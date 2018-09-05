@@ -23,14 +23,36 @@ namespace SerialPnPGateway
         int rxbufferindex = 0;
         bool escaped = false;
 
+        private DeviceClient DeviceClient = null;
+        private PnPInterface PnpInterface = null;
+
         SerialPort port;
 
-        public Device(String ComPort)
+        public string MethodHandler(string command, string input)
+        {
+            this.SendCommand(command, BitConverter.GetBytes(uint.Parse(input))[0]);
+            return null;
+        }
+
+        public string PropertyHandler(string property, string input)
+        {
+            this.SetProperty(property, uint.Parse(input));
+            return null;
+        }
+
+        public Device(String ComPort, DeviceClient deviceClient)
         {
             port = new SerialPort(ComPort, 115200, Parity.None, 8, StopBits.One);
 
             port.DataReceived += RxCallback;
             port.Open();
+
+            this.DeviceClient = deviceClient;
+
+            if (DeviceClient != null)
+            {
+                this.PnpInterface = new PnPInterface("arduino_" + ComPort, this.DeviceClient, PropertyHandler, MethodHandler);
+            }
 
             // send descriptor request
             SerialPnPPacketHeader dr = new SerialPnPPacketHeader();
@@ -39,6 +61,28 @@ namespace SerialPnPGateway
             dr.PacketType = 1; // Get descriptor
 
             this.SendPacket(dr);
+        }
+
+        public void RegisterWithPnP()
+        {
+            var interf = this.Interfaces[0];
+
+            foreach (var ee in interf.Commands)
+            {
+                this.PnpInterface.BindCommand(ee.Name);
+            }
+
+            foreach (var ee in interf.Events)
+            {
+                this.PnpInterface.BindEvent(ee.Name);
+            }
+
+            foreach (var ee in interf.Properties)
+            {
+                this.PnpInterface.BindProperty(ee.Name);
+            }
+
+            this.PnpInterface.PublishInterface();
         }
 
         public void GetProperty(String Property)
@@ -240,14 +284,17 @@ namespace SerialPnPGateway
 
                     if (evdef.Schema == Schema.Float)
                     {
+                        if (this.PnpInterface != null) this.PnpInterface.SendEvent(evdef.Name, BitConverter.ToSingle(data, 0).ToString());
                         Console.WriteLine("float " + BitConverter.ToSingle(data, 0));
                     }
                     else if (evdef.Schema == Schema.Int)
                     {
+                        if (this.PnpInterface != null) this.PnpInterface.SendEvent(evdef.Name, BitConverter.ToUInt32(data, 0).ToString());
                         Console.WriteLine("int (u) " + BitConverter.ToUInt32(data, 0));
                     }
                     else
                     {
+                        if (this.PnpInterface != null) this.PnpInterface.SendEvent(evdef.Name, "??");
                         Console.WriteLine("unknown " + data.Length.ToString() + " bytes");
                     }
 
@@ -274,6 +321,11 @@ namespace SerialPnPGateway
                 Array.Copy(payload, name_length + 1, data, 0, data.Length);
 
                 uint val = BitConverter.ToUInt32(data, 0);
+
+                if (this.PnpInterface != null)
+                {
+                    this.PnpInterface.WriteProperty(name, val.ToString());
+                }
 
                 Console.WriteLine("Got property \"" + name + "\" : [" + data.Length.ToString() + "] " + val.ToString());
             }
@@ -415,6 +467,11 @@ namespace SerialPnPGateway
                     Console.WriteLine("Unsupported descriptor");
                     throw new Exception();
                 }
+            }
+
+            if (this.Interfaces.Count > 0)
+            {
+                if (this.PnpInterface != null) RegisterWithPnP();
             }
         }
     }

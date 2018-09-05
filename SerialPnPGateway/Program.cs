@@ -8,7 +8,7 @@ namespace SerialPnPGateway
         {
             Console.WriteLine("Hello World!");
 
-            var a = new Device("COM4");
+            var a = new Device("COM4", null);
 
             while (true)
             {
