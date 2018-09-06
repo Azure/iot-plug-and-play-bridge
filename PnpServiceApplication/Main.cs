@@ -17,17 +17,12 @@ namespace iotpnp_service
         // az iot hub show-connection-string --hub-name {your iot hub name}Endpoint=sb://ihsuprodbyres062dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=ONNNpoZkJ/Z7Qb6z/z9K9kAzqREgoUnNvPOGIa6jKD0=
         private readonly static string s_connectionString = "HostName=npn-hub.azure-devices.net;Endpoint=sb://ihsuprodbyres062dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=ONNNpoZkJ/Z7Qb6z/z9K9kAzqREgoUnNvPOGIa6jKD0=";
       
-
-        private static void Main(string[] args)
+        private static void PrintUsage()
         {
-            Console.WriteLine("Azure IOT PNP - COSINE CLI.\n");
-
-            var pnpMgr = new PnpInterfaceManger(s_connectionString);
-
             Console.WriteLine("");
             Console.WriteLine("Parameters:");
             Console.WriteLine("l: list all interfaces published by the device");
-            Console.WriteLine("o: Perform an operation. Eg:o <interfaceid> <operationtype> <commandname> <commandinput>");
+            Console.WriteLine("Perform an operation. Eg:<interfaceid> <operationtype> <commandname> <commandinput>");
             Console.WriteLine("    <interfaceid>: Id for the interface obtained by listing all interfaces");
             Console.WriteLine("    <OperationType>:");
             Console.WriteLine("        pr - property read");
@@ -38,6 +33,15 @@ namespace iotpnp_service
             Console.WriteLine("    <commandname>: Name of the property/command");
             Console.WriteLine();
             Console.WriteLine("Press q to exit anytime.");
+        }
+
+        private static void Main(string[] args)
+        {
+            Console.WriteLine("Azure IOT PNP - COSINE CLI.\n");
+
+            var pnpMgr = new PnpInterfaceManger(s_connectionString);
+
+            PrintUsage();
 
             while (true)
             {
@@ -59,22 +63,22 @@ namespace iotpnp_service
                     continue;
                 }
 
-                if (input.StartsWith("o "))
+                try
                 {
                     var cmd_split = input.TrimEnd().Split(" ");
-                    if (cmd_split.Length < 4 || cmd_split.Length > 5)
+                    if (cmd_split.Length < 3 || cmd_split.Length > 4)
                     {
                         Console.WriteLine("Invalid command format");
                         continue;
                     }
 
-                    string interfaceId = cmd_split[1];
-                    string cmdType = cmd_split[2];
-                    string cmdName = cmd_split[3];
+                    string interfaceId = cmd_split[0];
+                    string cmdType = cmd_split[1];
+                    string cmdName = cmd_split[2];
                     string cmdInput = "";
 
-                    if (cmd_split.Length == 5) { 
-                        cmdInput = cmd_split[4];
+                    if (cmd_split.Length == 4) { 
+                        cmdInput = cmd_split[3];
                     }
 
                     var t = pnpMgr.GetPnpInterface(interfaceId);
@@ -114,7 +118,17 @@ namespace iotpnp_service
                             Console.WriteLine("command output: " + t1.Result);
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("Interface not found: " + interfaceId);
+                    }
                     continue;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Encountered error: " + ex.Message);
+                    Console.WriteLine(ex.StackTrace);
+                    PrintUsage();
                 }
             }
         

@@ -82,7 +82,7 @@ namespace PnpGateway
 
             if (interfaceId != Id)
             {
-                result = "{\"result\":\"Invalid parameter\"}";
+                result = "{\"result\":\"Invalid interface Id\"}";
                 return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 400));
             }
 
@@ -95,10 +95,14 @@ namespace PnpGateway
             else if (cmdType == "propwrite")
             {
                 WriteProperty(cmdName, input).Wait();
+                result = "{\"result\":\"Success\"}";
+                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
             }
             else if (cmdType == "cmd")
             {
-                CmdHandler(cmdName, input);
+                var ret = CmdHandler(cmdName, input);
+                result = "{\"result\":\"" + ret + "\"}";
+                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
             }
 
             result = "{\"result\":\"Invalid parameter\"}";
