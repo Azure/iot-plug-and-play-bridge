@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace PnpGateway
 {
-    class SimulatedDevice
+    class Gateway
     {
         // The device connection string to authenticate the device with your IoT hub.
         // Using the Azure CLI:
@@ -24,9 +24,19 @@ namespace PnpGateway
         {
 
             Console.WriteLine("Conneting to hub and updating pnp device interfaces.\n");
-            new MyPnpInterface().DoWork(s_connectionString);
+            //new MyPnpInterface().DoWork(s_connectionString);
 
+            
+
+            var deviceClient = DeviceClient.CreateFromConnectionString(s_connectionString, TransportType.Mqtt);
+
+            var pnpDeviceClient = new PnpDeviceClient(deviceClient);
+            pnpDeviceClient.Initialize().Wait();
+
+
+            var dev = new Device("COM4", pnpDeviceClient);
             Console.ReadLine();
+
             return;
         }
     }

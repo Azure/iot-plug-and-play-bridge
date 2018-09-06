@@ -50,7 +50,7 @@ namespace iotpnp_service
                                    new JProperty("name", cmdName))),
                            new JProperty("input", input));
 
-            var methodInvocation = new CloudToDeviceMethod("PnpCommandHandler" + Id) { ResponseTimeout = TimeSpan.FromSeconds(5) };
+            var methodInvocation = new CloudToDeviceMethod("PnpCommandHandler" + Id) { ResponseTimeout = TimeSpan.FromSeconds(30) };
             methodInvocation.SetPayloadJson(json.ToString());
 
             var serviceClient = ServiceClient.CreateFromConnectionString(ConnectionString);
@@ -86,7 +86,7 @@ namespace iotpnp_service
 
         public async Task<string> SendCommand(string Name, string input)
         {
-            if (!Properties.Contains(Name))
+            if (!Commands.Contains(Name))
             {
                 throw new ArgumentException("Interface " + Id + " doesn't contain the property " + Name);
             }

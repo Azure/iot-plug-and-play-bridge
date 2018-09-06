@@ -109,7 +109,7 @@ namespace iotpnp_service
                         }
                         else if (cmdType == "c")
                         {
-                            var t1 = pnpInt.SendCommand(cmdName, input);
+                            var t1 = pnpInt.SendCommand(cmdName, cmdInput);
                             t1.Wait();
                             Console.WriteLine("command output: " + t1.Result);
                         }

@@ -78,7 +78,7 @@ namespace PnpGateway
 
             var interfaceId = json["interfaceid"].ToString();
 
-            var input = cmdDescriptor["input"]?.ToString();
+            var input = json["input"]?.ToString();
 
             if (interfaceId != Id)
             {
@@ -95,6 +95,10 @@ namespace PnpGateway
             else if (cmdType == "propwrite")
             {
                 WriteProperty(cmdName, input).Wait();
+            }
+            else if (cmdType == "cmd")
+            {
+                CmdHandler(cmdName, input);
             }
 
             result = "{\"result\":\"Invalid parameter\"}";
