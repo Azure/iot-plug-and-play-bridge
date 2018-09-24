@@ -56,7 +56,7 @@ namespace iotpnp_service
             var serviceClient = ServiceClient.CreateFromConnectionString(ConnectionString);
 
             // Invoke the direct method asynchronously and get the response from the simulated device.
-            var response = await serviceClient.InvokeDeviceMethodAsync("stm32", methodInvocation);
+            var response = await serviceClient.InvokeDeviceMethodAsync("win-gateway", methodInvocation);
 
             Console.WriteLine("Response status: {0}, payload:", response.Status);
             Console.WriteLine(response.GetPayloadAsJson());
@@ -127,17 +127,17 @@ namespace iotpnp_service
                 }
             }
         }
-
+        // HostName=iot-pnp-hub1.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=buS4T5II3EDIPfXd/biEBiDIOpnRbyUJcOcbsuIVHpk=
         // Event Hub-compatible endpoint
         // az iot hub show --query properties.eventHubEndpoints.events.endpoint --name {your IoT Hub name}
-        private readonly static string s_eventHubsCompatibleEndpoint = "sb://ihsuprodbyres062dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=ONNNpoZkJ/Z7Qb6z/z9K9kAzqREgoUnNvPOGIa6jKD0=";
+        private readonly static string s_eventHubsCompatibleEndpoint = "sb://iothub-ns-iot-pnp-hu-794875-26efe2bd56.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=buS4T5II3EDIPfXd/biEBiDIOpnRbyUJcOcbsuIVHpk=;";
 
         // Event Hub-compatible name
         // az iot hub show --query properties.eventHubEndpoints.events.path --name {your IoT Hub name}
-        private readonly static string s_eventHubsCompatiblePath = "iothub-ehub-npn-hub-683558-bfe403c3a0";
+        private readonly static string s_eventHubsCompatiblePath = "iot-pnp-hub1";
 
         // az iot hub policy show --name iothubowner --query primaryKey --hub-name {your IoT Hub name}
-        private readonly static string s_iotHubSasKey = "ONNNpoZkJ/Z7Qb6z/z9K9kAzqREgoUnNvPOGIa6jKD0=";
+        private readonly static string s_iotHubSasKey = "buS4T5II3EDIPfXd/biEBiDIOpnRbyUJcOcbsuIVHpk=";
         private readonly static string s_iotHubSasKeyName = "iothubowner";
 
         public async Task ListenToEvent(string Name, CancellationTokenSource cts)
@@ -152,18 +152,6 @@ namespace iotpnp_service
             var connectionString = new EventHubsConnectionStringBuilder(new Uri(s_eventHubsCompatibleEndpoint), s_eventHubsCompatiblePath, s_iotHubSasKeyName, s_iotHubSasKey);
             eventHubClient = EventHubClient.CreateFromConnectionString(connectionString.ToString());
 
-            //try
-            //{
-            //    // Create a PartitionReciever for each partition on the hub.
-            //    var runtimeInfo1 = await eventHubClient.GetRuntimeInformationAsync();
-            //    var d2cPartitions1 = runtimeInfo1.PartitionIds;
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine(ex.Message);
-            //    Console.WriteLine(ex.StackTrace.ToString());
-            //    return;//throw ex;
-            //}
             // Create a PartitionReciever for each partition on the hub.
             var runtimeInfo = await eventHubClient.GetRuntimeInformationAsync();
             var d2cPartitions = runtimeInfo.PartitionIds;

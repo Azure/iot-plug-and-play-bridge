@@ -1,11 +1,9 @@
 ﻿using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PnpGateway
@@ -32,6 +30,11 @@ namespace PnpGateway
         }
 
         private Dictionary<string, PnPInterface> PnpInterfaceList { get; set; }
+
+        public bool ContainsInterface(string name)
+        {
+            return PnpInterfaceList.Keys.Contains(name);
+        }
 
         public async Task PublishInterface(PnPInterface pnpInterface)
         {

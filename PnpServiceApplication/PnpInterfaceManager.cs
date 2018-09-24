@@ -38,7 +38,7 @@ namespace iotpnp_service
         private async Task<Twin> GetDeviceTwin()
         {
             RegistryManager registryManager = RegistryManager.CreateFromConnectionString(ConnectionString);
-            Twin t = await registryManager.GetTwinAsync("stm32");
+            Twin t = await registryManager.GetTwinAsync("win-gateway");
             return t;
         }
 

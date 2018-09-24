@@ -39,7 +39,7 @@ namespace PnpGateway
 
             await pnpInterface.SendEvent("event1", "10");
 
-            pnpInterface = new PnPInterface("rubberinterface", pnpDeviceClient, this.PropChange, this.CmdHandler);
+            pnpInterface = new PnPInterface("eraserinterface", pnpDeviceClient, this.PropChange, this.CmdHandler);
             pnpInterface.BindProperty("prop1");
 
             pnpInterface.BindCommand("cmd1");

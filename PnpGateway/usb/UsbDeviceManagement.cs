@@ -13,83 +13,19 @@ namespace PnpGateway
 {
     class UsbDeviceManagement
     {
-        public UsbDeviceManagement(DeviceClient deviceClient)
+        public UsbDeviceManagement(PnpDeviceClient deviceClient)
         {
             m_DeviceClient = deviceClient;
-            m_DeviceClient.SetMethodHandlerAsync("enable", EnableDevice, null).Wait();
-            m_DeviceClient.SetMethodHandlerAsync("disable", DisableDevice, null).Wait();
+            PnPInterfaces = new List<PnPInterface>();
+
             m_DiscoveredDevices = new Dictionary<string, GenericWinUsbIoInterface>();
         }
 
+        private  List<PnPInterface> PnPInterfaces = null;
+
         private Dictionary<string, GenericWinUsbIoInterface> m_DiscoveredDevices;
 
-        public Task<MethodResponse> EnableDevice(MethodRequest methodRequest, object userContext)
-        {
-            UInt32 configRet = 0;
-            UInt32 devInst = 0;
-
-            if (m_DiscoveredDevices.Count <= 0)
-            {
-                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes("No device"), 400));
-            }
-
-            var data = Encoding.UTF8.GetString(methodRequest.Data);
-            int index = Int32.Parse(data);
-
-            configRet = CfgMgr.CM_Locate_DevNodeW(ref devInst, m_DiscoveredDevices.Values.ToArray()[index].DeviceInstanceId, 0);
-            if (configRet != CfgMgr.CR_SUCCESS)
-            {
-                Console.WriteLine("CM_Locate_DevNodeW failed: " + configRet);
-                goto end;
-            }
-            //disable device using CM API
-            configRet = CfgMgr.CM_Enable_DevNode(devInst, 0);
-            if (configRet != CfgMgr.CR_SUCCESS)
-            {
-                Console.WriteLine("CM_Enable_DevNode failed: " + configRet);
-            }
-
-        end:
-            // return result response
-            string result = "{\"result\":\"" + configRet + "\"}";
-            return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
-        }
-
-        public Task<MethodResponse> DisableDevice(MethodRequest methodRequest, object userContext)
-        {
-            UInt32 configRet = 0;
-            UInt32 devInst = 0;
-
-
-            if (m_DiscoveredDevices.Count <= 0)
-            {
-                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes("No device"), 400));
-            }
-
-            var data = Encoding.UTF8.GetString(methodRequest.Data);
-            int index = Int32.Parse(data);
-
-            configRet = CfgMgr.CM_Locate_DevNodeW(ref devInst, m_DiscoveredDevices.Values.ToArray()[index].DeviceInstanceId, 0);
-            if (configRet != CfgMgr.CR_SUCCESS)
-            {
-                Console.WriteLine("CM_Locate_DevNodeW failed: " + configRet);
-                goto end;
-            }
-  
-            //disable device using CM API
-            configRet = CfgMgr.CM_Disable_DevNode(devInst, CfgMgr.CM_DISABLE_PERSIST);
-            if (configRet != CfgMgr.CR_SUCCESS)
-            {
-                Console.WriteLine("CM_Disable_DevNode failed: " + configRet);
-            }
-
-        end:
-            // return result response
-            string result = "{\"result\":\"" + configRet + "\"}";
-            return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
-        }
-
-        DeviceClient m_DeviceClient;
+        PnpDeviceClient m_DeviceClient;
         UIntPtr m_NotifyContext;
 
         private async void OnUsbDeviceConnect(
@@ -102,7 +38,6 @@ namespace PnpGateway
             Dictionary<string, GenericWinUsbIoInterface> discoveredDevices;
             var winUsbDevices = new WinUsbDevices(deviceInterfaceGuid);
             var result = winUsbDevices.DiscoverUsbDevices(out discoveredDevices);
-            string json = null;
 
             if (result == true && discoveredDevices.ContainsKey(symLinkName))
             {
@@ -112,16 +47,104 @@ namespace PnpGateway
                 }
             }
 
-            TwinCollection settings = new TwinCollection();
-            List<UsbPnpInterface> deviceNames = m_DiscoveredDevices.Values.Select(x => new UsbPnpInterface(x)).ToList();
-            json = JsonConvert.SerializeObject(deviceNames);
-            settings["IoT-PnP-UsbDeviceManagement"] = json;
-            await m_DeviceClient.UpdateReportedPropertiesAsync(settings);
+            List<UsbDeviceContainer> deviceNames = m_DiscoveredDevices.Values.Select(x => new UsbDeviceContainer(x)).ToList();
+            foreach (var usbdevice in deviceNames)
+            {
+                UsbPnpInterface usbPnpInterface = new UsbPnpInterface(usbdevice.DeviceInterface, m_DeviceClient);
+                await m_DeviceClient.PublishInterface(usbPnpInterface.PnpInterface);
+            }
         }
 
         class UsbPnpInterface
         {
-            public UsbPnpInterface(GenericWinUsbIoInterface device)
+            public PnPInterface PnpInterface;
+
+            public UsbPnpInterface(string id, PnpDeviceClient pnpDeviceClient)
+            {
+
+                PnpInterface = new PnPInterface(id, pnpDeviceClient, PropertyHandler, MethodHandler);
+                PnpInterface.BindCommand("enable");
+                PnpInterface.BindCommand("disable");
+            }
+
+            public string MethodHandler(string command, string input)
+            {
+                if (command == "enable")
+                {
+                    return EnableDevice(input);
+                }
+                else if (command == "disable")
+                {
+                    return DisableDevice(input);
+                }
+
+                return null;
+            }
+
+
+            public string EnableDevice(string input)//MethodRequest methodRequest, object userContext)
+            {
+                UInt32 configRet = 0;
+                UInt32 devInst = 0;
+
+                //            var data = Encoding.UTF8.GetString(methodRequest.Data);
+                //int index = Int32.Parse(input);
+
+                configRet = CfgMgr.CM_Locate_DevNodeW(ref devInst, PnpInterface.Id, 0);
+                if (configRet != CfgMgr.CR_SUCCESS)
+                {
+                    Console.WriteLine("CM_Locate_DevNodeW failed: " + configRet);
+                    goto end;
+                }
+
+                //disable device using CM API
+                configRet = CfgMgr.CM_Enable_DevNode(devInst, 0);
+                if (configRet != CfgMgr.CR_SUCCESS)
+                {
+                    Console.WriteLine("CM_Enable_DevNode failed: " + configRet);
+                }
+
+                end:
+                // return result response
+                //string result = "{\"result\":\"" + configRet + "\"}";
+                //return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
+                return configRet.ToString();
+            }
+
+            public string DisableDevice(string input)//MethodRequest methodRequest, object userContext)
+            {
+                UInt32 configRet = 0;
+                UInt32 devInst = 0;
+
+                //int index = Int32.Parse(input);
+
+                configRet = CfgMgr.CM_Locate_DevNodeW(ref devInst, PnpInterface.Id, 0);
+                if (configRet != CfgMgr.CR_SUCCESS)
+                {
+                    Console.WriteLine("CM_Locate_DevNodeW failed: " + configRet);
+                    goto end;
+                }
+
+                //disable device using CM API
+                configRet = CfgMgr.CM_Disable_DevNode(devInst, CfgMgr.CM_DISABLE_PERSIST);
+                if (configRet != CfgMgr.CR_SUCCESS)
+                {
+                    Console.WriteLine("CM_Disable_DevNode failed: " + configRet);
+                }
+
+                end:
+                return configRet.ToString();
+            }
+
+            public string PropertyHandler(string property, string input)
+            {
+                return null;
+            }
+        }
+
+        class UsbDeviceContainer
+        {
+            public UsbDeviceContainer(GenericWinUsbIoInterface device)
             {
                 FriendlyName = device.FriendlyName;
                 DeviceInterface = device.DeviceInstanceId;
@@ -132,16 +155,16 @@ namespace PnpGateway
             public string DeviceInterface { get; set; }
         }
 
+
+
         private async void OnUsbDeviceDisconnect(string deviceInterfaceSymbolicLinkName)
         {
             if (m_DiscoveredDevices.Keys.Contains(deviceInterfaceSymbolicLinkName)) {
                // m_DiscoveredDevices.Remove(deviceInterfaceSymbolicLinkName);
-                List<UsbPnpInterface> deviceNames = m_DiscoveredDevices.Values.Select(x => new UsbPnpInterface(x)).ToList();
+                List<UsbDeviceContainer> deviceNames = m_DiscoveredDevices.Values.Select(x => new UsbDeviceContainer(x)).ToList();
                 var json = JsonConvert.SerializeObject(deviceNames);
 
-                TwinCollection settings = new TwinCollection();
-                settings["IoT-PnP-UsbDeviceManagement"] = json;
-                await m_DeviceClient.UpdateReportedPropertiesAsync(settings);
+                // Mark device disconnected
             }
         }
 
@@ -184,13 +207,6 @@ namespace PnpGateway
            // Guid DeviceInterfaceGuid
             )
         {
-            var json = JsonConvert.SerializeObject(m_DiscoveredDevices.Keys.ToList());
-
-            TwinCollection settings = new TwinCollection();
-            settings["IoT-PnP-UsbDeviceManagement"] = json;
-            await m_DeviceClient.UpdateReportedPropertiesAsync(settings);
-
-            //WinUsbDevices.DiscoverUsbDevices(DeviceInterfaceGuid);
             var filter = new CfgMgr.CM_NOTIFY_FILTER();
                 filter.cbSize = (uint)Marshal.SizeOf(filter);
                 filter.FilterType = CfgMgr.CM_NOTIFY_FILTER_TYPE.CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;

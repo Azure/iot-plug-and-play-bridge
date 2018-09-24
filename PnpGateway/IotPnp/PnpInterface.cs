@@ -125,15 +125,17 @@ namespace PnpGateway
                 throw new InvalidOperationException("Property doesn't exist");
             }
 
-            JObject pnpInterface = await GetInterfaceFromTwin();
-            JObject props = (JObject)pnpInterface["Properties"];
+            //JObject pnpInterface = await GetInterfaceFromTwin();
+            //JObject props = (JObject)pnpInterface["Properties"];
 
-            props[property] = val.ToString();
+            //props[property] = val.ToString();
 
-            TwinCollection settings = new TwinCollection();
-            var json = JsonConvert.SerializeObject(pnpInterface);
-            settings[Id] = json;
-            await DeviceClient.UpdateReportedPropertiesAsync(settings);
+            //TwinCollection settings = new TwinCollection();
+            //var json = JsonConvert.SerializeObject(pnpInterface);
+            //settings[Id] = json;
+            //await DeviceClient.UpdateReportedPropertiesAsync(settings);
+
+            PropChangeHandler(property, val.ToString());
         }
 
         private async Task<JObject> GetInterfaceFromTwin()

@@ -12,11 +12,12 @@ namespace iotpnp_service
     class IotPnpService
     {
         private static ServiceClient s_serviceClient;
-        
+
         // Connection string for your IoT Hub
         // az iot hub show-connection-string --hub-name {your iot hub name}Endpoint=sb://ihsuprodbyres062dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=ONNNpoZkJ/Z7Qb6z/z9K9kAzqREgoUnNvPOGIa6jKD0=
-        private readonly static string s_connectionString = "HostName=npn-hub.azure-devices.net;Endpoint=sb://ihsuprodbyres062dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=ONNNpoZkJ/Z7Qb6z/z9K9kAzqREgoUnNvPOGIa6jKD0=";
-      
+        private readonly static string s_connectionString = "HostName=iot-pnp-hub1.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=buS4T5II3EDIPfXd/biEBiDIOpnRbyUJcOcbsuIVHpk=";
+            //"HostName=npn-hub.azure-devices.net;Endpoint=sb://ihsuprodbyres062dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=ONNNpoZkJ/Z7Qb6z/z9K9kAzqREgoUnNvPOGIa6jKD0=";
+
         private static void PrintUsage()
         {
             Console.WriteLine("");
@@ -45,6 +46,7 @@ namespace iotpnp_service
 
             while (true)
             {
+                Console.WriteLine("Waiting for input");
                 string input = Console.ReadLine();
                 Console.WriteLine();
                 if (input == "q")
@@ -57,14 +59,15 @@ namespace iotpnp_service
                     continue;
                 }
 
-                if (input == "l")
-                {
-                    pnpMgr.DumpInterfaces().Wait();
-                    continue;
-                }
-
                 try
                 {
+
+                    if (input == "l")
+                    {
+                        pnpMgr.DumpInterfaces().Wait();
+                        continue;
+                    }
+
                     var cmd_split = input.TrimEnd().Split(" ");
                     if (cmd_split.Length < 3 || cmd_split.Length > 4)
                     {
@@ -94,7 +97,7 @@ namespace iotpnp_service
                         }
                         else if (cmdType == "pw")
                         {
-                            var t1 = pnpInt.WriteProperty(cmdName, input);
+                            var t1 = pnpInt.WriteProperty(cmdName, cmdInput);
                             t1.Wait();
                             Console.WriteLine("Property updated");
                         }
@@ -109,6 +112,7 @@ namespace iotpnp_service
                                 cts.Cancel();
                                 Console.WriteLine("Stopped Listening...");
                             };
+
                             pnpInt.ListenToEvent(cmdName, cts).Wait();
                         }
                         else if (cmdType == "c")

@@ -19,7 +19,7 @@ namespace iotpnp_service
             methodInvocation.SetPayloadJson(deviceIndex.ToString());
 
             // Invoke the direct method asynchronously and get the response from the simulated device.
-            var response = await serviceClient.InvokeDeviceMethodAsync("stm32", methodInvocation);
+            var response = await serviceClient.InvokeDeviceMethodAsync("win-gateway", methodInvocation);
 
             Console.WriteLine("Response status: {0}, payload:", response.Status);
             Console.WriteLine(response.GetPayloadAsJson());
