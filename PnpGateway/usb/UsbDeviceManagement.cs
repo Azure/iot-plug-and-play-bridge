@@ -50,8 +50,15 @@ namespace PnpGateway
             List<UsbDeviceContainer> deviceNames = m_DiscoveredDevices.Values.Select(x => new UsbDeviceContainer(x)).ToList();
             foreach (var usbdevice in deviceNames)
             {
-                UsbPnpInterface usbPnpInterface = new UsbPnpInterface(usbdevice.DeviceInterface, m_DeviceClient);
-                await m_DeviceClient.PublishInterface(usbPnpInterface.PnpInterface);
+                PnPInterface pnpInterface = m_DeviceClient.GetInterface(usbdevice.DeviceInterface);
+                if (pnpInterface == null)
+                {
+                    UsbPnpInterface usbPnpInterface = new UsbPnpInterface(usbdevice.DeviceInterface, m_DeviceClient);
+                    await m_DeviceClient.PublishInterface(usbPnpInterface.PnpInterface);
+                    pnpInterface = usbPnpInterface.PnpInterface;
+                }
+
+                pnpInterface.UpdateProperty("Connected", true);
             }
         }
 
@@ -65,6 +72,7 @@ namespace PnpGateway
                 PnpInterface = new PnPInterface(id, pnpDeviceClient, PropertyHandler, MethodHandler);
                 PnpInterface.BindCommand("enable");
                 PnpInterface.BindCommand("disable");
+                PnpInterface.BindProperty("Connected");
             }
 
             public string MethodHandler(string command, string input)
@@ -80,7 +88,6 @@ namespace PnpGateway
 
                 return null;
             }
-
 
             public string EnableDevice(string input)//MethodRequest methodRequest, object userContext)
             {
@@ -105,9 +112,6 @@ namespace PnpGateway
                 }
 
                 end:
-                // return result response
-                //string result = "{\"result\":\"" + configRet + "\"}";
-                //return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
                 return configRet.ToString();
             }
 
@@ -115,8 +119,6 @@ namespace PnpGateway
             {
                 UInt32 configRet = 0;
                 UInt32 devInst = 0;
-
-                //int index = Int32.Parse(input);
 
                 configRet = CfgMgr.CM_Locate_DevNodeW(ref devInst, PnpInterface.Id, 0);
                 if (configRet != CfgMgr.CR_SUCCESS)
@@ -163,6 +165,12 @@ namespace PnpGateway
                // m_DiscoveredDevices.Remove(deviceInterfaceSymbolicLinkName);
                 List<UsbDeviceContainer> deviceNames = m_DiscoveredDevices.Values.Select(x => new UsbDeviceContainer(x)).ToList();
                 var json = JsonConvert.SerializeObject(deviceNames);
+
+                foreach (var usbdevice in deviceNames)
+                {
+                    var pnpInterface =  m_DeviceClient.GetInterface(usbdevice.DeviceInterface);
+                    await pnpInterface.UpdateProperty("Connected", false);
+                }
 
                 // Mark device disconnected
             }

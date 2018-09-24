@@ -135,7 +135,6 @@ namespace iotpnp_service
                     PrintUsage();
                 }
             }
-        
         }
     }
 }

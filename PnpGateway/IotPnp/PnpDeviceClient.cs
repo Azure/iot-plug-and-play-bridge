@@ -36,6 +36,16 @@ namespace PnpGateway
             return PnpInterfaceList.Keys.Contains(name);
         }
 
+        public PnPInterface GetInterface(string name)
+        {
+            if(PnpInterfaceList.Keys.Contains(name))
+            {
+                return PnpInterfaceList[name];
+            }
+
+            return null;
+        }
+
         public async Task PublishInterface(PnPInterface pnpInterface)
         {
             if (PnpInterfaceList.Keys.Contains(pnpInterface.Id))

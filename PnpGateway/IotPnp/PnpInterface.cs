@@ -18,7 +18,7 @@ namespace PnpGateway
 
         private DeviceClient DeviceClient;
 
-        private List<string> Properties;
+        Dictionary<string, string> Properties;
         private List<CommandDef> Commands;
         private List<string> Events;
         public PropertyChangeHandler PropChangeHandler { get; private set; }
@@ -28,7 +28,7 @@ namespace PnpGateway
         {
             Id = id;
             DeviceClient = pnpDeviceClient.DeviceClient;
-            Properties = new List<string>();
+            Properties = new Dictionary<string, string>();
             Commands = new List<CommandDef>();
             Events = new List<string>();
             PropChangeHandler = propHandler;
@@ -46,8 +46,8 @@ namespace PnpGateway
                            select new JValue(p))),
                    new JProperty("Properties",
                        new JObject(
-                           from p in Properties
-                           select new JProperty(p, ""))),
+                           from p in Properties.Keys
+                           select new JProperty(p, Properties[p]))),
                    new JProperty("Commands",
                        new JObject(
                            from p in Commands.Select(x => x.Command)
@@ -58,7 +58,7 @@ namespace PnpGateway
 
         public void BindProperty(string property)
         {
-            Properties.Add(property);
+            Properties[property] = "";
         }
 
         public void BindEvent(string property)
@@ -88,13 +88,16 @@ namespace PnpGateway
 
             if (cmdType == "propread")
             {
-                PropChangeHandler(cmdName, input);
-                result = "{\"result\":\"Success\"}";
-                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
+                if (Properties.ContainsKey(cmdName))
+                {
+                    result = "{\"result\":\""+ Properties[cmdName] + "\"}";
+                    return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
+                }
+                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes("Property not found"), 400));
             }
             else if (cmdType == "propwrite")
             {
-                WriteProperty(cmdName, input).Wait();
+                WriteProperty(cmdName, input);
                 result = "{\"result\":\"Success\"}";
                 return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 200));
             }
@@ -118,22 +121,12 @@ namespace PnpGateway
             Commands.Add(new CommandDef(Command, CmdHandler));
         }
 
-        public async Task WriteProperty(string property, object val)
+        public void WriteProperty(string property, object val)
         {
-            if (!Properties.Contains(property))
+            if (!Properties.ContainsKey(property))
             {
                 throw new InvalidOperationException("Property doesn't exist");
             }
-
-            //JObject pnpInterface = await GetInterfaceFromTwin();
-            //JObject props = (JObject)pnpInterface["Properties"];
-
-            //props[property] = val.ToString();
-
-            //TwinCollection settings = new TwinCollection();
-            //var json = JsonConvert.SerializeObject(pnpInterface);
-            //settings[Id] = json;
-            //await DeviceClient.UpdateReportedPropertiesAsync(settings);
 
             PropChangeHandler(property, val.ToString());
         }
@@ -170,6 +163,21 @@ namespace PnpGateway
             message.Properties.Add("interfaceid", Id);
             message.Properties.Add("eventname", name);
             await DeviceClient.SendEventAsync(message);
+        }
+
+        internal async Task UpdateProperty(string property, bool value)
+        {
+            if (!Properties.ContainsKey(property))
+            {
+                throw new InvalidOperationException("Property doesn't exist");
+            }
+
+            Properties[property] = value.ToString();
+
+            TwinCollection settings = new TwinCollection();
+            settings[Id] = GetJson();
+
+            await DeviceClient.UpdateReportedPropertiesAsync(settings);
         }
     }
 }
