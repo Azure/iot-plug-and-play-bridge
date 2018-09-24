@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO.Ports;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace PnpGateway
 {
@@ -25,6 +26,7 @@ namespace PnpGateway
 
         private PnpDeviceClient DeviceClient = null;
         private PnPInterface PnpInterface = null;
+        private bool rxd = false;
 
         SerialPort port;
 
@@ -60,7 +62,14 @@ namespace PnpGateway
             dr.Length = (ushort)Marshal.SizeOf(dr);
             dr.PacketType = 1; // Get descriptor
 
-            this.SendPacket(dr);
+            Task task = new Task(async () => {
+                while (rxd == false)
+                {
+                    this.SendPacket(dr);
+                    await Task.Delay(1000);
+                }
+            });
+            task.Start();
         }
 
         public void RegisterWithPnP()
@@ -349,6 +358,8 @@ namespace PnpGateway
 
         private void ParseDescriptor(byte[] descriptor)
         {
+            rxd = true;
+
             ushort version = descriptor[0];
             ushort display_name_length = descriptor[1];
 
