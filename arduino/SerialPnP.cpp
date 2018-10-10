@@ -32,17 +32,19 @@ SerialPnP::Setup(const char* Name) {
     s_DescriptorIndex += nlen;
 
     Serial.begin(115200);
+    Serial.flush();
 }
 
 void
-SerialPnP::NewInlineInterface(
+SerialPnP::NewInterface(
     const char* InterfaceId
 ) {
-    s_Descriptor[s_DescriptorIndex++] = 0x04;
+    s_Descriptor[s_DescriptorIndex++] = 0x05;
 
-    uint8_t ilen = strlen(InterfaceId);
+    uint16_t ilen = strlen(InterfaceId);
 
-    s_Descriptor[s_DescriptorIndex++] = ilen;
+    s_Descriptor[s_DescriptorIndex++] = ilen & 0xFF;
+    s_Descriptor[s_DescriptorIndex++] = ilen >> 8;
 
     memcpy(&s_Descriptor[s_DescriptorIndex],
            InterfaceId,
@@ -94,6 +96,7 @@ SerialPnP::NewEvent(const char* Name,
     s_DescriptorIndex += ulen;
 
     s_Descriptor[s_DescriptorIndex++] = Schema;
+    s_Descriptor[s_DescriptorIndex++] = 0;
 }
 
 void
@@ -101,6 +104,7 @@ SerialPnP::NewProperty(const char* Name,
                        const char* DisplayName,
                        const char* Description,
                        const char* Units,
+                       SerialPnPSchema Schema,
                        bool Required,
                        bool Writeable,
                        void* Callback)
@@ -142,8 +146,15 @@ SerialPnP::NewProperty(const char* Name,
            ulen);
     s_DescriptorIndex += ulen;
 
-    s_Descriptor[s_DescriptorIndex++] = Required;
-    s_Descriptor[s_DescriptorIndex++] = Writeable;
+    s_Descriptor[s_DescriptorIndex++] = Schema;
+    s_Descriptor[s_DescriptorIndex++] = 0;
+
+    ulen = 0x00;
+    if (Required) ulen |= (1 << 1);
+    if (Writeable) ulen |= (1 << 0);
+
+    // flags
+    s_Descriptor[s_DescriptorIndex++] = ulen;
 }
 
 void
@@ -184,7 +195,9 @@ SerialPnP::NewCommand(const char* Name,
     s_DescriptorIndex += desclen;
 
     s_Descriptor[s_DescriptorIndex++] = InputSchema;
+    s_Descriptor[s_DescriptorIndex++] = 0;
     s_Descriptor[s_DescriptorIndex++] = OutputSchema;
+    s_Descriptor[s_DescriptorIndex++] = 0;
 }
 
 void
@@ -193,19 +206,24 @@ SerialPnP::Process()
     //
     // Process input
     //
-    while (Serial.available() > 0) {
+    while (Serial.available()) {
         char inb = Serial.read();
-        // Serial.write(inb);
 
-        if (inb == 0xEF && !s_Escaped) {
-            s_Escaped = true;
-            continue;
-
-        } else if ((inb == 0x5A) && !s_Escaped) {
+        if (inb == 0x5A) {
             s_RxBufferIndex = 0;
+            s_Escaped = false;
+            continue;
         }
 
-        s_Escaped = false;
+        if (inb == 0xEF) {
+            s_Escaped = true;
+            continue;
+        }
+
+        if (s_Escaped) {
+            inb++;
+            s_Escaped = false;
+        }
 
         s_RxBuffer[s_RxBufferIndex++] = inb;
 
@@ -226,18 +244,23 @@ SerialPnP::ProcessPacket(
     SerialPnPPacketHeader *Packet
 ) {
     SerialPnPPacketHeader out = {0};
-    out.StartOfFrame = 0x5A;
 
-    if (Packet->PacketType == SerialPnPPacketType::GetDescriptor) {
-        out.Length = s_DescriptorIndex + sizeof(SerialPnPPacketHeader);
+    if (Packet->PacketType == SerialPnPPacketType::ResetReq) {
+        out.Length = sizeof(SerialPnPPacketHeader);
+        out.PacketType = SerialPnPPacketType::ResetResp;
+
+        Serial.write(0x5A);
+        SerialWrite((uint8_t*) &out, sizeof(SerialPnPPacketHeader));
+    
+    } else if (Packet->PacketType == SerialPnPPacketType::GetDescriptor) {
+        out.Length = sizeof(SerialPnPPacketHeader) + s_DescriptorIndex;
         out.PacketType = SerialPnPPacketType::DescriptorResponse;
 
         Serial.write(0x5A); // need to send sync
-        SerialWrite((uint8_t*) &out + 1, sizeof(out) - 1);
+        SerialWrite((uint8_t*) &out, sizeof(SerialPnPPacketHeader));
         SerialWrite((uint8_t*) s_Descriptor, s_DescriptorIndex);
 
-    } else if ((Packet->PacketType == SerialPnPPacketType::GetProperty) ||
-               (Packet->PacketType == SerialPnPPacketType::SetProperty)) {
+    } else if ((Packet->PacketType == SerialPnPPacketType::SetProperty)) {
         // find entry in table
         SerialPnPPacketBody* body = (SerialPnPPacketBody*) Packet->Body;
 
@@ -249,55 +272,57 @@ SerialPnP::ProcessPacket(
         if (cb) {
             uint32_t outp = 0;
 
-            // schema is u32 for now
-            if (Packet->PacketType == SerialPnPPacketType::GetProperty) {
+            // If there's no data, call it for output only
+            if (Packet->Length - (sizeof(SerialPnPPacketHeader) +
+                                  sizeof(SerialPnPPacketBody) +
+                                  body->NameLength) == 0) {
+
                 ((SerialPnPCb) cb->Callback)(nullptr, &outp);
-
-                out.Length = sizeof(SerialPnPPacketHeader) +
-                             sizeof(SerialPnPPacketBody) +
-                             body->NameLength +
-                             sizeof(outp); // payload size; uint32
-
-                out.PacketType = SerialPnPPacketType::GetPropertyResponse;
-
-                Serial.write(0x5A); // need to send sync
-                SerialWrite((uint8_t*) &out + 1, sizeof(out) - 1);
-                SerialWrite(body->NameLength);
-                SerialWrite((uint8_t*) body->Payload, body->NameLength);
-                SerialWrite((uint8_t*) &outp, sizeof(outp));
-
             } else {
-                ((SerialPnPCb) cb->Callback)(body->Payload + body->NameLength, nullptr);
+                ((SerialPnPCb) cb->Callback)(body->Payload + body->NameLength, &outp);
             }
-        }
 
-    } else if (Packet->PacketType == SerialPnPPacketType::Command) {
+            out.Length = sizeof(SerialPnPPacketHeader) +
+                         sizeof(SerialPnPPacketBody) +
+                         body->NameLength +
+                         sizeof(outp); // payload size; uint32
+
+            out.PacketType = SerialPnPPacketType::PropertyResponse;
+
+            Serial.write(0x5A); // need to send sync
+            SerialWrite((uint8_t*) &out, sizeof(out));
+            SerialWrite(0); // Interface ID = 0
+            SerialWrite(body->NameLength);
+            SerialWrite((uint8_t*) body->Payload, body->NameLength);
+            SerialWrite((uint8_t*) &outp, sizeof(outp));
+        }
+    } else if ((Packet->PacketType == SerialPnPPacketType::Command)) {
+        // find entry in table
         SerialPnPPacketBody* body = (SerialPnPPacketBody*) Packet->Body;
 
         SerialPnPCallback* cb = nullptr;
-        cb = FindCallback(0x01, //property type
+        cb = FindCallback(0x01, //method type
                           body->NameLength,
                           body->Payload);
 
         if (cb) {
             uint32_t outp = 0;
 
-            // we don't care about schema for invocation
             ((SerialPnPCb) cb->Callback)(body->Payload + body->NameLength, &outp);
 
-            // just default to outputting a bool for now
             out.Length = sizeof(SerialPnPPacketHeader) +
                          sizeof(SerialPnPPacketBody) +
                          body->NameLength +
-                         1; // payload size; bool for now
+                         sizeof(outp); // payload size; uint32
 
             out.PacketType = SerialPnPPacketType::CommandResponse;
 
             Serial.write(0x5A); // need to send sync
-            SerialWrite((uint8_t*) &out + 1, sizeof(out) - 1);
+            SerialWrite((uint8_t*) &out, sizeof(out));
+            SerialWrite(0); // Interface ID = 0
             SerialWrite(body->NameLength);
             SerialWrite((uint8_t*) body->Payload, body->NameLength);
-            SerialWrite((uint8_t*) &outp, 1);
+            SerialWrite((uint8_t*) &outp, sizeof(outp));
         }
     }
 }
@@ -308,15 +333,19 @@ SerialPnP::SendEvent(const char* Name,
                      uint8_t ValueSize) {
 
     SerialPnPPacketHeader out = {0};
-    out.StartOfFrame = 0x5A;
 
     uint8_t nlen = strlen(Name);
 
-    out.Length = sizeof(out) + 1 + nlen + ValueSize;
+    out.Length = sizeof(SerialPnPPacketHeader) +
+                 sizeof(SerialPnPPacketBody) +
+                 nlen +
+                 ValueSize;
+
     out.PacketType = SerialPnPPacketType::Event;
 
     Serial.write(0x5A); // need to send sync
-    SerialWrite((uint8_t*) &out + 1, sizeof(out) - 1);
+    SerialWrite((uint8_t*) &out, sizeof(SerialPnPPacketHeader));
+    SerialWrite(0); // interface id = 0
     SerialWrite(nlen);
     SerialWrite((uint8_t*) Name, nlen);
     SerialWrite(Value, ValueSize);
@@ -384,32 +413,24 @@ void
 SerialPnP::SerialWrite(uint8_t* Buffer, size_t Count)
 {
     size_t c;
-    size_t start = 0;
 
-    // print as much as we can at a time before we hit a character
-    // that needs escaping
     for (c = 0; c < Count; c++) {
         if ((Buffer[c] == 0x5A) || (Buffer[c] == 0xEF)) {
-
-            if (c-start > 0) {
-                Serial.write(Buffer + start, (c-start));
-                Serial.write(0xEF);
-            }
-
-            start = c;
+            Serial.write(0xEF);
+            Serial.write(Buffer[c] - 1);
+        } else {
+            Serial.write(Buffer[c]);
         }
     }
-
-    // print whatever is left after the last escape
-    Serial.write(Buffer + start, Count - start);
 }
 
 void
-SerialPnP::SerialWrite(uint8_t Out)
+SerialPnP::SerialWrite(uint8_t Char)
 {
-    if ((Out == 0x5A) || (Out == 0xEF)) {
+    if ((Char == 0x5A) || (Char == 0xEF)) {
         Serial.write(0xEF);
+        Serial.write(Char - 1);
+    } else {
+        Serial.write(Char);
     }
-
-    Serial.write(Out);
 }

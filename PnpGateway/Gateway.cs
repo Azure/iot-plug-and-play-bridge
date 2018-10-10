@@ -6,6 +6,7 @@
 
 using System;
 using Microsoft.Azure.Devices.Client;
+using PnpGateway.Serial;
 
 namespace PnpGateway
 {
@@ -31,7 +32,7 @@ namespace PnpGateway
             usbdevicemgmt.StartMonitoring();
 
             // Discover serial interfaces
-            var dev = new Device("COM4", pnpDeviceClient);
+            var dev = new SerialPnPDevice("COM4", pnpDeviceClient);
             Console.ReadLine();
 
             return;

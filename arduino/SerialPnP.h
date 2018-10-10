@@ -1,19 +1,23 @@
 enum SerialPnPSchema {
     SchemaNone = 0,
-    SchemaBytes,
-    SchemaBool,
+    SchemaByte,
     SchemaFloat,
-    SchemaInt
+    SchemaDouble,
+    SchemaInt,
+    SchemaLong,
+    SchemaBoolean,
+    SchemaString,
 };
 
 typedef struct _SerialPnPPacketHeader {
-    uint8_t                 StartOfFrame;
     uint16_t                Length;
     uint8_t                 PacketType;
+    uint8_t                 Reserved;
     char                    Body[0];
 } SerialPnPPacketHeader;
 
 typedef struct _SerialPnPPacketBody {
+    uint8_t                 InterfaceId;
     uint8_t                 NameLength;
     char                    Payload[0];
 } SerialPnPPacketBody;
@@ -31,7 +35,7 @@ public:
     Setup(const char* Name);
 
     static void
-    NewInlineInterface(const char* InterfaceId);
+    NewInterface(const char* InterfaceId);
 
     static void
     NewEvent(const char* Name,
@@ -45,6 +49,7 @@ public:
                 const char* DisplayName,
                 const char* Description,
                 const char* Units,
+                SerialPnPSchema Schema,
                 bool Required,
                 bool Writeable,
                 void* Callback);
@@ -103,12 +108,13 @@ private:
 
 enum SerialPnPPacketType {
     None = 0,
-    GetDescriptor = 1,
-    DescriptorResponse = 2,
-    Command = 3,
-    CommandResponse = 4,
-    SetProperty = 5,
-    GetProperty = 7,
-    GetPropertyResponse = 8,
+    ResetReq = 1,
+    ResetResp = 2,
+    GetDescriptor = 3,
+    DescriptorResponse = 4,
+    Command = 5,
+    CommandResponse = 6,
+    SetProperty = 7,
+    PropertyResponse = 8,
     Event = 10
 };
