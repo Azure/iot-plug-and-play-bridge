@@ -75,7 +75,7 @@ namespace PnpGateway
                 PnpInterface.BindProperty("Connected");
             }
 
-            public string MethodHandler(string command, string input)
+            public async Task<string> MethodHandler(string command, string input)
             {
                 if (command == "enable")
                 {
@@ -138,9 +138,9 @@ namespace PnpGateway
                 return configRet.ToString();
             }
 
-            public string PropertyHandler(string property, string input)
+            public async Task PropertyHandler(string property, string input)
             {
-                return null;
+                return;
             }
         }
 

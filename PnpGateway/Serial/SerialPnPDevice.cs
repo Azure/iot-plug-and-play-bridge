@@ -81,6 +81,36 @@ namespace PnpGateway.Serial
             return rxstrdata;
         }
 
+        private static byte[] StringSchemaToBinary(Schema Schema, string Data)
+        {
+            var bd = new byte[0];
+
+            if ((Schema == Schema.Float) || (Schema == Schema.Int))
+            {
+                bd = new byte[4];
+
+                if (Schema == Schema.Float)
+                {
+                    var x = new float[1];
+                    x[0] = float.Parse(Data);
+                    Buffer.BlockCopy(x, 0, bd, 0, 4);
+                } else if (Schema == Schema.Int)
+                {
+                    var x = new int[1];
+                    x[0] = int.Parse(Data);
+                    Buffer.BlockCopy(x, 0, bd, 0, 4);
+                }
+            } else if (Schema == Schema.Boolean)
+            {
+                bd = new byte[1];
+                bool bdd = bool.Parse(Data);
+
+                bd[0] = (byte) (bdd ? 1 : 0);
+            }
+
+            return bd;
+        }
+
         private SerialPnPPacketInterface PacketInterface = null;
         private PnpDeviceClient DeviceClient = null;
 
@@ -174,15 +204,77 @@ namespace PnpGateway.Serial
             return null;
         }
 
-        // These are the device client entry points
-        public string MethodHandler(string command, string input)
+        private CommandDefinition LookupMethod(string Name, int InterfaceId)
         {
+            foreach (var ev in this.Interfaces[InterfaceId].Commands)
+            {
+                if (ev.Name.Equals(Name))
+                {
+                    return ev;
+                }
+            }
+
             return null;
         }
 
-        public string PropertyHandler(string property, string input)
+        private PropertyDefinition LookupProperty(string Name, int InterfaceId)
         {
+            foreach (var ev in this.Interfaces[InterfaceId].Properties)
+            {
+                if (ev.Name.Equals(Name))
+                {
+                    return ev;
+                }
+            }
+
             return null;
+        }
+
+        // These are the device client entry points
+        public async Task<string> MethodHandler(string command, string input)
+        {
+            var target = this.LookupMethod(command, 0);
+
+            if (target == null)
+            {
+                return "false";
+            }
+
+            // otherwise serialize data
+            var inputPayload = StringSchemaToBinary(target.RequestSchema, input);
+
+            // execute method
+            var rxPacket = await TxNameDataAndRxResponse(0, target.Name, 0x05, inputPayload);
+
+            byte[] rxPayload = new byte[rxPacket.Length - (6 + target.Name.Length)];
+            Buffer.BlockCopy(rxPacket, 6 + target.Name.Length, rxPayload, 0, rxPayload.Length);
+
+            var stval = BinarySchemaToString(target.ResponseSchema, rxPayload);
+
+            return stval;
+        }
+
+        public async Task PropertyHandler(string property, string input)
+        {
+            var target = this.LookupProperty(property, 0);
+
+            if (target == null)
+            {
+                return;
+            }
+
+            // otherwise serialize data
+            var inputPayload = StringSchemaToBinary(target.DataSchema, input);
+
+            // execute method
+            var rxPacket = await TxNameDataAndRxResponse(0, target.Name, 0x07, inputPayload);
+
+            byte[] rxPayload = new byte[rxPacket.Length - (6 + target.Name.Length)];
+            Buffer.BlockCopy(rxPacket, 6 + target.Name.Length, rxPayload, 0, rxPayload.Length);
+
+            var stval = BinarySchemaToString(target.DataSchema, rxPayload);
+
+            this.PnpInterface.WriteProperty(property, stval);
         }
 
         private async Task<byte[]> TxNameDataAndRxResponse(int InterfaceId, string Property, byte Type, byte[] RawValue)
@@ -220,10 +312,14 @@ namespace PnpGateway.Serial
             // Validate the field is correct
             var rxNameLength = rxPacket[5];
             var rxInterfaceId = rxPacket[4];
+            var rxName = new byte[rxNameLength];
+            Buffer.BlockCopy(rxPacket, 6, rxName, 0, rxNameLength);
 
-            if ((rxNameLength != nameBytes.Length) || (rxInterfaceId != InterfaceId))
+            if ((rxNameLength != nameBytes.Length) ||
+                (rxInterfaceId != InterfaceId) ||
+                (!rxName.Equals(Property)))
             {
-                throw new Exception("Bad response");
+                this.UnsolicitedPacket(this, rxPacket);
             }
 
             byte[] rxPayload = new byte[rxPacket.Length - (6 + nameBytes.Length)];
@@ -312,6 +408,12 @@ namespace PnpGateway.Serial
                 Console.WriteLine("Got new event " + event_name + " with data size " + rxDataSize + " schema " + ev.DataSchema.ToString () + " " + rxstrdata);
 
                 this.PnpInterface.SendEvent(event_name, rxstrdata);
+            }
+
+            // Got a property update
+            else if (packet[2] == 0x08)
+            {
+                // TODO
             }
         }
  

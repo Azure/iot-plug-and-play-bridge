@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace PnpGateway
 {
-    public delegate string CommandHandler(string cmd, string input);
+    public delegate Task<string> CommandHandler(string cmd, string input);
 
     class CommandDef
     {

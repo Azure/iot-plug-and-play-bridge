@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace PnpGateway
 {
-    public delegate string PropertyChangeHandler(string propName, string input);
+    public delegate Task PropertyChangeHandler(string propName, string input);
 
     public class PnPInterface
     {
@@ -127,7 +127,6 @@ namespace PnpGateway
             {
                 throw new InvalidOperationException("Property doesn't exist");
             }
-
             PropChangeHandler(property, val.ToString());
         }
 
@@ -138,7 +137,7 @@ namespace PnpGateway
             return JsonConvert.DeserializeObject<JObject>(t[Id].ToString());
         }
 
-        public string InvokeCommand(string command, string input)
+        public async Task<string> InvokeCommand(string command, string input)
         {
             CommandDef def = Commands.FirstOrDefault(x => x.Command == command);
             if (def == null)
@@ -146,7 +145,7 @@ namespace PnpGateway
                 throw new InvalidOperationException("command already exists");
             }
 
-            return def.Handler(command, input);
+            return await def.Handler(command, input);
         }
 
         public async Task SendEvent(string name, string value)
