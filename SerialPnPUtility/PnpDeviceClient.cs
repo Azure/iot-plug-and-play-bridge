@@ -20,6 +20,8 @@ namespace PnpGateway
         public Func<string, string, Task> propertyHandler;
         public Func<string, string, Task<string>> methodHandler;
 
+        public bool eventson = false;
+
         public PnPInterface(string v, PnpDeviceClient deviceClient, Func<string, string, Task> propertyHandler, Func<string, string, Task<string>> methodHandler)
         {
             this.Id = v;
@@ -30,27 +32,28 @@ namespace PnpGateway
 
         internal void WriteProperty(string name, string stval)
         {
-            throw new NotImplementedException();
+            
         }
 
         internal void BindCommand(string name)
         {
-            throw new NotImplementedException();
+            
         }
 
         internal void BindEvent(string name)
         {
-            throw new NotImplementedException();
+            
         }
 
         internal void BindProperty(string name)
         {
-            throw new NotImplementedException();
+            
         }
 
         internal void SendEvent(string event_name, string rxstrdata)
         {
-            Console.WriteLine("Got event " + event_name + " : " + rxstrdata);
+            if (eventson)
+                Console.WriteLine("EVENT : " + event_name + " : " + rxstrdata);
         }
     }
 }

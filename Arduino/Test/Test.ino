@@ -13,8 +13,8 @@ void CbSampleRate(int32_t *input, int32_t *output) {
   if (input) g_reportRate = *input;
 }
 
-void CbSquare(int32_t *input, int32_t *output) {
-  *output = *input << 2;
+void CbDouble(int32_t *input, int32_t *output) {
+  *output = *input << 1;
 }
 
 // the setup function runs once when you press reset or power the board
@@ -36,12 +36,12 @@ void setup() {
                            false, // required
                            true, // writeable
                            (SerialPnPCb*) CbSampleRate); // callback function on update
-    SerialPnP::NewCommand("square",
-                          "Square (power of 2)",
-                          "Squares a value and returns the input",
+    SerialPnP::NewCommand("double",
+                          "Multiply by 2",
+                          "Doubles a value and returns the input",
                           SerialPnPSchema::SchemaInt,
                           SerialPnPSchema::SchemaInt,
-                          (SerialPnPCb*) CbSquare);
+                          (SerialPnPCb*) CbDouble);
 }
 
 // the loop function runs over and over again forever

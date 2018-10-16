@@ -71,7 +71,7 @@ namespace PnpGateway.Serial
                 Buffer.BlockCopy(Data, 0, fa, 0, 4);
                 rxstrdata = fa[0].ToString();
             }
-            else if (((Schema == Schema.Float) && (Data.Length == 4)))
+            else if (((Schema == Schema.Int) && (Data.Length == 4)))
             {
                 var fa = new int[1];
                 Buffer.BlockCopy(Data, 0, fa, 0, 4);
@@ -158,13 +158,8 @@ namespace PnpGateway.Serial
             // Now query all properties to get PnP the updated value
             foreach (var property in this.Interfaces[0].Properties)
             {
-                var rxPacket = await TxNameDataAndRxResponse(0, property.Name, 0x07, null);
-
-                byte[] rxPayload = new byte[rxPacket.Length - (6 + property.Name.Length)];
-                Buffer.BlockCopy(rxPacket, 6 + property.Name.Length, rxPayload, 0, rxPayload.Length);
-
+                var rxPayload = await TxNameDataAndRxResponse(0, property.Name, 0x07, null);
                 var stval = BinarySchemaToString(property.DataSchema, rxPayload);
-
                 this.PnpInterface.WriteProperty(property.Name, stval);
             }
 
@@ -247,11 +242,8 @@ namespace PnpGateway.Serial
             var inputPayload = StringSchemaToBinary(target.RequestSchema, input);
 
             // execute method
-            var rxPacket = await TxNameDataAndRxResponse(0, target.Name, 0x05, inputPayload);
-
-            byte[] rxPayload = new byte[rxPacket.Length - (6 + target.Name.Length)];
-            Buffer.BlockCopy(rxPacket, 6 + target.Name.Length, rxPayload, 0, rxPayload.Length);
-
+            var rxPayload = await TxNameDataAndRxResponse(0, target.Name, 0x05, inputPayload);
+            
             var stval = BinarySchemaToString(target.ResponseSchema, rxPayload);
 
             return stval;
@@ -270,10 +262,7 @@ namespace PnpGateway.Serial
             var inputPayload = StringSchemaToBinary(target.DataSchema, input);
 
             // execute method
-            var rxPacket = await TxNameDataAndRxResponse(0, target.Name, 0x07, inputPayload);
-
-            byte[] rxPayload = new byte[rxPacket.Length - (6 + target.Name.Length)];
-            Buffer.BlockCopy(rxPacket, 6 + target.Name.Length, rxPayload, 0, rxPayload.Length);
+            var rxPayload = await TxNameDataAndRxResponse(0, target.Name, 0x07, inputPayload);
 
             var stval = BinarySchemaToString(target.DataSchema, rxPayload);
 
@@ -408,7 +397,7 @@ namespace PnpGateway.Serial
 
                 var rxstrdata = BinarySchemaToString(ev.DataSchema, rxData);
 
-                Console.WriteLine("Got new event " + event_name + " with data size " + rxDataSize + " schema " + ev.DataSchema.ToString () + " " + rxstrdata);
+                //Console.WriteLine("Got new event " + event_name + " with data size " + rxDataSize + " schema " + ev.DataSchema.ToString () + " " + rxstrdata);
 
                 if (DeviceClient != null)
                 {
