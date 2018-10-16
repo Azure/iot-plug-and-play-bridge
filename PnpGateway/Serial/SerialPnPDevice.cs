@@ -150,7 +150,10 @@ namespace PnpGateway.Serial
             ParseDescriptor(descriptor);
 
             // Register with device client
-            await RegisterWithPnP();
+            if (this.DeviceClient != null)
+            {
+                await RegisterWithPnP();
+            }
 
             // Now query all properties to get PnP the updated value
             foreach (var property in this.Interfaces[0].Properties)
@@ -407,7 +410,10 @@ namespace PnpGateway.Serial
 
                 Console.WriteLine("Got new event " + event_name + " with data size " + rxDataSize + " schema " + ev.DataSchema.ToString () + " " + rxstrdata);
 
-                this.PnpInterface.SendEvent(event_name, rxstrdata);
+                if (DeviceClient != null)
+                {
+                    this.PnpInterface.SendEvent(event_name, rxstrdata);
+                }
             }
 
             // Got a property update
