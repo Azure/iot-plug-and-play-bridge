@@ -167,6 +167,11 @@ namespace PnpGateway.Serial
             this.Operational = true;
         }
 
+        public void Stop()
+        {
+            this.PacketInterface.Close();
+        }
+
         private async Task RegisterWithPnP()
         {
             var interf = this.Interfaces[0];

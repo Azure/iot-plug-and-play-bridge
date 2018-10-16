@@ -10,7 +10,7 @@ namespace SerialPnPUtility
         static void Main(string[] args)
         {
             SerialPnPDevice dev = null;
-            PnpDeviceClient dclient = new PnpDeviceClient();
+            PnpDeviceClient dclient = null;
 
             while (true) {
                 string command = Console.ReadLine();
@@ -19,6 +19,7 @@ namespace SerialPnPUtility
 
                 if (cmd[0].Equals("open"))
                 {
+                    dclient = new PnpDeviceClient();
                     dev = new SerialPnPDevice(cmd[1], dclient);
                     dev.Start();
                 }
@@ -80,6 +81,13 @@ namespace SerialPnPUtility
                         var res = await dclient.iface.methodHandler(cmd[1], cmd[2]);
                         Console.WriteLine("RET : " + res);
                     });
+                }
+
+                else if (cmd[0].Equals("close"))
+                {
+                    dev.Stop();
+                    dev = null;
+                    dclient = null;
                 }
             }
         }

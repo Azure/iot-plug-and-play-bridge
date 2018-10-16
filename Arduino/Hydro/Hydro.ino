@@ -67,6 +67,12 @@ void setup() {
                         SerialPnPSchema::SchemaFloat,
                         "pH");
 
+    SerialPnP::NewEvent("ambient_light",
+                        "Ambient Light",
+                        "Ambient Light on plant",
+                        SerialPnPSchema::SchemaFloat,
+                        "%");
+
     SerialPnP::NewProperty("sample_rate",
                            "Sample Rate",
                            "Sample rate for sensors",
@@ -173,15 +179,15 @@ float getPhSensor() {
 //   return val;
 // }
 
-// float getLightSensor()
-// {
-//   float val = 1024 - analogRead(LIGHT_SENSOR_1);
-//   if (val != 0) {
-//     val /= 1024;
-//   }
+float getLightSensor()
+ {
+   float val = 1024 - analogRead(LIGHT_SENSOR_1);
+   if (val != 0) {
+     val /= 1024;
+   }
 
-//   return val;
-// }
+   return val;
+ }
 
 // void setLightSwitch(uint8_t *in, uint8_t *out)
 // {
@@ -235,6 +241,8 @@ void loop() {
 
       SerialPnP::SendEvent("ec", getEcSensor());
       SerialPnP::SendEvent("ph", getPhSensor());
+      SerialPnP::SendEvent("ambient_light", getLightSensor());
+      
       // String ecstr = String(rep, 4);
       // Serial.write("EC : ");
       // Serial.write(ecstr.c_str());
