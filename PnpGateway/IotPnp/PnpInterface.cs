@@ -155,7 +155,8 @@ namespace PnpGateway
                 throw new InvalidOperationException("Property doesn't exist");
             }
 
-            var telemetryDataPoint = value;
+            //var telemetryDataPoint = value;
+            var telemetryDataPoint = new Dictionary<string, string> { { name, value } };
 
             var messageString = JsonConvert.SerializeObject(telemetryDataPoint);
             var message = new Message(Encoding.ASCII.GetBytes(messageString));
