@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{25d83aa5-41e0-46a6-8795-0a4a201a426a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{92a538f9-7056-4277-a567-906bc28ce6a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="configuration">
+      <UniqueIdentifier>{0329e27d-0e6f-466f-95d1-3749ca7dcba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pnpinterface">
+      <UniqueIdentifier>{df63643c-8046-4f8c-9993-c8697c94c0c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pnpinterface\Modules">
+      <UniqueIdentifier>{7f915d09-7994-4c58-947e-5d0d6133ebf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="discovery">
+      <UniqueIdentifier>{e845b3ea-044d-4c18-b3ac-79eadb3aa765}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="discovery\Modules">
+      <UniqueIdentifier>{030cf99a-0879-4d3d-bdfc-580b70e86191}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="edgeProcessing">
+      <UniqueIdentifier>{2d1615ab-420b-455f-ac12-8c2c37e2b43b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Errors.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="DiscoveryManager.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpAdapterInterface.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpAdapterManager.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfigurationParser.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreDeviceManagement.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsPnpDeviceDiscovery.h">
+      <Filter>discovery\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpBridge.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpBridgeCommon.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="PnpBridge.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DiscoveryInterface.h">
+      <Filter>inc</Filter>
+    </ClCompile>
+    <ClCompile Include="DiscoveryManager.c">
+      <Filter>discovery</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialDevice.c">
+      <Filter>pnpinterface\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowsPnPDeviceDiscovery.c">
+      <Filter>discovery\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="PnpAdapterManger.c">
+      <Filter>pnpinterface</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigurationParser.c">
+      <Filter>configuration</Filter>
+    </ClCompile>
+    <ClCompile Include="utility.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialEdgeProcessing.c">
+      <Filter>edgeProcessing</Filter>
+    </ClCompile>
+    <ClCompile Include="AzureIotApis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config.json">
+      <Filter>configuration</Filter>
+    </None>
+  </ItemGroup>
+</Project>

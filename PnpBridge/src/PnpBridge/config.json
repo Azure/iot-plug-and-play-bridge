@@ -1,0 +1,67 @@
+{
+  "_comment": "Array of devices",
+  "Devices": [
+    {
+      "_comment": "DEVICE1 - Camera device",
+      "MatchFilters": {
+        "MatchType": "Exact",
+        "MatchParameters": {
+          "HardwareId": "USB\\VID_045E&PID_0779&MI_00"
+        }
+      },
+      "InterfaceId": "http://windows.com/coredevicehealth/v1",
+      "ExtensionParameters": {
+        "Identity": "windows-pnp-module"
+      }
+    },
+    {
+      "_comment": "DEVICE2 - Arduino sensor hub which reports Azure IoT Pnp interfaces",
+      "MatchFilters": {
+        "MatchType": "*"
+      },
+      "ExtensionParameters": {
+        "Identity": "arduino-serial-module",
+        "ComPort": "COM7",
+        "BaudRate": "115200"
+      }
+    }
+  ],
+  "DiscoveryAdapters": [
+    {
+      "AdapterList": [
+
+      ],
+      "InitArgs": [
+        {
+          "_comment": "Pnp Discovery Adapter",
+          "Identity": "windows-pnp-device-discovery",
+          "MatchFilters": {
+            "MatchType": "Exact",
+            "MatchParameters": {
+              "HardwareId": "USB\\VID_045E&PID_0779&MI_00"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "Extensions": [
+    {
+      "AdapterList": [
+
+      ],
+      "InitArgs": [
+        {
+          "_comment": "Core Device Health Extension",
+          "Identity": "windows-pnp-module",
+          "MatchFilters": {
+            "MatchType": "Exact",
+            "MatchParameters": {
+              "HardwareId": "USB\\VID_045E&PID_0779&MI_00"
+            }
+          }
+        }
+       ]
+    }
+  ]
+}
