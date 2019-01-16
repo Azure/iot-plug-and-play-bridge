@@ -82,6 +82,8 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
 
 	g_PnpBridge->dispatchLock = Lock_Init();
 
+	g_PnpBridge->shuttingDown = false;
+
     // Connect to Iot Hub and create a PnP device client handle
     if ((g_PnpBridge->deviceHandle = InitializeIotHubDeviceHandle()) == NULL)
     {
@@ -102,30 +104,37 @@ void PnpBridge_Release() {
 	LogInfo("Cleaning DeviceAggregator resources");
 
 	// Stop Device Disovery Modules
-	if (!g_PnpBridge->discoveryMgr) {
+	if (g_PnpBridge->discoveryMgr) {
 		DiscoveryAdapterManager_Stop(g_PnpBridge->discoveryMgr);
 		g_PnpBridge->discoveryMgr = NULL;
 	}
 
-	if (!g_PnpBridge->interfaceMgr) {
+	if (g_PnpBridge->interfaceMgr) {
 		PnpAdapterManager_Release(g_PnpBridge->interfaceMgr);
 		g_PnpBridge->interfaceMgr = NULL;
 	}
 
-	if (!g_PnpBridge) {
+	if (g_PnpBridge) {
 		free(g_PnpBridge);
 	}
 }
 
-static PNPBRIDGE_RESULT DeviceAggregator_Worker_Thread(void* threadArgument)
+static PNPBRIDGE_RESULT PnpBridge_Worker_Thread(void* threadArgument)
 {
-	// Start Device Discovery
-	DiscoveryAdapterManager_Start(g_PnpBridge->discoveryMgr);
+	PNPBRIDGE_RESULT result;
 
-	while (true) {
-		ThreadAPI_Sleep(30 * 60 * 1000);
+	// Start Device Discovery
+	result = DiscoveryAdapterManager_Start(g_PnpBridge->discoveryMgr);
+	if (PNPBRIDGE_OK != result) {
+		return result;
 	}
-	return 0;
+
+	//while (true) 
+    {
+		ThreadAPI_Sleep(1 * 10 * 1000);
+	}
+
+	return PNPBRIDGE_OK;
 }
 
 // State of PnP registration process.  We cannot proceed with PnP until we get into the state APP_PNP_REGISTRATION_SUCCEEDED.
@@ -151,7 +160,7 @@ static void reportedStateCallback(int status_code, void* userContextCallback)
 typedef struct _DAG_PNP_INTERFACE_TAG {
 	PNP_INTERFACE_CLIENT_HANDLE Interface;
 	char* InterfaceName;
-} DAG_PNP_INTERFACE_TAG, *PDAG_PNP_INTERFACE_TAG;
+} PNPBRIDGE_INTERFACE_TAG, *PPNPBRIDGE_INTERFACE_TAG;
 
 // Invokes PnP_DeviceClient_RegisterInterfacesAsync, which indicates to Azure IoT which PnP interfaces this device supports.
 // The PnP Handle *is not valid* until this operation has completed (as indicated by the callback appPnpInterfacesRegistered being invoked).
@@ -163,11 +172,11 @@ int AppRegisterPnPInterfacesAndWait(PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHand
 
 	int i = 0;
 
-	PDAG_PNP_INTERFACE_TAG* interfaceTags = malloc(sizeof(PDAG_PNP_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
+	PPNPBRIDGE_INTERFACE_TAG* interfaceTags = malloc(sizeof(PPNPBRIDGE_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
 	PNP_INTERFACE_CLIENT_HANDLE* interfaceClients = malloc(sizeof(PNP_INTERFACE_CLIENT_HANDLE)*g_PnpBridge->publishedInterfaceCount);
 	LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
 	while (interfaceItem != NULL) {
-		PNP_INTERFACE_CLIENT_HANDLE interface = ((PDAG_PNP_INTERFACE_TAG) singlylinkedlist_item_get_value(interfaceItem))->Interface;
+		PNP_INTERFACE_CLIENT_HANDLE interface = ((PPNPBRIDGE_INTERFACE_TAG) singlylinkedlist_item_get_value(interfaceItem))->Interface;
 		interfaceClients[i++] = interface;
 		interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
 	}
@@ -215,17 +224,17 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
 		// PnpAdapterMangager_GetInterfaceId(key, Message, &interfaceId);
 
 		// Create an Azure IoT PNP interface
-		PDAG_PNP_INTERFACE_TAG pInt = malloc(sizeof(DAG_PNP_INTERFACE_TAG));
+		PPNPBRIDGE_INTERFACE_TAG pInt = malloc(sizeof(PNPBRIDGE_INTERFACE_TAG));
 		char* interfaceId = (char*) json_object_get_string(DeviceChangePayload->Message, "InterfaceId");
 		int res = 0;
 
 		if (interfaceId != NULL) {
 			Lock(g_PnpBridge->dispatchLock);
 			// check if interface is already published
-			PDAG_PNP_INTERFACE_TAG* interfaceTags = malloc(sizeof(PDAG_PNP_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
+			PPNPBRIDGE_INTERFACE_TAG* interfaceTags = malloc(sizeof(PPNPBRIDGE_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
 			LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
 			while (interfaceItem != NULL) {
-				PDAG_PNP_INTERFACE_TAG interface = (PDAG_PNP_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceItem);
+				PPNPBRIDGE_INTERFACE_TAG interface = (PPNPBRIDGE_INTERFACE_TAG) singlylinkedlist_item_get_value(interfaceItem);
 				if (strcmp(interface->InterfaceName, interfaceId) == 0) {
 					//LogError("PnP Interface has already been published\n");
 					res = -1;
@@ -296,20 +305,18 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
     // and reporting back to PnpBridge
     result = DiscoveryAdapterManager_Create(&g_PnpBridge->discoveryMgr);
     if (PNPBRIDGE_OK != result) {
-        LogError("DiscoveryExtensions_Create failed: %d\n", result);
+        LogError("DiscoveryAdapterManager_Create failed: %d\n", result);
         return result;
     }
 
     THREAD_HANDLE workerThreadHandle = NULL;
-    if (ThreadAPI_Create(&workerThreadHandle, DeviceAggregator_Worker_Thread, NULL) != THREADAPI_OK)
-    {
+    if (THREADAPI_OK != ThreadAPI_Create(&workerThreadHandle, PnpBridge_Worker_Thread, NULL)) {
         workerThreadHandle = NULL;
     }
     else {
         ThreadAPI_Join(workerThreadHandle, NULL);
     }
 
-    // TODO: Wait for an event to set
     PnpBridge_Release();
 
     return PNPBRIDGE_OK;
@@ -317,6 +324,8 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
 
 int main()
 {
-    return PnpBridge_Main();
+	while (true) {
+		PnpBridge_Main();
+	}
 }
 

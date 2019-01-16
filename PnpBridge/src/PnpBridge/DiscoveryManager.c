@@ -31,10 +31,10 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
     }
 
 	// Build an interface map
-	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST)/sizeof(PDISCOVERY_ADAPTER); i++) {
-		PDISCOVERY_ADAPTER  discoveryAdapter = DISCOVERY_MANIFEST[i];
-        Map_Add(discoveryMgr->DiscoveryModuleMap, discoveryAdapter->Identity, (char *)discoveryAdapter);
-	}
+	//for (int i = 0; i < sizeof(DISCOVERY_MANIFEST)/sizeof(PDISCOVERY_ADAPTER); i++) {
+	//	PDISCOVERY_ADAPTER  discoveryAdapter = DISCOVERY_MANIFEST[i];
+    //    Map_Add(discoveryMgr->DiscoveryModuleMap, discoveryAdapter->Identity, (char *)discoveryAdapter);
+//	}
 
 	*discoveryManager = discoveryMgr;
 
@@ -53,9 +53,10 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
 		JSON_Object* discoveryParams = NULL;
         PNPBRIDGE_RESULT result;
 
-		// For this FiterId check if there is any device
-		for (int i = 0; i < json_array_get_count(devices); i++) {
-			JSON_Object *device = json_array_get_object(devices, i);
+		// For this Identity check if there is any device
+        // TODO: Create an array of device
+		for (int j = 0; j < json_array_get_count(devices); j++) {
+			JSON_Object *device = json_array_get_object(devices, j);
 
 			JSON_Object* params = Configuration_GetDiscoveryParameters(device);
             if (NULL != params) {
@@ -67,6 +68,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
             }
 		}
 
+        // TODO: Add validation to check minimum discovery interface methods
         result = discoveryInterface->StartDiscovery(DiscoveryAdapterChangeHandler, discoveryParams);
 
         if (PNPBRIDGE_OK == result) {
@@ -78,13 +80,29 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
 }
 
 void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager) {
-	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(DISCOVERY_ADAPTER); i++) {
-		PDISCOVERY_ADAPTER  adapter = DISCOVERY_MANIFEST[i];
-		adapter->StopDiscovery();
-	}
+    const char* const* keys;
+    const char* const* values;
+    size_t count;
+
+    // Call shutdown on all interfaces
+    if (Map_GetInternals(discoveryManager->DiscoveryModuleMap, &keys, &values, &count) != MAP_OK)
+    {
+        LogError("Map_GetInternals failed to get all pnp adapters");
+    }
+    else
+    {
+        for (int i = 0; i < count; i++)
+        {
+            int index = values[i][0];
+            PDISCOVERY_ADAPTER  adapter = DISCOVERY_MANIFEST[index];
+            adapter->StopDiscovery();
+        }
+    }
+
+    Map_Destroy(discoveryManager->DiscoveryModuleMap);
+    free(discoveryManager);
 }
 
-// CALLBACK1
 void DiscoveryAdapterChangeHandler(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
     PnpBridge_DeviceChangeCallback(DeviceChangePayload);
 }

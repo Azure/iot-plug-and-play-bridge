@@ -837,21 +837,11 @@ int SerialReportDevice(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON
 
 	LogInfo("Opening com port %s", port);
 
-	OpenDevice(seriaDevice->InterfaceName, baudRate);
+	//OpenDevice(seriaDevice->InterfaceName, baudRate);
 	return 0;
 }
 
 int SerialStopDevice() {
-	return 0;
-}
-
-#define NUMBER_OF_FORMATS 1
-
-int GetSerialFilterFormatIds(char*** filterFormatIds, int* NumberOfFormats) {
-	*filterFormatIds = malloc(sizeof(char*) * 1);
-	(*filterFormatIds)[0] = "arduino-serial-module";
-	*NumberOfFormats = 1;
-
 	return 0;
 }
 
