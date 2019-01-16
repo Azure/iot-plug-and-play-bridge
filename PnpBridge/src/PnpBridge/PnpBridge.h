@@ -18,6 +18,8 @@ typedef struct _PNP_BRIDGE {
 	// Number of published pnp interfaces
 	int publishedInterfaceCount;
 
-	LOCK_HANDLE DispatchLock;
+	LOCK_HANDLE dispatchLock;
+
+    bool shuttingDown;
 
 } PNP_BRIDGE, *PPNP_BRIDGE;

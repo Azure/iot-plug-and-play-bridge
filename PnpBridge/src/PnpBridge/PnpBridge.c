@@ -9,7 +9,6 @@
 
 #include "DiscoveryManager.h"
 
-#include "DiscoveryInterface.h"
 #include "PnpAdapterInterface.h"
 #include "PnpAdapterManager.h"
 
@@ -81,7 +80,7 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
 	g_PnpBridge->publishedInterfaces = singlylinkedlist_create();
 	g_PnpBridge->publishedInterfaceCount = 0;
 
-	g_PnpBridge->DispatchLock = Lock_Init();
+	g_PnpBridge->dispatchLock = Lock_Init();
 
     // Connect to Iot Hub and create a PnP device client handle
     if ((g_PnpBridge->deviceHandle = InitializeIotHubDeviceHandle()) == NULL)
@@ -98,13 +97,13 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
     return PNPBRIDGE_OK;
 }
 
-void DeviceAggregator_Release() {
+void PnpBridge_Release() {
 
 	LogInfo("Cleaning DeviceAggregator resources");
 
 	// Stop Device Disovery Modules
 	if (!g_PnpBridge->discoveryMgr) {
-		DiscoveryModules_Stop(g_PnpBridge->discoveryMgr);
+		DiscoveryAdapterManager_Stop(g_PnpBridge->discoveryMgr);
 		g_PnpBridge->discoveryMgr = NULL;
 	}
 
@@ -121,7 +120,7 @@ void DeviceAggregator_Release() {
 static PNPBRIDGE_RESULT DeviceAggregator_Worker_Thread(void* threadArgument)
 {
 	// Start Device Discovery
-	DiscoveryExtensions_Start(g_PnpBridge->discoveryMgr, NULL);
+	DiscoveryAdapterManager_Start(g_PnpBridge->discoveryMgr);
 
 	while (true) {
 		ThreadAPI_Sleep(30 * 60 * 1000);
@@ -196,16 +195,24 @@ int AppRegisterPnPInterfacesAndWait(PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHand
 	return result;
 }
 
-int DeviceAggregator_DeviceChangeCallback(PDEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
-	bool containsFilter = false;
-	int key = 0;
+PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+    PNPBRIDGE_RESULT result;
+    bool containsFilter = false;
+    int key = 0;
 
-	PnpAdapterManager_SupportsFilterId(g_PnpBridge->interfaceMgr, DeviceChangePayload->Message, &containsFilter, &key);
+    if (Configuration_IsDeviceConfigured(DeviceChangePayload->Message) < 0) {
+        LogInfo("Device is not configured. Dropping the change notification");
+        return PNPBRIDGE_OK;
+    }
+
+    result = PnpAdapterManager_SupportsIdentity(g_PnpBridge->interfaceMgr, DeviceChangePayload->Message, &containsFilter, &key);
+    if (PNPBRIDGE_OK != result) {
+        return result;
+    }
 
 	if (containsFilter) {
-
 		// Get the interface ID
-		//PnpAdapterMangager_GetInterfaceId(key, Message, &interfaceId);
+		// PnpAdapterMangager_GetInterfaceId(key, Message, &interfaceId);
 
 		// Create an Azure IoT PNP interface
 		PDAG_PNP_INTERFACE_TAG pInt = malloc(sizeof(DAG_PNP_INTERFACE_TAG));
@@ -213,7 +220,7 @@ int DeviceAggregator_DeviceChangeCallback(PDEVICE_CHANGE_PAYLOAD DeviceChangePay
 		int res = 0;
 
 		if (interfaceId != NULL) {
-			Lock(g_PnpBridge->DispatchLock);
+			Lock(g_PnpBridge->dispatchLock);
 			// check if interface is already published
 			PDAG_PNP_INTERFACE_TAG* interfaceTags = malloc(sizeof(PDAG_PNP_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
 			LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
@@ -246,7 +253,7 @@ int DeviceAggregator_DeviceChangeCallback(PDEVICE_CHANGE_PAYLOAD DeviceChangePay
 			AppRegisterPnPInterfacesAndWait(g_PnpBridge->pnpDeviceClientHandle);
 
 notify_end:
-			Unlock(g_PnpBridge->DispatchLock);
+			Unlock(g_PnpBridge->dispatchLock);
 			return res;
 		}
 		else {
@@ -287,9 +294,9 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
 
     // Load all the extensions that are capable of discovering devices
     // and reporting back to PnpBridge
-    result = DiscoveryExtensions_Create(&g_PnpBridge->discoveryMgr);
+    result = DiscoveryAdapterManager_Create(&g_PnpBridge->discoveryMgr);
     if (PNPBRIDGE_OK != result) {
-        LogError("PnpAdapterManager_Create failed: %d\n", result);
+        LogError("DiscoveryExtensions_Create failed: %d\n", result);
         return result;
     }
 
@@ -302,8 +309,8 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
         ThreadAPI_Join(workerThreadHandle, NULL);
     }
 
-    // Wait for an event to set
-    DeviceAggregator_Release();
+    // TODO: Wait for an event to set
+    PnpBridge_Release();
 
     return PNPBRIDGE_OK;
 }

@@ -36,13 +36,13 @@ JSON_Array* Configuration_GetConfiguredDevices() {
 	return devices;
 }
 
-JSON_Object* Configuration_GetModuleParameters(JSON_Object* Device) {
-	if (Device == NULL) {
+JSON_Object* Configuration_GetDiscoveryParameters(JSON_Object* device) {
+	if (device == NULL) {
 		return NULL;
 	}
 
-	JSON_Object* moduleParameters = json_object_dotget_object(Device, "ExtensionParameters");
-	return moduleParameters;
+	JSON_Object* discoveryParams = json_object_dotget_object(device, "DiscoveryParameters");
+	return discoveryParams;
 }
 
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
@@ -53,7 +53,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
 
 	for (int i = 0; i < json_array_get_count(devices); i++) {
 		JSON_Object *device = json_array_get_object(devices, i);
-		JSON_Object* moduleParams = Configuration_GetModuleParameters(device);
+		JSON_Object* moduleParams = Configuration_GetDiscoveryParameters(device);
 		const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
 		if (strcmp(deviceFormatId, formatId) == 0) {
 			JSON_Object* matchCriteria = json_object_dotget_object(device, "MatchFilters");

@@ -89,12 +89,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\azure-iot-sdk-c-pnp\c-utility\inc;..\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\azure-iot-sdk-c-pnp\iothub_client\inc;..\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\azure-iot-sdk-c-pnp\pnp_client\inc;..\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>..\cmake\Debug\parson.lib;..\cmake\iothub_client\Debug\iothub_client.lib;..\cmake\pnp_client\Debug\pnp_client.lib;..\cmake\iothub_client\Debug\iothub_client_http_transport.lib;..\cmake\iothub_client\Debug\iothub_client_amqp_transport.lib;..\cmake\iothub_client\Debug\iothub_client_amqp_ws_transport.lib;..\cmake\iothub_client\Debug\iothub_client_mqtt_transport.lib;..\cmake\iothub_client\Debug\iothub_client_mqtt_ws_transport.lib;..\cmake\umqtt\Debug\umqtt.lib;..\cmake\Debug\parson.lib;..\cmake\c-utility\Debug\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -104,12 +105,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\azure-iot-sdk-c-pnp\c-utility\inc;..\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\azure-iot-sdk-c-pnp\iothub_client\inc;..\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\azure-iot-sdk-c-pnp\pnp_client\inc;..\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>..\azure-iot-sdk-c-pnp\cmake_x64\Debug\parson.lib;..\azure-iot-sdk-c-pnp\cmake_x64\iothub_client\Debug\iothub_client.lib;..\azure-iot-sdk-c-pnp\cmake_x64\pnp_client\Debug\pnp_client.lib;..\azure-iot-sdk-c-pnp\cmake_x64\iothub_client\Debug\iothub_client_http_transport.lib;..\azure-iot-sdk-c-pnp\cmake_x64\iothub_client\Debug\iothub_client_amqp_transport.lib;..\azure-iot-sdk-c-pnp\cmake_x64\iothub_client\Debug\iothub_client_amqp_ws_transport.lib;..\azure-iot-sdk-c-pnp\cmake_x64\iothub_client\Debug\iothub_client_mqtt_transport.lib;..\azure-iot-sdk-c-pnp\cmake_x64\iothub_client\Debug\iothub_client_mqtt_ws_transport.lib;..\azure-iot-sdk-c-pnp\cmake_x64\umqtt\Debug\umqtt.lib;..\azure-iot-sdk-c-pnp\cmake_x64\Debug\parson.lib;..\azure-iot-sdk-c-pnp\cmake_x64\c-utility\Debug\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib;ntdll.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib</AdditionalDependencies>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
@@ -122,29 +124,35 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -164,14 +172,12 @@
     <ClInclude Include="WindowsPnpDeviceDiscovery.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AzureIotApis.cpp" />
     <ClCompile Include="ConfigurationParser.c" />
+    <ClCompile Include="CoreDeviceHealth.c" />
     <ClCompile Include="PnpBridge.c" />
-    <ClCompile Include="DiscoveryInterface.h" />
     <ClCompile Include="DiscoveryManager.c" />
     <ClCompile Include="PnpAdapterManger.c" />
     <ClCompile Include="SerialDevice.c" />
-    <ClCompile Include="SerialEdgeProcessing.c" />
     <ClCompile Include="utility.c" />
     <ClCompile Include="WindowsPnPDeviceDiscovery.c" />
   </ItemGroup>
@@ -179,11 +185,6 @@
     <None Include="config.json">
       <DeploymentContent>true</DeploymentContent>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\cmake_x64\pnp_client\pnp_client.vcxproj">
-      <Project>{cd65d61c-c913-30fa-a471-9600d4f63027}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

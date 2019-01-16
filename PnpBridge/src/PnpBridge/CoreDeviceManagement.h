@@ -1,5 +1,5 @@
 #pragma once
 
-extern PNP_INTERFACE_MODULE CoreDeviceManagement;
+extern PNP_INTERFACE_MODULE CoreDeviceHealthInterface;
 
-extern PNP_INTERFACE_MODULE SerialPnpImplementor;
+extern PNP_INTERFACE_MODULE SerialPnpInterface;

@@ -10,7 +10,7 @@
         }
       },
       "InterfaceId": "http://windows.com/coredevicehealth/v1",
-      "ExtensionParameters": {
+      "PnpParameters": {
         "Identity": "windows-pnp-module"
       }
     },
@@ -19,8 +19,11 @@
       "MatchFilters": {
         "MatchType": "*"
       },
-      "ExtensionParameters": {
-        "Identity": "arduino-serial-module",
+      "PnpParameters": {
+        "Identity": "arduino-serial-module"
+      },
+      "DiscoveryParameters": {
+        "Identity": "arduino-serial-module-discovery",
         "ComPort": "COM7",
         "BaudRate": "115200"
       }
@@ -33,35 +36,21 @@
       ],
       "InitArgs": [
         {
-          "_comment": "Pnp Discovery Adapter",
-          "Identity": "windows-pnp-device-discovery",
-          "MatchFilters": {
-            "MatchType": "Exact",
-            "MatchParameters": {
-              "HardwareId": "USB\\VID_045E&PID_0779&MI_00"
-            }
-          }
+          "_comment": "Pnp Discovery Adapter"
         }
       ]
     }
   ],
-  "Extensions": [
+  "PnpAdapters": [
     {
       "AdapterList": [
 
       ],
       "InitArgs": [
         {
-          "_comment": "Core Device Health Extension",
-          "Identity": "windows-pnp-module",
-          "MatchFilters": {
-            "MatchType": "Exact",
-            "MatchParameters": {
-              "HardwareId": "USB\\VID_045E&PID_0779&MI_00"
-            }
-          }
+          "_comment": "Core Device Health Extension"
         }
-       ]
+      ]
     }
   ]
 }

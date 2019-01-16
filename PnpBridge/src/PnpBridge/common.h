@@ -31,12 +31,11 @@
     DAG_ERROR,			      \
     DAG_INVALID_SIZE		  \
 
-/** @brief Enumeration specifying the status of calls to various APIs in this module.
-*/
-
-DEFINE_ENUM(DAG_RESULT, DAG_RESULT_VALUES);
-
-
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
 
 int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
+
+typedef struct _PNPBRIDGE_DEVICE_CHANGE_PAYLOAD {
+    JSON_Object* Message;
+    void* Context;
+} PNPBRIDGE_DEVICE_CHANGE_PAYLOAD, *PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD;

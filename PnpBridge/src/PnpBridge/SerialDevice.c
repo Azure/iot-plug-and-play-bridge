@@ -13,7 +13,7 @@
 #include <Windows.h>
 #include <cfgmgr32.h>
 
-NOTIFY_DEVICE_CHANGE SerialDeviceChangeCallback = NULL;
+PNPBRIDGE_NOTIFY_DEVICE_CHANGE SerialDeviceChangeCallback = NULL;
 
 #include <ctype.h>
 
@@ -85,9 +85,6 @@ typedef struct _SERIAL_DEVICE_CONTEXT {
 	unsigned int RxBufferIndex;
 	bool RxEscaped;
 } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
-
-int DeviceAggregator_Serial_EdgeProcessing(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
-
 
 void Start() {
 	LogInfo("Opening serial port");
@@ -650,9 +647,9 @@ int OpenDevice(char* port, DWORD baudRate) {
 
 	// TODO: Create a json object
     JSON_Object* serialDeviceChangePayload = json_value_get_object(json_parse_string(""));
-	DEVICE_CHANGE_PAYLOAD payload;
+    PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload;
 
-	payload.Type = PNP_INTERFACE_ARRIVAL;
+	//payload.Type = PNP_INTERFACE_ARRIVAL;
 	payload.Message = serialDeviceChangePayload;
 	payload.Context = deviceContext;
 	LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(InterfaceDefinitions);
@@ -813,7 +810,7 @@ void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, D
 	LogInfo("Receieved descriptor response, of length %d", *length);
 }
 
-int SerialReportDevice(NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* args) {
+int SerialReportDevice(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* args) {
 	if (args == NULL) {
 		return -1;
 	}
@@ -885,8 +882,6 @@ int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* ev
 		result = 0;
 	}
 
-	DeviceAggregator_Serial_EdgeProcessing(pnpInterface, eventName, data);
-
 	return result;
 }
 
@@ -942,7 +937,7 @@ static const PNP_CLIENT_READWRITE_PROPERTY_UPDATED_CALLBACK_TABLE serialProperty
 };
 
 
-int SerialBindPnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PDEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+int SerialBindPnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
 	PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) DeviceChangePayload->Context;
 	deviceContext->InterfaceHandle = PnpAdapter_GetPnpInterface(Interface);
 
@@ -951,15 +946,14 @@ int SerialBindPnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PDEVICE_CHANGE
 	return 0;
 }
 
-DISCOVERY_INTERFACE ArduinoSerialDiscovery = {
+DISCOVERY_ADAPTER ArduinoSerialDiscovery = {
+    .Identity = "arduino-serial-module-discovery",
 	.StartDiscovery = SerialReportDevice,
-	.StopDiscovery = SerialStopDevice,
-	.GetFilterFormatIds = GetSerialFilterFormatIds
+	.StopDiscovery = SerialStopDevice
 };
 
-PNP_INTERFACE_MODULE SerialPnpImplementor = {
+PNP_INTERFACE_MODULE SerialPnpInterface = {
+    .Identity = "arduino-serial-module",
 	.BindPnpInterface = SerialBindPnpInterface,
-	.ReleaseInterface = NULL,
-	.GetSupportedInterfaces = NULL,
-	.GetFilterFormatIds = GetSerialFilterFormatIds
+	.ReleaseInterface = NULL
 };

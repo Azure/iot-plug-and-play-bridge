@@ -7,13 +7,13 @@
 
 char* format = "{ \"HardwareId\":%s, \"Filter\":\"abc\", \"Identity\":\"windows-pnp-module\"  }";
 
-NOTIFY_DEVICE_CHANGE DeviceChangeHandler = NULL;
+PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeHandler = NULL;
 
 THREAD_HANDLE NotifyDevicePnpChanges;
 void NotifyDevicePnpChanges_worker(void* context)
 {
-	DEVICE_CHANGE_PAYLOAD payload = { 0 };
-	payload.Type = PNP_INTERFACE_ARRIVAL;
+    PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { 0 };
+	//payload.Type = PNP_INTERFACE_ARRIVAL;
 
 	JSON_Value* json = json_parse_string(context);
 	JSON_Object* jsonObject = json_value_get_object(json);
@@ -37,8 +37,8 @@ OnDeviceNotification(
 	if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) { // , "windows-pnp-module");
 		if (DeviceChangeHandler != NULL) {
 			char* msg = malloc(512*sizeof(char));
-			DEVICE_CHANGE_PAYLOAD payload = { 0 };
-			payload.Type = PNP_INTERFACE_ARRIVAL;
+            PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { 0 };
+			//payload.Type = PNP_INTERFACE_ARRIVAL;
 
 			DEVPROPTYPE PropType;
 			WCHAR hardwareIds[MAX_DEVICE_ID_LEN];
@@ -129,17 +129,9 @@ OnDeviceNotification(
 	return 0;
 }
 
-int GetFilterFormatIds(char*** filterFormatIds, int* NumberOfFormats) {
-	*filterFormatIds = malloc(sizeof(char*)*1);
-	(*filterFormatIds)[0] = "windows-pnp-module";
-	*NumberOfFormats = 1;
-
-	return 0;
-}
-
 HCMNOTIFICATION hNotifyCtx = NULL;
 
-int PnpStartDiscovery(NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* args) {
+int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* args) {
 
 	DWORD cmRet;
 	CM_NOTIFY_FILTER    cmFilter;
@@ -154,7 +146,7 @@ int PnpStartDiscovery(NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* ar
 	cmRet = CM_Register_Notification(
 				&cmFilter,                      // PCM_NOTIFY_FILTER pFilter,
 				NULL,                           // PVOID pContext,
-				OnDeviceNotification,                 // PCM_NOTIFY_CALLBACK pCallback,
+				(PCM_NOTIFY_CALLBACK) OnDeviceNotification,                 // PCM_NOTIFY_CALLBACK pCallback,
 				&hNotifyCtx                     // PHCMNOTIFICATION pNotifyContext
 				);
 	if (cmRet != CR_SUCCESS)
@@ -173,7 +165,7 @@ int PnpStopDiscovery() {
 	return 0;
 }
 
-int GetDiscoveryModuleInfo(PDISCOVERY_INTERFACE DiscoryInterface) {
+int GetDiscoveryModuleInfo(PDISCOVERY_ADAPTER DiscoryInterface) {
 	if (NULL == DiscoryInterface) {
 		return -1;
 	}
@@ -184,9 +176,8 @@ int GetDiscoveryModuleInfo(PDISCOVERY_INTERFACE DiscoryInterface) {
 	return 0;
 }
 
-DISCOVERY_INTERFACE WindowsPnpDeviceDiscovery = {
+DISCOVERY_ADAPTER WindowsPnpDeviceDiscovery = {
     .Identity = "windows-pnp-device-discovery",
 	.StartDiscovery = PnpStartDiscovery,
-	.StopDiscovery = PnpStopDiscovery,
-	.GetFilterFormatIds = GetFilterFormatIds
+	.StopDiscovery = PnpStopDiscovery
 };

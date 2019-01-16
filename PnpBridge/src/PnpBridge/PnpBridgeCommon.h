@@ -19,6 +19,9 @@ extern "C"
 {
 #endif
 
+/** @brief Enumeration specifying the status of calls to various APIs in this module.
+*/
+
 #define PNPBRIDGE_RESULT_VALUES \
     PNPBRIDGE_OK, \
     PNPBRIDGE_INSUFFICIENT_MEMORY, \

@@ -1,30 +1,39 @@
 #include "common.h"
 #include "PnpBridgeCommon.h"
 #include "DiscoveryManager.h"
-#include "DiscoveryInterface.h" // Need to remove it
+#include "DiscoveryInterface.h"
 #include "WindowsPnpDeviceDiscovery.h"
 
-DISCOVERY_INTERFACE discoveryInterface = { 0 };
+DISCOVERY_ADAPTER discoveryInterface = { 0 };
 
-PDISCOVERY_INTERFACE DISCOVERY_MANIFEST[] = {
+PDISCOVERY_ADAPTER DISCOVERY_MANIFEST[] = {
 	&WindowsPnpDeviceDiscovery,
 	&ArduinoSerialDiscovery
 };
 
-PNPBRIDGE_RESULT DiscoveryExtensions_Create(PDISCOVERY_MANAGER* discoveryManager) {
+void DiscoveryAdapterChangeHandler(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
 
-	PDISCOVERY_MANAGER discoveryMgr = malloc(sizeof(DISCOVERY_MANAGER));
+PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryManager) {
+    PDISCOVERY_MANAGER discoveryMgr;
+
+    if (NULL == discoveryManager) {
+        return PNPBRIDGE_INVALID_ARGS;
+    }
+
+    discoveryMgr = malloc(sizeof(DISCOVERY_MANAGER));
+    if (NULL == discoveryMgr) {
+        return PNPBRIDGE_INSUFFICIENT_MEMORY;
+    }
+
 	discoveryMgr->DiscoveryModuleMap = Map_Create(NULL);
+    if (NULL == discoveryMgr->DiscoveryModuleMap) {
+        return PNPBRIDGE_FAILED;
+    }
 
 	// Build an interface map
-	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST)/sizeof(PDISCOVERY_INTERFACE); i++) {
-		PDISCOVERY_INTERFACE  d = DISCOVERY_MANIFEST[i];
-		char** filterFormatIds = NULL;
-		int NumberOfFormats = 1;
-		d->GetFilterFormatIds(&filterFormatIds, &NumberOfFormats);
-		for (int i = 0; i < NumberOfFormats; i++) {
-			Map_Add(discoveryMgr->DiscoveryModuleMap, filterFormatIds[i], (char *)d);
-		}
+	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST)/sizeof(PDISCOVERY_ADAPTER); i++) {
+		PDISCOVERY_ADAPTER  discoveryAdapter = DISCOVERY_MANIFEST[i];
+        Map_Add(discoveryMgr->DiscoveryModuleMap, discoveryAdapter->Identity, (char *)discoveryAdapter);
 	}
 
 	*discoveryManager = discoveryMgr;
@@ -32,60 +41,50 @@ PNPBRIDGE_RESULT DiscoveryExtensions_Create(PDISCOVERY_MANAGER* discoveryManager
     return PNPBRIDGE_OK;
 }
 
-int DiscoverModuleChangeHandler(PDEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
-	//
-	// Filter the message based on configuration provided to gateway
-	//
-	if (Configuration_IsDeviceConfigured(DeviceChangePayload->Message) < 0) {
-		return -2;
-	}
-
-	if (DeviceChangePayload->Type == PNP_INTERFACE_ARRIVAL) {
-		DeviceAggregator_DeviceChangeCallback(DeviceChangePayload);
-	}
-
-	return 0;
-}
-
-PNPBRIDGE_RESULT DiscoveryExtensions_Start(PDISCOVERY_MANAGER discoveryManager, JSON_Object* args) {
+PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager) {
 	JSON_Array *devices = Configuration_GetConfiguredDevices();
 
-	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(PDISCOVERY_INTERFACE); i++) {
-		PDISCOVERY_INTERFACE  discoveryInterface = DISCOVERY_MANIFEST[i];
-		JSON_Object* moduleParameters = NULL;
-		char** filterFormatIds = NULL;
-		int NumberOfFormats = 0;
-		discoveryInterface->GetFilterFormatIds(&filterFormatIds, &NumberOfFormats);
-		for (int j = 0; j < NumberOfFormats; j++) {
-			Map_Add_Index(discoveryManager->DiscoveryModuleMap, filterFormatIds[j], i);
+    if (NULL == devices) {
+        return PNPBRIDGE_INVALID_ARGS;
+    }
 
-			// For this FiterId check if there is any device
-			int res = 0;
-			for (int i = 0; i < json_array_get_count(devices); i++) {
-				JSON_Object *device = json_array_get_object(devices, i);
+	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(PDISCOVERY_ADAPTER); i++) {
+		PDISCOVERY_ADAPTER  discoveryInterface = DISCOVERY_MANIFEST[i];
+		JSON_Object* discoveryParams = NULL;
+        PNPBRIDGE_RESULT result;
 
-				JSON_Object* moduleParams = Configuration_GetModuleParameters(device);
-				const char* deviceFormatId = json_object_get_string(moduleParams, "Identity");
-				if (strcmp(deviceFormatId, filterFormatIds[j]) == 0) {
-					//char* enumeration = json_object_get_string(device, "Enumeration");
-				//	if (enumeration != NULL && strcmp(enumeration, "Static") == 0) {
-					//	printf("static enumeration: %s\n", deviceFormatId);
-						moduleParameters = moduleParams;
-						break;
-				//	}
-				}
-			}
+		// For this FiterId check if there is any device
+		for (int i = 0; i < json_array_get_count(devices); i++) {
+			JSON_Object *device = json_array_get_object(devices, i);
+
+			JSON_Object* params = Configuration_GetDiscoveryParameters(device);
+            if (NULL != params) {
+                const char* deviceFormatId = json_object_get_string(params, "Identity");
+                if (strcmp(deviceFormatId, discoveryInterface->Identity) == 0) {
+                    discoveryParams = params;
+                    break;
+                }
+            }
 		}
 
-		discoveryInterface->StartDiscovery(DiscoverModuleChangeHandler, moduleParameters);
+        result = discoveryInterface->StartDiscovery(DiscoveryAdapterChangeHandler, discoveryParams);
+
+        if (PNPBRIDGE_OK == result) {
+            Map_Add_Index(discoveryManager->DiscoveryModuleMap, discoveryInterface->Identity, i);
+        }
 	}
 
     return PNPBRIDGE_OK;
 }
 
-void DiscoveryModules_Stop(PDISCOVERY_MANAGER discoveryManager) {
-	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(DISCOVERY_INTERFACE); i++) {
-		PDISCOVERY_INTERFACE  d = DISCOVERY_MANIFEST[i];
-		d->StopDiscovery();
+void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager) {
+	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(DISCOVERY_ADAPTER); i++) {
+		PDISCOVERY_ADAPTER  adapter = DISCOVERY_MANIFEST[i];
+		adapter->StopDiscovery();
 	}
+}
+
+// CALLBACK1
+void DiscoveryAdapterChangeHandler(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+    PnpBridge_DeviceChangeCallback(DeviceChangePayload);
 }

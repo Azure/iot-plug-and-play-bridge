@@ -79,7 +79,7 @@ CoreDevice_OnDeviceNotification(
 
 HCMNOTIFICATION CoreDevice_hNotifyCtx = NULL;
 
-int CoreDevice_BindPnpInterface(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient, PDEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+int CoreDevice_BindPnpInterface(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
 	DWORD cmRet;
 	CM_NOTIFY_FILTER    cmFilter;
 
@@ -206,18 +206,9 @@ int SendDeviceDisconnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCor
 //	return result;
 //}
 
-int GetFilter1FormatIds(char*** filterFormatIds, int* NumberOfFormats) {
-	*filterFormatIds = malloc(sizeof(char*) * 1);
-	(*filterFormatIds)[0] = "windows-pnp-module";
-	*NumberOfFormats = 1;
 
-	return 0;
-}
-
-
-PNP_INTERFACE_MODULE CoreDeviceManagement = {
+PNP_INTERFACE_MODULE CoreDeviceHealthInterface = {
+    .Identity = "core-device-health",
 	.BindPnpInterface = CoreDevice_BindPnpInterface,
 	.ReleaseInterface = NULL,
-	.GetSupportedInterfaces = NULL,
-	.GetFilterFormatIds = GetFilter1FormatIds
 };
