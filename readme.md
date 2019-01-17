@@ -35,13 +35,13 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
 
 ### Source Code
 
-- Clone Azure PnP Bridge Repo: https://xgrow18.visualstudio.com/_git/busesiot
+- Clone Azure PnP Bridge Repo: 
+  git clone -b staging-pnpbridge --recursive https://xgrow18.visualstudio.com/_git/busesiot
 
 
 ### Build Azure PnP Bridge
   After clone Azure PnP Bridge repro, run following commands in "Developer Command Prompt for VS 2017":
   - cd PnpBridge
-  - git submodule update --init --recursive 
   - cd Scripts
   - build.prereq.cmd
   - Open PnpBridge\src\PnpBridge\PnpBridge.vcxproj with "Visual Studio 2017"
