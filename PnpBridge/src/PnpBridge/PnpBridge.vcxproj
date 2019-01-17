@@ -159,6 +159,11 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Adapters\Camera\CameraIotPnpDevice.h" />
+    <ClInclude Include="Adapters\Camera\CameraPnpDiscovery.h" />
+    <ClInclude Include="Adapters\Camera\CameraStatConsumer.h" />
+    <ClInclude Include="Adapters\Camera\iot_pnp_apis.h" />
+    <ClInclude Include="Adapters\Camera\pch.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h" />
     <ClInclude Include="common.h" />
@@ -172,6 +177,10 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Adapters\Camera\CameraIotPnpDevice.cpp" />
+    <ClCompile Include="Adapters\Camera\CameraPnpDiscovery.cpp" />
+    <ClCompile Include="Adapters\Camera\CameraStatConsumer.cpp" />
+    <ClCompile Include="Adapters\Camera\iot_pnp_apis.cpp" />
     <ClCompile Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.c" />
     <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c" />
     <ClCompile Include="Adapters\Serial\SerialDevice.c" />

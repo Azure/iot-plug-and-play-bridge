@@ -7,6 +7,7 @@ extern "C"
 
 #include <DiscoveryAdapterInterface.h>
 #include <PnpAdapterInterface.h>
+#include <common.h>
 
 #include "pch.h"
 
@@ -22,31 +23,24 @@ int
 CameraPnpStopDiscovery(
     );
 
-int
-CameraGetFilterFormatIds(
-    _Out_ char*** filterFormatIds,
-    _Out_ int* numberOfFormats
-    );
-
-
 // Interface functions.
-PNPBRIDGE_RESULT
+int
 CameraPnpInterfaceInitialize(
     _In_ JSON_Object* adapterArgs
     );
 
-PNPBRIDGE_RESULT
+int
 CameraPnpInterfaceShutdown(
     );
 
-PNPBRIDGE_RESULT
+int
 CameraPnpInterfaceBind(
     _In_ PNPADAPTER_INTERFACE_HANDLE Interface, 
     _In_ PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, 
     _In_ PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload
     );
 
-PNPBRIDGE_RESULT
+int
 CameraPnpInterfaceRelease(
     _In_ PNPADAPTER_INTERFACE_HANDLE Interface
     );

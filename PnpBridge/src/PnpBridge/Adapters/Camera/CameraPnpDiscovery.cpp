@@ -31,7 +31,7 @@ CameraPnpDiscovery::~CameraPnpDiscovery(
 
 HRESULT 
 CameraPnpDiscovery::InitializePnpDiscovery(
-    _In_ NOTIFY_DEVICE_CHANGE pfnCallback,
+    _In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE pfnCallback,
     _In_opt_ void* pvContext
     )
 {
@@ -199,9 +199,9 @@ CameraPnpDiscovery::OnWatcherNotification(
     _In_ DWORD eventDataSize
     )
 {
-    CameraUniqueIdPtrList cameraUniqueIds;
-    NOTIFY_DEVICE_CHANGE  pfn = nullptr;
-    void*                 pv = nullptr;
+    CameraUniqueIdPtrList           cameraUniqueIds;
+    PNPBRIDGE_NOTIFY_DEVICE_CHANGE  pfn = nullptr;
+    void*                           pv = nullptr;
 
     RETURN_HR_IF_NULL (E_INVALIDARG, eventData);
     RETURN_HR_IF (E_INVALIDARG, eventDataSize == 0);
@@ -236,8 +236,7 @@ CameraPnpDiscovery::OnWatcherNotification(
     // component (i.e., not DA).
     if (pfn)
     {
-        DEVICE_CHANGE_PAYLOAD   payload = { };
-        int                     nResult = 0;
+        PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { };
 
         payload.Context = this;
         payload.Message = nullptr;
@@ -245,14 +244,14 @@ CameraPnpDiscovery::OnWatcherNotification(
         if (cameraUniqueIds.size() == 0 && m_cameraUniqueIds.size() > 0)
         {
             // We didn't have a camera, and we just got one (or more).
-            payload.Type = PNP_INTERFACE_ARRIVAL;
-            nResult = pfn(&payload);
+            payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
+            pfn(&payload);
         }
         else if (cameraUniqueIds.size() > 0 && m_cameraUniqueIds.size() == 0)
         {
             // We had a camera, and now we don't.
-            payload.Type = PNP_INTERFACE_REMOVAL;
-            nResult = pfn(&payload);
+            payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_REMOVAL;
+            pfn(&payload);
         }
         else
         {
@@ -260,11 +259,11 @@ CameraPnpDiscovery::OnWatcherNotification(
             {
                 // We lost our old camera, and got a new one.  Remove and
                 // start over.
-                payload.Type = PNP_INTERFACE_REMOVAL;
-                nResult = pfn(&payload);
+                payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_REMOVAL;
+                pfn(&payload);
 
-                payload.Type = PNP_INTERFACE_ARRIVAL;
-                nResult = pfn(&payload);
+                payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
+                pfn(&payload);
             }
         }
     }
