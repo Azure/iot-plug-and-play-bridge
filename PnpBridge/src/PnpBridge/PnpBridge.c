@@ -156,11 +156,6 @@ void appPnpInterfacesRegistered(PNP_REPORTED_INTERFACES_STATUS pnpInterfaceStatu
 	*appPnpRegistrationStatus = (pnpInterfaceStatus == PNP_REPORTED_INTERFACES_OK) ? APP_PNP_REGISTRATION_SUCCEEDED : APP_PNP_REGISTRATION_FAILED;
 }
 
-static void reportedStateCallback(int status_code, void* userContextCallback)
-{
-	LogError("Device Twin reported properties update completed with result: %d\r\n", status_code);
-}
-
 typedef struct _DAG_PNP_INTERFACE_TAG {
 	PNP_INTERFACE_CLIENT_HANDLE Interface;
 	char* InterfaceName;
@@ -172,20 +167,24 @@ typedef struct _DAG_PNP_INTERFACE_TAG {
 int AppRegisterPnPInterfacesAndWait(PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle)
 {
 	APP_PNP_REGISTRATION_STATUS appPnpRegistrationStatus = APP_PNP_REGISTRATION_PENDING;
-	int result;
-
-	int i = 0;
-
+	PNPBRIDGE_RESULT result;
+    PNP_CLIENT_RESULT pnpResult;
 	PPNPBRIDGE_INTERFACE_TAG* interfaceTags = malloc(sizeof(PPNPBRIDGE_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
 	PNP_INTERFACE_CLIENT_HANDLE* interfaceClients = malloc(sizeof(PNP_INTERFACE_CLIENT_HANDLE)*g_PnpBridge->publishedInterfaceCount);
 	LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
+    int i = 0;
+
 	while (interfaceItem != NULL) {
 		PNP_INTERFACE_CLIENT_HANDLE interface = ((PPNPBRIDGE_INTERFACE_TAG) singlylinkedlist_item_get_value(interfaceItem))->Interface;
 		interfaceClients[i++] = interface;
 		interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
 	}
 
-	PnP_DeviceClient_RegisterInterfacesAsync(pnpDeviceClientHandle, interfaceClients, g_PnpBridge->publishedInterfaceCount, appPnpInterfacesRegistered, &appPnpRegistrationStatus);
+    pnpResult = PnP_DeviceClient_RegisterInterfacesAsync(pnpDeviceClientHandle, interfaceClients, g_PnpBridge->publishedInterfaceCount, appPnpInterfacesRegistered, &appPnpRegistrationStatus);
+    if (PNP_CLIENT_OK != pnpResult) {
+        result = PNPBRIDGE_FAILED;
+        goto end;
+    }
 
 	while (appPnpRegistrationStatus == APP_PNP_REGISTRATION_PENDING) {
 		ThreadAPI_Sleep(100);
@@ -199,6 +198,7 @@ int AppRegisterPnPInterfacesAndWait(PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHand
 		result = 0;
 	}
 
+end:
 	free(interfaceClients);
 	free(interfaceTags);
 

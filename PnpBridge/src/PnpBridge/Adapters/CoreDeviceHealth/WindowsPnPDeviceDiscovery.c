@@ -1,5 +1,5 @@
 #include "common.h"
-#include "DiscoveryInterface.h"
+#include "DiscoveryAdapterInterface.h"
 #include <windows.h>
 #include <cfgmgr32.h>
 #include <initguid.h>

@@ -60,16 +60,19 @@
     <ClInclude Include="ConfigurationParser.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="CoreDeviceManagement.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsPnpDeviceDiscovery.h">
-      <Filter>discovery\Modules</Filter>
-    </ClInclude>
     <ClInclude Include="PnpBridge.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="PnpBridgeCommon.h" />
+    <ClInclude Include="DiscoveryAdapterInterface.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceManagement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PnpBridge.c">
@@ -81,9 +84,6 @@
     <ClCompile Include="SerialDevice.c">
       <Filter>pnpinterface\Modules</Filter>
     </ClCompile>
-    <ClCompile Include="WindowsPnPDeviceDiscovery.c">
-      <Filter>discovery\Modules</Filter>
-    </ClCompile>
     <ClCompile Include="PnpAdapterManger.c">
       <Filter>pnpinterface</Filter>
     </ClCompile>
@@ -93,10 +93,16 @@
     <ClCompile Include="utility.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CoreDeviceHealth.c">
-      <Filter>pnpinterface\Modules</Filter>
-    </ClCompile>
     <ClCompile Include="PnpBridgeService.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\Serial\SerialDevice.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

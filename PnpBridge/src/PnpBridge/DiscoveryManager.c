@@ -1,7 +1,7 @@
 #include "common.h"
 #include "PnpBridgeCommon.h"
 #include "DiscoveryManager.h"
-#include "DiscoveryInterface.h"
+#include "DiscoveryAdapterInterface.h"
 #include "WindowsPnpDeviceDiscovery.h"
 
 DISCOVERY_ADAPTER discoveryInterface = { 0 };

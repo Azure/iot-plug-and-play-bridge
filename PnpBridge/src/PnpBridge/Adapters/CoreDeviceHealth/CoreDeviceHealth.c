@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-#include "DiscoveryInterface.h"
+#include "DiscoveryAdapterInterface.h"
 #include "PnPAdapterInterface.h"
 
 #include <Windows.h>
