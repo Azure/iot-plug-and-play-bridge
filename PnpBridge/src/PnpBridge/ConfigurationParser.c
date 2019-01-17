@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #include "common.h"
 
 JSON_Value* g_ConfigurationFile = NULL;
@@ -55,7 +58,7 @@ JSON_Object* Configuration_GetDiscoveryParametersPerDevice(JSON_Object* device) 
 	return discoveryParams;
 }
 
-JSON_Object* Configuration_GetDiscoveryParameters(char* identity) {
+JSON_Object* Configuration_GetDiscoveryParameters(const char* identity) {
     JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
     JSON_Object *discoveryAdapters = json_object_dotget_object(jsonObject, "DiscoveryAdapters");
     if (NULL == discoveryAdapters) {

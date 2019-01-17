@@ -1,3 +1,11 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 // Device aggregator context
 typedef struct _PNP_BRIDGE {
 	// connection to iot device
@@ -21,3 +29,7 @@ typedef struct _PNP_BRIDGE {
 	LOCK_HANDLE dispatchLock;
 
 } PNP_BRIDGE, *PPNP_BRIDGE;
+
+#ifdef __cplusplus
+}
+#endif

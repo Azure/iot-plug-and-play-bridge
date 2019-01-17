@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 // DeviceAggregator.cpp : Defines the entry point for the console application.
-//
 
 #include "common.h"
 #include "PnpBridgeCommon.h"
@@ -117,7 +119,7 @@ void PnpBridge_Release() {
 	}
 }
 
-static PNPBRIDGE_RESULT PnpBridge_Worker_Thread(void* threadArgument)
+int PnpBridge_Worker_Thread(void* threadArgument)
 {
 	PNPBRIDGE_RESULT result;
 
@@ -251,7 +253,10 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
 
 			pInt->InterfaceName = interfaceId;
 
-			PnpAdapterManager_CreatePnpInterface(g_PnpBridge->interfaceMgr, g_PnpBridge->pnpDeviceClientHandle, key, &pInt->Interface, DeviceChangePayload);
+            result = PnpAdapterManager_CreatePnpInterface(g_PnpBridge->interfaceMgr, g_PnpBridge->pnpDeviceClientHandle, key, &pInt->Interface, DeviceChangePayload);
+            if (PNPBRIDGE_OK != result) {
+                goto end;
+            }
 
             g_PnpBridge->publishedInterfaceCount++;
             singlylinkedlist_add(g_PnpBridge->publishedInterfaces, pInt);

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #include "common.h"
 #include "DiscoveryAdapterInterface.h"
 #include <windows.h>
@@ -135,7 +138,7 @@ OnDeviceNotification(
 
 HCMNOTIFICATION hNotifyCtx = NULL;
 
-PNPBRIDGE_RESULT PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
+int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
 	DWORD cmRet;
 	CM_NOTIFY_FILTER    cmFilter;
 
@@ -166,17 +169,6 @@ PNPBRIDGE_RESULT PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCa
 
 int PnpStopDiscovery() {
 	CM_Unregister_Notification(hNotifyCtx);
-	return 0;
-}
-
-int GetDiscoveryModuleInfo(PDISCOVERY_ADAPTER DiscoryInterface) {
-	if (NULL == DiscoryInterface) {
-		return -1;
-	}
-
-	DiscoryInterface->StartDiscovery = PnpStartDiscovery;
-	DiscoryInterface->StopDiscovery = PnpStopDiscovery;
-
 	return 0;
 }
 

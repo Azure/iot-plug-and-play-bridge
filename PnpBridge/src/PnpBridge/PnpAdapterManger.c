@@ -1,12 +1,10 @@
-#pragma once
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "common.h"
-
 #include "PnpBridgeCommon.h"
-
 #include "PnpAdapterInterface.h"
 #include "PnpAdapterManager.h"
-
 #include "CoreDeviceHealth.h"
 
 // TODO: Decide where the extern are present for CoreDeviceHealth
@@ -111,7 +109,7 @@ PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter
 	method will take care of binding it to a module implementing 
 	PnP primitives
 */
-PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, int key, PNP_INTERFACE_CLIENT_HANDLE** InterfaceClient, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, int key, PNP_INTERFACE_CLIENT_HANDLE* InterfaceClient, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
 	// Get the module using the key as index
 	PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[key];
 

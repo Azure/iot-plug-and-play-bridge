@@ -1,4 +1,12 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #pragma once
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /**
 * @brief    PnpBridgeConfig_ReadConfigurationFromFile reads a PnpBridge JSON config file.
@@ -22,8 +30,12 @@ JSON_Object* Configuration_GetDiscoveryParametersPerDevice(JSON_Object* device);
 
 JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device);
 
-JSON_Object* Configuration_GetDiscoveryParameters(char* identity);
+JSON_Object* Configuration_GetDiscoveryParameters(const char *identity);
 
 JSON_Array* Configuration_GetConfiguredDevices();
 
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message);
+
+#ifdef __cplusplus
+}
+#endif

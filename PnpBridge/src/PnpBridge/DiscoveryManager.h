@@ -1,4 +1,12 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #pragma once
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef struct _DISCOVERY_MANAGER {
 	MAP_HANDLE DiscoveryModuleMap;
@@ -17,3 +25,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
 PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager);
 
 void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager);
+
+#ifdef __cplusplus
+}
+#endif
