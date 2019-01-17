@@ -36,6 +36,8 @@ JSON_Array* Configuration_GetConfiguredDevices();
 
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message);
 
+const char* Configuration_GetConnectionString();
+
 #ifdef __cplusplus
 }
 #endif

@@ -18,11 +18,11 @@ bool g_Shutdown = false;
 ////////////////////////////////////////////////////////////////////////
 
 //const char* connectionString = "HostName=iot-pnp-hub1.azure-devices.net;DeviceId=win-gateway;SharedAccessKey=GfbYy7e2PikTf2qHyabvEDBaJB5S4T+H+b9TbLsXfns=";
-const char* connectionString = "HostName=saas-iothub-1529564b-8f58-4871-b721-fe9459308cb1.azure-devices.net;DeviceId=956da476-8b3c-41ce-b405-d2d32bcf5e79;SharedAccessKey=sQcfPeDCZGEJWPI3M3SyB8pD60TNdOw10oFKuv5FBio=";
+//const char* connectionString = "HostName=saas-iothub-1529564b-8f58-4871-b721-fe9459308cb1.azure-devices.net;DeviceId=956da476-8b3c-41ce-b405-d2d32bcf5e79;SharedAccessKey=sQcfPeDCZGEJWPI3M3SyB8pD60TNdOw10oFKuv5FBio=";
 
 // InitializeIotHubDeviceHandle initializes underlying IoTHub client, creates a device handle with the specified connection string,
 // and sets some options on this handle prior to beginning.
-IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle()
+IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle(const char* connectionString)
 {
 	IOTHUB_DEVICE_HANDLE deviceHandle = NULL;
 	IOTHUB_CLIENT_RESULT iothubClientResult;
@@ -36,6 +36,7 @@ IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle()
 	}
 	else
 	{
+        // Get connection string from config
 		if ((deviceHandle = IoTHubDeviceClient_CreateFromConnectionString(connectionString, MQTT_Protocol)) == NULL)
 		{
 			LogError("Failed to create device handle\n");
@@ -63,6 +64,15 @@ IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle()
 }
 
 PNPBRIDGE_RESULT PnpBridge_Initialize() {
+    const char* connectionString;
+
+    connectionString = Configuration_GetConnectionString();
+
+    if (NULL == connectionString) {
+        LogError("Connection string not specified in the config\n");
+        return PNPBRIDGE_FAILED;
+    }
+
 	g_PnpBridge = (PPNP_BRIDGE) calloc(1, sizeof(PNP_BRIDGE));
 
     if (!g_PnpBridge) {
@@ -78,7 +88,7 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
     g_Shutdown = false;
 
     // Connect to Iot Hub and create a PnP device client handle
-    if ((g_PnpBridge->deviceHandle = InitializeIotHubDeviceHandle()) == NULL)
+    if ((g_PnpBridge->deviceHandle = InitializeIotHubDeviceHandle(connectionString)) == NULL)
     {
         LogError("Could not allocate IoTHub Device handle\n");
         return PNPBRIDGE_FAILED;
@@ -281,6 +291,13 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
     PNPBRIDGE_RESULT result;
     LogInfo("Starting Azure PnpBridge\n");
 
+    //#define CONFIG_FILE "c:\\data\\test\\dag\\config.json"
+    result = PnpBridgeConfig_ReadConfigurationFromFile("config.json");
+    if (PNPBRIDGE_OK != result) {
+        LogError("Failed to parse configuration. Check if config file is present and ensure its formatted correctly.\n");
+        return result;
+    }
+
     result = PnpBridge_Initialize();
     if (PNPBRIDGE_OK != result) {
         LogError("PnpBridge_Initialize failed: %d\n", result);
@@ -288,13 +305,6 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
     }
 
     LogInfo("Connected to Azure IoT Hub\n");
-
-    //#define CONFIG_FILE "c:\\data\\test\\dag\\config.json"
-    result = PnpBridgeConfig_ReadConfigurationFromFile("config.json");
-    if (PNPBRIDGE_OK != result) {
-        LogError("Failed to parse configuration. Check if config file is present and ensure its formatted correctly.\n");
-        return result;
-    }
 
     // Load all the adapters in interface manifest that implement Azure IoT PnP Interface
     // PnpBridge will call into corresponding adapter when a device is reported by 

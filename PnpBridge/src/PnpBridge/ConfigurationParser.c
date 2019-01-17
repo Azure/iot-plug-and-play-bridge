@@ -58,6 +58,16 @@ JSON_Object* Configuration_GetDiscoveryParametersPerDevice(JSON_Object* device) 
 	return discoveryParams;
 }
 
+const char* Configuration_GetConnectionString() {
+    JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
+    JSON_Object *pnpBridgeParams = json_object_dotget_object(jsonObject, "PnpBridgeParameters");
+    if (NULL == pnpBridgeParams) {
+        return NULL;
+    }
+
+    return json_object_dotget_string(pnpBridgeParams, "ConnectionString");
+}
+
 JSON_Object* Configuration_GetDiscoveryParameters(const char* identity) {
     JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
     JSON_Object *discoveryAdapters = json_object_dotget_object(jsonObject, "DiscoveryAdapters");
