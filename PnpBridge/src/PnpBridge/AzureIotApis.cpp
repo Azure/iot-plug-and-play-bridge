@@ -1,1 +1,0 @@
-// Create a jump table for AzureIotApi's

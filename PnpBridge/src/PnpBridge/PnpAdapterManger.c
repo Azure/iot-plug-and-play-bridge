@@ -7,7 +7,7 @@
 #include "PnpAdapterInterface.h"
 #include "PnpAdapterManager.h"
 
-#include "CoreDeviceManagement.h"
+#include "CoreDeviceHealth.h"
 
 // TODO: Decide where the extern are present for CoreDeviceHealth
 PPNP_INTERFACE_MODULE INTERFACE_MANIFEST[] = {

@@ -14,7 +14,6 @@
 PNP_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle = NULL;
 WCHAR* hardwareid = NULL;
 
-
 void WindowsPnpSendEventCallback(PNP_SEND_TELEMETRY_STATUS pnpSendEventStatus, void* userContextCallback)
 {
 	LogInfo("WindowsPnpSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);

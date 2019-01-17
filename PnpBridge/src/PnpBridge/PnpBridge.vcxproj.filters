@@ -13,26 +13,17 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="common">
-      <UniqueIdentifier>{25d83aa5-41e0-46a6-8795-0a4a201a426a}</UniqueIdentifier>
+    <Filter Include="Source Files\Adapters">
+      <UniqueIdentifier>{3524bf36-1d0b-46dc-ada9-78d0803fe1ec}</UniqueIdentifier>
     </Filter>
-    <Filter Include="inc">
+    <Filter Include="Source Files\Adapters\Serial">
+      <UniqueIdentifier>{611fd0c7-a77f-4116-bf8a-c41bded6d8a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Adapters\CoreDeviceHealth">
+      <UniqueIdentifier>{28fe5595-e94e-4bac-ac50-03299b219cd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\inc">
       <UniqueIdentifier>{92a538f9-7056-4277-a567-906bc28ce6a8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="configuration">
-      <UniqueIdentifier>{0329e27d-0e6f-466f-95d1-3749ca7dcba7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="pnpinterface">
-      <UniqueIdentifier>{df63643c-8046-4f8c-9993-c8697c94c0c8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="pnpinterface\Modules">
-      <UniqueIdentifier>{7f915d09-7994-4c58-947e-5d0d6133ebf5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="discovery">
-      <UniqueIdentifier>{e845b3ea-044d-4c18-b3ac-79eadb3aa765}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="discovery\Modules">
-      <UniqueIdentifier>{030cf99a-0879-4d3d-bdfc-580b70e86191}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -42,53 +33,40 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Errors.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="DiscoveryManager.h">
-      <Filter>inc</Filter>
+      <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="PnpAdapterInterface.h">
-      <Filter>inc</Filter>
+      <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="PnpAdapterManager.h">
-      <Filter>inc</Filter>
+      <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="common.h">
-      <Filter>inc</Filter>
+      <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="ConfigurationParser.h">
-      <Filter>inc</Filter>
+      <Filter>Source Files\inc</Filter>
     </ClInclude>
-    <ClInclude Include="PnpBridge.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PnpBridgeCommon.h" />
     <ClInclude Include="DiscoveryAdapterInterface.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceManagement.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpBridgeCommon.h">
+      <Filter>Source Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpBridge.h">
+      <Filter>Source Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h">
+      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PnpBridge.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DiscoveryManager.c">
-      <Filter>discovery</Filter>
-    </ClCompile>
-    <ClCompile Include="SerialDevice.c">
-      <Filter>pnpinterface\Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="PnpAdapterManger.c">
-      <Filter>pnpinterface</Filter>
-    </ClCompile>
-    <ClCompile Include="ConfigurationParser.c">
-      <Filter>configuration</Filter>
     </ClCompile>
     <ClCompile Include="utility.c">
       <Filter>Source Files</Filter>
@@ -96,19 +74,26 @@
     <ClCompile Include="PnpBridgeService.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Adapters\Serial\SerialDevice.c">
+    <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c">
+      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
+    </ClCompile>
+    <ClCompile Include="PnpAdapterManger.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DiscoveryManager.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigurationParser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\Serial\SerialDevice.c">
+      <Filter>Source Files\Adapters\Serial</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="config.json">
-      <Filter>configuration</Filter>
-    </None>
+    <None Include="config.json" />
   </ItemGroup>
 </Project>

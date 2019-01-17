@@ -2,26 +2,17 @@
 //
 
 #include "common.h"
-
 #include "PnpBridgeCommon.h"
-
 #include "ConfigurationParser.h"
-
 #include "DiscoveryManager.h"
-
 #include "PnpAdapterInterface.h"
 #include "PnpAdapterManager.h"
 
 #include "PnpBridge.h"
 
-// Things to implement
-//
-// 1. Allow a module to intercept traffic anf execute commands
-// 2. Clean up all warnings
-// 3. Restart mechanism
-
 //////////////////////////// GLOBALS ///////////////////////////////////
 PPNP_BRIDGE g_PnpBridge = NULL;
+bool g_Shutdown = false;
 ////////////////////////////////////////////////////////////////////////
 
 //const char* connectionString = "HostName=iot-pnp-hub1.azure-devices.net;DeviceId=win-gateway;SharedAccessKey=GfbYy7e2PikTf2qHyabvEDBaJB5S4T+H+b9TbLsXfns=";
@@ -82,7 +73,7 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
 
 	g_PnpBridge->dispatchLock = Lock_Init();
 
-	g_PnpBridge->shuttingDown = false;
+    g_Shutdown = false;
 
     // Connect to Iot Hub and create a PnP device client handle
     if ((g_PnpBridge->deviceHandle = InitializeIotHubDeviceHandle()) == NULL)
@@ -103,16 +94,23 @@ void PnpBridge_Release() {
 
 	LogInfo("Cleaning DeviceAggregator resources");
 
-	// Stop Device Disovery Modules
+    Lock(g_PnpBridge->dispatchLock);
+
+	// Stop Disovery Modules
 	if (g_PnpBridge->discoveryMgr) {
 		DiscoveryAdapterManager_Stop(g_PnpBridge->discoveryMgr);
 		g_PnpBridge->discoveryMgr = NULL;
 	}
 
+    // Stop Pnp Modules
 	if (g_PnpBridge->interfaceMgr) {
 		PnpAdapterManager_Release(g_PnpBridge->interfaceMgr);
 		g_PnpBridge->interfaceMgr = NULL;
 	}
+
+    Unlock(g_PnpBridge->dispatchLock);
+
+    Lock_Deinit(g_PnpBridge->dispatchLock);
 
 	if (g_PnpBridge) {
 		free(g_PnpBridge);
@@ -133,7 +131,7 @@ static PNPBRIDGE_RESULT PnpBridge_Worker_Thread(void* threadArgument)
 	while (true) 
     {
 		ThreadAPI_Sleep(1 * 1000);
-        if (g_PnpBridge->shuttingDown) {
+        if (g_Shutdown) {
             return PNPBRIDGE_OK;
         }
 	}
@@ -212,7 +210,7 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
 
     Lock(g_PnpBridge->dispatchLock);
 
-    if (g_PnpBridge->shuttingDown) {
+    if (g_Shutdown) {
         LogInfo("PnpBridge is shutting down. Dropping the change notification");
         result = PNPBRIDGE_OK;
         goto end;
@@ -325,7 +323,7 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
 
 void PnpBridge_Stop() {
     Lock(g_PnpBridge->dispatchLock);
-    g_PnpBridge->shuttingDown = true;
+    g_Shutdown = true;
     Unlock(g_PnpBridge->dispatchLock);
 }
 

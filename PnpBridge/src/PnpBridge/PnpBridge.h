@@ -20,6 +20,4 @@ typedef struct _PNP_BRIDGE {
 
 	LOCK_HANDLE dispatchLock;
 
-    bool shuttingDown;
-
 } PNP_BRIDGE, *PPNP_BRIDGE;
