@@ -5,7 +5,11 @@
 #include <initguid.h>
 #include <devpkey.h>
 
-char* format = "{ \"HardwareId\":%s, \"Filter\":\"abc\", \"Identity\":\"windows-pnp-module\"  }";
+/* A5DCBF10-6530-11D2-901F-00C04FB951ED */
+DEFINE_GUID(GUID_DEVINTERFACE_USB_DEVICE, 0xA5DCBF10L, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, \
+    0xC0, 0x4F, 0xB9, 0x51, 0xED);
+
+char* format = "{ \"HardwareId\":%s, \"Filter\":\"abc\", \"Identity\":\"core-device-health\"  }";
 
 PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeHandler = NULL;
 
@@ -131,17 +135,16 @@ OnDeviceNotification(
 
 HCMNOTIFICATION hNotifyCtx = NULL;
 
-int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* args) {
-
+PNPBRIDGE_RESULT PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
 	DWORD cmRet;
 	CM_NOTIFY_FILTER    cmFilter;
 
 	ZeroMemory(&cmFilter, sizeof(cmFilter));
 	cmFilter.cbSize = sizeof(cmFilter);
-	cmFilter.Flags = CM_NOTIFY_FILTER_FLAG_ALL_INTERFACE_CLASSES;
-	cmFilter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
+	//cmFilter.Flags = CM_NOTIFY_FILTER_FLAG_ALL_INTERFACE_CLASSES;
 
-	//cmFilter.u.DeviceInterface.ClassGuid = GUID_DEVINTERFACE_USB_DEVICE;
+    cmFilter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
+	cmFilter.u.DeviceInterface.ClassGuid = GUID_DEVINTERFACE_USB_DEVICE;
 
 	cmRet = CM_Register_Notification(
 				&cmFilter,                      // PCM_NOTIFY_FILTER pFilter,
@@ -151,11 +154,12 @@ int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_
 				);
 	if (cmRet != CR_SUCCESS)
 	{
-		//Log::Error(String().Format(L"CM_Register_Notification failed, error %d", cmRet));
-		return -1;
+		return PNPBRIDGE_FAILED;
 	}
 
 	DeviceChangeHandler = DeviceChangeCallback;
+
+    //EnumerateDevices(s_CameraInterfaceCategories[i])
 
 	return 0;
 }

@@ -129,9 +129,13 @@ static PNPBRIDGE_RESULT PnpBridge_Worker_Thread(void* threadArgument)
 		return result;
 	}
 
-	//while (true) 
+    // TODO: Change this to an event
+	while (true) 
     {
-		ThreadAPI_Sleep(1 * 10 * 1000);
+		ThreadAPI_Sleep(1 * 1000);
+        if (g_PnpBridge->shuttingDown) {
+            return PNPBRIDGE_OK;
+        }
 	}
 
 	return PNPBRIDGE_OK;
@@ -183,18 +187,15 @@ int AppRegisterPnPInterfacesAndWait(PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHand
 
 	PnP_DeviceClient_RegisterInterfacesAsync(pnpDeviceClientHandle, interfaceClients, g_PnpBridge->publishedInterfaceCount, appPnpInterfacesRegistered, &appPnpRegistrationStatus);
 
-	while (appPnpRegistrationStatus == APP_PNP_REGISTRATION_PENDING)
-	{
+	while (appPnpRegistrationStatus == APP_PNP_REGISTRATION_PENDING) {
 		ThreadAPI_Sleep(100);
 	}
 
-	if (appPnpRegistrationStatus != APP_PNP_REGISTRATION_SUCCEEDED)
-	{
+	if (appPnpRegistrationStatus != APP_PNP_REGISTRATION_SUCCEEDED) {
 		LogError("PnP has failed to register.\n");
 		result = __FAILURE__;
 	}
-	else
-	{
+	else {
 		result = 0;
 	}
 
@@ -209,14 +210,23 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
     bool containsFilter = false;
     int key = 0;
 
+    Lock(g_PnpBridge->dispatchLock);
+
+    if (g_PnpBridge->shuttingDown) {
+        LogInfo("PnpBridge is shutting down. Dropping the change notification");
+        result = PNPBRIDGE_OK;
+        goto end;
+    }
+
     if (Configuration_IsDeviceConfigured(DeviceChangePayload->Message) < 0) {
         LogInfo("Device is not configured. Dropping the change notification");
-        return PNPBRIDGE_OK;
+        result = PNPBRIDGE_OK;
+        goto end;
     }
 
     result = PnpAdapterManager_SupportsIdentity(g_PnpBridge->interfaceMgr, DeviceChangePayload->Message, &containsFilter, &key);
     if (PNPBRIDGE_OK != result) {
-        return result;
+        goto end;
     }
 
 	if (containsFilter) {
@@ -226,51 +236,42 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
 		// Create an Azure IoT PNP interface
 		PPNPBRIDGE_INTERFACE_TAG pInt = malloc(sizeof(PNPBRIDGE_INTERFACE_TAG));
 		char* interfaceId = (char*) json_object_get_string(DeviceChangePayload->Message, "InterfaceId");
-		int res = 0;
 
 		if (interfaceId != NULL) {
-			Lock(g_PnpBridge->dispatchLock);
 			// check if interface is already published
 			PPNPBRIDGE_INTERFACE_TAG* interfaceTags = malloc(sizeof(PPNPBRIDGE_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
 			LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
 			while (interfaceItem != NULL) {
 				PPNPBRIDGE_INTERFACE_TAG interface = (PPNPBRIDGE_INTERFACE_TAG) singlylinkedlist_item_get_value(interfaceItem);
 				if (strcmp(interface->InterfaceName, interfaceId) == 0) {
-					//LogError("PnP Interface has already been published\n");
-					res = -1;
-					goto notify_end;
+				    LogError("PnP Interface has already been published \n");
+                    result = PNPBRIDGE_FAILED;
+                    goto end;
 				}
 				interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
 			}
 
 			pInt->InterfaceName = interfaceId;
 
-			if ((pInt->Interface = PnP_InterfaceClient_Create(g_PnpBridge->pnpDeviceClientHandle, interfaceId, NULL, NULL, NULL)) == NULL)
-			{
-				LogError("PnP_InterfaceClient_Create2 failed\n");
-				res = -1;
-				goto notify_end;
-			}
+			PnpAdapterManager_CreatePnpInterface(g_PnpBridge->interfaceMgr, g_PnpBridge->pnpDeviceClientHandle, key, &pInt->Interface, DeviceChangePayload);
 
-			LogInfo("Publishing Azure Pnp Interface %s\n", interfaceId);
+            g_PnpBridge->publishedInterfaceCount++;
+            singlylinkedlist_add(g_PnpBridge->publishedInterfaces, pInt);
 
-			g_PnpBridge->publishedInterfaceCount++;
-			singlylinkedlist_add(g_PnpBridge->publishedInterfaces, pInt);
-
-			PnpAdapterManager_BindPnpInterface(g_PnpBridge->interfaceMgr, key, pInt->Interface, DeviceChangePayload);
-
+            LogInfo("Publishing Azure Pnp Interface %s\n", interfaceId);
 			AppRegisterPnPInterfacesAndWait(g_PnpBridge->pnpDeviceClientHandle);
 
-notify_end:
-			Unlock(g_PnpBridge->dispatchLock);
-			return res;
+            goto end;
 		}
 		else {
 			LogError("Interface id not set for the device change callback\n");
 		}
 	}
 
-	return 0;
+end:
+    Unlock(g_PnpBridge->dispatchLock);
+
+	return PNPBRIDGE_OK;
 }
 
 PNPBRIDGE_RESULT PnpBridge_Main() {
@@ -322,10 +323,35 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
     return PNPBRIDGE_OK;
 }
 
+void PnpBridge_Stop() {
+    Lock(g_PnpBridge->dispatchLock);
+    g_PnpBridge->shuttingDown = true;
+    Unlock(g_PnpBridge->dispatchLock);
+}
+
+#include <windows.h>
+
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+    switch (fdwCtrlType)
+    {
+    // Handle the CTRL-C signal. 
+    case CTRL_C_EVENT:
+        PnpBridge_Stop();
+        return TRUE;
+
+    default:
+        return FALSE;
+    }
+}
+
 int main()
 {
-	while (true) {
-		PnpBridge_Main();
-	}
+    if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
+    {
+        printf("\n -- Press Ctrl+C to stop PnpBridge");
+    }
+
+    PnpBridge_Main();
 }
 

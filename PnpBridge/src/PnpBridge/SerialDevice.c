@@ -810,17 +810,17 @@ void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, D
 	LogInfo("Receieved descriptor response, of length %d", *length);
 }
 
-int SerialReportDevice(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* args) {
-	if (args == NULL) {
+int SerialReportDevice(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
+	if (deviceArgs == NULL) {
 		return -1;
 	}
 
-	const char* port = (const char*) json_object_dotget_string(args, "ComPort");
+	const char* port = (const char*) json_object_dotget_string(deviceArgs, "ComPort");
 
 	SerialDeviceChangeCallback = DeviceChangeCallback;
-	JSON_Object* SerialDeviceInterfaceInfo = args;
+	JSON_Object* SerialDeviceInterfaceInfo = deviceArgs;
 
-	const char* baudRateParam = (const char*) json_object_dotget_string(args, "BaudRate");
+	const char* baudRateParam = (const char*) json_object_dotget_string(deviceArgs, "BaudRate");
 	DWORD baudRate = atoi(baudRateParam);
 
 	if (FindSerialDevices() < 0) {
@@ -927,8 +927,8 @@ static const PNP_CLIENT_READWRITE_PROPERTY_UPDATED_CALLBACK_TABLE serialProperty
 };
 
 
-int SerialBindPnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
-	PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) DeviceChangePayload->Context;
+int SerialCreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD args) {
+	PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) args->Context;
 	deviceContext->InterfaceHandle = PnpAdapter_GetPnpInterface(Interface);
 
 	//PnP_InterfaceClient_BindCallbacks(deviceContext->InterfaceHandle, &serialPropertyTable, NULL, deviceContext);
@@ -944,6 +944,6 @@ DISCOVERY_ADAPTER ArduinoSerialDiscovery = {
 
 PNP_INTERFACE_MODULE SerialPnpInterface = {
     .Identity = "arduino-serial-module",
-	.BindPnpInterface = SerialBindPnpInterface,
+	.CreatePnpInterface = SerialCreatePnpInterface,
 	.ReleaseInterface = NULL
 };

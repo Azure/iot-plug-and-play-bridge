@@ -36,13 +36,48 @@ JSON_Array* Configuration_GetConfiguredDevices() {
 	return devices;
 }
 
-JSON_Object* Configuration_GetDiscoveryParameters(JSON_Object* device) {
+JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device) {
+    if (device == NULL) {
+        return NULL;
+    }
+
+    JSON_Object* discoveryParams = json_object_dotget_object(device, "PnpParameters");
+    return discoveryParams;
+}
+
+
+JSON_Object* Configuration_GetDiscoveryParametersPerDevice(JSON_Object* device) {
 	if (device == NULL) {
 		return NULL;
 	}
 
 	JSON_Object* discoveryParams = json_object_dotget_object(device, "DiscoveryParameters");
 	return discoveryParams;
+}
+
+JSON_Object* Configuration_GetDiscoveryParameters(char* identity) {
+    JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
+    JSON_Object *discoveryAdapters = json_object_dotget_object(jsonObject, "DiscoveryAdapters");
+    if (NULL == discoveryAdapters) {
+        return NULL;
+    }
+
+    JSON_Array* params = json_object_dotget_array(discoveryAdapters, "Parameters");
+    if (NULL == params) {
+        return NULL;
+    }
+
+    for (int j = 0; j < json_array_get_count(params); j++) {
+        JSON_Object *param = json_array_get_object(params, j);
+        const char* id = json_object_dotget_string(param, "Identity");
+        if (NULL != id) {
+            if (strcmp(id, identity) == 0) {
+                return param;
+            }
+        }
+    }
+
+    return NULL;
 }
 
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
@@ -53,7 +88,11 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
 
 	for (int i = 0; i < json_array_get_count(devices); i++) {
 		JSON_Object *device = json_array_get_object(devices, i);
-		JSON_Object* moduleParams = Configuration_GetDiscoveryParameters(device);
+		JSON_Object* moduleParams = Configuration_GetPnpParametersForDevice(device);
+        if (NULL == moduleParams) {
+            continue;
+        }
+
 		const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
 		if (strcmp(deviceFormatId, formatId) == 0) {
 			JSON_Object* matchCriteria = json_object_dotget_object(device, "MatchFilters");

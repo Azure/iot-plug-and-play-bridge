@@ -75,9 +75,6 @@
     <ClCompile Include="PnpBridge.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DiscoveryInterface.h">
-      <Filter>inc</Filter>
-    </ClCompile>
     <ClCompile Include="DiscoveryManager.c">
       <Filter>discovery</Filter>
     </ClCompile>
@@ -98,6 +95,9 @@
     </ClCompile>
     <ClCompile Include="CoreDeviceHealth.c">
       <Filter>pnpinterface\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="PnpBridgeService.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

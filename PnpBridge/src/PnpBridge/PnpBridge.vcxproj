@@ -177,6 +177,7 @@
     <ClCompile Include="PnpBridge.c" />
     <ClCompile Include="DiscoveryManager.c" />
     <ClCompile Include="PnpAdapterManger.c" />
+    <ClCompile Include="PnpBridgeService.c" />
     <ClCompile Include="SerialDevice.c" />
     <ClCompile Include="utility.c" />
     <ClCompile Include="WindowsPnPDeviceDiscovery.c" />

@@ -79,13 +79,13 @@ CoreDevice_OnDeviceNotification(
 
 HCMNOTIFICATION CoreDevice_hNotifyCtx = NULL;
 
-int CoreDevice_BindPnpInterface(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+int CoreDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD param) {
 	DWORD cmRet;
 	CM_NOTIFY_FILTER    cmFilter;
 
-	JSON_Object* args = DeviceChangePayload->Message;
+	JSON_Object* args = param->Message;
 
-	if (pnpInterfaceClient == NULL) {
+	if (Interface == NULL) {
 		return -1;
 	}
 
@@ -108,7 +108,7 @@ int CoreDevice_BindPnpInterface(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient, 
 
 	hardwareid = L"b94d388a-7331-4e5e-8b0f-08160ea1f706";//json_object_dotget_string(args, "HardwareId");
 
-	pnpinterfaceHandle = PnpAdapter_GetPnpInterface(pnpInterfaceClient);
+	pnpinterfaceHandle = PnpAdapter_GetPnpInterface(Interface);
 	state = true;
 	Sample_SendEventAsync("camconn", "Connected");
 
@@ -209,6 +209,6 @@ int SendDeviceDisconnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCor
 
 PNP_INTERFACE_MODULE CoreDeviceHealthInterface = {
     .Identity = "core-device-health",
-	.BindPnpInterface = CoreDevice_BindPnpInterface,
+	.CreatePnpInterface = CoreDevice_CreatePnpInterface,
 	.ReleaseInterface = NULL,
 };

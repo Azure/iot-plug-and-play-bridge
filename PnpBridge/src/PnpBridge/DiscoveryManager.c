@@ -30,12 +30,6 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
         return PNPBRIDGE_FAILED;
     }
 
-	// Build an interface map
-	//for (int i = 0; i < sizeof(DISCOVERY_MANIFEST)/sizeof(PDISCOVERY_ADAPTER); i++) {
-	//	PDISCOVERY_ADAPTER  discoveryAdapter = DISCOVERY_MANIFEST[i];
-    //    Map_Add(discoveryMgr->DiscoveryModuleMap, discoveryAdapter->Identity, (char *)discoveryAdapter);
-//	}
-
 	*discoveryManager = discoveryMgr;
 
     return PNPBRIDGE_OK;
@@ -50,26 +44,29 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
 
 	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(PDISCOVERY_ADAPTER); i++) {
 		PDISCOVERY_ADAPTER  discoveryInterface = DISCOVERY_MANIFEST[i];
-		JSON_Object* discoveryParams = NULL;
+		JSON_Object* deviceParams = NULL;
         PNPBRIDGE_RESULT result;
 
-		// For this Identity check if there is any device
-        // TODO: Create an array of device
 		for (int j = 0; j < json_array_get_count(devices); j++) {
 			JSON_Object *device = json_array_get_object(devices, j);
 
-			JSON_Object* params = Configuration_GetDiscoveryParameters(device);
+            // For this Identity check if there is any device
+            // TODO: Create an array of device
+			JSON_Object* params = Configuration_GetDiscoveryParametersPerDevice(device);
             if (NULL != params) {
                 const char* deviceFormatId = json_object_get_string(params, "Identity");
                 if (strcmp(deviceFormatId, discoveryInterface->Identity) == 0) {
-                    discoveryParams = params;
+                    deviceParams = params;
                     break;
                 }
             }
 		}
 
+        JSON_Object* adapterParams = NULL;
+        adapterParams = Configuration_GetDiscoveryParameters(discoveryInterface->Identity);
+
         // TODO: Add validation to check minimum discovery interface methods
-        result = discoveryInterface->StartDiscovery(DiscoveryAdapterChangeHandler, discoveryParams);
+        result = discoveryInterface->StartDiscovery(DiscoveryAdapterChangeHandler, deviceParams, adapterParams);
 
         if (PNPBRIDGE_OK == result) {
             Map_Add_Index(discoveryManager->DiscoveryModuleMap, discoveryInterface->Identity, i);

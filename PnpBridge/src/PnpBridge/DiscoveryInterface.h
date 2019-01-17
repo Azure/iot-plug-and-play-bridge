@@ -8,7 +8,7 @@ typedef enum _PNP_INTERFACE_CHANGE_TYPE {
 
 typedef void (*PNPBRIDGE_NOTIFY_DEVICE_CHANGE)(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
 
-typedef int(*START_DISCOVER)(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* args);
+typedef int(*START_DISCOVER)(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs);
 typedef int(*STOP_DISCOVERY)();
 
 typedef struct _DISCOVERY_ADAPTER {

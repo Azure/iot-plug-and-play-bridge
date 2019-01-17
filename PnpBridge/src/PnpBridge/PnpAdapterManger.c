@@ -111,19 +111,21 @@ PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter
 	method will take care of binding it to a module implementing 
 	PnP primitives
 */
-PNPBRIDGE_RESULT PnpAdapterManager_BindPnpInterface(PPNP_ADAPTER_MANAGER adapter, int key, PNP_INTERFACE_CLIENT_HANDLE* InterfaceClient, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, int key, PNP_INTERFACE_CLIENT_HANDLE** InterfaceClient, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
 	// Get the module using the key as index
 	PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[key];
 
 	PPNPADAPTER_INTERFACE pnpInterface = malloc(sizeof(PNPADAPTER_INTERFACE));
 
-	pnpInterface->Interface = InterfaceClient;
+	//pnpInterface->Interface = InterfaceClient;
 	pnpInterface->key = key;
 
 	// Invoke interface binding method
-	pnpAdapter->BindPnpInterface(pnpInterface, DeviceChangePayload);
+	pnpAdapter->CreatePnpInterface(pnpInterface, pnpDeviceClientHandle, DeviceChangePayload);
 
-	//*InterfaceClient = (PNP_INTERFACE_CLIENT_HANDLE *) pnpInterface;
+    *InterfaceClient = pnpInterface->Interface;
+	
+    //*InterfaceClient = (PNP_INTERFACE_CLIENT_HANDLE *) pnpInterface;
 
 	return 0;
 }

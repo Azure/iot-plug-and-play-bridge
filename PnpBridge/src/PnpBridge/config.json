@@ -6,12 +6,12 @@
       "MatchFilters": {
         "MatchType": "Exact",
         "MatchParameters": {
-          "HardwareId": "USB\\VID_045E&PID_0779&MI_00"
+          "HardwareId": "USB\\VID_06CB&PID_00B3"
         }
       },
       "InterfaceId": "http://windows.com/coredevicehealth/v1",
       "PnpParameters": {
-        "Identity": "windows-pnp-module"
+        "Identity": "core-device-health"
       }
     },
     {
@@ -29,28 +29,17 @@
       }
     }
   ],
-  "DiscoveryAdapters": [
-    {
-      "AdapterList": [
-
-      ],
-      "InitArgs": [
+  "DiscoveryAdapters": {
+      "Parameters": [
         {
-          "_comment": "Pnp Discovery Adapter"
+          "Identity": "windows-pnp-device-discovery",
+          "DeviceInterfaceClasses": [
+            "A5DCBF10-6530-11D2-901F-00C04FB951ED",
+            "86E0D1E0-8089-11D0-9CE4-08003E301F73"
+          ]
         }
       ]
-    }
-  ],
+  },
   "PnpAdapters": [
-    {
-      "AdapterList": [
-
-      ],
-      "InitArgs": [
-        {
-          "_comment": "Core Device Health Extension"
-        }
-      ]
-    }
   ]
 }
