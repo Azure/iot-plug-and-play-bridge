@@ -8,15 +8,11 @@
 #include <initguid.h>
 #include <devpkey.h>
 
-/* A5DCBF10-6530-11D2-901F-00C04FB951ED */
-DEFINE_GUID(GUID_DEVINTERFACE_USB_DEVICE, 0xA5DCBF10L, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, \
-    0xC0, 0x4F, 0xB9, 0x51, 0xED);
 
-char* deviceChangeMessageformat = "{ \"HardwareId\":%s, \"Identity\":\"core-device-health\"  }";
+const char* deviceChangeMessageformat = "{ \"HardwareId\":%s, \"Identity\":\"core-device-health\"  }";
 
 PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeHandler = NULL;
 SINGLYLINKEDLIST_HANDLE g_deviceWatchers;
-
 
 DWORD 
 OnDeviceNotification(
@@ -109,6 +105,9 @@ OnDeviceNotification(
 
             payload.Message = jsonObject;
 
+            payload.Context = malloc(sizeof(eventData->u.DeviceInterface.ClassGuid));
+            memcpy(payload.Context, &eventData->u.DeviceInterface.ClassGuid, sizeof(eventData->u.DeviceInterface.ClassGuid));
+
             DeviceChangeHandler(&payload);
 
             STRING_delete(asJson);
@@ -117,7 +116,7 @@ OnDeviceNotification(
     return 0;
 }
 
-int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
+int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
     DWORD cmRet;
     CM_NOTIFY_FILTER cmFilter;
     HCMNOTIFICATION hNotifyCtx = NULL;
@@ -161,7 +160,7 @@ int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_
     return 0;
 }
 
-int PnpStopDiscovery() {
+int WindowsPnp_StopDiscovery() {
 
     LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_deviceWatchers);
     while (interfaceItem != NULL) {
@@ -176,6 +175,6 @@ int PnpStopDiscovery() {
 
 DISCOVERY_ADAPTER WindowsPnpDeviceDiscovery = {
     .Identity = "windows-pnp-device-discovery",
-    .StartDiscovery = PnpStartDiscovery,
-    .StopDiscovery = PnpStopDiscovery
+    .StartDiscovery = WindowsPnp_StartDiscovery,
+    .StopDiscovery = WindowsPnp_StopDiscovery
 };

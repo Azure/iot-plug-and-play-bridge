@@ -788,7 +788,7 @@ void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, D
     LogInfo("Receieved descriptor response, of length %d", *length);
 }
 
-int SerialReportDevice(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
+int SerialDevice_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
     if (deviceArgs == NULL) {
         return -1;
     }
@@ -825,7 +825,7 @@ int SerialReportDevice(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON
     return 0;
 }
 
-int SerialStopDevice() {
+int SerialDevice_StopDiscovery() {
     return 0;
 }
 
@@ -946,8 +946,8 @@ int SerialDevice_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
 
 DISCOVERY_ADAPTER ArduinoSerialDiscovery = {
     .Identity = "arduino-serial-discovery",
-    .StartDiscovery = SerialReportDevice,
-    .StopDiscovery = SerialStopDevice
+    .StartDiscovery = SerialDevice_StartDiscovery,
+    .StopDiscovery = SerialDevice_StopDiscovery
 };
 
 PNP_INTERFACE_MODULE SerialPnpInterface = {

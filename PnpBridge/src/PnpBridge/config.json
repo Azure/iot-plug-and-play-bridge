@@ -6,7 +6,7 @@
   "_comment_Devices": "Array of devices for Azure Pnp interface should be published",
   "Devices": [
     {
-      "_comment": "DEVICE1 - Camera device",
+      "_comment": "DEVICE1 - USB device",
       "MatchFilters": {
         "MatchType": "Exact",
         "MatchParameters": {
