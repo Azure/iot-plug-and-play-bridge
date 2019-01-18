@@ -49,7 +49,7 @@ protected:
                                                                    _Out_writes_bytes_to_(cbBuffer,*pcbData) PBYTE pbBuffer,
                                                                    _In_ ULONG cbBuffer,
                                                                    _Out_ ULONG* pcbData);
-    static DWORD                        PcmNotifyCallback(_In_ HCMNOTIFICATION hNotify,
+    static DWORD CALLBACK               PcmNotifyCallback(_In_ HCMNOTIFICATION hNotify,
                                                           _In_opt_ PVOID context,
                                                           _In_ CM_NOTIFY_ACTION action,
                                                           _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
