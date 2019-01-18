@@ -40,8 +40,8 @@ public:
 
 protected:
 
-    static void                                         ProcessETWEventCallback(_In_ PEVENT_RECORD precord);
-    static DWORD                                        ETWProcessThreadProc(_In_opt_ PVOID pv);
+    static void  WINAPI                                 ProcessETWEventCallback(_In_ PEVENT_RECORD precord);
+    static DWORD WINAPI                                 ETWProcessThreadProc(_In_opt_ PVOID pv);
     virtual HRESULT                                     AddStat(_In_ FSStatisticsEntry* pstats, _In_opt_z_ LPCWSTR DeviceSymbolicName);
     HRESULT                                             InternalStart();
     HRESULT                                             InternalStop();
