@@ -9,8 +9,8 @@
 
 // TODO: Decide where the extern are present for CoreDeviceHealth
 PPNP_INTERFACE_MODULE INTERFACE_MANIFEST[] = {
-	&CoreDeviceHealthInterface,
-	&SerialPnpInterface
+    &CoreDeviceHealthInterface,
+    &SerialPnpInterface
 };
 
 PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr) {
@@ -19,7 +19,7 @@ PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr) {
         return PNPBRIDGE_INVALID_ARGS;
     }
 
-	adapter = (PPNP_ADAPTER_MANAGER) malloc(sizeof(PNP_ADAPTER_MANAGER));
+    adapter = (PPNP_ADAPTER_MANAGER) malloc(sizeof(PNP_ADAPTER_MANAGER));
     if (NULL == adapter) {
         return PNPBRIDGE_INSUFFICIENT_MEMORY;
     }
@@ -29,9 +29,9 @@ PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr) {
         return PNPBRIDGE_FAILED;
     }
 
-	// Load a list of static modules and build an interface map
-	for (int i = 0; i < sizeof(INTERFACE_MANIFEST) / sizeof(PPNP_INTERFACE_MODULE); i++) {
-		PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[i];
+    // Load a list of static modules and build an interface map
+    for (int i = 0; i < sizeof(INTERFACE_MANIFEST) / sizeof(PPNP_INTERFACE_MODULE); i++) {
+        PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[i];
         PNPBRIDGE_RESULT result;
 
         if (NULL == pnpAdapter->Identity) {
@@ -49,11 +49,11 @@ PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr) {
         }
 
         Map_Add_Index(adapter->PnpAdapterMap, pnpAdapter->Identity, i);
-	}
+    }
 
     *adapterMgr = adapter;
 
-	return PNPBRIDGE_OK;
+    return PNPBRIDGE_OK;
 }
 
 void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
@@ -79,16 +79,16 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
     }
 
     Map_Destroy(adapter->PnpAdapterMap);
-	free(adapter);
+    free(adapter);
 }
 
 PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key) {
-	bool containsMessageKey = false;
-	char* interfaceId = NULL;
-	char* getIdentity = (char*) json_object_get_string(Message, "Identity");
+    bool containsMessageKey = false;
+    char* interfaceId = NULL;
+    char* getIdentity = (char*) json_object_get_string(Message, "Identity");
     MAP_RESULT mapResult;
 
-	*supported = false;
+    *supported = false;
 
     mapResult = Map_ContainsKey(adapter->PnpAdapterMap, getIdentity, &containsMessageKey);
     if (MAP_OK != mapResult || !containsMessageKey) {
@@ -101,54 +101,54 @@ PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter
     *supported = true;
     *key = index;
 
-	return PNPBRIDGE_OK;
+    return PNPBRIDGE_OK;
 }
 
 /*
-	Once an interface is registerd with Azure PnpDeviceClient this 
-	method will take care of binding it to a module implementing 
-	PnP primitives
+    Once an interface is registerd with Azure PnpDeviceClient this 
+    method will take care of binding it to a module implementing 
+    PnP primitives
 */
 PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, int key, PNP_INTERFACE_CLIENT_HANDLE* InterfaceClient, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
-	// Get the module using the key as index
-	PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[key];
+    // Get the module using the key as index
+    PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[key];
 
-	PPNPADAPTER_INTERFACE pnpInterface = malloc(sizeof(PNPADAPTER_INTERFACE));
+    PPNPADAPTER_INTERFACE pnpInterface = malloc(sizeof(PNPADAPTER_INTERFACE));
 
-	//pnpInterface->Interface = InterfaceClient;
-	pnpInterface->key = key;
+    //pnpInterface->Interface = InterfaceClient;
+    pnpInterface->key = key;
 
-	// Invoke interface binding method
-	pnpAdapter->CreatePnpInterface(pnpInterface, pnpDeviceClientHandle, DeviceChangePayload);
+    // Invoke interface binding method
+    pnpAdapter->CreatePnpInterface(pnpInterface, pnpDeviceClientHandle, DeviceChangePayload);
 
     *InterfaceClient = pnpInterface->Interface;
-	
+    
     //*InterfaceClient = (PNP_INTERFACE_CLIENT_HANDLE *) pnpInterface;
 
-	return 0;
+    return 0;
 }
 
 PNPBRIDGE_RESULT PnpAdapterManager_ReleasePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNPADAPTER_INTERFACE_HANDLE npInterfaceClient) {
-	if (NULL == npInterfaceClient) {
-		return PNPBRIDGE_INVALID_ARGS;
-	}
+    if (NULL == npInterfaceClient) {
+        return PNPBRIDGE_INVALID_ARGS;
+    }
 
-	PPNPADAPTER_INTERFACE pnpInterface = (PPNPADAPTER_INTERFACE) npInterfaceClient;
+    PPNPADAPTER_INTERFACE pnpInterface = (PPNPADAPTER_INTERFACE) npInterfaceClient;
 
-	// Get the module index
-	PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[pnpInterface->key];
-	pnpAdapter->ReleaseInterface(npInterfaceClient);
+    // Get the module index
+    PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[pnpInterface->key];
+    pnpAdapter->ReleaseInterface(npInterfaceClient);
 
-	return PNPBRIDGE_OK;
+    return PNPBRIDGE_OK;
 }
 
 PNP_INTERFACE_CLIENT_HANDLE PnpAdapter_GetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterfaceClient) {
-	if (pnpInterfaceClient == NULL) {
-		return NULL;
-	}
+    if (pnpInterfaceClient == NULL) {
+        return NULL;
+    }
 
-	PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpInterfaceClient;
-	return interfaceClient->Interface;
+    PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpInterfaceClient;
+    return interfaceClient->Interface;
 }
 
 void PnpAdapter_SetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient) {
@@ -166,7 +166,7 @@ PNPBRIDGE_RESULT PnpAdapter_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpInterfaceC
         return PNPBRIDGE_INVALID_ARGS;
     }
 
-	PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpInterfaceClient;
+    PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpInterfaceClient;
     interfaceClient->Context = Context;
 
     return PNPBRIDGE_OK;

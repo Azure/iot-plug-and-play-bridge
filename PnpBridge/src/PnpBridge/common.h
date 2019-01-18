@@ -33,12 +33,6 @@ extern "C"
 #include "PnpBridgeCommon.h"
 #include "ConfigurationParser.h"
 
-#define DAG_RESULT_VALUES     \
-    DAG_OK,                   \
-    DAG_INVALID_ARG,		  \
-    DAG_ERROR,			      \
-    DAG_INVALID_SIZE		  \
-
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
 
 int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);

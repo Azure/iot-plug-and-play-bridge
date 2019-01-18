@@ -29,6 +29,8 @@
       "DiscoveryParameters": {
         "Identity": "arduino-serial-discovery",
         "ComPort": "COM7",
+        "_comment": "NOTE: ComPort parameter will be used when UseComDevieInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
+        "UseComDeviceInterface": "false",
         "BaudRate": "115200"
       }
     }

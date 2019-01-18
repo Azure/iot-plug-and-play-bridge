@@ -9,7 +9,7 @@ extern "C"
 #endif
 
 typedef struct _DISCOVERY_MANAGER {
-	MAP_HANDLE DiscoveryModuleMap;
+    MAP_HANDLE DiscoveryModuleMap;
 } DISCOVERY_MANAGER, *PDISCOVERY_MANAGER;
 
 

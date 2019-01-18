@@ -10,8 +10,8 @@
 DISCOVERY_ADAPTER discoveryInterface = { 0 };
 
 PDISCOVERY_ADAPTER DISCOVERY_MANIFEST[] = {
-	&WindowsPnpDeviceDiscovery,
-	&ArduinoSerialDiscovery
+    &WindowsPnpDeviceDiscovery,
+    &ArduinoSerialDiscovery
 };
 
 void DiscoveryAdapterChangeHandler(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
@@ -28,34 +28,34 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
         return PNPBRIDGE_INSUFFICIENT_MEMORY;
     }
 
-	discoveryMgr->DiscoveryModuleMap = Map_Create(NULL);
+    discoveryMgr->DiscoveryModuleMap = Map_Create(NULL);
     if (NULL == discoveryMgr->DiscoveryModuleMap) {
         return PNPBRIDGE_FAILED;
     }
 
-	*discoveryManager = discoveryMgr;
+    *discoveryManager = discoveryMgr;
 
     return PNPBRIDGE_OK;
 }
 
 PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager) {
-	JSON_Array *devices = Configuration_GetConfiguredDevices();
+    JSON_Array *devices = Configuration_GetConfiguredDevices();
 
     if (NULL == devices) {
         return PNPBRIDGE_INVALID_ARGS;
     }
 
-	for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(PDISCOVERY_ADAPTER); i++) {
-		PDISCOVERY_ADAPTER  discoveryInterface = DISCOVERY_MANIFEST[i];
-		JSON_Object* deviceParams = NULL;
+    for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(PDISCOVERY_ADAPTER); i++) {
+        PDISCOVERY_ADAPTER  discoveryInterface = DISCOVERY_MANIFEST[i];
+        JSON_Object* deviceParams = NULL;
         PNPBRIDGE_RESULT result;
 
-		for (int j = 0; j < json_array_get_count(devices); j++) {
-			JSON_Object *device = json_array_get_object(devices, j);
+        for (int j = 0; j < json_array_get_count(devices); j++) {
+            JSON_Object *device = json_array_get_object(devices, j);
 
             // For this Identity check if there is any device
             // TODO: Create an array of device
-			JSON_Object* params = Configuration_GetDiscoveryParametersPerDevice(device);
+            JSON_Object* params = Configuration_GetDiscoveryParametersPerDevice(device);
             if (NULL != params) {
                 const char* deviceFormatId = json_object_get_string(params, "Identity");
                 if (strcmp(deviceFormatId, discoveryInterface->Identity) == 0) {
@@ -63,7 +63,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
                     break;
                 }
             }
-		}
+        }
 
         JSON_Object* adapterParams = NULL;
         adapterParams = Configuration_GetDiscoveryParameters(discoveryInterface->Identity);
@@ -74,7 +74,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
         if (PNPBRIDGE_OK == result) {
             Map_Add_Index(discoveryManager->DiscoveryModuleMap, discoveryInterface->Identity, i);
         }
-	}
+    }
 
     return PNPBRIDGE_OK;
 }

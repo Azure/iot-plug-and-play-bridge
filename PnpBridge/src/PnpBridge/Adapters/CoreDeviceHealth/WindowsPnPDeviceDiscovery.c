@@ -20,26 +20,26 @@ SINGLYLINKEDLIST_HANDLE g_deviceWatchers;
 
 DWORD 
 OnDeviceNotification(
-	_In_ HCMNOTIFICATION hNotify,
-	_In_opt_ PVOID context,
-	_In_ CM_NOTIFY_ACTION action,
-	_In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
-	_In_ DWORD eventDataSize)
+    _In_ HCMNOTIFICATION hNotify,
+    _In_opt_ PVOID context,
+    _In_ CM_NOTIFY_ACTION action,
+    _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
+    _In_ DWORD eventDataSize)
 {
 
-	if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) {
-		if (DeviceChangeHandler != NULL) {
+    if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) {
+        if (DeviceChangeHandler != NULL) {
             char* msg;
             PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { 0 };
-			DEVPROPTYPE PropType;
-			WCHAR hardwareIds[MAX_DEVICE_ID_LEN];
-			ULONG BufferSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
-			CONFIGRET status;
-			DEVINST Devinst;
-			DEVPROPTYPE DevPropType;
-			ULONG DevPropSize;
-			WCHAR deviceInstance[MAX_DEVICE_ID_LEN];
-			ULONG deviceInstanceSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
+            DEVPROPTYPE PropType;
+            WCHAR hardwareIds[MAX_DEVICE_ID_LEN];
+            ULONG BufferSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
+            CONFIGRET status;
+            DEVINST Devinst;
+            DEVPROPTYPE DevPropType;
+            ULONG DevPropSize;
+            WCHAR deviceInstance[MAX_DEVICE_ID_LEN];
+            ULONG deviceInstanceSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
             LPWSTR SingleDeviceId;
             int msgLen = 512;
             STRING_HANDLE asJson;
@@ -55,71 +55,71 @@ OnDeviceNotification(
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
 
             // Find the hardware Id
-			DevPropSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
-			status = CM_Get_Device_Interface_Property(
-							eventData->u.DeviceInterface.SymbolicLink,
-							&DEVPKEY_Device_InstanceId,
-							&DevPropType,
-							(PBYTE)deviceInstance,
-							&deviceInstanceSize,
-							0);
+            DevPropSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
+            status = CM_Get_Device_Interface_Property(
+                            eventData->u.DeviceInterface.SymbolicLink,
+                            &DEVPKEY_Device_InstanceId,
+                            &DevPropType,
+                            (PBYTE)deviceInstance,
+                            &deviceInstanceSize,
+                            0);
 
-			if (status != CR_SUCCESS) {
-				return -1;
-			}
+            if (status != CR_SUCCESS) {
+                return -1;
+            }
 
-			status = CM_Locate_DevNode(
-						&Devinst,
-						deviceInstance,
-						CM_LOCATE_DEVNODE_NORMAL);
+            status = CM_Locate_DevNode(
+                        &Devinst,
+                        deviceInstance,
+                        CM_LOCATE_DEVNODE_NORMAL);
 
-			if (status != CR_SUCCESS) {
-				return -1;
-			}
+            if (status != CR_SUCCESS) {
+                return -1;
+            }
 
-			status = CM_Get_DevNode_Property(
-						Devinst,
-						&DEVPKEY_Device_HardwareIds,
-						&PropType,
-						(PBYTE)hardwareIds,
-						&BufferSize,
-						0);
-			if (CR_SUCCESS != status) {
-				hardwareIds[0] = L'\0';
-			}
+            status = CM_Get_DevNode_Property(
+                        Devinst,
+                        &DEVPKEY_Device_HardwareIds,
+                        &PropType,
+                        (PBYTE)hardwareIds,
+                        &BufferSize,
+                        0);
+            if (CR_SUCCESS != status) {
+                hardwareIds[0] = L'\0';
+            }
 
             SingleDeviceId = (LPWSTR)hardwareIds;
-			size_t cLength = 0;
-			cLength = wcslen(SingleDeviceId);
+            size_t cLength = 0;
+            cLength = wcslen(SingleDeviceId);
 
-			while (*SingleDeviceId) {
-				cLength = wcslen(SingleDeviceId);
-				SingleDeviceId += cLength + 1;
-				sprintf_s(msg, msgLen, "%S", SingleDeviceId);
-				break;
-			}
+            while (*SingleDeviceId) {
+                cLength = wcslen(SingleDeviceId);
+                SingleDeviceId += cLength + 1;
+                sprintf_s(msg, msgLen, "%S", SingleDeviceId);
+                break;
+            }
 
-			LogInfo(msg);
+            LogInfo(msg);
 
-			asJson = STRING_new_JSON(msg);
-			sprintf_s(msg, msgLen, deviceChangeMessageformat, STRING_c_str(asJson));
+            asJson = STRING_new_JSON(msg);
+            sprintf_s(msg, msgLen, deviceChangeMessageformat, STRING_c_str(asJson));
 
-			json = json_parse_string(msg);
-			jsonObject = json_value_get_object(json);
+            json = json_parse_string(msg);
+            jsonObject = json_value_get_object(json);
 
-			payload.Message = jsonObject;
+            payload.Message = jsonObject;
 
-			DeviceChangeHandler(&payload);
+            DeviceChangeHandler(&payload);
 
-			STRING_delete(asJson);
-		}
-	}
-	return 0;
+            STRING_delete(asJson);
+        }
+    }
+    return 0;
 }
 
 int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
-	DWORD cmRet;
-	CM_NOTIFY_FILTER cmFilter;
+    DWORD cmRet;
+    CM_NOTIFY_FILTER cmFilter;
     HCMNOTIFICATION hNotifyCtx = NULL;
 
     g_deviceWatchers = singlylinkedlist_create();
@@ -154,11 +154,11 @@ int PnpStartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_
         singlylinkedlist_add(g_deviceWatchers, hNotifyCtx);
     }
 
-	DeviceChangeHandler = DeviceChangeCallback;
+    DeviceChangeHandler = DeviceChangeCallback;
 
     //EnumerateDevices()
 
-	return 0;
+    return 0;
 }
 
 int PnpStopDiscovery() {
@@ -171,11 +171,11 @@ int PnpStopDiscovery() {
     }
 
     singlylinkedlist_destroy(g_deviceWatchers);
-	return 0;
+    return 0;
 }
 
 DISCOVERY_ADAPTER WindowsPnpDeviceDiscovery = {
     .Identity = "windows-pnp-device-discovery",
-	.StartDiscovery = PnpStartDiscovery,
-	.StopDiscovery = PnpStopDiscovery
+    .StartDiscovery = PnpStartDiscovery,
+    .StopDiscovery = PnpStopDiscovery
 };
