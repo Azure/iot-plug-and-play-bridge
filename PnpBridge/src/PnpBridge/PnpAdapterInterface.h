@@ -64,13 +64,29 @@ typedef int(*PNPADAPTER_RELEASE_PNP_INTERFACE)(PNPADAPTER_INTERFACE_HANDLE pnpIn
 
 
 /**
-* @brief    PnpAdapter_GetPnpInterface gets the azure iot pnp interface client handle
+* @brief    PnpAdapter_GetPnpInterfaceClient gets the Azure iot pnp interface client handle
 
 * @param    pnpInterface          Handle to pnp adapter interface
 *
 * @returns  Handle to Azure Pnp Interface client
 */
-PNP_INTERFACE_CLIENT_HANDLE PnpAdapter_GetPnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
+PNP_INTERFACE_CLIENT_HANDLE PnpAdapter_GetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
+
+/**
+* @brief    PnpAdapter_SetPnpInterfaceClient seta the Azure iot pnp interface client handle
+*
+* @remarks  This API is for private preview only. When PnpBridge calls CreatePnpInterface 
+            callback on a pnp adapter, the adapter should create the Azure PnpInterfaceClient 
+            using PnP_InterfaceClient_Create and then call PnpAdapter_SetPnpInterfaceClient with
+            the PnpInterfaceClient
+
+* @param    pnpInterface          Handle to pnp adapter interface
+*
+** @param   pnpInterfaceClient    Handle to Azure pnp interface client
+*
+* @returns  VOID
+*/
+void PnpAdapter_SetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient);
 
 /**
 * @brief    PnpAdapter_SetContext sets a context for pnp adapter interface handle

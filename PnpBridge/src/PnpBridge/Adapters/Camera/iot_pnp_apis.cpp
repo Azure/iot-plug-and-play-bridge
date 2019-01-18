@@ -68,6 +68,8 @@ CameraPnpInterfaceBind(
     CameraPnpDiscovery*                 p = nullptr;
     std::wstring                        cameraName;
     std::unique_ptr<CameraIotPnpDevice> pIotPnp;
+    PNP_INTERFACE_CLIENT_HANDLE         pnpInterfaceClient;
+    const char*                         interfaceId;
 
     if (nullptr == Interface || nullptr == payload || nullptr == payload->Context)
     {
@@ -77,8 +79,16 @@ CameraPnpInterfaceBind(
     p = (CameraPnpDiscovery*)payload->Context;
     RETURN_IF_FAILED (p->GetFirstCamera(cameraName));
 
+    interfaceId = json_object_get_string(payload->Message, "InterfaceId");
+    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, NULL, NULL, NULL);
+    if (NULL == pnpInterfaceClient) {
+        RETURN_IF_FAILED(E_UNEXPECTED)
+    }
+
+    PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+
     pIotPnp = std::make_unique<CameraIotPnpDevice>();
-    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapter_GetPnpInterface(Interface), cameraName.c_str()));
+    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapter_GetPnpInterfaceClient(Interface), cameraName.c_str()));
     RETURN_IF_FAILED (pIotPnp->StartTelemetryWorker());
 
     if (0 == PnpAdapter_SetContext(Interface, (void*)pIotPnp.get()))

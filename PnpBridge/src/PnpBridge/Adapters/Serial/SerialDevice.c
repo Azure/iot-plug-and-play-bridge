@@ -356,7 +356,7 @@ int PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, char* property, char* i
 
 	LogInfo("Setting sample rate to %s", input);
 
-	TxPacket(serialDevice->hSerial, txPacket, txlength);
+	TxPacket(serialDevice, txPacket, txlength);
 
 	//ThreadAPI_Sleep(2000);
 
@@ -608,31 +608,6 @@ int OpenDevice(char* port, DWORD baudRate) {
 		return -1;
 	}
 
-	////Set timeouts 
-	//COMMTIMEOUTS timeouts = { 0 };
-	//timeouts.ReadIntervalTimeout = 50;
-	//timeouts.ReadTotalTimeoutConstant = 50;
-	//timeouts.ReadTotalTimeoutMultiplier = 10;
-	//timeouts.WriteTotalTimeoutConstant = 50;
-	//timeouts.WriteTotalTimeoutMultiplier = 10;
-
-	//if (SetCommTimeouts(hSerial, &timeouts) == FALSE)
-	//	printf("\n\n    Error! in Setting Time Outs");
-	//else
-	//	printf("\n\n    Setting Serial Port Timeouts Successfull\n");
-
-	//status = SetCommMask(hSerial, EV_RXCHAR); //Configure Windows to Monitor the serial device for Character Reception
-
-	//if (status == FALSE)
-	//	printf("\n\n    Error! in Setting CommMask");
-	//else
-	//	printf("\n\n    Setting CommMask successfull\n");
-
-	//SerialPnPPacketHeader dr = { 0 };
-	//dr.StartOfFrame = 0x5A;
-	//dr.Length = sizeof(dr);
-	//dr.PacketType = 1; // Get descriptor
-
 	PSERIAL_DEVICE_CONTEXT deviceContext = malloc(sizeof(SERIAL_DEVICE_CONTEXT));
 	deviceContext->hSerial = hSerial;
 	deviceContext->InterfaceHandle = NULL;
@@ -762,7 +737,7 @@ void ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice) {
 	ThreadAPI_Sleep(2000);
 
 	// Send the new packet
-	TxPacket(serialDevice->hSerial, resetPacket, 4);
+	TxPacket(serialDevice, resetPacket, 4);
 
 	ThreadAPI_Sleep(2000);
 
@@ -799,10 +774,10 @@ void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, D
 
 
 	// Send the new packets
-	TxPacket(serialDevice->hSerial, txPacket, 4);
+	TxPacket(serialDevice, txPacket, 4);
 	LogInfo("Sent descriptor request");
 
-	RxPacket(serialDevice->hSerial, desc, length, 0x04);
+	RxPacket(serialDevice, desc, length, 0x04);
 
 	if ((*desc)[2] != 0x04)
 	{
@@ -840,42 +815,42 @@ int SerialReportDevice(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON
 
 	LogInfo("Opening com port %s", port);
 
-	//OpenDevice(seriaDevice->InterfaceName, baudRate);
+	OpenDevice(seriaDevice->InterfaceName, baudRate);
 	return 0;
 }
 
 int SerialStopDevice() {
-	return 0;
+return 0;
 }
 
 void SerialDataSendEventCallback(PNP_SEND_TELEMETRY_STATUS pnpSendEventStatus, void* userContextCallback)
 {
-	LogInfo("SerialDataSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
+    LogInfo("SerialDataSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
 }
 
 int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data)
 {
-	int result;
-	PNP_CLIENT_RESULT pnpClientResult;
+    int result;
+    PNP_CLIENT_RESULT pnpClientResult;
 
-	if (pnpInterface == NULL) {
-		return 0;
-	}
+    if (pnpInterface == NULL) {
+        return 0;
+    }
 
-	char msg[512];
-	sprintf_s(msg, 512, "{\"%s\":\"%s\"}", eventName, data);
+    char msg[512];
+    sprintf_s(msg, 512, "{\"%s\":\"%s\"}", eventName, data);
 
-	if ((pnpClientResult = PnP_InterfaceClient_SendTelemetryAsync(pnpInterface, eventName, (const unsigned char*)msg, strlen(msg), SerialDataSendEventCallback, NULL)) != PNP_CLIENT_OK)
-	{
-		LogError("PnP_InterfaceClient_SendEventAsync failed, result=%d\n", pnpClientResult);
-		result = __FAILURE__;
-	}
-	else
-	{
-		result = 0;
-	}
+    if ((pnpClientResult = PnP_InterfaceClient_SendTelemetryAsync(pnpInterface, eventName, (const unsigned char*)msg, strlen(msg), SerialDataSendEventCallback, NULL)) != PNP_CLIENT_OK)
+    {
+        LogError("PnP_InterfaceClient_SendEventAsync failed, result=%d\n", pnpClientResult);
+        result = __FAILURE__;
+    }
+    else
+    {
+        result = 0;
+    }
 
-	return result;
+    return result;
 }
 
 
@@ -883,38 +858,38 @@ int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* ev
 // will tend to have actual program state as part of this.
 typedef struct PNP_READWRITE_PROPERTY_SAMPLE_STATE_TAG
 {
-	PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClientHandle;
+    PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClientHandle;
 } PNP_READWRITE_PROPERTY_SAMPLE_STATE;
 
 static void SampleRate(unsigned const char* propertyInitial, size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback)
 {
-	LogInfo("Processed telemetry frequency property updated.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
+    LogInfo("Processed telemetry frequency property updated.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
 
-	PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
+    PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
 
-	JSON_Value* propValue = json_parse_string(propertyDataUpdated);
-	JSON_Object* jsonObject = json_value_get_object(propValue);
+    JSON_Value* propValue = json_parse_string(propertyDataUpdated);
+    JSON_Object* jsonObject = json_value_get_object(propValue);
 
-	int sample_rate = (int)json_object_dotget_number(jsonObject, "value");
-	char c[7];
-	int i = 1;
+    int sample_rate = (int)json_object_dotget_number(jsonObject, "value");
+    char c[7];
+    int i = 1;
 
-	sprintf_s(c, 7, "%d", sample_rate*1000);
+    sprintf_s(c, 7, "%d", sample_rate * 1000);
 
-	PropertyHandler(deviceContext->hSerial, "sample_rate", c);
+    PropertyHandler(deviceContext->hSerial, "sample_rate", c);
 
-	PNP_CLIENT_RESULT pnpClientResult;
+    PNP_CLIENT_RESULT pnpClientResult;
 
-	PNP_CLIENT_READWRITE_PROPERTY_RESPONSE propertyResponse;
+    PNP_CLIENT_READWRITE_PROPERTY_RESPONSE propertyResponse;
 
-	propertyResponse.version = 1;
-	propertyResponse.propertyData = propertyDataUpdated;
-	propertyResponse.propertyDataLen = propertyDataUpdatedLen;
-	propertyResponse.responseVersion = desiredVersion;
-	propertyResponse.statusCode = 200;
-	propertyResponse.statusDescription = "Property Updated Successfully";
+    propertyResponse.version = 1;
+    propertyResponse.propertyData = propertyDataUpdated;
+    propertyResponse.propertyDataLen = propertyDataUpdatedLen;
+    propertyResponse.responseVersion = desiredVersion;
+    propertyResponse.statusCode = 200;
+    propertyResponse.statusDescription = "Property Updated Successfully";
 
-	pnpClientResult = PnP_InterfaceClient_ReportReadWritePropertyStatusAsync(deviceContext->InterfaceHandle, "sample_rate", &propertyResponse, NULL, NULL);
+    pnpClientResult = PnP_InterfaceClient_ReportReadWritePropertyStatusAsync(deviceContext->InterfaceHandle, "sample_rate", &propertyResponse, NULL, NULL);
 }
 
 const char* propertyNames[] = { "sample_rate" };
@@ -923,30 +898,42 @@ const PNP_READWRITE_PROPERTY_UPDATE_CALLBACK propertyUpdateTable[] = { SampleRat
 
 static const PNP_CLIENT_READWRITE_PROPERTY_UPDATED_CALLBACK_TABLE serialPropertyTable =
 {
-	1, // version of structure
-	1, // number of properties and callbacks to map to
-	(const char**)propertyNames,
-	(const PNP_READWRITE_PROPERTY_UPDATE_CALLBACK*) propertyUpdateTable
+    1, // version of structure
+    1, // number of properties and callbacks to map to
+    (const char**)propertyNames,
+    (const PNP_READWRITE_PROPERTY_UPDATE_CALLBACK*)propertyUpdateTable
 };
 
 
-int SerialCreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD args) {
-	PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) args->Context;
-	deviceContext->InterfaceHandle = PnpAdapter_GetPnpInterface(Interface);
+int SerialDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD args) {
+    PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)args->Context;
+    const char* interfaceId = json_object_get_string(args->Message, "InterfaceId");
 
-	//PnP_InterfaceClient_BindCallbacks(deviceContext->InterfaceHandle, &serialPropertyTable, NULL, deviceContext);
+    deviceContext->InterfaceHandle = PnpAdapter_GetPnpInterfaceClient(Interface);
 
-	return 0;
+    PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
+    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, &serialPropertyTable, NULL, deviceContext);
+    if (NULL == pnpInterfaceClient) {
+        return -1;
+    }
+
+    PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+
+    return 0;
+}
+
+int SerialDevice_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
+
 }
 
 DISCOVERY_ADAPTER ArduinoSerialDiscovery = {
-    .Identity = "arduino-serial-module-discovery",
+    .Identity = "arduino-serial-discovery",
 	.StartDiscovery = SerialReportDevice,
 	.StopDiscovery = SerialStopDevice
 };
 
 PNP_INTERFACE_MODULE SerialPnpInterface = {
-    .Identity = "arduino-serial-module",
-	.CreatePnpInterface = SerialCreatePnpInterface,
-	.ReleaseInterface = NULL
+    .Identity = "arduino-serial",
+	.CreatePnpInterface = SerialDevice_CreatePnpInterface,
+	.ReleaseInterface = SerialDevice_ReleasePnpInterface
 };

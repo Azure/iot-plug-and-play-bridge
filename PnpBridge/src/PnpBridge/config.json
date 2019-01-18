@@ -1,8 +1,9 @@
 {
+  "_comment_PnpBridgeParameters": "PnpBridge configurable parameters",
   "PnpBridgeParameters": {
     "ConnectionString": "HostName=saas-iothub-1529564b-8f58-4871-b721-fe9459308cb1.azure-devices.net;DeviceId=956da476-8b3c-41ce-b405-d2d32bcf5e79;SharedAccessKey=sQcfPeDCZGEJWPI3M3SyB8pD60TNdOw10oFKuv5FBio="
   },
-  "_comment": "Array of devices",
+  "_comment_Devices": "Array of devices for Azure Pnp interface should be published",
   "Devices": [
     {
       "_comment": "DEVICE1 - Camera device",
@@ -23,10 +24,10 @@
         "MatchType": "*"
       },
       "PnpParameters": {
-        "Identity": "arduino-serial-module"
+        "Identity": "arduino-serial"
       },
       "DiscoveryParameters": {
-        "Identity": "arduino-serial-module-discovery",
+        "Identity": "arduino-serial-discovery",
         "ComPort": "COM7",
         "BaudRate": "115200"
       }

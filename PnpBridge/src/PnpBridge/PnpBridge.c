@@ -63,6 +63,15 @@ IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle(const char* connectionString)
 	return deviceHandle;
 }
 
+void PnpBridge_CoreCleanup() {
+    if (g_PnpBridge->publishedInterfaces) {
+        singlylinkedlist_destroy(g_PnpBridge->publishedInterfaces);
+    }
+    if (g_PnpBridge->dispatchLock) {
+        Lock_Deinit(g_PnpBridge->dispatchLock);
+    }
+}
+
 PNPBRIDGE_RESULT PnpBridge_Initialize() {
     const char* connectionString;
 
@@ -77,13 +86,25 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
 
     if (!g_PnpBridge) {
         LogError("Failed to allocate memory for PnpBridge global");
+        PnpBridge_CoreCleanup();
         return PNPBRIDGE_INSUFFICIENT_MEMORY;
     }
 
 	g_PnpBridge->publishedInterfaces = singlylinkedlist_create();
+    if (NULL == g_PnpBridge->publishedInterfaces) {
+        LogError("Failed to allocate memory publish interface list");
+        PnpBridge_CoreCleanup();
+        return PNPBRIDGE_INSUFFICIENT_MEMORY;
+    }
+
 	g_PnpBridge->publishedInterfaceCount = 0;
 
 	g_PnpBridge->dispatchLock = Lock_Init();
+    if (NULL == g_PnpBridge->dispatchLock) {
+        LogError("Failed to init PnpBridge lock");
+        PnpBridge_CoreCleanup();
+        return PNPBRIDGE_INSUFFICIENT_MEMORY;
+    }
 
     g_Shutdown = false;
 
@@ -91,11 +112,13 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
     if ((g_PnpBridge->deviceHandle = InitializeIotHubDeviceHandle(connectionString)) == NULL)
     {
         LogError("Could not allocate IoTHub Device handle\n");
+        PnpBridge_CoreCleanup();
         return PNPBRIDGE_FAILED;
     }
     else if ((g_PnpBridge->pnpDeviceClientHandle = PnP_DeviceClient_CreateFromDeviceHandle(g_PnpBridge->deviceHandle)) == NULL)
     {
         LogError("PnP_DeviceClient_CreateFromDeviceHandle failed\n");
+        PnpBridge_CoreCleanup();
         return PNPBRIDGE_FAILED;
     }
 
@@ -122,7 +145,7 @@ void PnpBridge_Release() {
 
     Unlock(g_PnpBridge->dispatchLock);
 
-    Lock_Deinit(g_PnpBridge->dispatchLock);
+    PnpBridge_CoreCleanup();
 
 	if (g_PnpBridge) {
 		free(g_PnpBridge);
@@ -325,6 +348,7 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
 
     THREAD_HANDLE workerThreadHandle = NULL;
     if (THREADAPI_OK != ThreadAPI_Create(&workerThreadHandle, PnpBridge_Worker_Thread, NULL)) {
+        LogError("Failed to create PnpBridge_Worker_Thread \n");
         workerThreadHandle = NULL;
     }
     else {

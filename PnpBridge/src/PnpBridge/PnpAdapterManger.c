@@ -142,13 +142,23 @@ PNPBRIDGE_RESULT PnpAdapterManager_ReleasePnpInterface(PPNP_ADAPTER_MANAGER adap
 	return PNPBRIDGE_OK;
 }
 
-PNP_INTERFACE_CLIENT_HANDLE PnpAdapter_GetPnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterfaceClient) {
+PNP_INTERFACE_CLIENT_HANDLE PnpAdapter_GetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterfaceClient) {
 	if (pnpInterfaceClient == NULL) {
 		return NULL;
 	}
 
 	PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpInterfaceClient;
 	return interfaceClient->Interface;
+}
+
+void PnpAdapter_SetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient) {
+    if (pnpInterfaceClient == NULL) {
+        LogError("pnpInterface argument is NULL");
+        return;
+    }
+
+    PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpInterface;
+    interfaceClient->Interface = pnpInterfaceClient;
 }
 
 PNPBRIDGE_RESULT PnpAdapter_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpInterfaceClient, void* Context) {
