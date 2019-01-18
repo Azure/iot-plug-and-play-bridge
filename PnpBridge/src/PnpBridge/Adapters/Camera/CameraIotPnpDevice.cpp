@@ -220,7 +220,7 @@ CameraIotPnpDevice::CameraIotPnpDevice_PropertyCallback(
     _In_ PNP_REPORTED_PROPERTY_STATUS pnpReportedStatus,
     _In_opt_ void* userContextCallback)
 {
-    TRACELOG("status=%d,context=%s", pnpReportedStatus, (nullptr != userContextCallback ? (const char*)userContextCallback : "nullptr"));
+    LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpReportedStatus, userContextCallback);
 }
 
 void __cdecl
@@ -228,7 +228,7 @@ CameraIotPnpDevice::CameraIotPnpDevice_TelemetryCallback(
     _In_ PNP_SEND_TELEMETRY_STATUS pnpTelemetryStatus, 
     _In_opt_ void* userContextCallback)
 {
-    TRACELOG("status=%d,context=%s", pnpTelemetryStatus, (nullptr != userContextCallback ? (const char*)userContextCallback : "nullptr"));
+    LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpTelemetryStatus, userContextCallback);
 }
 
 DWORD 
