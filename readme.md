@@ -38,6 +38,8 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
 - Clone Azure PnP Bridge Repo: 
   git clone -b staging-pnpbridge --recursive https://xgrow18.visualstudio.com/_git/busesiot
 
+  Note: Keep the clone directory path short. Having deep root path's will result in MAX_PATH error during build of Azure IoT Pnp SDK.
+
 
 ### Build Azure PnP Bridge
   After clone Azure PnP Bridge repro, run following commands in "Developer Command Prompt for VS 2017":
