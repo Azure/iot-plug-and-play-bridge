@@ -19,17 +19,17 @@
       }
     },
     {
-      "_comment": "DEVICE2 - Arduino sensor hub which reports Azure IoT Pnp interfaces",
+      "_comment": "DEVICE2 - MCU sensor hub which reports Azure IoT Pnp interfaces",
       "MatchFilters": {
         "MatchType": "*"
       },
       "PnpParameters": {
-        "Identity": "arduino-serial"
+        "Identity": "serial-PnP"
       },
       "DiscoveryParameters": {
-        "Identity": "arduino-serial-discovery",
+        "Identity": "Serial-PnP-discovery",
         "ComPort": "COM7",
-        "_comment": "NOTE: ComPort parameter will be used when UseComDevieInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
+        "_comment": "TODO: Name it Serial-PnP NOTE: ComPort parameter will be used when UseComDevieInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
         "UseComDeviceInterface": "false",
         "BaudRate": "115200"
       }
