@@ -22,6 +22,7 @@
 #include <cfgmgr32.h>
 #include <initguid.h>
 #include <devpkey.h>
+#include <mfidl.h>
 
 // PnpBridge headers.
 #include <DiscoveryAdapterInterface.h>
@@ -43,20 +44,12 @@
 // Internal stuff???
 #include <internal/pnp_client_core.h>
 
-extern void TraceLog(
-    _In_z_ LPCSTR filename,
-    _In_z_ LPCSTR funcname,
-    _In_ int linenum,
-    _In_z_ LPCSTR format, ...);
-
-#define TRACELOG(a,...) TraceLog(__FILE__,__FUNCTION__,__LINE__,a, __VA_ARGS__)
-
 #define RETURN_IF_FAILED(hr)                                                                            \
     {                                                                                                   \
         HRESULT __hrRet = hr;                                                                           \
         if (FAILED(__hrRet))                                                                            \
         {                                                                                               \
-            printf("%s:%s:%d - hr=0x%08X\n", __FILE__, __FUNCTION__, __LINE__, hr);                     \
+            LogError("[ERROR]%s:%d - hr=0x%08X\n", __FUNCTION__, __LINE__, hr);                         \
             return __hrRet;                                                                             \
         }                                                                                               \
     }                                                                                                   \
@@ -65,7 +58,7 @@ extern void TraceLog(
     {                                                                                                   \
         if ((condition))                                                                                \
         {                                                                                               \
-            printf("%s:%s:%d - (%s) hr=0x%08X\n", __FILE__, __FUNCTION__, __LINE__, #condition, hr);    \
+            LogError("[ERROR]%s:%d - hr=0x%08X\n", __FUNCTION__, __LINE__, hr);                         \
             return hr;                                                                                  \
         }                                                                                               \
     }                                                                                                   \
@@ -74,7 +67,7 @@ extern void TraceLog(
     {                                                                                                   \
         if ((ptr) == nullptr)                                                                           \
         {                                                                                               \
-            printf("%s:%s:%d - (%s==nullptr) hr=0x%08X\n", __FILE__, __FUNCTION__, __LINE__, #ptr, hr); \
+            LogError("[ERROR]%s:%d - hr=0x%08X\n", __FUNCTION__, __LINE__, hr);                         \
             return hr;                                                                                  \
         }                                                                                               \
     }                                                                                                   \
@@ -228,6 +221,11 @@ __inline HRESULT HResultFromPnpInterfaceStatus(_In_ PNP_REPORTED_INTERFACES_STAT
         return E_UNEXPECTED;
     }
 }
+
+// Return the QPC in 100ns units.
+LONGLONG
+GetQPCInHns(
+    );
 
 #include "CameraStatConsumer.h"
 #include "CameraIotPnpDevice.h"

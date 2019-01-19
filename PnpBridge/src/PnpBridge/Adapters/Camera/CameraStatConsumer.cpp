@@ -25,20 +25,6 @@ static GUID s_CameraInterfaceCategories[] = {
     CLSID_VideoInputDeviceCategory
 };
 
-static 
-LONGLONG 
-GetSystemTimeInLongLong(
-    )
-{
-    FILETIME ft = { };
-    LONGLONG ll = 0;
-
-    GetSystemTimeAsFileTime(&ft);
-    CopyMemory(&ll, &ft, sizeof(ll));
-
-    return ll;
-}
-
 CameraStatConsumer::CameraStatConsumer(
     )
 :   m_hTrace(INVALID_PROCESSTRACE_HANDLE)
@@ -75,7 +61,7 @@ CameraStatConsumer::Initialize(
 
     if (nullptr == SessionName)
     {
-        RETURN_IF_FAILED (StringCchPrintf(m_pwzSessionName, MAX_PATH, L"CameraStatConsumer_%u_%I64d", GetCurrentProcessId(), GetSystemTimeInLongLong()));
+        RETURN_IF_FAILED (StringCchPrintf(m_pwzSessionName, MAX_PATH, L"CameraStatConsumer_%u_%I64d", GetCurrentProcessId(), MFGetSystemTime()));
     }
     else
     {

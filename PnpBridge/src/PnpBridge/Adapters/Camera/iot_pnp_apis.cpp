@@ -80,10 +80,8 @@ CameraPnpInterfaceBind(
     RETURN_IF_FAILED (p->GetFirstCamera(cameraName));
 
     interfaceId = json_object_get_string(payload->Message, "InterfaceId");
-    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, NULL, NULL, NULL);
-    if (NULL == pnpInterfaceClient) {
-        RETURN_IF_FAILED(E_UNEXPECTED)
-    }
+    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, nullptr, nullptr, nullptr);
+    RETURN_HR_IF_NULL (E_UNEXPECTED, pnpInterfaceClient);
 
     PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
 
@@ -91,16 +89,10 @@ CameraPnpInterfaceBind(
     RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapter_GetPnpInterfaceClient(Interface), cameraName.c_str()));
     RETURN_IF_FAILED (pIotPnp->StartTelemetryWorker());
 
-    if (0 == PnpAdapter_SetContext(Interface, (void*)pIotPnp.get()))
-    {
-        // Our interface context now owns the object.
-        pIotPnp.release();
-        return 0;
-    }
-    else
-    {
-        RETURN_IF_FAILED (E_UNEXPECTED);
-    }
+    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapter_SetContext(Interface, (void*)pIotPnp.get()));
+
+    // Our interface context now owns the object.
+    pIotPnp.release();
 
     return S_OK;
 }
