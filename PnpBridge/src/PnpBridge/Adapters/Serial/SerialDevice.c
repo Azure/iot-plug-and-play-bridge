@@ -788,7 +788,7 @@ void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, D
     LogInfo("Receieved descriptor response, of length %d", *length);
 }
 
-int SerialDevice_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
+int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
     if (deviceArgs == NULL) {
         return -1;
     }
@@ -825,7 +825,7 @@ int SerialDevice_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallb
     return 0;
 }
 
-int SerialDevice_StopDiscovery() {
+int SerialPnp_StopDiscovery() {
     return 0;
 }
 
@@ -911,7 +911,7 @@ static const PNP_CLIENT_READWRITE_PROPERTY_UPDATED_CALLBACK_TABLE serialProperty
 };
 
 
-int SerialDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD args) {
+int SerialPnp_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD args) {
     PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) args->Context;
     const char* interfaceId = json_object_get_string(args->Message, "InterfaceId");
 
@@ -928,7 +928,7 @@ int SerialDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_D
     return 0;
 }
 
-int SerialDevice_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
+int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpAdapter_GetContext(pnpInterface);
 
     if (NULL != deviceContext) {
@@ -944,14 +944,14 @@ int SerialDevice_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
     return 0;
 }
 
-DISCOVERY_ADAPTER ArduinoSerialDiscovery = {
-    .Identity = "arduino-serial-discovery",
-    .StartDiscovery = SerialDevice_StartDiscovery,
-    .StopDiscovery = SerialDevice_StopDiscovery
+DISCOVERY_ADAPTER SerialPnpDiscovery = {
+    .Identity = "serial-pnp-discovery",
+    .StartDiscovery = SerialPnp_StartDiscovery,
+    .StopDiscovery = SerialPnp_StopDiscovery
 };
 
 PNP_INTERFACE_MODULE SerialPnpInterface = {
-    .Identity = "arduino-serial",
-    .CreatePnpInterface = SerialDevice_CreatePnpInterface,
-    .ReleaseInterface = SerialDevice_ReleasePnpInterface
+    .Identity = "serial-pnp-interface",
+    .CreatePnpInterface = SerialPnp_CreatePnpInterface,
+    .ReleaseInterface = SerialPnp_ReleasePnpInterface
 };

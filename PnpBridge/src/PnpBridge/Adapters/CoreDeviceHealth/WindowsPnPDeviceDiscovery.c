@@ -9,7 +9,7 @@
 #include <devpkey.h>
 
 
-const char* deviceChangeMessageformat = "{ \"HardwareId\":%s, \"Identity\":\"core-device-health\"  }";
+const char* deviceChangeMessageformat = "{ \"HardwareId\":%s, \"Identity\":\"core-device-health\", \"SymbolicLink\":%s  }";
 
 PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeHandler = NULL;
 SINGLYLINKEDLIST_HANDLE g_deviceWatchers;
@@ -25,7 +25,7 @@ OnDeviceNotification(
 
     if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) {
         if (DeviceChangeHandler != NULL) {
-            char* msg;
+            char msg[512];
             PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { 0 };
             DEVPROPTYPE PropType;
             WCHAR hardwareIds[MAX_DEVICE_ID_LEN];
@@ -41,12 +41,6 @@ OnDeviceNotification(
             STRING_HANDLE asJson;
             JSON_Value* json;
             JSON_Object* jsonObject;
-
-            msg = malloc(msgLen * sizeof(char));
-            if (NULL == msg) {
-                LogError("Failed to allocate memory for PnpDeviceDiscovery change notification");
-                return -1;
-            }
 
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
 
@@ -98,7 +92,11 @@ OnDeviceNotification(
             LogInfo(msg);
 
             asJson = STRING_new_JSON(msg);
-            sprintf_s(msg, msgLen, deviceChangeMessageformat, STRING_c_str(asJson));
+
+            char msg1[512];
+            sprintf_s(msg1, msgLen, "%S", eventData->u.DeviceInterface.SymbolicLink);
+            STRING_HANDLE asJson1 = STRING_new_JSON(msg1);
+            sprintf_s(msg, msgLen, deviceChangeMessageformat, STRING_c_str(asJson), STRING_c_str(asJson1));
 
             json = json_parse_string(msg);
             jsonObject = json_value_get_object(json);
@@ -174,7 +172,7 @@ int WindowsPnp_StopDiscovery() {
 }
 
 DISCOVERY_ADAPTER WindowsPnpDeviceDiscovery = {
-    .Identity = "windows-pnp-device-discovery",
+    .Identity = "windows-pnp-discovery",
     .StartDiscovery = WindowsPnp_StartDiscovery,
     .StopDiscovery = WindowsPnp_StopDiscovery
 };

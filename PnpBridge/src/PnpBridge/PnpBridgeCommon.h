@@ -3,8 +3,6 @@
 
 #pragma once
 
-/* Shared structures and enums for iothub convenience layer and LL layer */
-
 #ifndef PNPBRIDGE_COMMON_H
 #define PNPBRIDGE_COMMON_H
 
@@ -35,4 +33,4 @@ extern "C"
 }
 #endif
 
-#endif /* IOTHUB_CLIENT_CORE_COMMON_H */
+#endif /* PNPBRIDGE_COMMON_H */
