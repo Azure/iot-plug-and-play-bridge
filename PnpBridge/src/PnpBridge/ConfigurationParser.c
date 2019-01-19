@@ -49,7 +49,7 @@ JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device) {
 }
 
 
-JSON_Object* Configuration_GetDiscoveryParametersPerDevice(JSON_Object* device) {
+JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device) {
     if (device == NULL) {
         return NULL;
     }
@@ -68,14 +68,14 @@ const char* Configuration_GetConnectionString() {
     return json_object_dotget_string(pnpBridgeParams, "ConnectionString");
 }
 
-JSON_Object* Configuration_GetDiscoveryParameters(const char* identity) {
+JSON_Object* Configuration_GetAdapterParameters(const char* identity, const char* adapterType) {
     JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
-    JSON_Object *discoveryAdapters = json_object_dotget_object(jsonObject, "DiscoveryAdapters");
-    if (NULL == discoveryAdapters) {
+    JSON_Object *adapter = json_object_dotget_object(jsonObject, adapterType);
+    if (NULL == adapter) {
         return NULL;
     }
 
-    JSON_Array* params = json_object_dotget_array(discoveryAdapters, "Parameters");
+    JSON_Array* params = json_object_dotget_array(adapter, "Parameters");
     if (NULL == params) {
         return NULL;
     }
@@ -91,6 +91,14 @@ JSON_Object* Configuration_GetDiscoveryParameters(const char* identity) {
     }
 
     return NULL;
+}
+
+JSON_Object* Configuration_GetPnpParameters(const char* identity) {
+    return Configuration_GetAdapterParameters(identity, "PnpAdapters");
+}
+
+JSON_Object* Configuration_GetDiscoveryParameters(const char* identity) {
+    return Configuration_GetAdapterParameters(identity, "DiscoveryAdapters");
 }
 
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {

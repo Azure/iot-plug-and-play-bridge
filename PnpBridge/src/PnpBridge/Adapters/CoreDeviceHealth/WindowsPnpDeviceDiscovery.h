@@ -10,7 +10,7 @@ extern "C"
 
 extern DISCOVERY_ADAPTER WindowsPnpDeviceDiscovery;
 
-extern DISCOVERY_ADAPTER ArduinoSerialDiscovery;
+extern DISCOVERY_ADAPTER SerialPnpDiscovery;
 
 #ifdef __cplusplus
 }

@@ -40,8 +40,8 @@ PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr) {
         }
 
         if (NULL != pnpAdapter->Initialize) {
-            // TODO: Extract args for the adapterMgr and pass it below
-            result = pnpAdapter->Initialize(NULL);
+            JSON_Object* initParams = Configuration_GetPnpParameters(pnpAdapter->Identity);
+            result = pnpAdapter->Initialize(initParams);
             if (PNPBRIDGE_OK != result) {
                 LogError("Failed to initialze a PnpAdapter");
                 continue;
@@ -62,14 +62,12 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
     size_t count;
 
     // Call shutdown on all interfaces
-    if (Map_GetInternals(adapter->PnpAdapterMap, &keys, &values, &count) != MAP_OK)
-    {
+    if (Map_GetInternals(adapter->PnpAdapterMap, &keys, &values, &count) != MAP_OK) {
         LogError("Map_GetInternals failed to get all pnp adapters");
     }
     else
     {
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             int index = values[i][0];
             PPNP_INTERFACE_MODULE  pnpAdapter = INTERFACE_MANIFEST[index];
             if (NULL != pnpAdapter->Shutdown) {
@@ -122,8 +120,6 @@ PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapt
     pnpAdapter->CreatePnpInterface(pnpInterface, pnpDeviceClientHandle, DeviceChangePayload);
 
     *InterfaceClient = pnpInterface->Interface;
-    
-    //*InterfaceClient = (PNP_INTERFACE_CLIENT_HANDLE *) pnpInterface;
 
     return 0;
 }

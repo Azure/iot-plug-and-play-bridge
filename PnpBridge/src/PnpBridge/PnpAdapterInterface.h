@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#pragma once
+#ifndef PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
+#define PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
 
 #ifdef __cplusplus
 extern "C"
@@ -123,3 +124,5 @@ typedef struct PNP_INTERFACE_MODULE {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* PNPBRIDGE_PNP_ADAPTER_INTERFACE_H */

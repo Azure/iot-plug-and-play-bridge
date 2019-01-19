@@ -11,7 +11,7 @@ DISCOVERY_ADAPTER discoveryInterface = { 0 };
 
 PDISCOVERY_ADAPTER DISCOVERY_MANIFEST[] = {
     &WindowsPnpDeviceDiscovery,
-    &ArduinoSerialDiscovery
+    &SerialPnpDiscovery
 };
 
 void DiscoveryAdapterChangeHandler(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
@@ -55,7 +55,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
 
             // For this Identity check if there is any device
             // TODO: Create an array of device
-            JSON_Object* params = Configuration_GetDiscoveryParametersPerDevice(device);
+            JSON_Object* params = Configuration_GetDiscoveryParametersForDevice(device);
             if (NULL != params) {
                 const char* deviceFormatId = json_object_get_string(params, "Identity");
                 if (strcmp(deviceFormatId, discoveryInterface->Identity) == 0) {
