@@ -132,38 +132,33 @@ CameraStatConsumer::Shutdown(
 }
 
 HRESULT 
-CameraStatConsumer::GetStats(
-    _Inout_ FSStatisticsEntry& stats, 
-    _In_opt_z_ LPCWSTR SymbolicName, 
-    _Inout_updates_to_opt_(cchReceivedSymName,*pcchWritten) LPWSTR pwzReceivedSymName,
-    _In_ ULONG cchReceivedSymName,
-    _Out_opt_ ULONG* pcchWritten
+CameraStatConsumer::PreStats(
+    _Inout_ FSStatisticsEntry& stats_pre, 
+    _Out_ LONGLONG* pllPreTs
     )
 {
     AutoLock lock(&m_lock);
 
-    // For now, we don't filter on symbolic name so we can just return S_OK.
-    // Once we start poking into specific symbolic names, we can return another
-    // error code if we don't find the stats for the device in question.
+    RETURN_HR_IF_NULL (E_POINTER, pllPreTs);
+    *pllPreTs = MFGetSystemTime();
 
-    stats = m_stats;
+    stats_pre = m_stats;
 
-    if (nullptr != pcchWritten)
-    {
-        *pcchWritten = (ULONG)(m_SymbolicLinkNameReceived.size() + 1);
-    }
-    if (pwzReceivedSymName != nullptr && cchReceivedSymName != 0)
-    {
-        if (cchReceivedSymName <= m_SymbolicLinkNameReceived.size())
-        {
-            // If the out param is null, we have to return an error.
-            // Otherwise, we set the buffer size needed above so we
-            // can return S_OK, indicating we have data to provide.
-            RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), pcchWritten);
-            return S_OK;
-        }
-        RETURN_IF_FAILED (StringCchCopy(pwzReceivedSymName, cchReceivedSymName, m_SymbolicLinkNameReceived.c_str()));
-    }
+    return S_OK;
+}
+
+HRESULT 
+CameraStatConsumer::PostStats(
+    _Inout_ FSStatisticsEntry& stats_post, 
+    _Out_ LONGLONG* pllPostTs
+    )
+{
+    AutoLock lock(&m_lock);
+
+    RETURN_HR_IF_NULL (E_POINTER, pllPostTs);
+    *pllPostTs = MFGetSystemTime();
+
+    stats_post = m_stats;
 
     return S_OK;
 }
@@ -268,12 +263,12 @@ CameraStatConsumer::AddStat(
             // based on different frame rates.  For now, we're assuming
             // the frame rate won't change across sessions.
             m_stats.m_flags = pstats->m_flags;
-            m_stats.m_request += pstats->m_request;
-            m_stats.m_input += pstats->m_input;
-            m_stats.m_output += pstats->m_output;
-            m_stats.m_dropped += pstats->m_dropped;
-            m_stats.m_delayrmsacc += pstats->m_delayrmsacc;
-            m_stats.m_delayrmscounter += pstats->m_delayrmscounter;
+            m_stats.m_request = pstats->m_request;
+            m_stats.m_input = pstats->m_input;
+            m_stats.m_output = pstats->m_output;
+            m_stats.m_dropped = pstats->m_dropped;
+            m_stats.m_delayrmsacc = pstats->m_delayrmsacc;
+            m_stats.m_delayrmscounter = pstats->m_delayrmscounter;
             m_stats.m_expectedframedelay = pstats->m_expectedframedelay;
 
             m_SymbolicLinkNameReceived = (DeviceSymbolicName == nullptr ? L"nullptr" : DeviceSymbolicName);

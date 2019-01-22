@@ -25,7 +25,7 @@ public:
     virtual ~CameraPnpDiscovery();
 
     /// Public methods.
-    HRESULT                             InitializePnpDiscovery(_In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE pfnCallback, _In_ void* pvContext);
+    HRESULT                             InitializePnpDiscovery(_In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE pfnCallback, _In_ JSON_Object* deviceArgs, _In_ JSON_Object* adapterArgs);
     void                                Shutdown();
     HRESULT                             GetFirstCamera(_Out_ std::wstring& cameraName);
 
@@ -65,6 +65,5 @@ protected:
 
     std::vector<HCMNOTIFICATION>        m_vecWatcherHandles;
     PNPBRIDGE_NOTIFY_DEVICE_CHANGE      m_pfnCallback;
-    void*                               m_pvCallbackContext;
 };
 

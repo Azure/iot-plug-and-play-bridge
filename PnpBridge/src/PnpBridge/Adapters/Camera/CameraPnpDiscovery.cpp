@@ -19,6 +19,7 @@ static GUID s_CameraInterfaceCategories[] = {
 CameraPnpDiscovery::CameraPnpDiscovery(
     )
 :   m_fShutdown(false)
+,   m_pfnCallback(nullptr)
 {
 
 }
@@ -32,41 +33,70 @@ CameraPnpDiscovery::~CameraPnpDiscovery(
 HRESULT 
 CameraPnpDiscovery::InitializePnpDiscovery(
     _In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE pfnCallback,
-    _In_opt_ void* pvContext
+    _In_ JSON_Object* deviceArgs, 
+    _In_ JSON_Object* adapterArgs
     )
 {
-    AutoLock lock(&m_lock);
+    bool fInvokeCallback = false;
 
-    RETURN_IF_FAILED (CheckShutdown());
-
-    RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS), m_vecWatcherHandles.size() != 0);
-
-    for (ULONG i = 0; i < _countof(s_CameraInterfaceCategories); i++)
     {
-        CONFIGRET           cr = CR_SUCCESS;
-        CM_NOTIFY_FILTER    cmFilter = { };
-        HCMNOTIFICATION     hNotification = nullptr;
+        AutoLock lock(&m_lock);
 
-        cmFilter.cbSize                         = sizeof(cmFilter);
-        cmFilter.Flags                          = 0;
-        cmFilter.FilterType                     = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
-        cmFilter.Reserved                       = 0;
-        cmFilter.u.DeviceInterface.ClassGuid    = s_CameraInterfaceCategories[i];
+        RETURN_IF_FAILED (CheckShutdown());
 
-        cr = CM_Register_Notification(&cmFilter, (PVOID)this, CameraPnpDiscovery::PcmNotifyCallback, &hNotification);
-        RETURN_HR_IF (HRESULT_FROM_WIN32(CM_MapCrToWin32Err(cr, ERROR_INVALID_DATA)), cr != CR_SUCCESS);
-        m_vecWatcherHandles.push_back(hNotification);
+        // For now, we don't use these parameters.
+        UNREFERENCED_PARAMETER (deviceArgs);
+        UNREFERENCED_PARAMETER (adapterArgs);
+
+        RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS), m_vecWatcherHandles.size() != 0);
+
+        for (ULONG i = 0; i < _countof(s_CameraInterfaceCategories); i++)
+        {
+            CONFIGRET           cr = CR_SUCCESS;
+            CM_NOTIFY_FILTER    cmFilter = { };
+            HCMNOTIFICATION     hNotification = nullptr;
+
+            cmFilter.cbSize                         = sizeof(cmFilter);
+            cmFilter.Flags                          = 0;
+            cmFilter.FilterType                     = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
+            cmFilter.Reserved                       = 0;
+            cmFilter.u.DeviceInterface.ClassGuid    = s_CameraInterfaceCategories[i];
+
+            cr = CM_Register_Notification(&cmFilter, (PVOID)this, CameraPnpDiscovery::PcmNotifyCallback, &hNotification);
+            RETURN_HR_IF (HRESULT_FROM_WIN32(CM_MapCrToWin32Err(cr, ERROR_INVALID_DATA)), cr != CR_SUCCESS);
+            m_vecWatcherHandles.push_back(hNotification);
+        }
+
+        // Once we've registered for the callbacks, go ahead and enumerate
+        m_cameraUniqueIds.clear();
+        for (ULONG i = 0; i < _countof(s_CameraInterfaceCategories); i++)
+        {
+            RETURN_IF_FAILED (EnumerateCameras(s_CameraInterfaceCategories[i]));
+        }
+
+        m_pfnCallback = pfnCallback;
+        fInvokeCallback = (m_cameraUniqueIds.size() > 0);
     }
 
-    // Once we've registered for the callbacks, go ahead and enumerate
-    m_cameraUniqueIds.clear();
-    for (ULONG i = 0; i < _countof(s_CameraInterfaceCategories); i++)
+    if (fInvokeCallback && pfnCallback != nullptr)
     {
-        RETURN_IF_FAILED (EnumerateCameras(s_CameraInterfaceCategories[i]));
-    }
+        PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { };
+        std::unique_ptr<JsonWrapper>    pjson = std::make_unique<JsonWrapper>();
 
-    m_pfnCallback = pfnCallback;
-    m_pvCallbackContext = pvContext;
+        RETURN_IF_FAILED (pjson->Initialize());
+        RETURN_IF_FAILED (pjson->AddFormatString("Identity", "camera-health-monitor"));
+        RETURN_IF_FAILED (pjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
+
+        payload.Message     = pjson->GetObject();
+        payload.Context     = this;
+        payload.ChangeType  = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
+
+        // We didn't have a camera, and we just got one (or more).
+        pfnCallback(&payload);
+
+        // $$LEAKLEAK!!!
+        pjson->Detach();
+    }
 
     return S_OK;
 }
@@ -159,6 +189,7 @@ CameraPnpDiscovery::EnumerateCameras(
         bool fDupe = false;
         CameraUniqueIdPtr uniqueId;
 
+        uniqueId = std::make_unique<CameraUniqueId>();
         RETURN_IF_FAILED (CameraPnpDiscovery::MakeUniqueId(pwz, uniqueId->m_UniqueId, uniqueId->m_HWId));
 
         // Filter out duplicates.
@@ -201,10 +232,15 @@ CameraPnpDiscovery::OnWatcherNotification(
 {
     CameraUniqueIdPtrList           cameraUniqueIds;
     PNPBRIDGE_NOTIFY_DEVICE_CHANGE  pfn = nullptr;
-    void*                           pv = nullptr;
 
-    RETURN_HR_IF_NULL (E_INVALIDARG, eventData);
-    RETURN_HR_IF (E_INVALIDARG, eventDataSize == 0);
+    // EventData may be empty.  This can happen if we're forcing ourselves
+    // to check the Windows PnP state since we may have been started when
+    // the devices we care about were already installed.
+    if ((eventData == nullptr && eventDataSize != 0) ||
+        (eventData != nullptr && eventDataSize == 0))
+    {
+        RETURN_IF_FAILED (E_INVALIDARG);
+    }
 
     {
         AutoLock                lock(&m_lock);
@@ -212,7 +248,6 @@ CameraPnpDiscovery::OnWatcherNotification(
         RETURN_IF_FAILED (CheckShutdown());
 
         pfn = m_pfnCallback;
-        pv = m_pvCallbackContext;
 
         // Steal the old list, so the EnumerateCameras can rebuild
         // the new list.  This will allow us to compare the two
@@ -237,11 +272,22 @@ CameraPnpDiscovery::OnWatcherNotification(
     if (pfn)
     {
         PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { };
+        std::unique_ptr<JsonWrapper>    pjson = std::make_unique<JsonWrapper>();
 
+        RETURN_IF_FAILED (pjson->Initialize());
+        RETURN_IF_FAILED (pjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
+
+        payload.Message = pjson->GetObject();
         payload.Context = this;
-        payload.Message = nullptr;
-
-        if (cameraUniqueIds.size() == 0 && m_cameraUniqueIds.size() > 0)
+        
+        if (cameraUniqueIds.size() == 0 && m_cameraUniqueIds.size() == 0)
+        {
+            // We have no camera, we may have been called as a part of
+            // our initialization without any camera installed.  This is
+            // a no-op.
+            return S_OK;
+        }
+        else if (cameraUniqueIds.size() == 0 && m_cameraUniqueIds.size() > 0)
         {
             // We didn't have a camera, and we just got one (or more).
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;

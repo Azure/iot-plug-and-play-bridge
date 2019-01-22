@@ -227,6 +227,7 @@ LONGLONG
 GetQPCInHns(
     );
 
+#include "JsonWrapper.h"
 #include "CameraStatConsumer.h"
 #include "CameraIotPnpDevice.h"
 #include "CameraPnpDiscovery.h"

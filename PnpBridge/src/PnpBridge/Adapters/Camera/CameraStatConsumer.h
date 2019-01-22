@@ -32,11 +32,8 @@ public:
     HRESULT                                             Start();
     HRESULT                                             Stop();
     void                                                Shutdown();
-    HRESULT                                             GetStats(_Inout_ FSStatisticsEntry& stats, 
-                                                                 _In_opt_z_ LPCWSTR SymbolicName, 
-                                                                 _Inout_updates_to_opt_(cchReceivedSymName,*pcchWritten) LPWSTR pwzReceivedSymName,
-                                                                 _In_ ULONG cchReceivedSymName,
-                                                                 _Out_opt_ ULONG* pcchWritten);
+    HRESULT                                             PreStats(_Inout_ FSStatisticsEntry& stats_pre, _Out_ LONGLONG* llPreTs);
+    HRESULT                                             PostStats(_Inout_ FSStatisticsEntry& stats_post, _Out_ LONGLONG* llPostTs);
 
 protected:
 
