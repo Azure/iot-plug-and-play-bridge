@@ -6,9 +6,11 @@
 #include "PnpAdapterInterface.h"
 #include "PnpAdapterManager.h"
 #include "CoreDeviceHealth.h"
+#include "Adapters/Camera/CameraIotPnpAPIs.h"
 
 // TODO: Decide where the extern are present for CoreDeviceHealth
 PPNP_INTERFACE_MODULE INTERFACE_MANIFEST[] = {
+    //&CameraPnpInterface,
     &CoreDeviceHealthInterface,
     &SerialPnpInterface
 };

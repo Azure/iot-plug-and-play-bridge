@@ -6,10 +6,12 @@
 #include "DiscoveryManager.h"
 #include "DiscoveryAdapterInterface.h"
 #include "WindowsPnpDeviceDiscovery.h"
+#include "Adapters/Camera/CameraIotPnpAPIs.h"
 
 DISCOVERY_ADAPTER discoveryInterface = { 0 };
 
 PDISCOVERY_ADAPTER DISCOVERY_MANIFEST[] = {
+    //&CameraPnpAdapter,
     &WindowsPnpDeviceDiscovery,
     &SerialPnpDiscovery
 };
