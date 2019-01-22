@@ -25,14 +25,10 @@ public:
     virtual HRESULT             ReportTelemetry(_In_z_ const char* telemetryName,
                                                 _In_reads_bytes_(messageDataLen) const unsigned char* messageData,
                                                 _In_ size_t messageDataLen);
-    virtual HRESULT             LoopTelemetry(_In_ DWORD dwMilliseconds = 5500);
+    virtual HRESULT             LoopTelemetry(_In_ DWORD dwMilliseconds = 15000);
 
     static void __cdecl         CameraIotPnpDevice_PropertyCallback(_In_ PNP_REPORTED_PROPERTY_STATUS pnpReportedStatus, _In_opt_ void* userContextCallback);
     static void __cdecl         CameraIotPnpDevice_TelemetryCallback(_In_ PNP_SEND_TELEMETRY_STATUS pnpTelemetryStatus, _In_opt_ void* userContextCallback);
-    static HRESULT              JsonSetJsonValueAsString(_Inout_ JSON_Object* json_obj, _In_z_ LPCSTR name, _In_ UINT32 val);
-    static HRESULT              JsonSetJsonValueAsString(_Inout_ JSON_Object* json_obj, _In_z_ LPCSTR name, _In_ LONGLONG val);
-    static HRESULT              JsonSetJsonValueAsString(_Inout_ JSON_Object* json_obj, _In_z_ LPCSTR name, _In_ double val);
-    static HRESULT              JsonSetJsonHresultAsString(_Inout_ JSON_Object* json_obj, _In_z_ LPCSTR name, _In_ HRESULT hr);
 
 protected:
     static DWORD WINAPI                         TelemetryWorkerThreadProc(_In_opt_ PVOID pv);

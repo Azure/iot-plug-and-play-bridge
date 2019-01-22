@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "CameraIotPnpDevice.h"
 
-#define MAX_32BIT_DECIMAL_DIGIT     11          // maximum number of digits possible for a 32-bit value in decimal (plus null terminator).
-#define MAX_64BIT_DECIMAL_DIGIT     21
-#define MAX_32BIT_HEX_DIGIT         11          // Max hex digit is 8, but we need "0x" and null terminator.
 #define ONE_SECOND_IN_100HNS        10000000    // 10,000,000 100hns in 1 second.
 #define ONE_MILLISECOND_IN_100HNS   10000       // 10,000 100hns in 1 millisecond.
 
@@ -171,19 +168,30 @@ HRESULT
 CameraIotPnpDevice::LoopTelemetry(
     _In_ DWORD dwMilliseconds)
 {
-    DWORD               dwSleepDuration = (dwMilliseconds > 30000 ? 30000 : dwMilliseconds);
     bool                fShutdown = false;
-    FSStatisticsEntry   old_stats = { };
 
     RETURN_IF_FAILED (m_cameraStats->Start());
 
     do
     {
-        FSStatisticsEntry   stats = { };
+        FSStatisticsEntry   stats_pre = { };
+        FSStatisticsEntry   stats_post = { };
         DWORD               dwWait = 0;
-        LONGLONG            llStart = MFGetSystemTime();
+        LONGLONG            llStart = 0;
         LONGLONG            llEnd = 0;
+        DWORD               dwSleepDuration = (dwMilliseconds > 30000 ? 30000 : dwMilliseconds);
 
+        // Take a snap shot of the stats immedately before we wait for
+        // the pipeline.
+        // NOTE:  If the prestat return 0 output/0 dropped, that means
+        // the pipeline hasn't been primed.  We should avoid publishing
+        // this information.  So for that, we want to skip reporting 
+        // telemetry.
+        RETURN_IF_FAILED (m_cameraStats->PreStats(stats_pre, &llStart));
+        if ((stats_pre.m_dropped + stats_pre.m_output) == 0)
+        {
+            dwSleepDuration = 1000;
+        }
         dwWait = WaitForSingleObject(m_hShutdownEvent, dwSleepDuration);
         switch (dwWait)
         {
@@ -193,7 +201,10 @@ CameraIotPnpDevice::LoopTelemetry(
             break;
         case WAIT_TIMEOUT:
             // Just keep looping.
-            llEnd = MFGetSystemTime();
+            if ((stats_pre.m_dropped + stats_pre.m_output) > 0)
+            {
+                RETURN_IF_FAILED (m_cameraStats->PostStats(stats_post, &llEnd));
+            }
             break;
         case WAIT_ABANDONED:
             RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_WAIT_NO_CHILDREN));
@@ -203,64 +214,55 @@ CameraIotPnpDevice::LoopTelemetry(
             RETURN_IF_FAILED (E_UNEXPECTED);
         }
 
-        if (!fShutdown)
+        if (!fShutdown && ((stats_pre.m_dropped + stats_pre.m_output) > 0))
         {
-            JSON_Value*             json_val = nullptr;
-            JSON_Object*            json_obj = nullptr;
-            LONGLONG                llDelta = (llEnd - llStart);
-            double                  dblActualFps = 0.0;
-            double                  dblExpectedFps = 0.0;
-            std::unique_ptr<char[]> psz;
-            size_t                  cch = 0;
+            LONGLONG                        llDelta = (llEnd - llStart);
+            LONGLONG                        llTotalFrames = 0;
+            double                          dblActualFps = 0.0;
+            double                          dblExpectedFps = 0.0;
+            size_t                          cch = 0;
+            std::unique_ptr<JsonWrapper>    pjson;
 
-            RETURN_IF_FAILED (m_cameraStats->GetStats(stats, nullptr, nullptr, 0, nullptr));
-            LogInfo("stats[strmid=%u,source=%u,flags=0x%X,request=%I64d,input=%I64d,output=%I64d,dropped=%I64d,avgdelay=%f,status=0x%08X]",
-                    stats.m_streamid,
-                    stats.m_statsource,
-                    stats.m_flags,
-                    stats.m_request,
-                    stats.m_input,
-                    stats.m_output,
-                    stats.m_dropped,
-                    (double)(stats.m_delayrmscounter == 0 ? 0 : sqrt(stats.m_delayrmsacc / stats.m_delayrmscounter)),
-                    stats.m_hrstatus);
+            LogInfo("stats_pre[strmid=%u,source=%u,flags=0x%X,request=%I64d,input=%I64d,output=%I64d,dropped=%I64d,avgdelay=%f,status=0x%08X]",
+                    stats_pre.m_streamid,
+                    stats_pre.m_statsource,
+                    stats_pre.m_flags,
+                    stats_pre.m_request,
+                    stats_pre.m_input,
+                    stats_pre.m_output,
+                    stats_pre.m_dropped,
+                    (double)(stats_pre.m_delayrmscounter == 0 ? 0 : sqrt(stats_pre.m_delayrmsacc / stats_pre.m_delayrmscounter)),
+                    stats_pre.m_hrstatus);
+            LogInfo("stats_post[strmid=%u,source=%u,flags=0x%X,request=%I64d,input=%I64d,output=%I64d,dropped=%I64d,avgdelay=%f,status=0x%08X]",
+                    stats_post.m_streamid,
+                    stats_post.m_statsource,
+                    stats_post.m_flags,
+                    stats_post.m_request,
+                    stats_post.m_input,
+                    stats_post.m_output,
+                    stats_post.m_dropped,
+                    (double)(stats_post.m_delayrmscounter == 0 ? 0 : sqrt(stats_post.m_delayrmsacc / stats_post.m_delayrmscounter)),
+                    stats_post.m_hrstatus);
 
             if (llDelta != 0)
             {
-                if ((old_stats.m_output == 0 && old_stats.m_dropped == 0))
-                {
-                    dblActualFps = ((double)((stats.m_output + stats.m_dropped) * ONE_SECOND_IN_100HNS) / llDelta);
-                }
-                else
-                {
-                    dblActualFps = ((double)(((stats.m_output + stats.m_dropped) - (old_stats.m_output + old_stats.m_dropped)) * ONE_SECOND_IN_100HNS) / llDelta);
-                }
+                llTotalFrames = ((stats_post.m_dropped + stats_post.m_output) - (stats_pre.m_dropped + stats_pre.m_output));
+                dblActualFps = ((double)(llTotalFrames * ONE_SECOND_IN_100HNS) / llDelta);
             }
-            if (stats.m_expectedframedelay > 0)
+            if (stats_post.m_expectedframedelay > 0)
             {
-                dblExpectedFps = (double)(ONE_SECOND_IN_100HNS / stats.m_expectedframedelay);
+                dblExpectedFps = (double)(ONE_SECOND_IN_100HNS / stats_post.m_expectedframedelay);
             }
-            old_stats = stats;
+            LogInfo ("total_frames=%I64d (delta=%I64d), fps=%.3f(%.3f)", llTotalFrames, llDelta, dblActualFps, dblExpectedFps);
 
-            json_val = json_value_init_object();
-            RETURN_HR_IF_NULL (E_OUTOFMEMORY, json_val);
-            json_obj = json_value_get_object(json_val);
-            RETURN_HR_IF_NULL (E_UNEXPECTED, json_obj);
-
-            RETURN_IF_FAILED (CameraIotPnpDevice::JsonSetJsonValueAsString(json_obj, "streamId", stats.m_streamid));
-            RETURN_IF_FAILED (CameraIotPnpDevice::JsonSetJsonValueAsString(json_obj, "frames", stats.m_output));
-            RETURN_IF_FAILED (CameraIotPnpDevice::JsonSetJsonValueAsString(json_obj, "dropped", stats.m_dropped));
-            RETURN_IF_FAILED (CameraIotPnpDevice::JsonSetJsonValueAsString(json_obj, "expected_framerate", dblExpectedFps));
-            RETURN_IF_FAILED (CameraIotPnpDevice::JsonSetJsonValueAsString(json_obj, "actual_framerate", dblActualFps));
-
-            cch = json_serialization_size(json_val);
-            if (cch > 0)
-            {
-                psz = std::make_unique<char[]>(cch + 1);
-                RETURN_HR_IF (E_UNEXPECTED, JSONFailure == json_serialize_to_buffer(json_val, psz.get(), cch));
-                psz.get()[cch] = '\0';
-                RETURN_IF_FAILED (ReportTelemetry("camera_health", (const unsigned char*)psz.get(), cch));
-            }
+            pjson = std::make_unique<JsonWrapper>();
+            RETURN_IF_FAILED (pjson->Initialize());
+            RETURN_IF_FAILED (pjson->AddValueAsString("streamId", stats_post.m_streamid));
+            RETURN_IF_FAILED (pjson->AddValueAsString("frames", stats_post.m_output));
+            RETURN_IF_FAILED (pjson->AddValueAsString("dropped", stats_post.m_dropped));
+            RETURN_IF_FAILED (pjson->AddValueAsString("expected_framerate", dblExpectedFps));
+            RETURN_IF_FAILED (pjson->AddValueAsString("actual_framerate", dblActualFps));
+            RETURN_IF_FAILED (ReportTelemetry("camera_health", (const unsigned char *)pjson->GetMessage(), pjson->GetSize()));
         }
     } while (!fShutdown);
 
@@ -283,114 +285,6 @@ CameraIotPnpDevice::CameraIotPnpDevice_TelemetryCallback(
     _In_opt_ void* userContextCallback)
 {
     LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpTelemetryStatus, userContextCallback);
-}
-
-HRESULT
-CameraIotPnpDevice::JsonSetJsonValueAsString(
-    _Inout_ JSON_Object* json_obj, 
-    _In_z_ LPCSTR name, 
-    _In_ UINT32 val
-    )
-{
-    char sz[MAX_32BIT_DECIMAL_DIGIT] = { };
-
-    RETURN_HR_IF_NULL (E_INVALIDARG, json_obj);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
-
-    RETURN_IF_FAILED (StringCchPrintfA(sz, _countof(sz), "%u", val));
-
-    // json_object_set_string returns 0 on success and -1 on
-    // failure.  Failure for this can be either via invalid
-    // arg (i.e., JSON_Object is invalid) or we ran out of 
-    // memory.  We'll assume, since this is only called by our 
-    // object and the methods are protected, that the parameters
-    // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(json_obj, name, sz));
-
-    return S_OK;
-}
-
-HRESULT
-CameraIotPnpDevice::JsonSetJsonValueAsString(
-    _Inout_ JSON_Object* json_obj, 
-    _In_z_ LPCSTR name, 
-    _In_ LONGLONG val
-    )
-{
-    char sz[MAX_64BIT_DECIMAL_DIGIT] = { };
-
-    RETURN_HR_IF_NULL (E_INVALIDARG, json_obj);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
-
-    RETURN_IF_FAILED (StringCchPrintfA(sz, _countof(sz), "%I64d", val));
-
-    // json_object_set_string returns 0 on success and -1 on
-    // failure.  Failure for this can be either via invalid
-    // arg (i.e., JSON_Object is invalid) or we ran out of 
-    // memory.  We'll assume, since this is only called by our 
-    // object and the methods are protected, that the parameters
-    // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(json_obj, name, sz));
-
-    return S_OK;
-}
-
-HRESULT
-CameraIotPnpDevice::JsonSetJsonValueAsString(
-    _Inout_ JSON_Object* json_obj, 
-    _In_z_ LPCSTR name, 
-    _In_ double val
-    )
-{
-    HRESULT hr = S_OK;
-    char    sz[MAX_64BIT_DECIMAL_DIGIT] = { };
-
-    RETURN_HR_IF_NULL (E_INVALIDARG, json_obj);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
-
-    hr = StringCchPrintfA(sz, _countof(sz), "%.3f", val);
-    if (hr == S_OK || hr == STRSAFE_E_INSUFFICIENT_BUFFER)
-    {
-        // If we successfully converted the string or if
-        // we truncated the string, assume we're fine.
-        hr = S_OK;
-    }
-    RETURN_IF_FAILED (hr);
-
-    // json_object_set_string returns 0 on success and -1 on
-    // failure.  Failure for this can be either via invalid
-    // arg (i.e., JSON_Object is invalid) or we ran out of 
-    // memory.  We'll assume, since this is only called by our 
-    // object and the methods are protected, that the parameters
-    // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(json_obj, name, sz));
-
-    return S_OK;
-}
-
-HRESULT
-CameraIotPnpDevice::JsonSetJsonHresultAsString(
-    _Inout_ JSON_Object* json_obj, 
-    _In_z_ LPCSTR name, 
-    _In_ HRESULT hr
-    )
-{
-    char sz[MAX_32BIT_HEX_DIGIT] = { };
-
-    RETURN_HR_IF_NULL (E_INVALIDARG, json_obj);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
-
-    RETURN_IF_FAILED (StringCchPrintfA(sz, _countof(sz), "0x%08X", hr));
-
-    // json_object_set_string returns 0 on success and -1 on
-    // failure.  Failure for this can be either via invalid
-    // arg (i.e., JSON_Object is invalid) or we ran out of 
-    // memory.  We'll assume, since this is only called by our 
-    // object and the methods are protected, that the parameters
-    // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(json_obj, name, sz));
-
-    return S_OK;
 }
 
 DWORD 
