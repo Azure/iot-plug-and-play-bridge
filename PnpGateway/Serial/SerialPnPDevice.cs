@@ -156,12 +156,12 @@ namespace PnpGateway.Serial
             }
 
             // Now query all properties to get PnP the updated value
-            foreach (var property in this.Interfaces[0].Properties)
-            {
-                var rxPayload = await TxNameDataAndRxResponse(0, property.Name, 0x07, null);
-                var stval = BinarySchemaToString(property.DataSchema, rxPayload);
-                this.PnpInterface.WriteProperty(property.Name, stval);
-            }
+            //foreach (var property in this.Interfaces[0].Properties)
+            //{
+            //    var rxPayload = await TxNameDataAndRxResponse(0, property.Name, 0x07, null);
+            //    var stval = BinarySchemaToString(property.DataSchema, rxPayload);
+            //    this.PnpInterface.WriteProperty(property.Name, stval);
+            //}
 
             // Set operational now we understand the different data types
             this.Operational = true;
@@ -402,7 +402,7 @@ namespace PnpGateway.Serial
 
                 var rxstrdata = BinarySchemaToString(ev.DataSchema, rxData);
 
-                //Console.WriteLine("Got new event " + event_name + " with data size " + rxDataSize + " schema " + ev.DataSchema.ToString () + " " + rxstrdata);
+                Console.WriteLine("-> Event " + event_name + " with data size " + rxDataSize + " schema " + ev.DataSchema.ToString () + " " + rxstrdata);
 
                 if (DeviceClient != null)
                 {

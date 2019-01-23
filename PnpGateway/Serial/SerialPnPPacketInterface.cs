@@ -89,7 +89,7 @@ namespace PnpGateway.Serial
             //{
             //    Console.Write(x.ToString() + " ");
             //}
-            //Console.Write("\n");
+           // Console.Write("\n");
 
             // Transmit packet on serial bus
             Port.Write(TxPacket, 0, TxPacket.Length);
@@ -102,12 +102,16 @@ namespace PnpGateway.Serial
             while (Port.BytesToRead > 0)
             {
                 inb = Port.ReadByte();
+
+                //if (inb == 0x5A)
+                //{
+                    //Console.Out.Write("\n");
+                //}
                 //Console.Out.Write(inb.ToString() + " ");
 
                 // Check for a start of packet byte
                 if (inb == 0x5A)
                 {
-                    //Console.Out.Write("\n");
                     RxBufferIndex = 0;
                     RxEscaped = false;
                     continue;

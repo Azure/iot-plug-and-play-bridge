@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\PnpGateway\Serial\SerialPnPDevice.cs" Link="SerialPnPDevice.cs" />
-    <Compile Include="..\PnpGateway\Serial\SerialPnPPacketInterface.cs" Link="SerialPnPPacketInterface.cs" />
+    <Compile Include="..\..\PnpGateway\Serial\SerialPnPDevice.cs" Link="SerialPnPDevice.cs" />
+    <Compile Include="..\..\PnpGateway\Serial\SerialPnPPacketInterface.cs" Link="SerialPnPPacketInterface.cs" />
   </ItemGroup>
 
   <ItemGroup>
