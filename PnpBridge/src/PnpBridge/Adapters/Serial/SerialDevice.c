@@ -16,8 +16,6 @@
 #include <Windows.h>
 #include <cfgmgr32.h>
 
-PNPBRIDGE_NOTIFY_DEVICE_CHANGE SerialDeviceChangeCallback = NULL;
-
 #include <ctype.h>
 
 typedef struct SerialPnPPacketHeader
@@ -89,9 +87,7 @@ typedef struct _SERIAL_DEVICE_CONTEXT {
     bool RxEscaped;
 } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
 
-void Start() {
-    LogInfo("Opening serial port");
-}
+PNPBRIDGE_NOTIFY_DEVICE_CHANGE SerialDeviceChangeCallback = NULL;
 
 void RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
 void TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
@@ -115,7 +111,7 @@ int UartReceiver(void* context)
         byte* desc = NULL;
         DWORD length;
 
-        RxPacket(deviceContext->hSerial, &desc, &length, 0x00);
+        RxPacket(deviceContext, &desc, &length, 0x00);
         UnsolicitedPacket(deviceContext, desc, length);
 
         if (desc != NULL) {
@@ -794,11 +790,11 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
     }
 
     const char* port = (const char*) json_object_dotget_string(deviceArgs, "ComPort");
-    const char* useComPortParamStr = (const char*)json_object_dotget_string(deviceArgs, "UseComDeviceInterface");
-    bool useComPortParam = false;
+    const char* useComDevInterfaceStr = (const char*)json_object_dotget_string(deviceArgs, "UseComDeviceInterface");
+    bool useComPortParam = true;
 
-    if ((NULL != useComPortParamStr) && (0 == stricmp(useComPortParamStr, "true"))) {
-        useComPortParam = true;
+    if ((NULL != useComDevInterfaceStr) && (0 == stricmp(useComDevInterfaceStr, "true"))) {
+        useComPortParam = false;
     }
 
     SerialDeviceChangeCallback = DeviceChangeCallback;
