@@ -20,6 +20,11 @@ bool g_Shutdown = false;
 //const char* connectionString = "HostName=iot-pnp-hub1.azure-devices.net;DeviceId=win-gateway;SharedAccessKey=GfbYy7e2PikTf2qHyabvEDBaJB5S4T+H+b9TbLsXfns=";
 //const char* connectionString = "HostName=saas-iothub-1529564b-8f58-4871-b721-fe9459308cb1.azure-devices.net;DeviceId=956da476-8b3c-41ce-b405-d2d32bcf5e79;SharedAccessKey=sQcfPeDCZGEJWPI3M3SyB8pD60TNdOw10oFKuv5FBio=";
 
+typedef struct _DAG_PNP_INTERFACE_TAG {
+    PNP_INTERFACE_CLIENT_HANDLE Interface;
+    char* InterfaceName;
+} PNPBRIDGE_INTERFACE_TAG, *PPNPBRIDGE_INTERFACE_TAG;
+
 // InitializeIotHubDeviceHandle initializes underlying IoTHub client, creates a device handle with the specified connection string,
 // and sets some options on this handle prior to beginning.
 IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle(const char* connectionString)
@@ -65,6 +70,12 @@ IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle(const char* connectionString)
 
 void PnpBridge_CoreCleanup() {
     if (g_PnpBridge->publishedInterfaces) {
+        LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
+        while (interfaceItem != NULL) {
+            PPNPBRIDGE_INTERFACE_TAG interface = (PPNPBRIDGE_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceItem);
+            free(interface->Interface);
+            interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
+        }
         singlylinkedlist_destroy(g_PnpBridge->publishedInterfaces);
     }
     if (g_PnpBridge->dispatchLock) {
@@ -189,11 +200,6 @@ void appPnpInterfacesRegistered(PNP_REPORTED_INTERFACES_STATUS pnpInterfaceStatu
     *appPnpRegistrationStatus = (pnpInterfaceStatus == PNP_REPORTED_INTERFACES_OK) ? APP_PNP_REGISTRATION_SUCCEEDED : APP_PNP_REGISTRATION_FAILED;
 }
 
-typedef struct _DAG_PNP_INTERFACE_TAG {
-    PNP_INTERFACE_CLIENT_HANDLE Interface;
-    char* InterfaceName;
-} PNPBRIDGE_INTERFACE_TAG, *PPNPBRIDGE_INTERFACE_TAG;
-
 // Invokes PnP_DeviceClient_RegisterInterfacesAsync, which indicates to Azure IoT which PnP interfaces this device supports.
 // The PnP Handle *is not valid* until this operation has completed (as indicated by the callback appPnpInterfacesRegistered being invoked).
 // In this sample, we block indefinitely but production code should include a timeout.
@@ -263,28 +269,30 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
     }
 
     if (containsFilter) {
-        // Get the interface ID
-        // PnpAdapterMangager_GetInterfaceId(key, Message, &interfaceId);
-
         // Create an Azure IoT PNP interface
         PPNPBRIDGE_INTERFACE_TAG pInt = malloc(sizeof(PNPBRIDGE_INTERFACE_TAG));
         char* interfaceId = (char*) json_object_get_string(DeviceChangePayload->Message, "InterfaceId");
 
         if (interfaceId != NULL) {
+            int idSize = (int) strlen(interfaceId) + 1;
+            char* id = malloc(idSize*sizeof(char));
+            strcpy_s(id, idSize, interfaceId);
+            id[idSize - 1] = '\0';
+
             // check if interface is already published
             PPNPBRIDGE_INTERFACE_TAG* interfaceTags = malloc(sizeof(PPNPBRIDGE_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
             LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
             while (interfaceItem != NULL) {
                 PPNPBRIDGE_INTERFACE_TAG interface = (PPNPBRIDGE_INTERFACE_TAG) singlylinkedlist_item_get_value(interfaceItem);
-                if (strcmp(interface->InterfaceName, interfaceId) == 0) {
-                    LogError("PnP Interface has already been published \n");
+                if (strcmp(interface->InterfaceName, id) == 0) {
+                    LogError("PnP Interface has already been published. Dropping the change notification. \n");
                     result = PNPBRIDGE_FAILED;
                     goto end;
                 }
                 interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
             }
 
-            pInt->InterfaceName = interfaceId;
+            pInt->InterfaceName = id;
 
             result = PnpAdapterManager_CreatePnpInterface(g_PnpBridge->interfaceMgr, g_PnpBridge->pnpDeviceClientHandle, key, &pInt->Interface, DeviceChangePayload);
             if (PNPBRIDGE_OK != result) {

@@ -569,6 +569,8 @@ int FindSerialDevices()
     return 0;
 }
 
+const char* serialDeviceChangeMessageformat = "{ \"Identity\":\"serial-pnp-interface\"  }";
+
 int OpenDevice(const char* port, DWORD baudRate) {
     BOOL status = FALSE;
     HANDLE hSerial = CreateFileA(port,
@@ -620,16 +622,22 @@ int OpenDevice(const char* port, DWORD baudRate) {
     PropertyHandler(deviceContext, "sample_rate", "300000");
 
     // TODO: Create a json object
-    JSON_Object* serialDeviceChangePayload = json_value_get_object(json_parse_string(""));
     PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload;
 
+    STRING_HANDLE asJson = STRING_new_JSON(serialDeviceChangeMessageformat);
+
+    JSON_Value* json = json_parse_string(serialDeviceChangeMessageformat);
+    JSON_Object* jsonObject = json_value_get_object(json);
+
+    payload.Message = jsonObject;
+
     //payload.Type = PNP_INTERFACE_ARRIVAL;
-    payload.Message = serialDeviceChangePayload;
+    payload.Message = jsonObject;
     payload.Context = deviceContext;
     LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(InterfaceDefinitions);
     while (interfaceItem != NULL) {
         const InterfaceDefinition* def = (const InterfaceDefinition*) singlylinkedlist_item_get_value(interfaceItem);
-        json_object_set_string(serialDeviceChangePayload, "InterfaceId", def->Id);
+        json_object_set_string(payload.Message, "InterfaceId", def->Id);
         SerialDeviceChangeCallback(&payload);
         interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
     }

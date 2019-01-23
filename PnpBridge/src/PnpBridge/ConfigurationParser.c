@@ -104,7 +104,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
     JSON_Array *devices = Configuration_GetConfiguredDevices();
     int res = -1;
 
-    //const char* formatId = json_object_dotget_string(Message, "Identity");
+    const char* formatId = json_object_dotget_string(Message, "Identity");
 
     for (int i = 0; i < json_array_get_count(devices); i++) {
         JSON_Object *device = json_array_get_object(devices, i);
@@ -114,7 +114,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
         }
 
         const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
-       // if (strcmp(deviceFormatId, formatId) == 0) {
+        if (strcmp(deviceFormatId, formatId) == 0) {
             JSON_Object* matchCriteria = json_object_dotget_object(device, "MatchFilters");
             const char* matchType = json_object_get_string(matchCriteria, "MatchType");
             if (strcmp(matchType, "*") == 0) {
@@ -146,7 +146,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
             }
             res = 0;
             goto end;
-       // }
+        }
     }
 
 end:
