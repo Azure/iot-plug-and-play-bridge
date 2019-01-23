@@ -619,7 +619,7 @@ int OpenDevice(const char* port, DWORD baudRate) {
 
     ParseDescriptor(desc, length);
 
-    PropertyHandler(deviceContext, "sample_rate", "300000");
+    PropertyHandler(deviceContext, "sample_rate", "5000");
 
     // TODO: Create a json object
     PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload;
@@ -919,8 +919,6 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVI
     PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) args->Context;
     const char* interfaceId = json_object_get_string(args->Message, "InterfaceId");
 
-    deviceContext->InterfaceHandle = PnpAdapter_GetPnpInterfaceClient(Interface);
-
     PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, &serialPropertyTable, NULL, deviceContext);
     if (NULL == pnpInterfaceClient) {
@@ -928,6 +926,7 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVI
     }
 
     PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+    deviceContext->InterfaceHandle = PnpAdapter_GetPnpInterfaceClient(Interface);
 
     return 0;
 }
