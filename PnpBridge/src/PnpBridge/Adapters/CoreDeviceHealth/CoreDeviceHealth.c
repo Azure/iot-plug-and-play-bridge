@@ -53,7 +53,6 @@ CoreDevice_OnDeviceNotification(
     _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
     _In_ DWORD eventDataSize)
 {
-    DEVPROPTYPE PropType;
     char* deviceSymbolicLink = context;
 
     char buff[512];
@@ -189,6 +188,7 @@ int CoreDevice_Shutdown() {
     if (NULL != g_coreDeviceWatchers) {
         singlylinkedlist_destroy(g_coreDeviceWatchers);
     }
+    return 0;
 }
 
 PNP_INTERFACE_MODULE CoreDeviceHealthInterface = {

@@ -6,7 +6,6 @@
 #include "azure_c_shared_utility/base32.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
-
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/lock.h"
 
@@ -15,77 +14,10 @@
 
 #include <Windows.h>
 #include <cfgmgr32.h>
-
 #include <ctype.h>
 
-typedef struct SerialPnPPacketHeader
-{
-    byte StartOfFrame;
-    USHORT Length;
-    byte PacketType;
-} SerialPnPPacketHeader;
+#include "Adapters\SerialPnp\SerialPnp.h"
 
-typedef enum Schema
-{
-    Invalid = 0,
-    Byte,
-    Float,
-    Double,
-    Int,
-    Long,
-    Boolean,
-    String
-} Schema;
-
-typedef struct FieldDefinition
-{
-    char* Name;
-    char* DisplayName;
-    char* Description;
-} FieldDefinition;
-
-
-typedef struct EventDefinition
-{
-    FieldDefinition defintion;
-    Schema DataSchema;
-    char* Units;
-} EventDefinition;
-
-typedef struct PropertyDefinition
-{
-    FieldDefinition defintion;
-    char* Units;
-    bool Required;
-    bool Writeable;
-    Schema DataSchema;
-} PropertyDefinition;
-
-typedef struct CommandDefinition
-{
-    FieldDefinition defintion;
-    Schema RequestSchema;
-    Schema ResponseSchema;
-} CommandDefinition;
-
-typedef struct InterfaceDefinition
-{
-    char* Id;
-    int Index;
-    SINGLYLINKEDLIST_HANDLE Events;
-    SINGLYLINKEDLIST_HANDLE Properties;
-    SINGLYLINKEDLIST_HANDLE Commands;
-} InterfaceDefinition;
-
-SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
-
-typedef struct _SERIAL_DEVICE_CONTEXT {
-    HANDLE hSerial;
-    PNP_INTERFACE_CLIENT_HANDLE* InterfaceHandle;
-    byte RxBuffer[4096]; // Todo: maximum buffer size
-    unsigned int RxBufferIndex;
-    bool RxEscaped;
-} SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
 
 PNPBRIDGE_NOTIFY_DEVICE_CHANGE SerialDeviceChangeCallback = NULL;
 
@@ -797,35 +729,53 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
         return -1;
     }
 
-    const char* port = (const char*) json_object_dotget_string(deviceArgs, "ComPort");
-    const char* useComDevInterfaceStr = (const char*)json_object_dotget_string(deviceArgs, "UseComDeviceInterface");
-    bool useComPortParam = true;
+    const char* port = NULL;
+    const char* useComDevInterfaceStr;
+    const char* baudRateParam;
+    bool useComDeviceInterface = false;
 
+    useComDevInterfaceStr = (const char*)json_object_dotget_string(deviceArgs, "UseComDeviceInterface");
     if ((NULL != useComDevInterfaceStr) && (0 == stricmp(useComDevInterfaceStr, "true"))) {
-        useComPortParam = false;
+        useComDeviceInterface = true;
+    }
+
+    if (!useComDeviceInterface) {
+        port = (const char*)json_object_dotget_string(deviceArgs, "ComPort");
+        if (NULL == port) {
+            LogError("ComPort parameter is missing in configuration");
+            return -1;
+        }
     }
 
     SerialDeviceChangeCallback = DeviceChangeCallback;
     JSON_Object* SerialDeviceInterfaceInfo = deviceArgs;
 
-    const char* baudRateParam = (const char*) json_object_dotget_string(deviceArgs, "BaudRate");
-    DWORD baudRate = atoi(baudRateParam);
-
-    if (FindSerialDevices() < 0) {
-        LogError("Failed to get com port %s", port);
-    }
-
-    LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(SerialDeviceList);
-    if (item == NULL) {
-        LogError("No serial device was found %s", port);
+    baudRateParam = (const char*) json_object_dotget_string(deviceArgs, "BaudRate");
+    if (NULL == baudRateParam) {
+        LogError("BaudRate parameter is missing in configuration");
         return -1;
     }
 
-    const PSERIAL_DEVICE seriaDevice = (const PSERIAL_DEVICE) singlylinkedlist_item_get_value(item);
+    PSERIAL_DEVICE seriaDevice = NULL;
+    DWORD baudRate = atoi(baudRateParam);
+    if (useComDeviceInterface) {
+        if (FindSerialDevices() < 0) {
+            LogError("Failed to get com port %s", port);
+        }
 
-    LogInfo("Opening com port %s", useComPortParam ? port : seriaDevice->InterfaceName);
+        LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(SerialDeviceList);
+        if (item == NULL) {
+            LogError("No serial device was found %s", port);
+            return -1;
+        }
 
-    OpenDevice(useComPortParam ? port : seriaDevice->InterfaceName, baudRate);
+        seriaDevice = (PSERIAL_DEVICE)singlylinkedlist_item_get_value(item);
+    }
+
+
+    LogInfo("Opening com port %s", useComDeviceInterface ? seriaDevice->InterfaceName : port);
+
+    OpenDevice(useComDeviceInterface ? seriaDevice->InterfaceName : port, baudRate);
     return 0;
 }
 
@@ -850,7 +800,7 @@ int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* ev
     char msg[512];
     sprintf_s(msg, 512, "{\"%s\":\"%s\"}", eventName, data);
 
-    if ((pnpClientResult = PnP_InterfaceClient_SendTelemetryAsync(pnpInterface, eventName, (const unsigned char*)msg, strlen(msg), SerialDataSendEventCallback, NULL)) != PNP_CLIENT_OK)
+    if ((pnpClientResult = PnP_InterfaceClient_SendTelemetryAsync(pnpInterface, "temp", (const unsigned char*)msg, strlen(msg), SerialDataSendEventCallback, NULL)) != PNP_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_SendEventAsync failed, result=%d\n", pnpClientResult);
         result = __FAILURE__;
@@ -920,7 +870,7 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVI
     const char* interfaceId = json_object_get_string(args->Message, "InterfaceId");
 
     PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
-    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, &serialPropertyTable, NULL, deviceContext);
+    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, "test3int/1.0.0", &serialPropertyTable, NULL, deviceContext);
     if (NULL == pnpInterfaceClient) {
         return -1;
     }

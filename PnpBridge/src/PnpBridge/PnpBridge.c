@@ -20,7 +20,7 @@ bool g_Shutdown = false;
 //const char* connectionString = "HostName=iot-pnp-hub1.azure-devices.net;DeviceId=win-gateway;SharedAccessKey=GfbYy7e2PikTf2qHyabvEDBaJB5S4T+H+b9TbLsXfns=";
 //const char* connectionString = "HostName=saas-iothub-1529564b-8f58-4871-b721-fe9459308cb1.azure-devices.net;DeviceId=956da476-8b3c-41ce-b405-d2d32bcf5e79;SharedAccessKey=sQcfPeDCZGEJWPI3M3SyB8pD60TNdOw10oFKuv5FBio=";
 
-typedef struct _DAG_PNP_INTERFACE_TAG {
+typedef struct _PNPBRIDGE_INTERFACE_TAG {
     PNP_INTERFACE_CLIENT_HANDLE Interface;
     char* InterfaceName;
 } PNPBRIDGE_INTERFACE_TAG, *PPNPBRIDGE_INTERFACE_TAG;

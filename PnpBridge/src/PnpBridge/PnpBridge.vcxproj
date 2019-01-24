@@ -175,6 +175,7 @@
     <ClInclude Include="PnpAdapterManager.h" />
     <ClInclude Include="PnpBridge.h" />
     <ClInclude Include="PnpBridgeCommon.h" />
+    <ClInclude Include="Adapters\SerialPnp\SerialPnp.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -185,7 +186,7 @@
     <ClCompile Include="Adapters\Camera\JsonWrapper.cpp" />
     <ClCompile Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.c" />
     <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c" />
-    <ClCompile Include="Adapters\Serial\SerialDevice.c" />
+    <ClCompile Include="Adapters\SerialPnp\SerialPnp.c" />
     <ClCompile Include="ConfigurationParser.c" />
     <ClCompile Include="PnpBridge.c" />
     <ClCompile Include="DiscoveryManager.c" />

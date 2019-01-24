@@ -12,8 +12,8 @@ DISCOVERY_ADAPTER discoveryInterface = { 0 };
 
 PDISCOVERY_ADAPTER DISCOVERY_MANIFEST[] = {
     &CameraPnpAdapter,
-    &WindowsPnpDeviceDiscovery,
-    &SerialPnpDiscovery
+    &SerialPnpDiscovery,
+    &WindowsPnpDeviceDiscovery
 };
 
 void DiscoveryAdapterChangeHandler(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
@@ -35,9 +35,36 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
         return PNPBRIDGE_FAILED;
     }
 
+    discoveryMgr->startDiscoveryThreadHandles = singlylinkedlist_create();
+    if (NULL == discoveryMgr->startDiscoveryThreadHandles) {
+        return PNPBRIDGE_FAILED;
+    }
+
     *discoveryManager = discoveryMgr;
 
     return PNPBRIDGE_OK;
+}
+
+typedef struct _START_DISCOVERY_PARAMS {
+    PDISCOVERY_ADAPTER  discoveryInterface;
+    JSON_Object* deviceParams;
+    JSON_Object* adapterParams;
+    int key;
+    PDISCOVERY_MANAGER discoveryManager;
+} START_DISCOVERY_PARAMS, *PSTART_DISCOVERY_PARAMS;
+
+int DiscoveryManager_StarDiscovery_Worker_Thread(void* threadArgument)
+{
+    PSTART_DISCOVERY_PARAMS p = threadArgument;
+    int result = p->discoveryInterface->StartDiscovery(DiscoveryAdapterChangeHandler, p->deviceParams, p->adapterParams);
+
+    if (PNPBRIDGE_OK == result) {
+        Map_Add_Index(p->discoveryManager->DiscoveryModuleMap, p->discoveryInterface->Identity, p->key);
+    }
+
+    free(threadArgument);
+
+    return 0;
 }
 
 PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager) {
@@ -50,7 +77,6 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
     for (int i = 0; i < sizeof(DISCOVERY_MANIFEST) / sizeof(PDISCOVERY_ADAPTER); i++) {
         PDISCOVERY_ADAPTER  discoveryInterface = DISCOVERY_MANIFEST[i];
         JSON_Object* deviceParams = NULL;
-        PNPBRIDGE_RESULT result;
 
         for (int j = 0; j < json_array_get_count(devices); j++) {
             JSON_Object *device = json_array_get_object(devices, j);
@@ -70,12 +96,27 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
         JSON_Object* adapterParams = NULL;
         adapterParams = Configuration_GetDiscoveryParameters(discoveryInterface->Identity);
 
-        // TODO: Add validation to check minimum discovery interface methods
-        result = discoveryInterface->StartDiscovery(DiscoveryAdapterChangeHandler, deviceParams, adapterParams);
+        PSTART_DISCOVERY_PARAMS threadContext;
+        THREAD_HANDLE workerThreadHandle = NULL;
 
-        if (PNPBRIDGE_OK == result) {
-            Map_Add_Index(discoveryManager->DiscoveryModuleMap, discoveryInterface->Identity, i);
+        // threadContext memory will be freed by the worker item when its done.
+        threadContext = malloc(sizeof(START_DISCOVERY_PARAMS));
+        if (NULL == threadContext) {
+            return PNPBRIDGE_INSUFFICIENT_MEMORY;
         }
+
+        threadContext->adapterParams = adapterParams;
+        threadContext->deviceParams = deviceParams;
+        threadContext->discoveryInterface = discoveryInterface;
+        threadContext->key = i;
+        threadContext->discoveryManager = discoveryManager;
+
+        if (THREADAPI_OK != ThreadAPI_Create(&workerThreadHandle, DiscoveryManager_StarDiscovery_Worker_Thread, threadContext)) {
+            LogError("Failed to create PnpBridge_Worker_Thread \n");
+            workerThreadHandle = NULL;
+        }
+
+        singlylinkedlist_add(discoveryManager->startDiscoveryThreadHandles, workerThreadHandle);
     }
 
     return PNPBRIDGE_OK;
@@ -85,6 +126,15 @@ void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager) {
     const char* const* keys;
     const char* const* values;
     size_t count;
+
+    // Wait for all start discovery threads to join
+    LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(discoveryManager->startDiscoveryThreadHandles);
+    while (interfaceItem != NULL) {
+        THREAD_HANDLE workerThreadHandle = (THREAD_HANDLE)singlylinkedlist_item_get_value(interfaceItem);
+        ThreadAPI_Join(workerThreadHandle, NULL);
+        interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
+    }
+    singlylinkedlist_destroy(discoveryManager->startDiscoveryThreadHandles);
 
     // Call shutdown on all interfaces
     if (Map_GetInternals(discoveryManager->DiscoveryModuleMap, &keys, &values, &count) != MAP_OK)

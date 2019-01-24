@@ -10,6 +10,9 @@ extern "C"
 
 typedef struct _DISCOVERY_MANAGER {
     MAP_HANDLE DiscoveryModuleMap;
+
+    // List of thread handles for startdiscovery
+    SINGLYLINKEDLIST_HANDLE startDiscoveryThreadHandles;
 } DISCOVERY_MANAGER, *PDISCOVERY_MANAGER;
 
 
