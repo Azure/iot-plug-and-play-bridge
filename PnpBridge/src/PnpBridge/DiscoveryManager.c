@@ -11,7 +11,7 @@
 DISCOVERY_ADAPTER discoveryInterface = { 0 };
 
 PDISCOVERY_ADAPTER DISCOVERY_MANIFEST[] = {
-    //&CameraPnpAdapter,
+    &CameraPnpAdapter,
     &WindowsPnpDeviceDiscovery,
     &SerialPnpDiscovery
 };

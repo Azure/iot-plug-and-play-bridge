@@ -33,6 +33,19 @@
         "UseComDeviceInterface": "false",
         "BaudRate": "115200"
       }
+    },
+    {
+      "_comment": "DEVICE3 - Standard Video Camera connected to a PC, for now the first camera only.",
+      "MatchFilters": {
+        "MatchType": "Exact",
+        "MatchParameters": {
+          "HardwareId": "UVC_Webcam_00"
+        }
+      },
+      "InterfaceId": "http://windows.com/camera_health_monitor/v1",
+      "PnpParameters": {
+        "Identity": "camera-health-monitor"
+      }
     }
   ],
   "DiscoveryAdapters": {

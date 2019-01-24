@@ -10,7 +10,7 @@
 
 // TODO: Decide where the extern are present for CoreDeviceHealth
 PPNP_INTERFACE_MODULE INTERFACE_MANIFEST[] = {
-    //&CameraPnpInterface,
+    &CameraPnpInterface,
     &CoreDeviceHealthInterface,
     &SerialPnpInterface
 };
