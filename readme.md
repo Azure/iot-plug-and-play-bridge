@@ -20,9 +20,12 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
   - Any hardware capable supporting above OS SKUs and versions.
   - Supported peripherals (refer to 
 
-- IoT Edge (this shouldn�t be required)
+- Private Preview of Azure IoT Central at https://aka.ms/iotc-demo.
+
+- IoT Edge (this is not required)
 
 ## Azure PnP Bridge Architecture
+![Architecture](/pnpbridge/docs/Pictures/AzurePnPBridge.png)
 
 ## Dev Machine Setup
 
@@ -33,17 +36,11 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
 
 - Download Windows 17763 SDK: https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk
 
-### Source Code
-
-- Clone Azure PnP Bridge Repo: 
-  git clone -b staging-pnpbridge --recursive https://xgrow18.visualstudio.com/_git/busesiot
-
-  Note: Keep the clone directory path short. Having deep root path's will result in MAX_PATH error during build of Azure IoT Pnp SDK.
-
 
 ### Build Azure PnP Bridge
-  After clone Azure PnP Bridge repro, run following commands in "Developer Command Prompt for VS 2017":
+  After clone Azure PnP Bridge repo, run following commands in "Developer Command Prompt for VS 2017":
   - cd PnpBridge
+  - git submodule update --init --recursive 
   - cd Scripts
   - build.prereq.cmd
   - Open PnpBridge\src\PnpBridge\PnpBridge.vcxproj with "Visual Studio 2017"
@@ -64,11 +61,15 @@ For serial/USB peripheral devices that are not included in current source code, 
 
 ### Deploy Azure PnP Bridge
 
-Instruction on deploy it
-- How to specify Configuration for Azure PnP Bridge
-- How to configure for auto start PnP Bridge
-- How to provision the device
-- How to set up an IoT Central Dashboard
+1. Set up an IoT Central Dashboard
   - https://docs.microsoft.com/en-us/azure/iot-central/tutorial-define-device-type 
-- How to get the Connection String to connect the device to IoT Central
+
+2. Setup a device and get the Connection String to connect the device to IoT Central.  This device is the Azure PnP Bridge Device. 
   - https://docs.microsoft.com/en-us/azure/iot-central/tutorial-add-device
+
+3. Setup Azure PnP Bridge Device
+    - Refer to "Re-Requisite" section for choosing OS image to install on the device. 
+    - Update src/pnpbridge/config.json "ConnectionString" under "PnpBridgeParameters" with the step #2 Connection String for the device.    
+    - copy pnpbridge.exe and src/pnpbridge/config.json in the same location on the Azure PnP Bridge Device.
+    - In a command line window, type "pnpbridge.exe".  This will start Azure PnP Bridge process.  
+
