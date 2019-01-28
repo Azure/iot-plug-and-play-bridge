@@ -58,7 +58,7 @@ For devices that self descre Azure IoT PnP interface, the template should contai
 There are currently 3 discovery adapters in PnP Bridge:
 
 * WindowPnPDiscovery: Reports a PnP device based on a device class provided as part of PnP Bridge configuration
-* CameraDisovery: Reporta a camera on windows
+* CameraDisovery: Reports a camera on windows
 * SerialPnp: Reports a serial PnP device. This uses self describing Azure IoT PnP interface.
 
 Here's an example output of json message published by WindowPnPDiscovery adapter:
@@ -99,51 +99,91 @@ There are currently 3 discovery adapters in PnP Bridge:
 
 ## Authoring new PnP Bridge Adapters
 
-To extend PnP Bridge in order to support new device discovery and implement new Azure IoT PnP interfaces, below components need to be authored. All the API declarations are part of "PnpBridge.h". Include this single file and implement the adapters. Then add a reference to these adapters in Adapters/AdapterManifest.c.
+To extend PnP Bridge in order to support new device discovery and implement new Azure IoT PnP interfaces, follow the steps below. All the API declarations are part of "PnpBridge.h". 
 
-### Discovery Adapter
+* Create a Discovery Adapter
 
-If an existing discovery adapter's message is sufficient to identify a device then you can skip implementing Discovery adapter. To implement a new Discovery adapter, implement the methods in the structure below, populate a static instance of the structure:
+  If an existing discovery adapter's message is sufficient to identify a device then you can skip implementing Discovery adapter. To implement a new Discovery adapter, implement the methods in the structure below, populate a static instance of the structure:
 
-```C
-  typedef struct _DISCOVERY_ADAPTER {
-      // Identity of the Discovery Adapter
-      const char* Identity;
+  ```C
+    typedef struct _DISCOVERY_ADAPTER {
+        // Identity of the Discovery Adapter
+        const char* Identity;
 
-      // Discovery Adapter wide initialization callback
-      DISCOVERYAPAPTER_START_DISCOVER StartDiscovery;
-      
-      // Discovery Adapter wide shutdown callback
-      DISCOVERYAPAPTER_STOP_DISCOVERY StopDiscovery;
-  } DISCOVERY_ADAPTER, *PDISCOVERY_ADAPTER;
-```
+        // Discovery Adapter wide initialization callback
+        DISCOVERYAPAPTER_START_DISCOVER StartDiscovery;
+        
+        // Discovery Adapter wide shutdown callback
+        DISCOVERYAPAPTER_STOP_DISCOVERY StopDiscovery;
+    } DISCOVERY_ADAPTER, *PDISCOVERY_ADAPTER;
+  ```
 
-The API's above are described in DiscoveryAdapterInterface.h
+  The API's above are described in DiscoveryAdapterInterface.h
 
-### PnP Adapter
+* Create a PnP Adapter
 
-This adapter implements the Azure IoT PnP interface for a device. Following callbacks needs to be implemented:
+  This adapter implements the Azure IoT PnP interface for a device. Following callbacks needs to be implemented:
 
-```C
-  typedef struct _PNP_ADAPTER {
-      // Identity of the Pnp Adapter
-      const char* Identity;
+  ```C
+    typedef struct _PNP_ADAPTER {
+        // Identity of the Pnp Adapter
+        const char* Identity;
 
-      // Discovery Adapter wide initialization callback 
-      PNPADAPTER_PNP_INTERFACE_INITIALIZE Initialize;
+        // Discovery Adapter wide initialization callback 
+        PNPADAPTER_PNP_INTERFACE_INITIALIZE Initialize;
 
-      // PnpBridge calls this when a matching device is found
-      PNPADAPTER_BIND_PNP_INTERFACE CreatePnpInterface;
+        // PnpBridge calls this when a matching device is found
+        PNPADAPTER_BIND_PNP_INTERFACE CreatePnpInterface;
 
-      // PnpBridge calls this during shutdown for each interface
-      PNPADAPTER_RELEASE_PNP_INTERFACE ReleaseInterface;
+        // PnpBridge calls this during shutdown for each interface
+        PNPADAPTER_RELEASE_PNP_INTERFACE ReleaseInterface;
 
-      // PnP Adapter wide shutdown callback
-      PNPADAPTER_PNP_INTERFACE_SHUTDOWN Shutdown;
-  } PNP_ADAPTER, *PPNP_ADAPTER;
-```
+        // PnP Adapter wide shutdown callback
+        PNPADAPTER_PNP_INTERFACE_SHUTDOWN Shutdown;
+    } PNP_ADAPTER, *PPNP_ADAPTER;
+  ```
 
-The API's above are described in PnpAdapterInterface.h
+  The API's above are described in PnpAdapterInterface.h
+
+* Enable the adapters in PnP Bridge by adding a reference to these adapters in Adapters/AdapterManifest.c:
+
+  ```C
+    extern DISCOVERY_ADAPTER MyDiscoveryAdapter;
+    PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
+      .
+      .
+      &MyDiscoveryAdapter
+    }
+
+    extern PNP_ADAPTER MyPnpAdapter;
+    PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
+      .
+      .
+      &MyPnpAdapter
+    }
+  ```
+
+* The discovery adapter will be started automatically. To publish a Azure PnP interface add a configuration entry. In the below example, the PnpAdapter identity uses is "my-pnp-adapter".
+
+  ```JSON
+  "Devices": [
+      {
+        "_comment": "MyDevice",
+        "MatchFilters": {
+          "MatchType": "Exact",
+          "MatchParameters": {
+            "MyCustomIdentity": "MySampleDevice"
+          }
+        },
+        "InterfaceId": "http://contoso.com/mypnpinterface/v1.0.0",
+        "PnpParameters": {
+          "Identity": "my-pnp-adapter"
+        }
+      }
+    ]
+  ```
+
+
 
 ## Folder Structure
 
