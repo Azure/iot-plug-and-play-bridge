@@ -28,6 +28,9 @@
     <Filter Include="Source Files\Adapters\SerialPnp">
       <UniqueIdentifier>{611fd0c7-a77f-4116-bf8a-c41bded6d8a3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Adapters\Sample">
+      <UniqueIdentifier>{05fcc339-7478-4508-9685-0279a2e32c46}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -45,9 +48,6 @@
     <ClInclude Include="PnpAdapterManager.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
-    <ClInclude Include="common.h">
-      <Filter>Source Files\inc</Filter>
-    </ClInclude>
     <ClInclude Include="ConfigurationParser.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
@@ -58,9 +58,6 @@
       <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
     </ClInclude>
     <ClInclude Include="PnpBridgeCommon.h">
-      <Filter>Source Files\inc</Filter>
-    </ClInclude>
-    <ClInclude Include="PnpBridge.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h">
@@ -86,6 +83,12 @@
     </ClInclude>
     <ClInclude Include="Adapters\SerialPnp\SerialPnp.h">
       <Filter>Source Files\Adapters\SerialPnp</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpBridgeh.h">
+      <Filter>Source Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="PnpBridge.h">
+      <Filter>Source Files\inc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +133,9 @@
     </ClCompile>
     <ClCompile Include="Adapters\SerialPnp\SerialPnp.c">
       <Filter>Source Files\Adapters\SerialPnp</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\AdapterManifest.c">
+      <Filter>Source Files\Adapters</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

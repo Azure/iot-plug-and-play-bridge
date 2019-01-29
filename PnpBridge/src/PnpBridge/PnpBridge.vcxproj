@@ -167,18 +167,19 @@
     <ClInclude Include="Adapters\Camera\pch.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h" />
-    <ClInclude Include="common.h" />
+    <ClInclude Include="PnpBridge.h" />
     <ClInclude Include="ConfigurationParser.h" />
     <ClInclude Include="DiscoveryAdapterInterface.h" />
     <ClInclude Include="PnpAdapterInterface.h" />
     <ClInclude Include="DiscoveryManager.h" />
     <ClInclude Include="PnpAdapterManager.h" />
-    <ClInclude Include="PnpBridge.h" />
+    <ClInclude Include="PnpBridgeh.h" />
     <ClInclude Include="PnpBridgeCommon.h" />
     <ClInclude Include="Adapters\SerialPnp\SerialPnp.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Adapters\AdapterManifest.c" />
     <ClCompile Include="Adapters\Camera\CameraIotPnpAPIs.cpp" />
     <ClCompile Include="Adapters\Camera\CameraIotPnpDevice.cpp" />
     <ClCompile Include="Adapters\Camera\CameraPnpDiscovery.cpp" />

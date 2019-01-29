@@ -25,7 +25,7 @@ public:
     virtual ~CameraPnpDiscovery();
 
     /// Public methods.
-    HRESULT                             InitializePnpDiscovery(_In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE pfnCallback, _In_ JSON_Object* deviceArgs, _In_ JSON_Object* adapterArgs);
+    HRESULT                             InitializePnpDiscovery(_In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE pfnCallback, _In_ const char* deviceArgs, _In_ const char* adapterArgs);
     void                                Shutdown();
     HRESULT                             GetFirstCamera(_Out_ std::wstring& cameraName);
 

@@ -26,7 +26,7 @@ typedef void* PNPADAPTER_INTERFACE_HANDLE;
 *
 * @returns  integer greater than zero on success and other values on failure.
 */
-typedef int(*PNPADAPTER_PNP_INTERFACE_INITIALIZE) (JSON_Object* adapterArgs);
+typedef int(*PNPADAPTER_PNP_INTERFACE_INITIALIZE) (const char* adapterArgs);
 
 
 /**
@@ -111,7 +111,7 @@ int PnpAdapter_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpInterface, void* contex
 */
 void* PnpAdapter_GetContext(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
 
-typedef struct PNP_INTERFACE_MODULE {
+typedef struct _PNP_ADAPTER {
     // Identity of the Pnp Adapter that will be used in the config 
     // of a device under PnpParameters
     const char* Identity;
@@ -119,7 +119,7 @@ typedef struct PNP_INTERFACE_MODULE {
     PNPADAPTER_BIND_PNP_INTERFACE CreatePnpInterface;
     PNPADAPTER_RELEASE_PNP_INTERFACE ReleaseInterface;
     PNPADAPTER_PNP_INTERFACE_SHUTDOWN Shutdown;
-} PNP_INTERFACE_MODULE, *PPNP_INTERFACE_MODULE;
+} PNP_ADAPTER, *PPNP_ADAPTER;
 
 #ifdef __cplusplus
 }

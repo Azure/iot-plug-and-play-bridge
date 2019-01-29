@@ -28,7 +28,7 @@
       },
       "DiscoveryParameters": {
         "Identity": "serial-pnp-discovery",
-        "ComPort": "COM7",
+        "ComPort": "COM4",
         "_comment": "NOTE: ComPort parameter will be used when UseComDeviceInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
         "UseComDeviceInterface": "false",
         "BaudRate": "115200"
@@ -49,9 +49,18 @@
     }
   ],
   "DiscoveryAdapters": {
+    "EnabledAdapters": {
+    },
     "Parameters": [
       {
         "Identity": "windows-pnp-discovery",
+        "_comment1": "USB Device class",
+        "DeviceInterfaceClasses": [
+          "A5DCBF10-6530-11D2-901F-00C04FB951ED"
+        ]
+      },
+      {
+        "Identity": "camera-health-monitor",
         "_comment1": "USB Device class",
         "DeviceInterfaceClasses": [
           "A5DCBF10-6530-11D2-901F-00C04FB951ED"
@@ -60,6 +69,8 @@
     ]
   },
   "PnpAdapters": {
+    "EnabledAdapters": {
+    },
     "Parameters": [
       {
       }

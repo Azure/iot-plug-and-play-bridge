@@ -1,3 +1,9 @@
+#pragma once
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef struct SerialPnPPacketHeader
 {
@@ -66,4 +72,10 @@ typedef struct _SERIAL_DEVICE_CONTEXT {
     byte RxBuffer[4096]; // Todo: maximum buffer size
     unsigned int RxBufferIndex;
     bool RxEscaped;
+    THREAD_HANDLE SerialDeviceWorker;
+    PNPBRIDGE_NOTIFY_DEVICE_CHANGE SerialDeviceChangeCallback;
 } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
+
+#ifdef __cplusplus
+}
+#endif

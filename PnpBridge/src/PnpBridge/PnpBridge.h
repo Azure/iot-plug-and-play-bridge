@@ -1,34 +1,30 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#pragma once
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-// Device aggregator context
-typedef struct _PNP_BRIDGE {
-    // connection to iot device
-    IOTHUB_DEVICE_HANDLE deviceHandle;
+#include <pnp_interface_client.h>
 
-    // Handle representing PnpDeviceClient
-    PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle;
+typedef enum _PNPBRIDGE_INTERFACE_CHANGE_TYPE {
+    PNPBRIDGE_INTERFACE_CHANGE_INVALID,
+    PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL,
+    PNPBRIDGE_INTERFACE_CHANGE_REMOVAL
+} PNPBRIDGE_INTERFACE_CHANGE_TYPE;
 
-    // Manages loading all discovery plugins and their lifetime
-    PDISCOVERY_MANAGER discoveryMgr;
+typedef struct _PNPBRIDGE_DEVICE_CHANGE_PAYLOAD {
+    const char* Message;
+    int MessageLength;
+    PNPBRIDGE_INTERFACE_CHANGE_TYPE ChangeType;
+    void* Context;
+} PNPBRIDGE_DEVICE_CHANGE_PAYLOAD, *PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD;
 
-    // Manages loading all pnp adapter plugins and their lifetime
-    PPNP_ADAPTER_MANAGER interfaceMgr;
-
-    // List of publised pnp interfaces
-    SINGLYLINKEDLIST_HANDLE publishedInterfaces;
-
-    // Number of published pnp interfaces
-    int publishedInterfaceCount;
-
-    LOCK_HANDLE dispatchLock;
-
-} PNP_BRIDGE, *PPNP_BRIDGE;
+#include <DiscoveryAdapterInterface.h>
+#include <PnpAdapterInterface.h>
 
 #ifdef __cplusplus
 }

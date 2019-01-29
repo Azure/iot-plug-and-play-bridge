@@ -33,8 +33,8 @@ CameraPnpDiscovery::~CameraPnpDiscovery(
 HRESULT 
 CameraPnpDiscovery::InitializePnpDiscovery(
     _In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE pfnCallback,
-    _In_ JSON_Object* deviceArgs, 
-    _In_ JSON_Object* adapterArgs
+    _In_ const char* deviceArgs,
+    _In_ const char* adapterArgs
     )
 {
     bool fInvokeCallback = false;
@@ -87,7 +87,8 @@ CameraPnpDiscovery::InitializePnpDiscovery(
         RETURN_IF_FAILED (pjson->AddFormatString("Identity", "camera-health-monitor"));
         RETURN_IF_FAILED (pjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
 
-        payload.Message     = pjson->GetObject();
+        payload.Message = pjson->GetMessageW();
+        payload.MessageLength = static_cast<int>(pjson->GetSize());
         payload.Context     = this;
         payload.ChangeType  = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
 
@@ -277,7 +278,8 @@ CameraPnpDiscovery::OnWatcherNotification(
         RETURN_IF_FAILED (pjson->Initialize());
         RETURN_IF_FAILED (pjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
 
-        payload.Message = pjson->GetObject();
+        payload.Message = pjson->GetMessageW();
+        payload.MessageLength = static_cast<int>(pjson->GetSize());
         payload.Context = this;
         
         if (cameraUniqueIds.size() == 0 && m_cameraUniqueIds.size() == 0)

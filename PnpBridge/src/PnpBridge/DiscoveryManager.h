@@ -9,10 +9,10 @@ extern "C"
 #endif
 
 typedef struct _DISCOVERY_MANAGER {
-    MAP_HANDLE DiscoveryModuleMap;
+    MAP_HANDLE DiscoveryAdapterMap;
 
     // List of thread handles for startdiscovery
-    SINGLYLINKEDLIST_HANDLE startDiscoveryThreadHandles;
+   // SINGLYLINKEDLIST_HANDLE startDiscoveryThreadHandles;
 } DISCOVERY_MANAGER, *PDISCOVERY_MANAGER;
 
 
@@ -25,7 +25,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
 *
 * @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
 */
-PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager);
+PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config);
 
 void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager);
 

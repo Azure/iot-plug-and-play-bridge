@@ -4,8 +4,6 @@
 #ifndef PNPBRIDGE_DISCOVERY_ADAPTER_INTERFACE_H
 #define PNPBRIDGE_DISCOVERY_ADAPTER_INTERFACE_H
 
-#include <common.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -37,7 +35,7 @@ extern "C"
     *
     * @returns  integer greater than zero on success and other values on failure.
     */
-    typedef int(*DISCOVERYAPAPTER_START_DISCOVER)(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs);
+    typedef int(*DISCOVERYAPAPTER_START_DISCOVER)(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, const char* deviceArgs, const char* adapterArgs);
 
     /**
     * @brief    DISCOVERYAPAPTER_STOP_DISCOVERY callback is called to notify a discovery adapter to stop discovery.

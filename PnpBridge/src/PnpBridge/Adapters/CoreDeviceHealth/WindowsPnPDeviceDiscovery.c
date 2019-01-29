@@ -1,12 +1,20 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "common.h"
-#include "DiscoveryAdapterInterface.h"
+#include <PnpBridge.h>
 #include <windows.h>
 #include <cfgmgr32.h>
 #include <initguid.h>
 #include <devpkey.h>
+
+#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/threadapi.h"
+#include "azure_c_shared_utility/singlylinkedlist.h"
+#include "azure_c_shared_utility/lock.h"
+
+#include "parson.h"
 
 
 const char* deviceChangeMessageformat = "{ \"HardwareId\":%s, \"Identity\":\"core-device-health\", \"SymbolicLink\":%s  }";
@@ -39,8 +47,8 @@ OnDeviceNotification(
             LPWSTR SingleDeviceId;
             int msgLen = 512;
             STRING_HANDLE asJson;
-            JSON_Value* json;
-            JSON_Object* jsonObject;
+           // JSON_Value* json;
+           // JSON_Object* jsonObject;
 
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
 
@@ -98,10 +106,10 @@ OnDeviceNotification(
             STRING_HANDLE asJson1 = STRING_new_JSON(msg1);
             sprintf_s(msg, msgLen, deviceChangeMessageformat, STRING_c_str(asJson), STRING_c_str(asJson1));
 
-            json = json_parse_string(msg);
-            jsonObject = json_value_get_object(json);
+           // json = json_parse_string(msg);
+           // jsonObject = json_value_get_object(json);
 
-            payload.Message = jsonObject;
+            payload.Message = msg;
 
             payload.Context = malloc(sizeof(eventData->u.DeviceInterface.ClassGuid));
             memcpy(payload.Context, &eventData->u.DeviceInterface.ClassGuid, sizeof(eventData->u.DeviceInterface.ClassGuid));
@@ -114,7 +122,7 @@ OnDeviceNotification(
     return 0;
 }
 
-int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, JSON_Object* deviceArgs, JSON_Object* adapterArgs) {
+int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, const char* deviceArgs, const char* adapterArgs) {
     DWORD cmRet;
     CM_NOTIFY_FILTER cmFilter;
     HCMNOTIFICATION hNotifyCtx = NULL;
@@ -124,9 +132,13 @@ int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallbac
         return -1;
     }
 
-    JSON_Array* interfaceClasses =  json_object_dotget_array(adapterArgs, "DeviceInterfaceClasses");
+    JSON_Value*                         jmsg;
+    JSON_Object*                        jobj;
+    jmsg = json_parse_string(adapterArgs);
+    jobj = json_value_get_object(jmsg);
+    JSON_Array* interfaceClasses =  json_object_dotget_array(jobj, "DeviceInterfaceClasses");
 
-    for (int j = 0; j < json_array_get_count(interfaceClasses); j++) {
+    for (int j = 0; j < (int)json_array_get_count(interfaceClasses); j++) {
         const char *interfaceClass = json_array_get_string(interfaceClasses, j);
         GUID guid;
         if (UuidFromStringA((char *)interfaceClass, &guid) != RPC_S_OK) {

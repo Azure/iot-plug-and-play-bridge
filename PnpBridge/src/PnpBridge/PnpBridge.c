@@ -3,14 +3,13 @@
 
 // DeviceAggregator.cpp : Defines the entry point for the console application.
 
-#include "common.h"
 #include "PnpBridgeCommon.h"
 #include "ConfigurationParser.h"
 #include "DiscoveryManager.h"
 #include "PnpAdapterInterface.h"
 #include "PnpAdapterManager.h"
 
-#include "PnpBridge.h"
+#include "PnpBridgeh.h"
 
 //////////////////////////// GLOBALS ///////////////////////////////////
 PPNP_BRIDGE g_PnpBridge = NULL;
@@ -83,10 +82,10 @@ void PnpBridge_CoreCleanup() {
     }
 }
 
-PNPBRIDGE_RESULT PnpBridge_Initialize() {
+PNPBRIDGE_RESULT PnpBridge_Initialize(JSON_Value* config) {
     const char* connectionString;
 
-    connectionString = Configuration_GetConnectionString();
+    connectionString = Configuration_GetConnectionString(config);
 
     if (NULL == connectionString) {
         LogError("Connection string not specified in the config\n");
@@ -100,6 +99,8 @@ PNPBRIDGE_RESULT PnpBridge_Initialize() {
         PnpBridge_CoreCleanup();
         return PNPBRIDGE_INSUFFICIENT_MEMORY;
     }
+
+    g_PnpBridge->configuration = config;
 
     g_PnpBridge->publishedInterfaces = singlylinkedlist_create();
     if (NULL == g_PnpBridge->publishedInterfaces) {
@@ -165,12 +166,12 @@ void PnpBridge_Release() {
 
 int PnpBridge_Worker_Thread(void* threadArgument)
 {
-    PNPBRIDGE_RESULT result;
+    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
     // Start Device Discovery
-    result = DiscoveryAdapterManager_Start(g_PnpBridge->discoveryMgr);
+    result = DiscoveryAdapterManager_Start(g_PnpBridge->discoveryMgr, g_PnpBridge->configuration);
     if (PNPBRIDGE_OK != result) {
-        return result;
+        goto exit;
     }
 
     // TODO: Change this to an event
@@ -178,11 +179,12 @@ int PnpBridge_Worker_Thread(void* threadArgument)
     {
         ThreadAPI_Sleep(1 * 1000);
         if (g_Shutdown) {
-            return PNPBRIDGE_OK;
+            goto exit;
         }
     }
 
-    return PNPBRIDGE_OK;
+exit:
+    return result;
 }
 
 // State of PnP registration process.  We cannot proceed with PnP until we get into the state APP_PNP_REGISTRATION_SUCCEEDED.
@@ -257,13 +259,18 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
         goto end;
     }
 
-    if (Configuration_IsDeviceConfigured(DeviceChangePayload->Message) < 0) {
+    JSON_Value*                         jmsg;
+    JSON_Object*                        jobj;
+    jmsg = json_parse_string(DeviceChangePayload->Message);
+    jobj = json_value_get_object(jmsg);
+
+    if (Configuration_IsDeviceConfigured(g_PnpBridge->configuration, jobj) < 0) {
         LogInfo("Device is not configured. Dropping the change notification");
         result = PNPBRIDGE_OK;
         goto end;
     }
 
-    result = PnpAdapterManager_SupportsIdentity(g_PnpBridge->interfaceMgr, DeviceChangePayload->Message, &containsFilter, &key);
+    result = PnpAdapterManager_SupportsIdentity(g_PnpBridge->interfaceMgr, jobj, &containsFilter, &key);
     if (PNPBRIDGE_OK != result) {
         goto end;
     }
@@ -271,7 +278,7 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
     if (containsFilter) {
         // Create an Azure IoT PNP interface
         PPNPBRIDGE_INTERFACE_TAG pInt = malloc(sizeof(PNPBRIDGE_INTERFACE_TAG));
-        char* interfaceId = (char*) json_object_get_string(DeviceChangePayload->Message, "InterfaceId");
+        char* interfaceId = (char*) json_object_get_string(jobj, "InterfaceId");
 
         if (interfaceId != NULL) {
             int idSize = (int) strlen(interfaceId) + 1;
@@ -319,20 +326,22 @@ end:
 }
 
 PNPBRIDGE_RESULT PnpBridge_Main() {
-    PNPBRIDGE_RESULT result;
+    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
+    JSON_Value* config = NULL;
+
     LogInfo("Starting Azure PnpBridge\n");
 
     //#define CONFIG_FILE "c:\\data\\test\\dag\\config.json"
-    result = PnpBridgeConfig_ReadConfigurationFromFile("config.json");
+    result = PnpBridgeConfig_ReadConfigurationFromFile("config.json", &config);
     if (PNPBRIDGE_OK != result) {
         LogError("Failed to parse configuration. Check if config file is present and ensure its formatted correctly.\n");
-        return result;
+        goto exit;
     }
 
-    result = PnpBridge_Initialize();
+    result = PnpBridge_Initialize(config);
     if (PNPBRIDGE_OK != result) {
         LogError("PnpBridge_Initialize failed: %d\n", result);
-        return result;
+        goto exit;
     }
 
     LogInfo("Connected to Azure IoT Hub\n");
@@ -340,10 +349,10 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
     // Load all the adapters in interface manifest that implement Azure IoT PnP Interface
     // PnpBridge will call into corresponding adapter when a device is reported by 
     // DiscoveryExtension
-    result = PnpAdapterManager_Create(&g_PnpBridge->interfaceMgr);
+    result = PnpAdapterManager_Create(&g_PnpBridge->interfaceMgr, g_PnpBridge->configuration);
     if (PNPBRIDGE_OK != result) {
         LogError("PnpAdapterManager_Create failed: %d\n", result);
-        return result;
+        goto exit;
     }
 
     // Load all the extensions that are capable of discovering devices
@@ -351,7 +360,7 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
     result = DiscoveryAdapterManager_Create(&g_PnpBridge->discoveryMgr);
     if (PNPBRIDGE_OK != result) {
         LogError("DiscoveryAdapterManager_Create failed: %d\n", result);
-        return result;
+        goto exit;
     }
 
     THREAD_HANDLE workerThreadHandle = NULL;
@@ -363,9 +372,10 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
         ThreadAPI_Join(workerThreadHandle, NULL);
     }
 
+exit:
     PnpBridge_Release();
 
-    return PNPBRIDGE_OK;
+    return result;
 }
 
 void PnpBridge_Stop() {
@@ -394,7 +404,7 @@ int main()
 {
     if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
     {
-        printf("\n -- Press Ctrl+C to stop PnpBridge");
+        printf("\n -- Press Ctrl+C to stop PnpBridge\n");
     }
 
     PnpBridge_Main();

@@ -25,7 +25,7 @@
 #include <mfidl.h>
 
 // PnpBridge headers.
-#include <DiscoveryAdapterInterface.h>
+#include <PnpBridge.h>
 
 // IOT Hub Headers here...
 #include <iothub.h>
@@ -43,6 +43,9 @@
 
 // Internal stuff???
 #include <internal/pnp_client_core.h>
+
+// Logging headers
+#include "azure_c_shared_utility/xlogging.h"
 
 #define RETURN_IF_FAILED(hr)                                                                            \
     {                                                                                                   \

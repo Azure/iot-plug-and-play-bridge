@@ -26,7 +26,7 @@ typedef struct _PNP_ADAPTER_MANAGER {
 *
 * @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
 */
-PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapter);
+PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapter, JSON_Value* config);
 
 /**
 * @brief    PnpAdapterManager_Release uninitializes the PnpAdapter resources.

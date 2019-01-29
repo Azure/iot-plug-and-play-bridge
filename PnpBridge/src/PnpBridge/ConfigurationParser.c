@@ -1,38 +1,36 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "common.h"
+#include "PnpBridgeCommon.h"
 
-JSON_Value* g_ConfigurationFile = NULL;
-
-PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename) {
-    if (NULL == filename) {
+PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename, JSON_Value** config) {
+    if (NULL == filename || NULL == config) {
         return PNPBRIDGE_INVALID_ARGS;
     }
 
-    g_ConfigurationFile = json_parse_file(filename);
-    if (g_ConfigurationFile == NULL) {
+    *config = json_parse_file(filename);
+    if (*config == NULL) {
         return PNPBRIDGE_CONFIG_READ_FAILED;
     }
 
     return PNPBRIDGE_OK;
 }
 
-PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *config) {
-    if (NULL == config) {
+PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *configString, JSON_Value** config) {
+    if (NULL == configString || NULL == config) {
         return PNPBRIDGE_INVALID_ARGS;
     }
 
-    g_ConfigurationFile = json_parse_string(config);
-    if (g_ConfigurationFile == NULL) {
+    *config = json_parse_string(configString);
+    if (*config == NULL) {
         return PNPBRIDGE_CONFIG_READ_FAILED;
     }
 
     return PNPBRIDGE_OK;
 }
 
-JSON_Array* Configuration_GetConfiguredDevices() {
-    JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
+JSON_Array* Configuration_GetConfiguredDevices(JSON_Value* config) {
+    JSON_Object* jsonObject = json_value_get_object(config);
     JSON_Array *devices = json_object_dotget_array(jsonObject, "Devices");
 
     return devices;
@@ -57,8 +55,8 @@ JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device) 
     return discoveryParams;
 }
 
-const char* Configuration_GetConnectionString() {
-    JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
+const char* Configuration_GetConnectionString(JSON_Value* config) {
+    JSON_Object* jsonObject = json_value_get_object(config);
     JSON_Object *pnpBridgeParams = json_object_dotget_object(jsonObject, "PnpBridgeParameters");
     if (NULL == pnpBridgeParams) {
         return NULL;
@@ -67,8 +65,8 @@ const char* Configuration_GetConnectionString() {
     return json_object_dotget_string(pnpBridgeParams, "ConnectionString");
 }
 
-JSON_Object* Configuration_GetAdapterParameters(const char* identity, const char* adapterType) {
-    JSON_Object* jsonObject = json_value_get_object(g_ConfigurationFile);
+JSON_Object* Configuration_GetAdapterParameters(JSON_Value* config, const char* identity, const char* adapterType) {
+    JSON_Object* jsonObject = json_value_get_object(config);
     JSON_Object *adapter = json_object_dotget_object(jsonObject, adapterType);
     if (NULL == adapter) {
         return NULL;
@@ -79,7 +77,7 @@ JSON_Object* Configuration_GetAdapterParameters(const char* identity, const char
         return NULL;
     }
 
-    for (int j = 0; j < json_array_get_count(params); j++) {
+    for (int j = 0; j < (int)json_array_get_count(params); j++) {
         JSON_Object *param = json_array_get_object(params, j);
         const char* id = json_object_dotget_string(param, "Identity");
         if (NULL != id) {
@@ -92,21 +90,21 @@ JSON_Object* Configuration_GetAdapterParameters(const char* identity, const char
     return NULL;
 }
 
-JSON_Object* Configuration_GetPnpParameters(const char* identity) {
-    return Configuration_GetAdapterParameters(identity, "PnpAdapters");
+JSON_Object* Configuration_GetPnpParameters(JSON_Value* config, const char* identity) {
+    return Configuration_GetAdapterParameters(config, identity, "PnpAdapters");
 }
 
-JSON_Object* Configuration_GetDiscoveryParameters(const char* identity) {
-    return Configuration_GetAdapterParameters(identity, "DiscoveryAdapters");
+JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config,const char* identity) {
+    return Configuration_GetAdapterParameters(config, identity, "DiscoveryAdapters");
 }
 
-PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
-    JSON_Array *devices = Configuration_GetConfiguredDevices();
+PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message) {
+    JSON_Array *devices = Configuration_GetConfiguredDevices(config);
     int res = -1;
 
     const char* formatId = json_object_dotget_string(Message, "Identity");
 
-    for (int i = 0; i < json_array_get_count(devices); i++) {
+    for (int i = 0; i < (int)json_array_get_count(devices); i++) {
         JSON_Object *device = json_array_get_object(devices, i);
         JSON_Object* moduleParams = Configuration_GetPnpParametersForDevice(device);
         if (NULL == moduleParams) {
@@ -124,7 +122,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message) {
 
             JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, "MatchParameters");
             const size_t matchParameterCount = json_object_get_count(matchParameters);
-            for (int i = 0; i < matchParameterCount; i++) {
+            for (int i = 0; i < (int)matchParameterCount; i++) {
                 const char* name = json_object_get_name(matchParameters, i);
                 const char* value = json_object_get_string(matchParameters, name);
 

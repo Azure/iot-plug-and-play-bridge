@@ -8,9 +8,6 @@ extern "C"
 {
 #endif
 
-extern PNP_INTERFACE_MODULE CoreDeviceHealthInterface;
-
-extern PNP_INTERFACE_MODULE SerialPnpInterface;
 
 #ifdef __cplusplus
 }

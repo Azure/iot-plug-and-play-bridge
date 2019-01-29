@@ -5,16 +5,14 @@ extern "C"
 {
 #endif
 
-#include <DiscoveryAdapterInterface.h>
-#include <PnpAdapterInterface.h>
-#include <common.h>
+#include <PnpBridge.h>
 
 // Camera discovery API entry points.
 int
 CameraPnpStartDiscovery(
     _In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback,
-    _In_ JSON_Object* deviceArgs, 
-    _In_ JSON_Object* adapterArgs
+    _In_ const char* deviceArgs, 
+    _In_ const char* adapterArgs
     );
 
 int 
@@ -24,7 +22,7 @@ CameraPnpStopDiscovery(
 // Interface functions.
 int
 CameraPnpInterfaceInitialize(
-    _In_ JSON_Object* adapterArgs
+    _In_ const char* adapterArgs
     );
 
 int
@@ -44,7 +42,7 @@ CameraPnpInterfaceRelease(
     );
 
 extern DISCOVERY_ADAPTER        CameraPnpAdapter;
-extern PNP_INTERFACE_MODULE     CameraPnpInterface;
+extern PNP_ADAPTER     CameraPnpInterface;
 
 #ifdef __cplusplus
 }

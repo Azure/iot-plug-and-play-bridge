@@ -15,7 +15,7 @@ extern "C"
 *
 * @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
 */
-PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename);
+PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename, JSON_Value** config);
 
 /**
 * @brief    PnpBridgeConfig_ReadConfigurationFromString reads a PnpBridge JSON config from string.
@@ -24,21 +24,21 @@ PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename)
 *
 * @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
 */
-PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *config);
+PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *configString, JSON_Value** config);
 
 JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device);
 
 JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device);
 
-JSON_Object* Configuration_GetPnpParameters(const char* identity);
+JSON_Object* Configuration_GetPnpParameters(JSON_Value* config, const char* identity);
 
-JSON_Object* Configuration_GetDiscoveryParameters(const char *identity);
+JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config, const char *identity);
 
-JSON_Array* Configuration_GetConfiguredDevices();
+JSON_Array* Configuration_GetConfiguredDevices(JSON_Value* config);
 
-PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Object* Message);
+PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message);
 
-const char* Configuration_GetConnectionString();
+const char* Configuration_GetConnectionString(JSON_Value* config);
 
 #ifdef __cplusplus
 }

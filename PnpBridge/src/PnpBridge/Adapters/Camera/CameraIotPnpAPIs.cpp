@@ -7,7 +7,7 @@ DISCOVERY_ADAPTER CameraPnpAdapter = {
     CameraPnpStopDiscovery
 };
 
-PNP_INTERFACE_MODULE CameraPnpInterface = {
+PNP_ADAPTER CameraPnpInterface = {
     "camera-health-monitor",
     CameraPnpInterfaceInitialize,
     CameraPnpInterfaceBind,
@@ -21,8 +21,8 @@ CameraPnpDiscovery*  g_pPnpDiscovery = nullptr;
 int
 CameraPnpStartDiscovery(
     _In_ PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback,
-    _In_ JSON_Object* deviceArgs,
-    _In_ JSON_Object* adapterArgs
+    _In_ const char* deviceArgs,
+    _In_ const char* adapterArgs
     )
 {
     // Avoid using unique_ptr here, we want to play some pointer
@@ -59,7 +59,7 @@ CameraPnpStopDiscovery(
 // Interface bind functions.
 int
 CameraPnpInterfaceInitialize(
-    _In_ JSON_Object* adapterArgs
+    _In_ const char* adapterArgs
     )
 {
     return S_OK;
@@ -84,6 +84,9 @@ CameraPnpInterfaceBind(
     std::unique_ptr<CameraIotPnpDevice> pIotPnp;
     PNP_INTERFACE_CLIENT_HANDLE         pnpInterfaceClient;
     const char*                         interfaceId;
+    JSON_Value*                         jmsg;
+    JSON_Object*                        jobj;
+
 
     if (nullptr == Interface || nullptr == payload || nullptr == payload->Context)
     {
@@ -93,7 +96,10 @@ CameraPnpInterfaceBind(
     p = (CameraPnpDiscovery*)payload->Context;
     RETURN_IF_FAILED (p->GetFirstCamera(cameraName));
 
-    interfaceId = json_object_get_string(payload->Message, "InterfaceId");
+    jmsg =  json_parse_string(payload->Message);
+    jobj = json_value_get_object(jmsg);
+
+    interfaceId = "http://windows.com/camera_health_monitor/v1"; //json_object_get_string(jobj, "InterfaceId");
     pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, nullptr, nullptr, nullptr);
     RETURN_HR_IF_NULL (E_UNEXPECTED, pnpInterfaceClient);
 

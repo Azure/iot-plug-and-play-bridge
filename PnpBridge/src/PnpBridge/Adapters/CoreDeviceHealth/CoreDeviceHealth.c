@@ -1,13 +1,21 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "common.h"
-#include "DiscoveryAdapterInterface.h"
-#include "PnPAdapterInterface.h"
+#include <PnpBridge.h>
+
+#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/threadapi.h"
+#include "azure_c_shared_utility/singlylinkedlist.h"
+#include "azure_c_shared_utility/lock.h"
+
 #include <Windows.h>
 #include <cfgmgr32.h>
 #include <devpkey.h>
 #include <initguid.h>
+
+#include "parson.h"
 
 PNP_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle = NULL;
 
@@ -81,10 +89,12 @@ int CoreDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEV
     DWORD cmRet;
     CM_NOTIFY_FILTER cmFilter;
     PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
-    JSON_Object* args = param->Message;
-    const char* interfaceId = json_object_get_string(param->Message, "InterfaceId");
-    const char* hardwareId = json_object_get_string(param->Message, "HardwareId");
-    const char* symbolicLink = json_object_get_string(param->Message, "SymbolicLink");
+    JSON_Value* jvalue = json_parse_string(param->Message);
+    JSON_Object* jmsg = json_value_get_object(jvalue);
+    JSON_Object* args = jmsg;
+    const char* interfaceId = json_object_get_string(args, "InterfaceId");
+    const char* hardwareId = json_object_get_string(args, "HardwareId");
+    const char* symbolicLink = json_object_get_string(args, "SymbolicLink");
 
     if (Interface == NULL) {
         return -1;
@@ -175,7 +185,7 @@ int CoreDevice_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
     return 0;
 }
 
-int CoreDevice_Initialize(JSON_Object* adapterArgs) {
+int CoreDevice_Initialize(const char* adapterArgs) {
     g_coreDeviceWatchers = singlylinkedlist_create();
     if (NULL == g_coreDeviceWatchers) {
         return -1;
@@ -191,7 +201,7 @@ int CoreDevice_Shutdown() {
     return 0;
 }
 
-PNP_INTERFACE_MODULE CoreDeviceHealthInterface = {
+PNP_ADAPTER CoreDeviceHealthInterface = {
     .Identity = "core-device-health",
     .Initialize = CoreDevice_Initialize,
     .Shutdown = CoreDevice_Shutdown,
