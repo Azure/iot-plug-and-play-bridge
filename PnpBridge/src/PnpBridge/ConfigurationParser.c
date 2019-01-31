@@ -98,12 +98,16 @@ JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config,const char*
     return Configuration_GetAdapterParameters(config, identity, "DiscoveryAdapters");
 }
 
-PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message) {
+PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message, JSON_Object** Device) {
     JSON_Array *devices = Configuration_GetConfiguredDevices(config);
+    JSON_Object* discMatchParams;
     int res = -1;
+    bool foundMatch = false;
 
     const char* formatId = json_object_dotget_string(Message, "Identity");
+    discMatchParams = json_object_get_object(Message, "MatchParameters");
 
+    // There needs to be only one match at the end.
     for (int i = 0; i < (int)json_array_get_count(devices); i++) {
         JSON_Object *device = json_array_get_object(devices, i);
         JSON_Object* moduleParams = Configuration_GetPnpParametersForDevice(device);
@@ -112,12 +116,24 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
         }
 
         const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
-        if (strcmp(deviceFormatId, formatId) == 0) {
+        if (true) { //strcmp(deviceFormatId, formatId) == 0) {
             JSON_Object* matchCriteria = json_object_dotget_object(device, "MatchFilters");
             const char* matchType = json_object_get_string(matchCriteria, "MatchType");
             if (strcmp(matchType, "*") == 0) {
+                if (true == foundMatch) {
+                    LogError("Found multiple devices in the config that match the filter");
+                    res = -1;
+                    goto end;
+                }
+
+                foundMatch = true;
                 res = 0;
-                goto end;
+                *Device = device;
+                continue;
+            }
+
+            if (NULL == discMatchParams) {
+                continue;
             }
 
             JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, "MatchParameters");
@@ -126,20 +142,28 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
                 const char* name = json_object_get_name(matchParameters, i);
                 const char* value = json_object_get_string(matchParameters, name);
 
-                if (!json_object_dothas_value(Message, name)) {
+                if (!json_object_dothas_value(discMatchParams, name)) {
                     res = -1;
                     goto end;
                 }
 
-                const char* value2 = json_object_get_string(Message, name);
+                const char* value2 = json_object_get_string(discMatchParams, name);
                 if (strstr(value2, value) == 0) {
                     res = -1;
                     goto end;
                 }
                 else {
+                    if (true == foundMatch) {
+                        LogError("Found multiple devices in the config that match the filter");
+                        res = -1;
+                        goto end;
+                    }
+
                     const char* interfaceId = json_object_dotget_string(device, "InterfaceId");
                     json_object_set_string(Message, "InterfaceId", interfaceId);
-                    break;
+                    foundMatch = true;
+                    *Device = device;
+                    res = 0;
                 }
             }
             res = 0;

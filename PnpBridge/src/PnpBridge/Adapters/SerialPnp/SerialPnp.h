@@ -64,7 +64,11 @@ typedef struct InterfaceDefinition
     SINGLYLINKEDLIST_HANDLE Commands;
 } InterfaceDefinition;
 
-SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
+typedef enum DefinitionType {
+    Telemetry,
+    Property,
+    Command
+} DefinitionType;
 
 typedef struct _SERIAL_DEVICE_CONTEXT {
     HANDLE hSerial;
@@ -75,6 +79,21 @@ typedef struct _SERIAL_DEVICE_CONTEXT {
     THREAD_HANDLE SerialDeviceWorker;
     PNPBRIDGE_NOTIFY_DEVICE_CHANGE SerialDeviceChangeCallback;
 } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
+
+void SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
+
+void SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
+
+void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length);
+
+void SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
+
+void SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length);
+
+byte* SerialPnp_StringSchemaToBinary(Schema Schema, byte* data, int* length);
+
+int SerialPnp_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
+
 
 #ifdef __cplusplus
 }

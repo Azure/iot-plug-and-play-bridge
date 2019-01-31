@@ -246,6 +246,26 @@ end:
     return result;
 }
 
+PNPBRIDGE_RESULT PnpBridge_ValidateDeviceChangePayload(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+    if (NULL == DeviceChangePayload) {
+        return PNPBRIDGE_INVALID_ARGS;
+    }
+
+    if (NULL == DeviceChangePayload->Message) {
+        return PNPBRIDGE_INVALID_ARGS;
+    }
+
+    if (0 == DeviceChangePayload->MessageLength) {
+        return PNPBRIDGE_INVALID_ARGS;
+    }
+
+    //if (PNPBRIDGE_INTERFACE_CHANGE_INVALID == DeviceChangePayload->ChangeType) {
+    //    return PNPBRIDGE_INVALID_ARGS;
+    //}
+
+    return PNPBRIDGE_OK;
+}
+
 PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
     PNPBRIDGE_RESULT result;
     bool containsFilter = false;
@@ -255,22 +275,27 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
 
     if (g_Shutdown) {
         LogInfo("PnpBridge is shutting down. Dropping the change notification");
-        result = PNPBRIDGE_OK;
         goto end;
     }
 
-    JSON_Value*                         jmsg;
-    JSON_Object*                        jobj;
+    result = PnpBridge_ValidateDeviceChangePayload(DeviceChangePayload);
+    if (PNPBRIDGE_OK != result) {
+        LogInfo("Change payload is invalid");
+        goto end;
+    }
+
+    JSON_Value* jmsg;
+    JSON_Object* jobj;
+    JSON_Object* jdevice;
+
     jmsg = json_parse_string(DeviceChangePayload->Message);
     jobj = json_value_get_object(jmsg);
-
-    if (Configuration_IsDeviceConfigured(g_PnpBridge->configuration, jobj) < 0) {
+    if (Configuration_IsDeviceConfigured(g_PnpBridge->configuration, jobj, &jdevice) < 0) {
         LogInfo("Device is not configured. Dropping the change notification");
-        result = PNPBRIDGE_OK;
         goto end;
     }
 
-    result = PnpAdapterManager_SupportsIdentity(g_PnpBridge->interfaceMgr, jobj, &containsFilter, &key);
+    result = PnpAdapterManager_SupportsIdentity(g_PnpBridge->interfaceMgr, jdevice, &containsFilter, &key);
     if (PNPBRIDGE_OK != result) {
         goto end;
     }

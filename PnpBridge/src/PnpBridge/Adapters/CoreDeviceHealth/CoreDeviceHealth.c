@@ -138,7 +138,7 @@ void CoreDeviceNewDataSendEventCallback(PNP_CLIENT_RESULT pnpClientResult, void*
     LogInfo("CoreDeviceNewDataSendEventCallback called, result=%d, userContextCallback=%p", pnpClientResult, userContextCallback);
 }
 
-// PnP_Sample_SendEventAsync demonstrates sending a PnP event to Azure IoT
+// SerialPnp_SendEventAsync demonstrates sending a PnP event to Azure IoT
 int SendDeviceConnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCoreDevice)
 {
     int result;
@@ -160,7 +160,7 @@ int SendDeviceConnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCoreDe
 }
 
 
-// PnP_Sample_SendEventAsync demonstrates sending a PnP event to Azure IoT
+// SerialPnp_SendEventAsync demonstrates sending a PnP event to Azure IoT
 int SendDeviceDisconnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCoreDevice)
 {
     int result;

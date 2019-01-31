@@ -196,6 +196,7 @@
     <ClCompile Include="utility.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CmdAndPropHandler.h" />
     <None Include="config.json">
       <DeploymentContent>true</DeploymentContent>
     </None>

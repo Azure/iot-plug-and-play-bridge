@@ -36,7 +36,7 @@ JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config, const char
 
 JSON_Array* Configuration_GetConfiguredDevices(JSON_Value* config);
 
-PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message);
+PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message, JSON_Object** Device);
 
 const char* Configuration_GetConnectionString(JSON_Value* config);
 

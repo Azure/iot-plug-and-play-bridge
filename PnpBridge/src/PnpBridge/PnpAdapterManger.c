@@ -114,7 +114,8 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
 PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key) {
     bool containsMessageKey = false;
     char* interfaceId = NULL;
-    char* getIdentity = (char*) json_object_get_string(Message, "Identity");
+    JSON_Object* pnpParams = json_object_get_object(Message, "PnpParameters");
+    char* getIdentity = (char*) json_object_get_string(pnpParams, "Identity");
     MAP_RESULT mapResult;
 
     *supported = false;

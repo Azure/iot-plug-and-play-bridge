@@ -17,7 +17,12 @@
 #include "parson.h"
 
 
-const char* deviceChangeMessageformat = "{ \"HardwareId\":%s, \"Identity\":\"core-device-health\", \"SymbolicLink\":%s  }";
+const char* deviceChangeMessageformat = "{ \
+                                           \"Identity\": \"windows-pnp-discovery\", \
+                                           \"MatchParameters\": { \
+                                               \"HardwareId\":%s, \"SymbolicLink\":%s \
+                                            } \
+                                         }";
 
 PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeHandler = NULL;
 SINGLYLINKEDLIST_HANDLE g_deviceWatchers;

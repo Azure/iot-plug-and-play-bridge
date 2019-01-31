@@ -140,5 +140,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="config.json" />
+    <None Include="CmdAndPropHandler.h">
+      <Filter>Source Files\Adapters</Filter>
+    </None>
   </ItemGroup>
 </Project>

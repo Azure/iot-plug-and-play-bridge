@@ -18,17 +18,30 @@
 
 #include "Adapters\SerialPnp\SerialPnp.h"
 
-void RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
-void TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
-void UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length);
-void ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
-void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length);
+// BEGIN - PNPCSDK#20
+// https://github.com/Azure/azure-iot-sdk-c-pnp/issues/20
+// Temporary redirection for property and command handling since PnP C SDK property change 
+// callback doesn't provide the command name.
+void SerialPnp_PropertyUpdateHandlerRedirect(int index, unsigned const char* propertyInitial,
+    size_t propertyInitialLen, unsigned const char* propertyDataUpdated,
+    size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback);
 
-byte* StringSchemaToBinary(Schema Schema, byte* data, int* length);
+void SerialPnp_CommandUpdateHandlerRedirect(int index,
+    const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
+    PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
+    void* userContextCallback);
 
-int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
+#define CMD_PROP_HANDLER_ADAPTER_NAME SerialPnp
+#define PROP_HANDLER_ADAPTER_METHOD SerialPnp_PropertyUpdateHandlerRedirect
+#define CMD_HANDLER_ADAPTER_METHOD SerialPnp_CommandUpdateHandlerRedirect
 
-int UartReceiver(void* context)
+#include <CmdAndPropHandler.h>
+// END - PNPCSDK#20
+
+SINGLYLINKEDLIST_HANDLE g_InterfaceDefinitions = NULL;
+HANDLE g_hSerial = NULL;
+
+int SerialPnp_UartReceiver(void* context)
 {
     BYTE msgBuffer[2048];
     PBYTE p = msgBuffer;
@@ -40,8 +53,8 @@ int UartReceiver(void* context)
         byte* desc = NULL;
         DWORD length;
 
-        RxPacket(deviceContext, &desc, &length, 0x00);
-        UnsolicitedPacket(deviceContext, desc, length);
+        SerialPnp_RxPacket(deviceContext, &desc, &length, 0x00);
+        SerialPnp_UnsolicitedPacket(deviceContext, desc, length);
 
         if (desc != NULL) {
             free(desc);
@@ -52,7 +65,7 @@ int UartReceiver(void* context)
 }
 
 
-void TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length)
+void SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length)
 {
     int txLength = 1 + Length;
     // First iterate through and find out our new length
@@ -65,37 +78,37 @@ void TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length)
     }
 
     // Now construct outgoing buffer
-    byte* TxPacket = malloc(sizeof(byte) *txLength);
+    byte* SerialPnp_TxPacket = malloc(sizeof(byte) *txLength);
 
     txLength = 1;
-    TxPacket[0] = 0x5A; // Start of frame
+    SerialPnp_TxPacket[0] = 0x5A; // Start of frame
     for (int i = 0; i<Length; i++)
     {
         // Escape these bytes where necessary
         if ((OutPacket[i] == 0x5A) || (OutPacket[i] == 0xEF))
         {
-            TxPacket[txLength++] = 0xEF;
-            TxPacket[txLength++] = (byte)(OutPacket[i] - 1);
+            SerialPnp_TxPacket[txLength++] = 0xEF;
+            SerialPnp_TxPacket[txLength++] = (byte)(OutPacket[i] - 1);
         }
         else
         {
-            TxPacket[txLength++] = OutPacket[i];
+            SerialPnp_TxPacket[txLength++] = OutPacket[i];
         }
     }
 
     DWORD write_size = 0;
-    if (!WriteFile(serialDevice->hSerial, TxPacket, txLength, &write_size, NULL))
+    if (!WriteFile(serialDevice->hSerial, SerialPnp_TxPacket, txLength, &write_size, NULL))
     {
         LogError("write failed");
     }
 
-    free(TxPacket);
+    free(SerialPnp_TxPacket);
 }
 
-const EventDefinition* LookupEvent(char* EventName, int InterfaceId)
+const EventDefinition* SerialPnp_LookupEvent(char* EventName, int InterfaceId)
 {
     const InterfaceDefinition* interfaceDef;
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(InterfaceDefinitions);
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(g_InterfaceDefinitions);
 
     for(int i=0; i<InterfaceId-1; i++)
     {
@@ -117,7 +130,7 @@ const EventDefinition* LookupEvent(char* EventName, int InterfaceId)
     return NULL;
 }
 
-byte* StringSchemaToBinary(Schema Schema, byte* data, int* length)
+byte* SerialPnp_StringSchemaToBinary(Schema Schema, byte* data, int* length)
 {
     byte* bd = NULL;
 
@@ -159,7 +172,7 @@ byte* StringSchemaToBinary(Schema Schema, byte* data, int* length)
     return bd;
 }
 
-char* BinarySchemaToString(Schema Schema, byte* Data, byte length)
+char* SerialPnp_BinarySchemaToString(Schema Schema, byte* Data, byte length)
 {
     char* rxstrdata = malloc(256);
 
@@ -179,7 +192,7 @@ char* BinarySchemaToString(Schema Schema, byte* Data, byte length)
     return rxstrdata;
 }
 
-void UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length)
+void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length)
 {
     // Got an event
     if (packet[2] == 0x0A) {
@@ -192,20 +205,20 @@ void UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length
         memcpy(event_name, packet + 6, rxNameLength);
         event_name[rxNameLength] = '\0';
 
-        const EventDefinition* ev = LookupEvent(event_name, rxInterfaceId);
+        const EventDefinition* ev = SerialPnp_LookupEvent(event_name, rxInterfaceId);
 
         byte* rxData = malloc(sizeof(byte)*rxDataSize);
         memcpy(rxData, packet + 6 + rxNameLength, rxDataSize);
 
-        char* rxstrdata = BinarySchemaToString(ev->DataSchema, rxData, (byte) rxDataSize);
+        char* rxstrdata = SerialPnp_BinarySchemaToString(ev->DataSchema, rxData, (byte) rxDataSize);
         LogInfo("%s: %s", ev->defintion.Name, rxstrdata);
 
-        PnP_Sample_SendEventAsync(device->InterfaceHandle, ev->defintion.Name, rxstrdata);
+        SerialPnp_SendEventAsync(device->InterfaceHandle, ev->defintion.Name, rxstrdata);
 
         free(event_name);
         free(rxData);
     }
-    // Got a property update
+    // Got a command update
     else if (packet[2] == 0x08)
     {
         // TODO
@@ -215,9 +228,9 @@ void UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length
     }
 }
 
-const PropertyDefinition* LookupProperty(const char* propertyName, int InterfaceId)
+const PropertyDefinition* SerialPnp_LookupProperty(const char* propertyName, int InterfaceId)
 {
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(InterfaceDefinitions);
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(g_InterfaceDefinitions);
     const InterfaceDefinition* interfaceDef;
 
     for (int i = 0; i<InterfaceId - 1; i++)
@@ -240,9 +253,34 @@ const PropertyDefinition* LookupProperty(const char* propertyName, int Interface
     return NULL;
 }
 
-int PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* property, char* input)
+const CommandDefinition* SerialPnp_LookupCommand(const char* commandName, int InterfaceId)
 {
-    const PropertyDefinition* prop = LookupProperty(property, 0);
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(g_InterfaceDefinitions);
+    const InterfaceDefinition* interfaceDef;
+
+    for (int i = 0; i<InterfaceId - 1; i++)
+    {
+        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
+    }
+    interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
+
+    SINGLYLINKEDLIST_HANDLE command = interfaceDef->Commands;
+    LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(command);
+    const CommandDefinition* ev;
+    while (eventDef != NULL) {
+        ev = singlylinkedlist_item_get_value(eventDef);
+        if (strcmp(ev->defintion.Name, commandName) == 0) {
+            return ev;
+        }
+        eventDef = singlylinkedlist_get_next_item(eventDef);
+    }
+
+    return NULL;
+}
+
+int SerialPnp_PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* property, char* input)
+{
+    const PropertyDefinition* prop = SerialPnp_LookupProperty(property, 0);
 
     if (prop == NULL)
     {
@@ -251,7 +289,7 @@ int PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* property, c
 
     // otherwise serialize data
     int length = 0;
-    byte* inputPayload = StringSchemaToBinary(prop->DataSchema, input, &length);
+    byte* inputPayload = SerialPnp_StringSchemaToBinary(prop->DataSchema, input, &length);
 
     int nameLength = (int)strlen(property);
     int txlength = 6 + nameLength + length;
@@ -259,7 +297,7 @@ int PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* property, c
 
     txPacket[0] = (byte)(txlength & 0xFF);
     txPacket[1] = (byte)(txlength >> 8);
-    txPacket[2] = 0x07; // property request
+    txPacket[2] = 0x07; // command request
                         // [3] is reserved
     txPacket[4] = (byte) 0;
     txPacket[5] = (byte) nameLength;
@@ -269,9 +307,9 @@ int PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* property, c
         memcpy(txPacket + 6 + nameLength, inputPayload, length);
     }
 
-    LogInfo("Setting sample rate to %s", input);
+    LogInfo("Setting property %s to %s", property, input);
 
-    TxPacket(serialDevice, txPacket, txlength);
+    SerialPnp_TxPacket(serialDevice, txPacket, txlength);
 
     //ThreadAPI_Sleep(2000);
 
@@ -285,7 +323,56 @@ int PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* property, c
 }
 
 
-void ParseDescriptor(byte* descriptor, DWORD length)
+int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* command, char* input, char** response)
+{
+    const CommandDefinition* cmd = SerialPnp_LookupCommand(command, 0);
+
+    if (cmd == NULL)
+    {
+        return -1;
+    }
+
+    // otherwise serialize data
+    int length = 0;
+    byte* inputPayload = SerialPnp_StringSchemaToBinary(cmd->RequestSchema, input, &length);
+
+    int nameLength = (int)strlen(command);
+    int txlength = 6 + nameLength + length;
+    byte* txPacket = malloc(txlength);
+
+    txPacket[0] = (byte)(txlength & 0xFF);
+    txPacket[1] = (byte)(txlength >> 8);
+    txPacket[2] = 0x05; // command request
+                        // [3] is reserved
+    txPacket[4] = (byte)0;
+    txPacket[5] = (byte)nameLength;
+
+    memcpy(txPacket + 6, command, nameLength);
+    if (inputPayload != NULL) {
+        memcpy(txPacket + 6 + nameLength, inputPayload, length);
+    }
+
+    LogInfo("Invoking command %s to %s", command, input);
+
+    SerialPnp_TxPacket(serialDevice, txPacket, txlength);
+
+    byte* responsePacket;
+    SerialPnp_RxPacket(serialDevice, &responsePacket, &length, 0x02);
+
+    char* stval = SerialPnp_BinarySchemaToString(cmd->ResponseSchema, responsePacket, length);
+    *response = responsePacket;
+
+    if (inputPayload != NULL) {
+        free(inputPayload);
+    }
+
+    free(txPacket);
+
+    return 0;
+}
+
+
+void SerialPnp_ParseDescriptor(byte* descriptor, DWORD length)
 {
     int c = 4;
 
@@ -300,7 +387,7 @@ void ParseDescriptor(byte* descriptor, DWORD length)
     LogInfo("Device Name    : %s", display_name);
 
 
-    InterfaceDefinitions = singlylinkedlist_create();
+    g_InterfaceDefinitions = singlylinkedlist_create();
 
     c += display_name_length;
 
@@ -378,7 +465,7 @@ void ParseDescriptor(byte* descriptor, DWORD length)
 
                     singlylinkedlist_add(indef->Commands, tfdef);
                 }
-                else if (ptype == 0x02) // property
+                else if (ptype == 0x02) // command
                 {
                     PropertyDefinition* tfdef = calloc(1, sizeof(PropertyDefinition));
                     tfdef->defintion = fielddef;
@@ -429,7 +516,7 @@ void ParseDescriptor(byte* descriptor, DWORD length)
                 }
             }
 
-            singlylinkedlist_add(InterfaceDefinitions, indef);
+            singlylinkedlist_add(g_InterfaceDefinitions, indef);
         }
         else
         {
@@ -445,7 +532,7 @@ typedef struct _SERIAL_DEVICE {
 SINGLYLINKEDLIST_HANDLE SerialDeviceList = NULL;
 int SerialDeviceCount = 0;
 
-int FindSerialDevices()
+int SerialPnp_FindSerialDevices()
 {
     CONFIGRET cmResult = CR_SUCCESS;
     char* deviceInterfaceList;
@@ -488,40 +575,43 @@ int FindSerialDevices()
     return 0;
 }
 
-const char* serialDeviceChangeMessageformat = "{ \"Identity\":\"serial-pnp-interface\"  }";
+const char* serialDeviceChangeMessageformat = "{ \
+                                                 \"Identity\": \"serial-pnp-discovery\" \
+                                               }";
 
-int OpenDeviceWorker(void* context) {
+int SerialPnp_OpenDeviceWorker(void* context) {
     byte* desc;
     DWORD length;
     PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = {0};
     PSERIAL_DEVICE_CONTEXT deviceContext = context;
 
-    ResetDevice(deviceContext);
-    DeviceDescriptorRequest(deviceContext, &desc, &length);
+    SerialPnp_ResetDevice(deviceContext);
+    SerialPnp_DeviceDescriptorRequest(deviceContext, &desc, &length);
 
-    ParseDescriptor(desc, length);
-    PropertyHandler(deviceContext, "sample_rate", "5000");
+    SerialPnp_ParseDescriptor(desc, length);
+    SerialPnp_PropertyHandler(deviceContext, "sample_rate", "5000");
 
     STRING_HANDLE asJson = STRING_new_JSON(serialDeviceChangeMessageformat);
     JSON_Value* json = json_parse_string(serialDeviceChangeMessageformat);
     JSON_Object* jsonObject = json_value_get_object(json);
 
-    LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(InterfaceDefinitions);
+    LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_InterfaceDefinitions);
     while (interfaceItem != NULL) {
         const InterfaceDefinition* def = (const InterfaceDefinition*)singlylinkedlist_item_get_value(interfaceItem);
         json_object_set_string(jsonObject, "InterfaceId", def->Id);
         payload.Message = json_serialize_to_string(json_object_get_wrapping_value(jsonObject));
+        payload.MessageLength = (int)json_serialization_size(json_object_get_wrapping_value(jsonObject));
         payload.Context = deviceContext;
         deviceContext->SerialDeviceChangeCallback(&payload);
         interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
     }
 
-    UartReceiver(deviceContext);
+    SerialPnp_UartReceiver(deviceContext);
 
     return 0;
 }
 
-int OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback) {
+int SerialPnp_OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback) {
     BOOL status = FALSE;
     HANDLE hSerial = CreateFileA(port,
         GENERIC_READ | GENERIC_WRITE,
@@ -542,6 +632,9 @@ int OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVICE_CHANGE 
         return -1;
     }
 
+    // TODO: Create an handle for DiscoveryAdapter for lifetime
+    g_hSerial = hSerial;
+
     DCB dcbSerialParams = { 0 };
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
     if (!GetCommState(hSerial, &dcbSerialParams)) {
@@ -561,14 +654,14 @@ int OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVICE_CHANGE 
     deviceContext->InterfaceHandle = NULL;
     deviceContext->SerialDeviceChangeCallback = DeviceChangeCallback;
 
-    if (ThreadAPI_Create(&deviceContext->SerialDeviceWorker, OpenDeviceWorker, deviceContext) != THREADAPI_OK) {
+    if (ThreadAPI_Create(&deviceContext->SerialDeviceWorker, SerialPnp_OpenDeviceWorker, deviceContext) != THREADAPI_OK) {
         LogError("ThreadAPI_Create failed");
     }
 
     return 0;
 }
 
-void RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType)
+void SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType)
 {
     BYTE inb = 0;
     DWORD dwRead = 0;
@@ -625,7 +718,7 @@ void RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD*
     }
 }
 
-void ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice) {
+void SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice) {
     // Prepare packet
     byte* resetPacket = calloc(4, sizeof(byte)); // packet header
     byte* responsePacket = NULL;
@@ -636,12 +729,12 @@ void ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice) {
     ThreadAPI_Sleep(2000);
 
     // Send the new packet
-    TxPacket(serialDevice, resetPacket, 4);
+    SerialPnp_TxPacket(serialDevice, resetPacket, 4);
 
     ThreadAPI_Sleep(2000);
 
     DWORD length;
-    RxPacket(serialDevice, &responsePacket, &length, 0x02);
+    SerialPnp_RxPacket(serialDevice, &responsePacket, &length, 0x02);
 
     if (responsePacket == NULL) {
         LogError("received NULL for response packet");
@@ -656,12 +749,7 @@ void ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice) {
     LogInfo("Receieved reset response");
 }
 
-//New changes Start
-void StopDevice(HANDLE hSerial) {
-    CloseHandle(hSerial);
-}
-
-void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length)
+void SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length)
 {
     // Prepare packet
     byte txPacket[4] = { 0 }; // packet header
@@ -673,10 +761,10 @@ void DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, D
 
 
     // Send the new packets
-    TxPacket(serialDevice, txPacket, 4);
+    SerialPnp_TxPacket(serialDevice, txPacket, 4);
     LogInfo("Sent descriptor request");
 
-    RxPacket(serialDevice, desc, length, 0x04);
+    SerialPnp_RxPacket(serialDevice, desc, length, 0x04);
 
     if ((*desc)[2] != 0x04)
     {
@@ -723,7 +811,7 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
     PSERIAL_DEVICE seriaDevice = NULL;
     DWORD baudRate = atoi(baudRateParam);
     if (useComDeviceInterface) {
-        if (FindSerialDevices() < 0) {
+        if (SerialPnp_FindSerialDevices() < 0) {
             LogError("Failed to get com port %s", port);
         }
 
@@ -739,20 +827,21 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
 
     LogInfo("Opening com port %s", useComDeviceInterface ? seriaDevice->InterfaceName : port);
 
-    OpenDevice(useComDeviceInterface ? seriaDevice->InterfaceName : port, baudRate, DeviceChangeCallback);
+    SerialPnp_OpenDevice(useComDeviceInterface ? seriaDevice->InterfaceName : port, baudRate, DeviceChangeCallback);
     return 0;
 }
 
 int SerialPnp_StopDiscovery() {
+    CloseHandle(g_hSerial);
     return 0;
 }
 
-void SerialDataSendEventCallback(PNP_SEND_TELEMETRY_STATUS pnpSendEventStatus, void* userContextCallback)
+void SerialPnp_SendEventCallback(PNP_SEND_TELEMETRY_STATUS pnpSendEventStatus, void* userContextCallback)
 {
     LogInfo("SerialDataSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
 }
 
-int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data)
+int SerialPnp_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data)
 {
     int result;
     PNP_CLIENT_RESULT pnpClientResult;
@@ -764,7 +853,7 @@ int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* ev
     char msg[512];
     sprintf_s(msg, 512, "{\"%s\":\"%s\"}", eventName, data);
 
-    if ((pnpClientResult = PnP_InterfaceClient_SendTelemetryAsync(pnpInterface, "temp", (const unsigned char*)msg, strlen(msg), SerialDataSendEventCallback, NULL)) != PNP_CLIENT_OK)
+    if ((pnpClientResult = PnP_InterfaceClient_SendTelemetryAsync(pnpInterface, "temp", (const unsigned char*)msg, strlen(msg), SerialPnp_SendEventCallback, NULL)) != PNP_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_SendEventAsync failed, result=%d\n", pnpClientResult);
         result = __FAILURE__;
@@ -777,26 +866,71 @@ int PnP_Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterface, char* ev
     return result;
 }
 
-
-// PNP_READWRITE_PROPERTY_SAMPLE_STATE maintains state of system tied to specific interface.  Actual implementations
-// will tend to have actual program state as part of this.
-typedef struct PNP_READWRITE_PROPERTY_SAMPLE_STATE_TAG
+static void SerialPnp_PropertyUpdateHandler(const char* propertyName, unsigned const char* propertyInitial, size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback)
 {
-    PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClientHandle;
-} PNP_READWRITE_PROPERTY_SAMPLE_STATE;
+    PNP_CLIENT_RESULT pnpClientResult;
+    PNP_CLIENT_READWRITE_PROPERTY_RESPONSE propertyResponse;
+    PSERIAL_DEVICE_CONTEXT deviceContext;
 
-static void PropertyUpdateHandler(const char* propertyName, unsigned const char* propertyInitial, size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback);
+    LogInfo("Processed property.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
 
-#define PROPERTY_HANDLER(index) void PropertyUpdateHandler ## index(unsigned const char* propertyInitial, \
-    size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback) \
-    {PropertyUpdateHandlerRedirect(index, propertyInitial, propertyInitialLen, propertyDataUpdated, propertyDataUpdatedLen, \
-     desiredVersion, userContextCallback);};
+    deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
 
-static void PropertyUpdateHandlerRedirect(int index, unsigned const char* propertyInitial, 
-    size_t propertyInitialLen, unsigned const char* propertyDataUpdated, 
+    SerialPnp_PropertyHandler(deviceContext, propertyName, (char*)propertyDataUpdated);
+
+    // TODO: Send the correct response code below
+    propertyResponse.version = 1;
+    propertyResponse.propertyData = propertyDataUpdated;
+    propertyResponse.propertyDataLen = propertyDataUpdatedLen;
+    propertyResponse.responseVersion = desiredVersion;
+    propertyResponse.statusCode = 200;
+    propertyResponse.statusDescription = "Property Updated Successfully";
+
+    pnpClientResult = PnP_InterfaceClient_ReportReadWritePropertyStatusAsync(deviceContext->InterfaceHandle, propertyName, &propertyResponse, NULL, NULL);
+}
+
+// PnPSampleEnvironmentalSensor_SetCommandResponse is a helper that fills out a PNP_CLIENT_COMMAND_RESPONSE
+static void SerialPnp_SetCommandResponse(PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, const char* responseData, int status)
+{
+    size_t responseLen = strlen(responseData);
+    memset(pnpClientCommandResponseContext, 0, sizeof(*pnpClientCommandResponseContext));
+    pnpClientCommandResponseContext->version = PNP_CLIENT_COMMAND_RESPONSE_VERSION_1;
+
+    // Allocate a copy of the response data to return to the invoker.  The PnP layer that invoked PnPSampleEnvironmentalSensor_Blink
+    // takes responsibility for freeing this data.
+    if ((pnpClientCommandResponseContext->responseData = malloc(responseLen + 1)) == NULL)
+    {
+        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to allocate response data");
+        pnpClientCommandResponseContext->status = 500;
+    }
+    else
+    {
+        pnpClientCommandResponseContext->responseData = (unsigned char*)responseData;
+        //strcpy_s((char*)pnpClientCommandResponseContext->responseData, responseData);
+        pnpClientCommandResponseContext->responseDataLen = responseLen;
+        pnpClientCommandResponseContext->status = status;
+    }
+}
+
+
+void SerialPnp_CommandUpdateHandler(const char* commandName, const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext, PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, void* userContextCallback) {
+    PSERIAL_DEVICE_CONTEXT deviceContext;
+
+   // LogInfo("Processed command frequency property updated.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
+
+    deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
+
+    char* response;
+    SerialPnp_CommandHandler(deviceContext, commandName, (char*)pnpClientCommandContext->requestData, &response);
+    SerialPnp_SetCommandResponse(pnpClientCommandResponseContext, response, 200);
+}
+
+
+void SerialPnp_PropertyUpdateHandlerRedirect(int index, unsigned const char* propertyInitial,
+    size_t propertyInitialLen, unsigned const char* propertyDataUpdated,
     size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback)
 {
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(InterfaceDefinitions);
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(g_InterfaceDefinitions);
     const InterfaceDefinition* interfaceDef;
 
     for (int i = 0; i<0 - 1; i++)
@@ -809,79 +943,22 @@ static void PropertyUpdateHandlerRedirect(int index, unsigned const char* proper
     LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(property);
     const PropertyDefinition* ev = NULL;
     eventDef = singlylinkedlist_get_head_item(property);
-    int x = 0;
-    while (eventDef != NULL && x < index) {
+    for (int i = 0; i < index + 1; i++) {
         ev = singlylinkedlist_item_get_value(eventDef);
         eventDef = singlylinkedlist_get_next_item(eventDef);
-        x++;
     }
     if (NULL != ev) {
-        PropertyUpdateHandler(ev->defintion.Name, propertyInitial, propertyInitialLen, propertyDataUpdated, propertyDataUpdatedLen,
+        SerialPnp_PropertyUpdateHandler(ev->defintion.Name, propertyInitial, propertyInitialLen, propertyDataUpdated, propertyDataUpdatedLen,
             desiredVersion, userContextCallback);
     }
 }
 
-PROPERTY_HANDLER(0);
-PROPERTY_HANDLER(1);
-PROPERTY_HANDLER(2);
-PROPERTY_HANDLER(3);
-PROPERTY_HANDLER(4);
-PROPERTY_HANDLER(5);
-PROPERTY_HANDLER(6);
-PROPERTY_HANDLER(7);
-PROPERTY_HANDLER(8);
-PROPERTY_HANDLER(9);
-
-#define PROPERTY_HANDLER_METHOD(index) &PropertyUpdateHandler ## index
-
-void* PredefinedPropertyHandlerTables[] = {
-    PROPERTY_HANDLER_METHOD(0),
-    PROPERTY_HANDLER_METHOD(1),
-    PROPERTY_HANDLER_METHOD(2),
-    PROPERTY_HANDLER_METHOD(3),
-    PROPERTY_HANDLER_METHOD(4),
-    PROPERTY_HANDLER_METHOD(5),
-    PROPERTY_HANDLER_METHOD(6),
-    PROPERTY_HANDLER_METHOD(7),
-    PROPERTY_HANDLER_METHOD(8),
-    PROPERTY_HANDLER_METHOD(9)
-};
-
-static void PropertyUpdateHandler(const char* propertyName, unsigned const char* propertyInitial, size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback)
+void SerialPnp_CommandUpdateHandlerRedirect(int index,
+    const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
+    PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
+    void* userContextCallback)
 {
-    PNP_CLIENT_RESULT pnpClientResult;
-    PNP_CLIENT_READWRITE_PROPERTY_RESPONSE propertyResponse;
-    PSERIAL_DEVICE_CONTEXT deviceContext;
-
-    LogInfo("Processed telemetry frequency property updated.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
-
-    deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
-
-    PropertyHandler(deviceContext->hSerial, propertyName, (char*)propertyDataUpdated);
-
-    propertyResponse.version = 1;
-    propertyResponse.propertyData = propertyDataUpdated;
-    propertyResponse.propertyDataLen = propertyDataUpdatedLen;
-    propertyResponse.responseVersion = desiredVersion;
-    propertyResponse.statusCode = 200;
-    propertyResponse.statusDescription = "Property Updated Successfully";
-
-    pnpClientResult = PnP_InterfaceClient_ReportReadWritePropertyStatusAsync(deviceContext->InterfaceHandle, propertyName, &propertyResponse, NULL, NULL);
-}
-
-int SerialPnp_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD args) {
-    PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) args->Context;
-    JSON_Value* jvalue = json_parse_string(args->Message);
-    JSON_Object* jmsg = json_value_get_object(jvalue);
-    const char* interfaceId = json_object_get_string(jmsg, "InterfaceId");
-
-    PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
-
-    // Construct property table
-    PNP_CLIENT_READWRITE_PROPERTY_UPDATED_CALLBACK_TABLE serialPropertyTable = { 0 };
-    serialPropertyTable.version = 1;
-
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(InterfaceDefinitions);
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(g_InterfaceDefinitions);
     const InterfaceDefinition* interfaceDef;
 
     for (int i = 0; i<0 - 1; i++)
@@ -890,39 +967,139 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVI
     }
     interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
 
-    SINGLYLINKEDLIST_HANDLE property = interfaceDef->Properties;
-    LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(property);
-    const PropertyDefinition* ev;
+    SINGLYLINKEDLIST_HANDLE command = interfaceDef->Commands;
+    LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(command);
+    const CommandDefinition* ev = NULL;
+    eventDef = singlylinkedlist_get_head_item(command);
+    for (int i = 0; i < index + 1; i++) {
+        ev = singlylinkedlist_item_get_value(eventDef);
+        eventDef = singlylinkedlist_get_next_item(eventDef);
+    }
+    if (NULL != ev) {
+        SerialPnp_CommandUpdateHandler(ev->defintion.Name, pnpClientCommandContext, pnpClientCommandResponseContext, userContextCallback);
+    }
+}
+
+const InterfaceDefinition* SerialPnp_GetInterface(const char* interfaceId) {
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(g_InterfaceDefinitions);
+    while (interfaceDefHandle != NULL) {
+        const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
+        if (stricmp(interfaceDef->Id, interfaceId) == 0) {
+            return interfaceDef;
+        }
+        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
+    }
+    return NULL;
+}
+
+int SerialPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list) {
+    if (NULL == list) {
+        return 0;
+    }
+
+    LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(list);
     int count = 0;
-    while (eventDef != NULL) {
-        ev = singlylinkedlist_item_get_value(eventDef);
+    while (NULL != item) {
         count++;
-        eventDef = singlylinkedlist_get_next_item(eventDef);
+        item = singlylinkedlist_get_next_item(item);
+    }
+    return count;
+}
+
+int SerialPnp_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD args) {
+    PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT) args->Context;
+    JSON_Value* jvalue = json_parse_string(args->Message);
+    JSON_Object* jmsg = json_value_get_object(jvalue);
+    PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
+    const char* interfaceId = json_object_get_string(jmsg, "InterfaceId");
+    const InterfaceDefinition* interfaceDef = SerialPnp_GetInterface(interfaceId);
+    PNP_CLIENT_READWRITE_PROPERTY_UPDATED_CALLBACK_TABLE serialPropertyTable = { 0 };
+    PNP_CLIENT_COMMAND_CALLBACK_TABLE serialCommandTable = { 0 };
+    PNP_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
+    char** propertyNames = NULL;
+    PNP_READWRITE_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
+    char** commandNames = NULL;
+    int propertyCount = 0;
+    int commandCount = 0;
+
+    if (NULL == interfaceDef) {
+        return -1;
     }
 
-    serialPropertyTable.numCallbacks = count;
-    char** propertyNames = malloc(sizeof(char*)*count);
-    PNP_READWRITE_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = malloc(sizeof(PNP_READWRITE_PROPERTY_UPDATE_CALLBACK*)*count);
-    eventDef = singlylinkedlist_get_head_item(property);
-    int x = 0;
-    while (eventDef != NULL) {
-        ev = singlylinkedlist_item_get_value(eventDef);
-        propertyNames[x] = ev->defintion.Name;
-        propertyUpdateTable[x] = PredefinedPropertyHandlerTables[x];
-        x++;
-        eventDef = singlylinkedlist_get_next_item(eventDef);
+    // Construct property table
+    {
+        SINGLYLINKEDLIST_HANDLE property = interfaceDef->Properties;
+        propertyCount = SerialPnp_GetListCount(interfaceDef->Properties);
+
+        if (propertyCount > 0) {
+            LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(property);
+            const PropertyDefinition* ev;
+
+            propertyNames = malloc(sizeof(char*)*propertyCount);
+            propertyUpdateTable = malloc(sizeof(PNP_READWRITE_PROPERTY_UPDATE_CALLBACK*)*propertyCount);
+            eventDef = singlylinkedlist_get_head_item(property);
+            int x = 0;
+            while (eventDef != NULL) {
+                ev = singlylinkedlist_item_get_value(eventDef);
+                propertyNames[x] = ev->defintion.Name;
+                propertyUpdateTable[x] = PredefinedPropertyHandlerTables[x];
+                x++;
+                eventDef = singlylinkedlist_get_next_item(eventDef);
+            }
+
+            serialPropertyTable.numCallbacks = propertyCount;
+            serialPropertyTable.propertyNames = propertyNames;
+            serialPropertyTable.callbacks = propertyUpdateTable;
+            serialPropertyTable.version = 1;
+        }
     }
 
-    serialPropertyTable.propertyNames = propertyNames;
-    serialPropertyTable.callbacks = propertyUpdateTable;
+    // Construct command table
+    {
+        SINGLYLINKEDLIST_HANDLE command = interfaceDef->Commands;
+        int commandCount = SerialPnp_GetListCount(command);
+       
+        if (commandCount > 0) {
+            LIST_ITEM_HANDLE cmdDef;
+            int x = 0;
+            const CommandDefinition* cv;
 
-    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, &serialPropertyTable, NULL, deviceContext);
+            commandNames = malloc(sizeof(char*)*commandCount);
+            commandUpdateTable = malloc(sizeof(PNP_COMMAND_EXECUTE_CALLBACK*)*commandCount);
+            cmdDef = singlylinkedlist_get_head_item(command);
+            while (cmdDef != NULL) {
+                cv = singlylinkedlist_item_get_value(cmdDef);
+                commandNames[x] = cv->defintion.Name;
+                commandUpdateTable[x] = PredefinedCommandHandlerTables[x];
+                x++;
+                cmdDef = singlylinkedlist_get_next_item(cmdDef);
+            }
+
+            serialCommandTable.numCommandCallbacks = commandCount;
+            serialCommandTable.commandNames = commandNames;
+            serialCommandTable.commandCallbacks = commandUpdateTable;
+            serialCommandTable.version = 1;
+        }
+    }
+
+    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, propertyCount > 0 ? &serialPropertyTable : NULL, commandCount > 0 ? &serialCommandTable : NULL, deviceContext);
     if (NULL == pnpInterfaceClient) {
         return -1;
     }
 
-    free(propertyUpdateTable);
-    free(propertyNames);
+    if (NULL != propertyUpdateTable) {
+        free(propertyUpdateTable);
+    }
+    if (NULL != propertyNames) {
+        free(propertyNames);
+    }
+
+    if (NULL != commandUpdateTable) {
+        free(commandUpdateTable);
+    }
+    if (NULL != commandNames) {
+        free(commandNames);
+    }
 
     PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
     deviceContext->InterfaceHandle = PnpAdapter_GetPnpInterfaceClient(Interface);
