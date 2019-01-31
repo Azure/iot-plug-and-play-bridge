@@ -39,7 +39,6 @@ void SerialPnp_CommandUpdateHandlerRedirect(int index,
 // END - PNPCSDK#20
 
 SINGLYLINKEDLIST_HANDLE g_InterfaceDefinitions = NULL;
-HANDLE g_hSerial = NULL;
 
 int SerialPnp_UartReceiver(void* context)
 {
@@ -632,9 +631,6 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVI
         return -1;
     }
 
-    // TODO: Create an handle for DiscoveryAdapter for lifetime
-    g_hSerial = hSerial;
-
     DCB dcbSerialParams = { 0 };
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
     if (!GetCommState(hSerial, &dcbSerialParams)) {
@@ -832,7 +828,6 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
 }
 
 int SerialPnp_StopDiscovery() {
-    CloseHandle(g_hSerial);
     return 0;
 }
 
@@ -1114,6 +1109,7 @@ int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
         return 0;
     }
 
+    // BUG: If a serial device has multiple interface, this wont work
     if (deviceContext->hSerial) {
         CloseHandle(deviceContext->hSerial);
     }
