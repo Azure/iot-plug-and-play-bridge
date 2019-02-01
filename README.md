@@ -25,7 +25,7 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
 - IoT Edge (this is not required)
 
 ## Azure PnP Bridge Architecture
-![Architecture](/pnpbridge/docs/Pictures/AzurePnPBridge.png)
+![Architecture](./pnpbridge/docs/Pictures/AzurePnPBridge.png)
 
 ## Dev Machine Setup
 
