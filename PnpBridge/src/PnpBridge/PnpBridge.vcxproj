@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{8756FD40-34AF-4000-AAB9-C2A14E75B23B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>PnpBridge</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib;mfplat.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib;mfplat.lib</AdditionalDependencies>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib;mfplat.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\pnp_client\$(Configuration)\pnp_client.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_http_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_amqp_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\iothub_client\$(Configuration)\iothub_client_mqtt_ws_transport.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\umqtt\$(Configuration)\umqtt.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\$(Configuration)\parson.lib;..\..\deps\azure-iot-sdk-c-pnp\$(Platform)_$(Configuration)\c-utility\$(Configuration)\aziotsharedutil.lib;crypt32.lib;winhttp.lib;crypt32.lib;winhttp.lib;ws2_32.lib;secur32.lib;advapi32.lib;ncrypt.lib;rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Cfgmgr32.lib;mfplat.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Adapters\Camera\CameraIotPnpAPIs.h" />
+    <ClInclude Include="Adapters\Camera\CameraIotPnpDevice.h" />
+    <ClInclude Include="Adapters\Camera\CameraPnpDiscovery.h" />
+    <ClInclude Include="Adapters\Camera\CameraStatConsumer.h" />
+    <ClInclude Include="Adapters\Camera\JsonWrapper.h" />
+    <ClInclude Include="Adapters\Camera\pch.h" />
+    <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h" />
+    <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h" />
+    <ClInclude Include="PnpBridge.h" />
+    <ClInclude Include="ConfigurationParser.h" />
+    <ClInclude Include="DiscoveryAdapterInterface.h" />
+    <ClInclude Include="PnpAdapterInterface.h" />
+    <ClInclude Include="DiscoveryManager.h" />
+    <ClInclude Include="PnpAdapterManager.h" />
+    <ClInclude Include="PnpBridgeh.h" />
+    <ClInclude Include="PnpBridgeCommon.h" />
+    <ClInclude Include="Adapters\SerialPnp\SerialPnp.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Adapters\AdapterManifest.c" />
+    <ClCompile Include="Adapters\Camera\CameraIotPnpAPIs.cpp" />
+    <ClCompile Include="Adapters\Camera\CameraIotPnpDevice.cpp" />
+    <ClCompile Include="Adapters\Camera\CameraPnpDiscovery.cpp" />
+    <ClCompile Include="Adapters\Camera\CameraStatConsumer.cpp" />
+    <ClCompile Include="Adapters\Camera\JsonWrapper.cpp" />
+    <ClCompile Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.c" />
+    <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c" />
+    <ClCompile Include="Adapters\SerialPnp\SerialPnp.c" />
+    <ClCompile Include="ConfigurationParser.c" />
+    <ClCompile Include="PnpBridge.c" />
+    <ClCompile Include="DiscoveryManager.c" />
+    <ClCompile Include="PnpAdapterManger.c" />
+    <ClCompile Include="PnpBridgeService.c" />
+    <ClCompile Include="utility.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CmdAndPropHandler.h" />
+    <None Include="config.json">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
