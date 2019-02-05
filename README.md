@@ -30,7 +30,7 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
 ## Dev Machine Setup
 
 ### Development Pre-Requisite
-- In order to build Private Preview Azure PnP Bridge, you need to join Microsoft Azure team: https://github.com/Azure
+- In order to build Private Preview Azure PnP Bridge, you need to have access to Azure IoT PnP Preview at https://github.com/azure/azure-iot-pnp-preview. 
 
 - Ensure cmake and Visual Studio 2017 are installed
 
