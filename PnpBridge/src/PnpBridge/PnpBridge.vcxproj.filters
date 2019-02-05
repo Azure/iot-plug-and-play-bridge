@@ -90,6 +90,12 @@
     <ClInclude Include="PnpBridge.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
+    <ClInclude Include="Adapters\Camera\CameraCaptureEngine.h">
+      <Filter>Source Files\Adapters\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\Camera\CameraCaptureEngineCallbacks.h">
+      <Filter>Source Files\Adapters\Camera</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PnpBridge.c">
@@ -136,6 +142,12 @@
     </ClCompile>
     <ClCompile Include="Adapters\AdapterManifest.c">
       <Filter>Source Files\Adapters</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\Camera\CameraCaptureEngine.cpp">
+      <Filter>Source Files\Adapters\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\Camera\CameraCaptureEngineCallbacks.cpp">
+      <Filter>Source Files\Adapters\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

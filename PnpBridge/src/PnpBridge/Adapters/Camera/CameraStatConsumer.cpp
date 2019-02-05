@@ -163,6 +163,110 @@ CameraStatConsumer::PostStats(
     return S_OK;
 }
 
+HRESULT 
+CameraStatConsumer::TakePhoto(
+    )
+{
+    HRESULT                 hr = S_OK;
+    CameraCaptureEngine     camera;
+    ComPtr<IMFSample>       jpegFrame;
+
+    // Just in case we hven't CoInitializeEx/MFStartup yet...
+    RETURN_IF_FAILED (CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+    hr = MFStartup(MF_VERSION);
+    if (FAILED(hr))
+    {
+        (void)CoUninitialize();
+        RETURN_IF_FAILED (hr);
+    }
+
+    hr = camera.TakePhoto((m_SymbolicLinkName.empty() ? nullptr : m_SymbolicLinkName.c_str()), &jpegFrame);
+
+    (void)MFShutdown();
+    (void)CoUninitialize();
+    RETURN_IF_FAILED (hr);
+
+    m_JpegFrame = jpegFrame;
+
+    return S_OK;
+}
+
+HRESULT 
+CameraStatConsumer::GetJpegFrameSize(
+    _Out_ ULONG* pcbJpegFrameSize
+    )
+{
+    RETURN_HR_IF_NULL (E_POINTER, pcbJpegFrameSize);
+    *pcbJpegFrameSize = 0;
+
+    if (m_JpegFrame.Get() != nullptr)
+    {
+        DWORD  cBufCount = 0;
+
+        RETURN_IF_FAILED (m_JpegFrame->GetBufferCount(&cBufCount));
+        if (cBufCount > 0)
+        {
+            ComPtr<IMFMediaBuffer>  spJpegBuffer;
+
+            RETURN_IF_FAILED (m_JpegFrame->GetBufferByIndex(0, &spJpegBuffer));
+            RETURN_IF_FAILED (spJpegBuffer->GetCurrentLength((DWORD*)pcbJpegFrameSize));
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT 
+CameraStatConsumer::GetJpegFrame(
+    _Inout_ PBYTE pbJpegFrame, 
+    _In_ ULONG cbJpegFrame, 
+    _Out_opt_ ULONG* pcbWritten
+    )
+{
+    ULONG   cbNeeded = 0;
+    PBYTE   pbJpeg = nullptr;
+    ULONG   cbJpeg = 0;
+    
+    RETURN_HR_IF_NULL (E_INVALIDARG, pbJpegFrame);
+    RETURN_HR_IF (E_INVALIDARG, cbJpegFrame == 0);
+
+    if (m_JpegFrame.Get() != nullptr)
+    {
+        ComPtr<IMFMediaBuffer>  spJpegBuffer;
+        errno_t                 err = 0;
+        DWORD                   cBufCount = 0;
+
+        // There should be one buffer (we shouldn't see multi-buffer
+        // samples since that's only for network streaming samples).
+        RETURN_IF_FAILED (m_JpegFrame->GetBufferCount(&cBufCount));
+        RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), cBufCount == 0);
+        RETURN_IF_FAILED (m_JpegFrame->GetBufferByIndex(0, &spJpegBuffer));
+
+        // Once we've successfully locked, we should unlock before releasing.
+        RETURN_IF_FAILED (spJpegBuffer->Lock(&pbJpeg, nullptr, (DWORD*)&cbJpeg));
+
+        if (cbJpeg > cbJpegFrame)
+        {
+            (void)spJpegBuffer->Unlock();
+            RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
+        }
+        // errno_t doesn't translate to Win32 errors, just return
+        // E_INVALIDARG since that's what will cause memcpy_s to 
+        // fail.
+        err = memcpy_s (pbJpegFrame, cbJpegFrame, pbJpeg, cbJpeg);
+        (void)spJpegBuffer->Unlock();
+        RETURN_HR_IF (E_INVALIDARG, err != 0);
+    }
+
+    if (pcbWritten)
+    {
+        *pcbWritten = cbJpeg;
+    }
+
+    return S_OK;
+}
+
+
 /// Protected methods.
 void 
 CameraStatConsumer::ProcessETWEventCallback(
