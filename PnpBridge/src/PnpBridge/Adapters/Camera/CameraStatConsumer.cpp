@@ -170,6 +170,7 @@ CameraStatConsumer::TakePhoto(
     HRESULT                 hr = S_OK;
     CameraCaptureEngine     camera;
     ComPtr<IMFSample>       jpegFrame;
+    std::wstring            symbolicName;
 
     // Just in case we hven't CoInitializeEx/MFStartup yet...
     RETURN_IF_FAILED (CoInitializeEx(nullptr, COINIT_MULTITHREADED));
@@ -180,13 +181,19 @@ CameraStatConsumer::TakePhoto(
         RETURN_IF_FAILED (hr);
     }
 
+    m_lock.Lock();
+    symbolicName = m_SymbolicLinkName;
+    m_lock.Unlock();
+
     hr = camera.TakePhoto((m_SymbolicLinkName.empty() ? nullptr : m_SymbolicLinkName.c_str()), &jpegFrame);
 
     (void)MFShutdown();
     (void)CoUninitialize();
     RETURN_IF_FAILED (hr);
 
+    m_lock.Lock();
     m_JpegFrame = jpegFrame;
+    m_lock.Unlock();
 
     return S_OK;
 }
@@ -196,6 +203,8 @@ CameraStatConsumer::GetJpegFrameSize(
     _Out_ ULONG* pcbJpegFrameSize
     )
 {
+    AutoLock lock(&m_lock);
+
     RETURN_HR_IF_NULL (E_POINTER, pcbJpegFrameSize);
     *pcbJpegFrameSize = 0;
 
@@ -223,40 +232,38 @@ CameraStatConsumer::GetJpegFrame(
     _Out_opt_ ULONG* pcbWritten
     )
 {
-    ULONG   cbNeeded = 0;
-    PBYTE   pbJpeg = nullptr;
-    ULONG   cbJpeg = 0;
+    AutoLock lock(&m_lock);
+
+    PBYTE                   pbJpeg = nullptr;
+    ULONG                   cbJpeg = 0;
+    ComPtr<IMFMediaBuffer>  spJpegBuffer;
+    errno_t                 err = 0;
+    DWORD                   cBufCount = 0;
     
     RETURN_HR_IF_NULL (E_INVALIDARG, pbJpegFrame);
     RETURN_HR_IF (E_INVALIDARG, cbJpegFrame == 0);
 
-    if (m_JpegFrame.Get() != nullptr)
+    // There should be one buffer (we shouldn't see multi-buffer
+    // samples since that's only for network streaming samples).
+    RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), m_JpegFrame.Get() == nullptr);
+    RETURN_IF_FAILED (m_JpegFrame->GetBufferCount(&cBufCount));
+    RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), cBufCount == 0);
+    RETURN_IF_FAILED (m_JpegFrame->GetBufferByIndex(0, &spJpegBuffer));
+
+    // Once we've successfully locked, we should unlock before releasing.
+    RETURN_IF_FAILED (spJpegBuffer->Lock(&pbJpeg, nullptr, (DWORD*)&cbJpeg));
+
+    if (cbJpeg > cbJpegFrame)
     {
-        ComPtr<IMFMediaBuffer>  spJpegBuffer;
-        errno_t                 err = 0;
-        DWORD                   cBufCount = 0;
-
-        // There should be one buffer (we shouldn't see multi-buffer
-        // samples since that's only for network streaming samples).
-        RETURN_IF_FAILED (m_JpegFrame->GetBufferCount(&cBufCount));
-        RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), cBufCount == 0);
-        RETURN_IF_FAILED (m_JpegFrame->GetBufferByIndex(0, &spJpegBuffer));
-
-        // Once we've successfully locked, we should unlock before releasing.
-        RETURN_IF_FAILED (spJpegBuffer->Lock(&pbJpeg, nullptr, (DWORD*)&cbJpeg));
-
-        if (cbJpeg > cbJpegFrame)
-        {
-            (void)spJpegBuffer->Unlock();
-            RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
-        }
-        // errno_t doesn't translate to Win32 errors, just return
-        // E_INVALIDARG since that's what will cause memcpy_s to 
-        // fail.
-        err = memcpy_s (pbJpegFrame, cbJpegFrame, pbJpeg, cbJpeg);
         (void)spJpegBuffer->Unlock();
-        RETURN_HR_IF (E_INVALIDARG, err != 0);
+        RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
     }
+    // errno_t doesn't translate to Win32 errors, just return
+    // E_INVALIDARG since that's what will cause memcpy_s to 
+    // fail.
+    err = memcpy_s (pbJpegFrame, cbJpegFrame, pbJpeg, cbJpeg);
+    (void)spJpegBuffer->Unlock();
+    RETURN_HR_IF (E_INVALIDARG, err != 0);
 
     if (pcbWritten)
     {
