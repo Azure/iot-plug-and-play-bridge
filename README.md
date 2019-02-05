@@ -53,9 +53,7 @@ Azure PnP Bridge comes with set of supported peripherals:
 - Peripherals connected over Serial COM ports or Serial over USB
     - Please refer Arduino/MCU programming guide on how to enable Azure PNP Interfaces
     - Peripherals connected HID over USB
-    - Cameras connected over USB
-    - IP cameras (? Need clear description on how to setup IP camera)
-    - Built-in MIPI cameras (should we bother to list it here)
+    - All cameras supported by Windows OS (Webcam, MIPI cameras and IP of RGB/IR/Depth cameras).
 
 For serial/USB peripheral devices that are not included in current source code, developers can update the Azure PnP Bridge code to enable their custom protocols.
 
