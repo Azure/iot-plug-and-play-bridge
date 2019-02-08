@@ -9,7 +9,7 @@
 
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value) {
     char a[2] = { 0 };
-    a[0] = value;
+    a[0] = (char)value;
     return Map_Add(handle, key, a);
 }
 

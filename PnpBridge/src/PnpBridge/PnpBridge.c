@@ -166,6 +166,7 @@ void PnpBridge_Release() {
 
 int PnpBridge_Worker_Thread(void* threadArgument)
 {
+    AZURE_UNREFERENCED_PARAMETER(threadArgument);
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
     // Start Device Discovery
@@ -312,7 +313,7 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
             id[idSize - 1] = '\0';
 
             // check if interface is already published
-            PPNPBRIDGE_INTERFACE_TAG* interfaceTags = malloc(sizeof(PPNPBRIDGE_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
+            //PPNPBRIDGE_INTERFACE_TAG* interfaceTags = malloc(sizeof(PPNPBRIDGE_INTERFACE_TAG)*g_PnpBridge->publishedInterfaceCount);
             LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(g_PnpBridge->publishedInterfaces);
             while (interfaceItem != NULL) {
                 PPNPBRIDGE_INTERFACE_TAG interface = (PPNPBRIDGE_INTERFACE_TAG) singlylinkedlist_item_get_value(interfaceItem);

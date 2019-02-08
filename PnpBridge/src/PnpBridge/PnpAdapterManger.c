@@ -113,7 +113,6 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
 
 PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key) {
     bool containsMessageKey = false;
-    char* interfaceId = NULL;
     JSON_Object* pnpParams = json_object_get_object(Message, "PnpParameters");
     char* getIdentity = (char*) json_object_get_string(pnpParams, "Identity");
     MAP_RESULT mapResult;
@@ -143,6 +142,8 @@ PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapt
     // Get the module using the key as index
     PPNP_ADAPTER  pnpAdapter = PNP_ADAPTER_MANIFEST[key];
 
+    AZURE_UNREFERENCED_PARAMETER(adapter);
+
     PPNPADAPTER_INTERFACE pnpInterface = malloc(sizeof(PNPADAPTER_INTERFACE));
 
     //pnpInterface->Interface = InterfaceClient;
@@ -163,6 +164,8 @@ PNPBRIDGE_RESULT PnpAdapterManager_ReleasePnpInterface(PPNP_ADAPTER_MANAGER adap
     if (NULL == interfaceClient) {
         return PNPBRIDGE_INVALID_ARGS;
     }
+
+    AZURE_UNREFERENCED_PARAMETER(adapter);
 
     PPNPADAPTER_INTERFACE pnpInterface = (PPNPADAPTER_INTERFACE)interfaceClient;
 

@@ -104,7 +104,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
     int res = -1;
     bool foundMatch = false;
 
-    const char* formatId = json_object_dotget_string(Message, "Identity");
+   // const char* formatId = json_object_dotget_string(Message, "Identity");
     discMatchParams = json_object_get_object(Message, "MatchParameters");
 
     // There needs to be only one match at the end.
@@ -115,7 +115,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
             continue;
         }
 
-        const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
+//        const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
         if (true) { //strcmp(deviceFormatId, formatId) == 0) {
             JSON_Object* matchCriteria = json_object_dotget_object(device, "MatchFilters");
             const char* matchType = json_object_get_string(matchCriteria, "MatchType");
@@ -138,8 +138,8 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
 
             JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, "MatchParameters");
             const size_t matchParameterCount = json_object_get_count(matchParameters);
-            for (int i = 0; i < (int)matchParameterCount; i++) {
-                const char* name = json_object_get_name(matchParameters, i);
+            for (int j = 0; j < (int)matchParameterCount; j++) {
+                const char* name = json_object_get_name(matchParameters, j);
                 const char* value = json_object_get_string(matchParameters, name);
 
                 if (!json_object_dothas_value(discMatchParams, name)) {
