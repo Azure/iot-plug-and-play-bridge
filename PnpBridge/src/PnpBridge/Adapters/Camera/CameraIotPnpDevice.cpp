@@ -268,7 +268,7 @@ CameraIotPnpDevice::LoopTelemetry(
             RETURN_IF_FAILED (pjson->AddValueAsString("dropped", stats_post.m_dropped));
             RETURN_IF_FAILED (pjson->AddValueAsString("expected_framerate", dblExpectedFps));
             RETURN_IF_FAILED (pjson->AddValueAsString("actual_framerate", dblActualFps));
-            //RETURN_IF_FAILED (ReportTelemetry("camera_health", (const unsigned char *)pjson->GetMessage(), pjson->GetSize()));
+            RETURN_IF_FAILED (ReportTelemetry("camera_health", (const unsigned char *)pjson->GetMessage(), pjson->GetSize()));
         }
     } while (!fShutdown);
 
