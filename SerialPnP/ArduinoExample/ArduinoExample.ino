@@ -73,10 +73,6 @@ void setup() {
                          SerialPnPSchema_Int,                      // data schema of input to command
                          SerialPnPSchema_Int,                    // data schema of output to command
                          (SerialPnPCb*) CbCalibrate);                // callback - see below
-
-    // This call must be made once to complete Serial PnP Setup, after all interaces have been defined.
-    // It will notify the host that device initialization is complete.
-    SerialPnP_Ready();
 }
 
 void loop() {
