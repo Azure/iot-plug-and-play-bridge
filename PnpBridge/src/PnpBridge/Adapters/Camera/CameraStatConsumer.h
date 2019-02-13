@@ -63,5 +63,8 @@ protected:
     std::vector<HCMNOTIFICATION>                        m_vecWatcherHandles;
     std::wstring                                        m_SymbolicLinkName;
     std::wstring                                        m_SymbolicLinkNameReceived;
-    ComPtr<IMFSample>                                   m_JpegFrame;
+    bool                                                m_fCoInit;
+    bool                                                m_fMfStartup;
+    std::unique_ptr<BYTE[]>                             m_jpegFrame;
+    size_t                                              m_jpegFrameSize;
 };

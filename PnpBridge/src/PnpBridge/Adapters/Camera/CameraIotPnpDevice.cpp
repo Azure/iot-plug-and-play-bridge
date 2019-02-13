@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "CameraIotPnpDevice.h"
+#include <pnpbridgecommon.h>
+#include <pnpbridge.h>
 
 #define ONE_SECOND_IN_100HNS        10000000    // 10,000,000 100hns in 1 second.
 #define ONE_MILLISECOND_IN_100HNS   10000       // 10,000 100hns in 1 millisecond.
@@ -8,6 +10,7 @@ CameraIotPnpDevice::CameraIotPnpDevice()
 :   m_PnpClientInterface(nullptr)
 ,   m_hWorkerThread(nullptr)
 ,   m_hShutdownEvent(nullptr)
+,   m_PnpDeviceClient(nullptr)
 {
 
 }
@@ -17,6 +20,7 @@ CameraIotPnpDevice::~CameraIotPnpDevice()
     // We don't close this handle, it's closed by the DeviceAggregator
     // when the interface is released.
     m_PnpClientInterface = nullptr;
+    m_PnpDeviceClient = nullptr;
 
     Shutdown();
 }
@@ -24,6 +28,7 @@ CameraIotPnpDevice::~CameraIotPnpDevice()
 HRESULT
 CameraIotPnpDevice::Initialize(
     _In_ PNP_INTERFACE_CLIENT_HANDLE hPnpClientInterface, 
+    _In_ PNP_DEVICE_CLIENT_HANDLE hPnpDeviceClient,
     _In_opt_z_ LPCWSTR deviceName
     )
 {
@@ -35,6 +40,7 @@ CameraIotPnpDevice::Initialize(
     RETURN_IF_FAILED (m_cameraStats->Initialize(nullptr, GUID_NULL, deviceName));
     RETURN_IF_FAILED (m_cameraStats->AddProvider(g_FrameServerEventProvider));
     m_PnpClientInterface = hPnpClientInterface;
+    m_PnpDeviceClient = hPnpDeviceClient;
 
     return S_OK;
 }
@@ -262,11 +268,77 @@ CameraIotPnpDevice::LoopTelemetry(
             RETURN_IF_FAILED (pjson->AddValueAsString("dropped", stats_post.m_dropped));
             RETURN_IF_FAILED (pjson->AddValueAsString("expected_framerate", dblExpectedFps));
             RETURN_IF_FAILED (pjson->AddValueAsString("actual_framerate", dblActualFps));
-            RETURN_IF_FAILED (ReportTelemetry("camera_health", (const unsigned char *)pjson->GetMessage(), pjson->GetSize()));
+            //RETURN_IF_FAILED (ReportTelemetry("camera_health", (const unsigned char *)pjson->GetMessage(), pjson->GetSize()));
         }
     } while (!fShutdown);
 
     RETURN_IF_FAILED (m_cameraStats->Stop());
+
+    return S_OK;
+}
+
+HRESULT             
+CameraIotPnpDevice::TakePhotoOp(
+    _Out_ std::string& strResponse
+    )
+{
+    ULONG                   cbJpeg = 0;
+    ULONG                   cbWritten = 0;
+    std::unique_ptr<BYTE[]> pbJpeg;
+    FILETIME                ft = { };
+    SYSTEMTIME              st = { };
+    char                    szFile[MAX_PATH] = { };
+    int                     pnpResult = PNPBRIDGE_OK;
+
+    RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_NOT_READY), m_PnpDeviceClient);
+    RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_NOT_READY), m_cameraStats.get());
+
+    RETURN_IF_FAILED (m_cameraStats->TakePhoto());
+    RETURN_IF_FAILED (m_cameraStats->GetJpegFrameSize(&cbJpeg));
+    
+    pbJpeg = std::make_unique<BYTE[]>(cbJpeg);
+    RETURN_IF_FAILED (m_cameraStats->GetJpegFrame(pbJpeg.get(), cbJpeg, &cbWritten));
+
+    GetSystemTimePreciseAsFileTime(&ft);
+    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), !FileTimeToSystemTime(&ft, &st));
+    RETURN_IF_FAILED (StringCchPrintfA(szFile, ARRAYSIZE(szFile), "photo_%04d-%02d-%02d-%02d-%02d-%02d.%03d.jpg", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds));
+
+
+    // Write the photo to the local temp folder.  This will keep overwriting
+    // the old photo so we will only keep the most current photo in our
+    // temp folder--this is to avoid filling up our file system with
+    // old photos.
+    WritePhotoToTemp(pbJpeg.get(), cbJpeg);
+
+
+
+    pnpResult = PnpBridge_UploadToBlobAsync(szFile,
+                                            pbJpeg.get(),
+                                            cbJpeg,
+                                            CameraIotPnpDevice_BlobUploadCallback,
+                                            (void*)this);
+    switch(pnpResult)
+    {
+    case PNPBRIDGE_OK:
+        break;
+    case PNPBRIDGE_INSUFFICIENT_MEMORY:
+        RETURN_IF_FAILED (E_OUTOFMEMORY);
+    case PNPBRIDGE_INVALID_ARGS:
+        RETURN_IF_FAILED (E_INVALIDARG);
+        break;
+    case PNPBRIDGE_CONFIG_READ_FAILED:
+        RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_BAD_CONFIGURATION));
+        break;
+    case PNPBRIDGE_DUPLICATE_ENTRY:
+        RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_DUP_NAME));
+    case PNPBRIDGE_FAILED:
+    default:
+        RETURN_IF_FAILED (E_UNEXPECTED);
+        break;
+    }
+
+    // Send back the file name here...
+    strResponse = "{ photo : " + std::string(szFile) + " }";
 
     return S_OK;
 }
@@ -287,6 +359,15 @@ CameraIotPnpDevice::CameraIotPnpDevice_TelemetryCallback(
     LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpTelemetryStatus, userContextCallback);
 }
 
+void __cdecl
+CameraIotPnpDevice::CameraIotPnpDevice_BlobUploadCallback(
+    IOTHUB_CLIENT_FILE_UPLOAD_RESULT result, 
+    void* userContextCallback
+    )
+{    
+    LogInfo("%s:%d upload_result=%d,context=0x%p", __FUNCTION__, __LINE__, result, userContextCallback);
+}
+
 DWORD 
 WINAPI 
 CameraIotPnpDevice::TelemetryWorkerThreadProc(
@@ -301,4 +382,34 @@ CameraIotPnpDevice::TelemetryWorkerThreadProc(
     }
 
     return 0;
+}
+
+HRESULT
+CameraIotPnpDevice::WritePhotoToTemp(
+    _In_reads_bytes_(cbJpeg) PBYTE pbJpeg, 
+    _In_ ULONG cbJpeg
+    )
+{
+    HANDLE  hFile = INVALID_HANDLE_VALUE;
+    char    szTemp[MAX_PATH + 1] = { };
+    size_t  cch = 0;
+    BOOL    fResult = FALSE;
+    ULONG   cbWritten = 0;
+
+    RETURN_HR_IF_NULL (E_INVALIDARG, pbJpeg);
+    RETURN_HR_IF (E_INVALIDARG, cbJpeg == 0);
+
+    // Use the ANSI version instead of the wide-char.
+    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), 0 == GetTempPathA(ARRAYSIZE(szTemp), szTemp));
+    RETURN_IF_FAILED (StringCchCatA(szTemp, ARRAYSIZE(szTemp), "current_photo.jpg"));
+
+    LogInfo ("Writing photo to temp folder (%s)", szTemp);
+
+    hFile = CreateFileA(szTemp, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), hFile == INVALID_HANDLE_VALUE);
+    fResult = WriteFile(hFile, pbJpeg, cbJpeg, &cbWritten, nullptr);
+    (void) CloseHandle(hFile);
+    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), !fResult);
+
+    return S_OK;
 }
