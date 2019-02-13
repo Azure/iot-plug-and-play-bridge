@@ -8,8 +8,6 @@
 #include <Wire.h>
 #include "SerialPnP.h"
 
-void(*__HardFault)() = 0;
-
 // This function will be called during SerialPnP initialization, and should
 // configure the serial port for SerialPnP operation, enabling it with a baud
 // rate of 115200 and other settings compliant with the Serial PnP specification.
@@ -51,5 +49,7 @@ SerialPnP_PlatformSerialWrite(
 void
 SerialPnP_PlatformReset()
 {
-    __HardFault();
+    // This call must be made once to complete Serial PnP Setup, after all interaces have been defined.
+    // It will notify the host that device initialization is complete.
+    SerialPnP_Ready();
 }
