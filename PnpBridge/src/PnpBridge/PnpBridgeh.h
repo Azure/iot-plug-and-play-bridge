@@ -18,13 +18,7 @@ typedef struct _PNP_BRIDGE {
     PDISCOVERY_MANAGER discoveryMgr;
 
     // Manages loading all pnp adapter plugins and their lifetime
-    PPNP_ADAPTER_MANAGER interfaceMgr;
-
-    // List of publised pnp interfaces
-    SINGLYLINKEDLIST_HANDLE publishedInterfaces;
-
-    // Number of published pnp interfaces
-    int publishedInterfaceCount;
+    PPNP_ADAPTER_MANAGER adapterMgr;
 
     LOCK_HANDLE dispatchLock;
 
@@ -32,6 +26,8 @@ typedef struct _PNP_BRIDGE {
     JSON_Value* configuration;
 
 } PNP_BRIDGE, *PPNP_BRIDGE;
+
+void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
 
 #ifdef __cplusplus
 }

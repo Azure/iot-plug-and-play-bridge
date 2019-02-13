@@ -31,7 +31,7 @@ CameraPnpInterfaceShutdown(
 
 int
 CameraPnpInterfaceBind(
-    _In_ PNPADAPTER_INTERFACE_HANDLE Interface, 
+    _In_ PNPADAPTER_CONTEXT adapterHandle,
     _In_ PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, 
     _In_ PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload
     );

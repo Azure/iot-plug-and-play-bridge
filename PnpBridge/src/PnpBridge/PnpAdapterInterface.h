@@ -9,14 +9,10 @@ extern "C"
 {
 #endif
 
-typedef struct _PNPADAPTER_INTERFACE {
-    PNP_INTERFACE_CLIENT_HANDLE Interface;
-    void* Context;
-    int key;
-} PNPADAPTER_INTERFACE, *PPNPADAPTER_INTERFACE;
-
+// Pnp adapter interface handle
 typedef void* PNPADAPTER_INTERFACE_HANDLE;
-
+typedef PNPADAPTER_INTERFACE_HANDLE* PPNPADAPTER_INTERFACE_HANDLE;
+typedef void* PNPADAPTER_CONTEXT;
 
 /**
 * @brief    PNPADAPTER_PNP_INTERFACE_INITIALIZE callback uses to initialize a pnp adapter.
@@ -50,7 +46,23 @@ typedef int(*PNPADAPTER_PNP_INTERFACE_SHUTDOWN)();
 *
 * @returns  integer greater than zero on success and other values on failure.
 */
-typedef int(*PNPADAPTER_BIND_PNP_INTERFACE)(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload);
+//typedef int(*PNPADAPTER_BIND_PNP_INTERFACE)(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload);
+
+typedef int(*PNPADAPTER_BIND_PNP_INTERFACE)(PNPADAPTER_CONTEXT adapterHandle, 
+                                            PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle,
+                                            PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload);
+
+// NOTES TO SELF:
+
+//
+// Config update requires bridge tear down and restart
+//
+
+// Discovered Device -> Bind -> CreatePnpInterfaces -> Create Pnp Interface client ->
+// Create Pnp Adapter Interface -> Associate it with the adapter and store the device config pointer -> Get All interface for all adapters -> publish
+//
+
+// ***************
 
 /**
 * @brief    PNPADAPTER_RELEASE_PNP_INTERFACE uninitializes the pnp interface.
@@ -61,8 +73,40 @@ typedef int(*PNPADAPTER_BIND_PNP_INTERFACE)(PNPADAPTER_INTERFACE_HANDLE pnpInter
 *
 * @returns  integer greater than zero on success and other values on failure.
 */
-typedef int(*PNPADAPTER_RELEASE_PNP_INTERFACE)(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
+typedef int(*PNPADAPTER_INTERFACE_RELEASE)(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
 
+
+typedef int(*PNPADAPTER_DEVICE_ARRIVED)(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload);
+
+/**
+   PnpAdapterInterface Methods
+**/
+
+// Pnp adapter interface creation parameters
+typedef struct _PNPADPATER_INTERFACE_INIT_PARAMS {
+    PNPADAPTER_DEVICE_ARRIVED deviceArrived;
+	PNPADAPTER_INTERFACE_RELEASE releaseInterface;
+} PNPADPATER_INTERFACE_INIT_PARAMS, *PPNPADPATER_INTERFACE_INIT_PARAMS;
+
+/**
+* @brief    PnpAdapter_CreatePnpInterface creates a PnP Bridge adapter interface
+
+* @param    pnpAdapterInterface          Handle to pnp adapter interface
+*
+* @returns  Result indicating status of pnp adapter interface creation
+*/
+int PnpAdapterInterface_Create(PNPADAPTER_CONTEXT adapterHandle, const char* interfaceName,
+                                  PNP_INTERFACE_CLIENT_HANDLE Interface,
+                                  PPNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface,
+								  PPNPADPATER_INTERFACE_INIT_PARAMS params);
+
+/**
+* @brief    PnpAdapter_DestroyPnpInterface destroys a PnP Bridge adapter interface
+
+* @param    pnpAdapterInterface          Handle to pnp adapter interface
+*
+*/
+void PnpAdapterInterface_Destroy(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface);
 
 /**
 * @brief    PnpAdapter_GetPnpInterfaceClient gets the Azure iot pnp interface client handle
@@ -71,23 +115,7 @@ typedef int(*PNPADAPTER_RELEASE_PNP_INTERFACE)(PNPADAPTER_INTERFACE_HANDLE pnpIn
 *
 * @returns  Handle to Azure Pnp Interface client
 */
-PNP_INTERFACE_CLIENT_HANDLE PnpAdapter_GetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
-
-/**
-* @brief    PnpAdapter_SetPnpInterfaceClient seta the Azure iot pnp interface client handle
-*
-* @remarks  This API is for private preview only. When PnpBridge calls CreatePnpInterface 
-            callback on a pnp adapter, the adapter should create the Azure PnpInterfaceClient 
-            using PnP_InterfaceClient_Create and then call PnpAdapter_SetPnpInterfaceClient with
-            the PnpInterfaceClient
-
-* @param    pnpInterface          Handle to pnp adapter interface
-*
-** @param   pnpInterfaceClient    Handle to Azure pnp interface client
-*
-* @returns  VOID
-*/
-void PnpAdapter_SetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient);
+PNP_INTERFACE_CLIENT_HANDLE PnpAdapterInterface_GetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface);
 
 /**
 * @brief    PnpAdapter_SetContext sets a context for pnp adapter interface handle
@@ -98,7 +126,7 @@ void PnpAdapter_SetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpInterface, 
 *
 * @returns  integer greater than zero on success and other values on failure.
 */
-int PnpAdapter_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpInterface, void* context);
+int PnpAdapterInterface_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface, void* context);
 
 /**
 * @brief    PnpAdapter_GetContext gets context set by pnp adapter.
@@ -109,16 +137,23 @@ int PnpAdapter_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpInterface, void* contex
 *
 * @returns  void* context
 */
-void* PnpAdapter_GetContext(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
+void* PnpAdapterInterface_GetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface);
 
+/*
+	PnpAdapter Binding info
+*/
 typedef struct _PNP_ADAPTER {
     // Identity of the Pnp Adapter that will be used in the config 
     // of a device under PnpParameters
-    const char* Identity;
-    PNPADAPTER_PNP_INTERFACE_INITIALIZE Initialize;
-    PNPADAPTER_BIND_PNP_INTERFACE CreatePnpInterface;
-    PNPADAPTER_RELEASE_PNP_INTERFACE ReleaseInterface;
-    PNPADAPTER_PNP_INTERFACE_SHUTDOWN Shutdown;
+    const char* identity;
+
+    PNPADAPTER_PNP_INTERFACE_INITIALIZE initialize;
+
+	PNPADAPTER_BIND_PNP_INTERFACE createPnpInterface;
+
+	//PNPADAPTER_RELEASE_PNP_INTERFACE releaseInterface;
+
+	PNPADAPTER_PNP_INTERFACE_SHUTDOWN shutdown;
 } PNP_ADAPTER, *PPNP_ADAPTER;
 
 #ifdef __cplusplus

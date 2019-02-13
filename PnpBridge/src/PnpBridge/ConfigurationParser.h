@@ -26,6 +26,8 @@ PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename,
 */
 PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *configString, JSON_Value** config);
 
+JSON_Object* Configuration_GetMatchParametersForDevice(JSON_Object* device);
+
 JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device);
 
 JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device);

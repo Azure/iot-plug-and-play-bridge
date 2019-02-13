@@ -39,9 +39,11 @@ extern "C"
 
 #include "parson.h"
 
-
-/** @brief Enumeration specifying the status of calls to various APIs in this module.
-*/
+#define TRY
+#define LEAVE   goto __tryLabel;
+#define FINALLY goto __tryLabel; __tryLabel:
+#undef __try
+#undef __finally
 
 #define PNPBRIDGE_RESULT_VALUES \
     PNPBRIDGE_OK, \
@@ -53,6 +55,8 @@ extern "C"
 
     DEFINE_ENUM(PNPBRIDGE_RESULT, PNPBRIDGE_RESULT_VALUES);
 
+#define PNPBRIDGE_SUCCESS(Result) (Result == PNPBRIDGE_OK)
+
 #include "ConfigurationParser.h"
 
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
@@ -60,6 +64,17 @@ MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
 int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 
 #include <PnpBridge.h>
+
+#define PNP_CONFIG_IDENTITY_NAME "Identity"
+#define PNP_CONFIG_INTERFACE_ID_NAME "InterfaceId"
+#define PNP_CONFIG_PERSISTENT_NAME "Persistent"
+#define PNP_CONFIG_MATCH_FILTERS_NAME "MatchFilters"
+#define PNP_CONFIG_MATCH_TYPE_NAME "MatchType"
+#define PNP_CONFIG_NAME_MATCH_PARAMETERS "MatchParameters"
+#define PNP_CONFIG_DISCOVERY_ADAPTER_NAME "DiscoveryAdapter"
+#define PNP_CONFIG_NAME_PNP_PARAMETERS "PnpParameters"
+#define PNP_CONFIG_NAME_PNP_ADAPTERS "PnpAdapters"
+#define PNP_CONFIG_NAME_DISCOVERY_ADAPTERS "DiscoveryAdapters"
 
 #ifdef __cplusplus
 }

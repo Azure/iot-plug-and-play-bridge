@@ -11,9 +11,9 @@ PNP_ADAPTER CameraPnpInterface = {
     "camera-health-monitor",
     CameraPnpInterfaceInitialize,
     CameraPnpInterfaceBind,
-    CameraPnpInterfaceRelease,
     CameraPnpInterfaceShutdown
 };
+//    CameraPnpInterfaceRelease,
 
 // Camera discovery API entry points.
 CameraPnpDiscovery*  g_pPnpDiscovery = nullptr;
@@ -74,7 +74,7 @@ CameraPnpInterfaceShutdown(
 
 int
 CameraPnpInterfaceBind(
-    _In_ PNPADAPTER_INTERFACE_HANDLE Interface,
+    _In_ PNPADAPTER_CONTEXT adapterHandle,
     _In_ PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle,
     _In_ PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload
     )
@@ -87,6 +87,7 @@ CameraPnpInterfaceBind(
     JSON_Value*                         jmsg;
     JSON_Object*                        jobj;
 
+	PNPADAPTER_INTERFACE_HANDLE Interface = NULL;
 
     if (nullptr == Interface || nullptr == payload || nullptr == payload->Context)
     {
@@ -103,13 +104,13 @@ CameraPnpInterfaceBind(
     pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, nullptr, nullptr, nullptr);
     RETURN_HR_IF_NULL (E_UNEXPECTED, pnpInterfaceClient);
 
-    PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+    //PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
 
     pIotPnp = std::make_unique<CameraIotPnpDevice>();
-    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapter_GetPnpInterfaceClient(Interface), nullptr /* cameraName.c_str() */));
+    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(Interface), nullptr /* cameraName.c_str() */));
     RETURN_IF_FAILED (pIotPnp->StartTelemetryWorker());
 
-    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapter_SetContext(Interface, (void*)pIotPnp.get()));
+    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_SetContext(Interface, (void*)pIotPnp.get()));
 
     // Our interface context now owns the object.
     pIotPnp.release();
@@ -122,7 +123,7 @@ CameraPnpInterfaceRelease(
     _In_ PNPADAPTER_INTERFACE_HANDLE Interface
     )
 {
-    CameraIotPnpDevice* p = (CameraIotPnpDevice*)PnpAdapter_GetContext(Interface);
+    CameraIotPnpDevice* p = (CameraIotPnpDevice*)PnpAdapterInterface_GetContext(Interface);
 
     if (p != nullptr)
     {
@@ -135,7 +136,7 @@ CameraPnpInterfaceRelease(
 
     // Clear our context to make sure we don't keep a stale
     // object around.
-    (void) PnpAdapter_SetContext(Interface, nullptr);
+    (void) PnpAdapterInterface_SetContext(Interface, nullptr);
 
     return S_OK;
 }

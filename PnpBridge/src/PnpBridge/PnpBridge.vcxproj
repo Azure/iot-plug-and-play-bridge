@@ -23,7 +23,7 @@
     <ProjectGuid>{8756FD40-34AF-4000-AAB9-C2A14E75B23B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>PnpBridge</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -156,9 +156,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Adapters\Camera\CameraCaptureEngine.h" />
     <ClInclude Include="Adapters\Camera\CameraCaptureEngineCallbacks.h" />
     <ClInclude Include="Adapters\Camera\CameraIotPnpAPIs.h" />
@@ -167,8 +164,10 @@
     <ClInclude Include="Adapters\Camera\CameraStatConsumer.h" />
     <ClInclude Include="Adapters\Camera\JsonWrapper.h" />
     <ClInclude Include="Adapters\Camera\pch.h" />
+    <ClInclude Include="adapters\CmdAndPropHandler.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h" />
+    <ClInclude Include="IotHubComms.h" />
     <ClInclude Include="PnpBridge.h" />
     <ClInclude Include="ConfigurationParser.h" />
     <ClInclude Include="DiscoveryAdapterInterface.h" />
@@ -193,6 +192,9 @@
     <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c" />
     <ClCompile Include="Adapters\SerialPnp\SerialPnp.c" />
     <ClCompile Include="ConfigurationParser.c" />
+    <ClCompile Include="core\PnpAdapterInterface.c" />
+    <ClCompile Include="core\PnpBridgeMemory.c" />
+    <ClCompile Include="IotHubComms.c" />
     <ClCompile Include="PnpBridge.c" />
     <ClCompile Include="DiscoveryManager.c" />
     <ClCompile Include="PnpAdapterManger.c" />
@@ -200,7 +202,6 @@
     <ClCompile Include="utility.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="CmdAndPropHandler.h" />
     <None Include="config.json">
       <DeploymentContent>true</DeploymentContent>
     </None>

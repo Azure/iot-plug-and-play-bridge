@@ -19,6 +19,20 @@
       }
     },
     {
+      "_comment": "DEVICE1 - RANDOM device",
+      "MatchFilters": {
+        "MatchType": "Exact",
+        "MatchParameters": {
+          "HardwareId": "USB\\VID_07DE&PID_11F3"
+        }
+      },
+      "Persistent" : "true",
+      "InterfaceId": "http://windows.com/coredevicehealth/v1",
+      "PnpParameters": {
+          "Identity": "core-device-health"
+      }
+    },
+    {
       "_comment": "DEVICE2 - MCU sensor hub which reports Azure IoT Pnp interfaces",
       "MatchFilters": {
         "MatchType": "*"

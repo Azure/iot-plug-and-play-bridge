@@ -83,9 +83,14 @@ CoreDevice_OnDeviceNotification(
     return 0;
 }
 
+
+int CoreDevice_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
+    return 0;
+}
+
 HCMNOTIFICATION CoreDevice_hNotifyCtx = NULL;
 
-int CoreDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD param) {
+int CoreDevice_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD param) {
     DWORD cmRet;
     CM_NOTIFY_FILTER cmFilter;
     PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
@@ -95,17 +100,30 @@ int CoreDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEV
     const char* interfaceId = json_object_get_string(args, "InterfaceId");
     const char* hardwareId = json_object_get_string(args, "HardwareId");
     const char* symbolicLink = json_object_get_string(args, "SymbolicLink");
+    const char* persistent = json_object_get_string(args, "Persistent");
 
-    if (Interface == NULL) {
-        return -1;
-    }
+	PNPADAPTER_INTERFACE_HANDLE Interface = NULL;
 
     pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, NULL, NULL, NULL);
     if (NULL == pnpInterfaceClient) {
         return -1;
     }
 
-    PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+    // Create PnpAdapter Interface
+    {
+        PNPADPATER_INTERFACE_INIT_PARAMS interfaceParams = { 0 };
+        interfaceParams.releaseInterface = CoreDevice_ReleaseInterface;
+        PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
+
+        int result = PnpAdapterInterface_Create(adapterHandle, interfaceId, pnpInterfaceClient, &pnpAdapterInterface, &interfaceParams);
+        if (result < 0) {
+            return result;
+        }
+    }
+
+    if (NULL != persistent && stricmp(persistent, "true") == 0) {
+        return 0;
+    }
 
     ZeroMemory(&cmFilter, sizeof(cmFilter));
     cmFilter.cbSize = sizeof(cmFilter);
@@ -181,10 +199,6 @@ int SendDeviceDisconnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCor
     return result;
 }
 
-int CoreDevice_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
-    return 0;
-}
-
 int CoreDevice_Initialize(const char* adapterArgs) {
     g_coreDeviceWatchers = singlylinkedlist_create();
     if (NULL == g_coreDeviceWatchers) {
@@ -202,9 +216,9 @@ int CoreDevice_Shutdown() {
 }
 
 PNP_ADAPTER CoreDeviceHealthInterface = {
-    .Identity = "core-device-health",
-    .Initialize = CoreDevice_Initialize,
-    .Shutdown = CoreDevice_Shutdown,
-    .CreatePnpInterface = CoreDevice_CreatePnpInterface,
-    .ReleaseInterface = CoreDevice_ReleaseInterface,
+    .identity = "core-device-health",
+    .initialize = CoreDevice_Initialize,
+    .shutdown = CoreDevice_Shutdown,
+    .createPnpInterface = CoreDevice_CreatePnpInterface,
+    //.releaseInterface = CoreDevice_ReleaseInterface,
 };
