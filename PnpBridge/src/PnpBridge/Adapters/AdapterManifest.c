@@ -10,8 +10,7 @@ extern DISCOVERY_ADAPTER WindowsPnpDeviceDiscovery;
 
 PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
     &CameraPnpAdapter,
-    &SerialPnpDiscovery,
-    &WindowsPnpDeviceDiscovery
+    &SerialPnpDiscovery
 };
 
 const int DiscoveryAdapterCount = sizeof(DISCOVERY_ADAPTER_MANIFEST) / sizeof(PDISCOVERY_ADAPTER);
@@ -22,8 +21,7 @@ extern PNP_ADAPTER SerialPnpInterface;
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
     &CameraPnpInterface,
-    &SerialPnpInterface,
-    &CoreDeviceHealthInterface
+    &SerialPnpInterface
 };
 
 const int PnpAdapterCount = sizeof(PNP_ADAPTER_MANIFEST) / sizeof(PPNP_ADAPTER);

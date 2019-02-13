@@ -16,6 +16,71 @@ PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename,
     return PNPBRIDGE_OK;
 }
 
+PNPBRIDGE_RESULT PnpBridgeConfig_ValidateConfiguration(JSON_Value* config) {
+    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
+
+    // Check for mandatory parameters
+    TRY
+    {
+        // Devices
+        {
+            JSON_Array* devices = Configuration_GetConfiguredDevices(config);
+            for (int i = 0; i < (int)json_array_get_count(devices); i++) {
+                JSON_Object *device = json_array_get_object(devices, i);
+
+                // InterfaceId or SelfDescribing
+                {
+                    const char* selfDescribing = json_object_dotget_string(device, PNP_CONFIG_NAME_SELF_DESCRIBING);
+                    const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_NAME_INTERFACE_ID);
+                    if (NULL == selfDescribing) {
+                        if (NULL == interfaceId) {
+                            LogError("A device is missing InterfaceId");
+                        }
+                    }
+                }
+
+                // PnpParameters
+                {
+                    JSON_Object* pnpParams = Configuration_GetPnpParametersForDevice(device);
+                    if (NULL == pnpParams) {
+                        LogError("A device is missing PnpParameters");
+                        result = PNPBRIDGE_INVALID_ARGS;
+                        LEAVE;
+                    }
+
+                    // PnpParameters -> Idenitity
+                    const char* identity = json_object_dotget_string(pnpParams, PNP_CONFIG_IDENTITY_NAME);
+                    if (NULL == identity) {
+                        LogError("PnpParameter is missing Adapter identity");
+                        result = PNPBRIDGE_INVALID_ARGS;
+                        LEAVE;
+                    }
+                }
+
+                // DiscoveryParameters
+                {
+                    JSON_Object* discParams = Configuration_GetDiscoveryParametersForDevice(device);
+                    if (discParams) {
+                        // DiscoveryParameters -> Idenitity
+                        const char* identity = json_object_dotget_string(discParams, PNP_CONFIG_IDENTITY_NAME);
+                        if (NULL == identity) {
+                            LogError("DiscoveryParameters is missing Adapter identity");
+                            result = PNPBRIDGE_INVALID_ARGS;
+                            LEAVE;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    FINALLY
+    {
+
+    }
+
+    return result;
+}
+
 PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *configString, JSON_Value** config) {
     if (NULL == configString || NULL == config) {
         return PNPBRIDGE_INVALID_ARGS;
@@ -172,8 +237,8 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
                         }
                     }
                     else {
-                        const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_INTERFACE_ID_NAME);
-                        json_object_set_string(Message, PNP_CONFIG_INTERFACE_ID_NAME, interfaceId);
+                        const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_NAME_INTERFACE_ID);
+                        json_object_set_string(Message, PNP_CONFIG_NAME_INTERFACE_ID, interfaceId);
                         foundMatch = true;
                         pnpAdapterIdentity = (char*) currPnpAdapterId;
                         *Device = device;

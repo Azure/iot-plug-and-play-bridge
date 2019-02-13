@@ -229,7 +229,7 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
             goto end;
         }
         else {
-            LogError("Interface id not set for the device change callback\n");
+            LogError("Dropping device change callback\n");
         }
     }
 
@@ -243,51 +243,62 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
     JSON_Value* config = NULL;
 
-    LogInfo("Starting Azure PnpBridge\n");
+    TRY
+    {
+        LogInfo("Starting Azure PnpBridge\n");
 
-    //#define CONFIG_FILE "c:\\data\\test\\dag\\config.json"
-    result = PnpBridgeConfig_ReadConfigurationFromFile("config.json", &config);
-    if (PNPBRIDGE_OK != result) {
-        LogError("Failed to parse configuration. Check if config file is present and ensure its formatted correctly.\n");
-        goto exit;
+        // Read the config file from a file
+        result = PnpBridgeConfig_ReadConfigurationFromFile("config.json", &config);
+        if (PNPBRIDGE_OK != result) {
+            LogError("Failed to parse configuration. Check if config file is present and ensure its formatted correctly.\n");
+            LEAVE;
+        }
+
+        // Check if config file has mandatory parameters
+        result = PnpBridgeConfig_ValidateConfiguration(config);
+        if (PNPBRIDGE_OK != result) {
+            LogError("Config file is invalid\n");
+            LEAVE;
+        }
+
+        result = PnpBridge_Initialize(config);
+        if (PNPBRIDGE_OK != result) {
+            LogError("PnpBridge_Initialize failed: %d\n", result);
+            LEAVE;
+        }
+
+        LogInfo("Connected to Azure IoT Hub\n");
+
+        // Load all the adapters in interface manifest that implement Azure IoT PnP Interface
+        // PnpBridge will call into corresponding adapter when a device is reported by 
+        // DiscoveryExtension
+        result = PnpAdapterManager_Create(&g_PnpBridge->adapterMgr, g_PnpBridge->configuration);
+        if (PNPBRIDGE_OK != result) {
+            LogError("PnpAdapterManager_Create failed: %d\n", result);
+            LEAVE;
+        }
+
+        // Load all the extensions that are capable of discovering devices
+        // and reporting back to PnpBridge
+        result = DiscoveryAdapterManager_Create(&g_PnpBridge->discoveryMgr);
+        if (PNPBRIDGE_OK != result) {
+            LogError("DiscoveryAdapterManager_Create failed: %d\n", result);
+            LEAVE;
+        }
+
+        THREAD_HANDLE workerThreadHandle = NULL;
+        if (THREADAPI_OK != ThreadAPI_Create(&workerThreadHandle, PnpBridge_Worker_Thread, NULL)) {
+            LogError("Failed to create PnpBridge_Worker_Thread\n");
+            workerThreadHandle = NULL;
+        }
+        else {
+            ThreadAPI_Join(workerThreadHandle, NULL);
+        }
     }
-
-    result = PnpBridge_Initialize(config);
-    if (PNPBRIDGE_OK != result) {
-        LogError("PnpBridge_Initialize failed: %d\n", result);
-        goto exit;
+    FINALLY
+    {
+        PnpBridge_Release(g_PnpBridge);
     }
-
-    LogInfo("Connected to Azure IoT Hub\n");
-
-    // Load all the adapters in interface manifest that implement Azure IoT PnP Interface
-    // PnpBridge will call into corresponding adapter when a device is reported by 
-    // DiscoveryExtension
-    result = PnpAdapterManager_Create(&g_PnpBridge->adapterMgr, g_PnpBridge->configuration);
-    if (PNPBRIDGE_OK != result) {
-        LogError("PnpAdapterManager_Create failed: %d\n", result);
-        goto exit;
-    }
-
-    // Load all the extensions that are capable of discovering devices
-    // and reporting back to PnpBridge
-    result = DiscoveryAdapterManager_Create(&g_PnpBridge->discoveryMgr);
-    if (PNPBRIDGE_OK != result) {
-        LogError("DiscoveryAdapterManager_Create failed: %d\n", result);
-        goto exit;
-    }
-
-    THREAD_HANDLE workerThreadHandle = NULL;
-    if (THREADAPI_OK != ThreadAPI_Create(&workerThreadHandle, PnpBridge_Worker_Thread, NULL)) {
-        LogError("Failed to create PnpBridge_Worker_Thread \n");
-        workerThreadHandle = NULL;
-    }
-    else {
-        ThreadAPI_Join(workerThreadHandle, NULL);
-    }
-
-exit:
-    PnpBridge_Release(g_PnpBridge);
 
     return result;
 }

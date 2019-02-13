@@ -125,7 +125,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_NotifyPersistentInterfaces(PDISCOVERY_M
 
             // Get the match filters and post a device change message
             JSON_Object* matchParams = Configuration_GetMatchParametersForDevice(device);
-            const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_INTERFACE_ID_NAME);
+            const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_NAME_INTERFACE_ID);
             if (NULL != interfaceId && NULL != matchParams) {
                 char msg[512] = { 0 };
                 sprintf_s(msg, 512, PnpBridge_DeviceChangeMessageformat, interfaceId, json_serialize_to_string(json_object_get_wrapping_value(matchParams)));

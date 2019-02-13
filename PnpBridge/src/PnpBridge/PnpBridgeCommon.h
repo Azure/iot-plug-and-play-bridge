@@ -66,15 +66,17 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #include <PnpBridge.h>
 
 #define PNP_CONFIG_IDENTITY_NAME "Identity"
-#define PNP_CONFIG_INTERFACE_ID_NAME "InterfaceId"
+#define PNP_CONFIG_NAME_INTERFACE_ID "InterfaceId"
 #define PNP_CONFIG_PERSISTENT_NAME "Persistent"
 #define PNP_CONFIG_MATCH_FILTERS_NAME "MatchFilters"
 #define PNP_CONFIG_MATCH_TYPE_NAME "MatchType"
 #define PNP_CONFIG_NAME_MATCH_PARAMETERS "MatchParameters"
 #define PNP_CONFIG_DISCOVERY_ADAPTER_NAME "DiscoveryAdapter"
 #define PNP_CONFIG_NAME_PNP_PARAMETERS "PnpParameters"
+#define PNP_CONFIG_NAME_DISCOVERY_PARAMETERS "DiscoveryParameters"
 #define PNP_CONFIG_NAME_PNP_ADAPTERS "PnpAdapters"
 #define PNP_CONFIG_NAME_DISCOVERY_ADAPTERS "DiscoveryAdapters"
+#define PNP_CONFIG_NAME_SELF_DESCRIBING "SelfDescribing"
 
 #ifdef __cplusplus
 }

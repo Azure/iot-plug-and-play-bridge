@@ -176,6 +176,7 @@ PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter
 
     mapResult = Map_ContainsKey(adapter->pnpAdapterMap, getIdentity, &containsMessageKey);
     if (MAP_OK != mapResult || !containsMessageKey) {
+        LogError("PnpAdapter %s is not present in AdapterManifest", getIdentity);
         return PNPBRIDGE_FAILED;
     }
 

@@ -42,6 +42,8 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
 
 const char* Configuration_GetConnectionString(JSON_Value* config);
 
+PNPBRIDGE_RESULT PnpBridgeConfig_ValidateConfiguration(JSON_Value* config);
+
 #ifdef __cplusplus
 }
 #endif
