@@ -32,6 +32,8 @@ CameraStatConsumer::CameraStatConsumer(
 ,   m_eState(CameraStatConsumerState_Stopped)
 ,   m_guidSession(GUID_NULL)
 ,   m_hFlushThread(nullptr)
+,   m_fCoInit(false)
+,   m_fMfStartup(false)
 {
     ZeroMemory(m_buffer, sizeof(m_buffer));
     ZeroMemory(&m_TraceLogfile, sizeof(m_TraceLogfile));
@@ -58,6 +60,11 @@ CameraStatConsumer::Initialize(
     )
 {
     AutoLock lock(&m_lock);
+
+    RETURN_IF_FAILED (CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+    m_fCoInit = true;
+    RETURN_IF_FAILED (MFStartup(MF_VERSION));
+    m_fMfStartup = true;
 
     if (nullptr == SessionName)
     {
@@ -172,28 +179,34 @@ CameraStatConsumer::TakePhoto(
     ComPtr<IMFSample>       jpegFrame;
     std::wstring            symbolicName;
 
-    // Just in case we hven't CoInitializeEx/MFStartup yet...
-    RETURN_IF_FAILED (CoInitializeEx(nullptr, COINIT_MULTITHREADED));
-    hr = MFStartup(MF_VERSION);
-    if (FAILED(hr))
-    {
-        (void)CoUninitialize();
-        RETURN_IF_FAILED (hr);
-    }
-
     m_lock.Lock();
     symbolicName = m_SymbolicLinkName;
     m_lock.Unlock();
 
-    hr = camera.TakePhoto((m_SymbolicLinkName.empty() ? nullptr : m_SymbolicLinkName.c_str()), &jpegFrame);
+    LogInfo ("Taking photo...");
+    RETURN_IF_FAILED (camera.TakePhoto((symbolicName.empty() ? nullptr : symbolicName.c_str()), &jpegFrame));
 
-    (void)MFShutdown();
-    (void)CoUninitialize();
-    RETURN_IF_FAILED (hr);
+    if (jpegFrame.Get() != nullptr)
+    {
+        DWORD  cBufCount = 0;
+        ComPtr<IMFMediaBuffer>  spJpegBuffer;
+        ULONG cbJpegSize = 0;
+        PBYTE pbJpeg = nullptr;
+        errno_t err = 0;
 
-    m_lock.Lock();
-    m_JpegFrame = jpegFrame;
-    m_lock.Unlock();
+        RETURN_IF_FAILED (jpegFrame->GetBufferCount(&cBufCount));
+        RETURN_HR_IF (E_UNEXPECTED, cBufCount != 1);
+        RETURN_IF_FAILED (jpegFrame->ConvertToContiguousBuffer(&spJpegBuffer));
+        RETURN_IF_FAILED (spJpegBuffer->Lock(&pbJpeg, nullptr, (DWORD*)&cbJpegSize));
+
+        m_lock.Lock();
+        m_jpegFrameSize = cbJpegSize;
+        m_jpegFrame = std::make_unique<BYTE[]>(cbJpegSize);
+        err = memcpy_s(m_jpegFrame.get(), cbJpegSize, pbJpeg, cbJpegSize);
+        m_lock.Unlock();
+
+        RETURN_HR_IF (E_UNEXPECTED, err != 0);
+    }
 
     return S_OK;
 }
@@ -206,21 +219,7 @@ CameraStatConsumer::GetJpegFrameSize(
     AutoLock lock(&m_lock);
 
     RETURN_HR_IF_NULL (E_POINTER, pcbJpegFrameSize);
-    *pcbJpegFrameSize = 0;
-
-    if (m_JpegFrame.Get() != nullptr)
-    {
-        DWORD  cBufCount = 0;
-
-        RETURN_IF_FAILED (m_JpegFrame->GetBufferCount(&cBufCount));
-        if (cBufCount > 0)
-        {
-            ComPtr<IMFMediaBuffer>  spJpegBuffer;
-
-            RETURN_IF_FAILED (m_JpegFrame->GetBufferByIndex(0, &spJpegBuffer));
-            RETURN_IF_FAILED (spJpegBuffer->GetCurrentLength((DWORD*)pcbJpegFrameSize));
-        }
-    }
+    *pcbJpegFrameSize = (ULONG)m_jpegFrameSize;
 
     return S_OK;
 }
@@ -245,29 +244,21 @@ CameraStatConsumer::GetJpegFrame(
 
     // There should be one buffer (we shouldn't see multi-buffer
     // samples since that's only for network streaming samples).
-    RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), m_JpegFrame.Get() == nullptr);
-    RETURN_IF_FAILED (m_JpegFrame->GetBufferCount(&cBufCount));
-    RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), cBufCount == 0);
-    RETURN_IF_FAILED (m_JpegFrame->GetBufferByIndex(0, &spJpegBuffer));
+    RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), m_jpegFrame.get() == nullptr);
 
-    // Once we've successfully locked, we should unlock before releasing.
-    RETURN_IF_FAILED (spJpegBuffer->Lock(&pbJpeg, nullptr, (DWORD*)&cbJpeg));
-
-    if (cbJpeg > cbJpegFrame)
+    if (m_jpegFrameSize > cbJpegFrame)
     {
-        (void)spJpegBuffer->Unlock();
         RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
     }
     // errno_t doesn't translate to Win32 errors, just return
     // E_INVALIDARG since that's what will cause memcpy_s to 
     // fail.
-    err = memcpy_s (pbJpegFrame, cbJpegFrame, pbJpeg, cbJpeg);
-    (void)spJpegBuffer->Unlock();
+    err = memcpy_s (pbJpegFrame, cbJpegFrame, m_jpegFrame.get(), m_jpegFrameSize);
     RETURN_HR_IF (E_INVALIDARG, err != 0);
 
     if (pcbWritten)
     {
-        *pcbWritten = cbJpeg;
+        *pcbWritten = (ULONG)m_jpegFrameSize;
     }
 
     return S_OK;
@@ -497,6 +488,15 @@ CameraStatConsumer::InternalShutdown(
     }
 
     m_eState = CameraStatConsumerState_Shutdown;
+
+    if (m_fCoInit)
+    {
+        CoUninitialize();
+    }
+    if (m_fMfStartup)
+    {
+        (void) MFShutdown();
+    }
 
     return S_OK;
 }

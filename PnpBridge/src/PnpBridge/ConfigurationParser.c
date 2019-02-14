@@ -116,7 +116,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
         }
 
         const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
-        if (true) { //strcmp(deviceFormatId, formatId) == 0) {
+        if (strcmp(deviceFormatId, formatId) == 0) {
             JSON_Object* matchCriteria = json_object_dotget_object(device, "MatchFilters");
             const char* matchType = json_object_get_string(matchCriteria, "MatchType");
             if (strcmp(matchType, "*") == 0) {

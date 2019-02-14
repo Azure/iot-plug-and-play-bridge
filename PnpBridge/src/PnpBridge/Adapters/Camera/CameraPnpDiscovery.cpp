@@ -86,6 +86,7 @@ CameraPnpDiscovery::InitializePnpDiscovery(
         RETURN_IF_FAILED (pjson->Initialize());
         RETURN_IF_FAILED (pjson->AddFormatString("Identity", "camera-health-monitor"));
         RETURN_IF_FAILED (pjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
+        RETURN_IF_FAILED (pjson->AddFormatString("InterfaceId", "http://windows.com/camera_health_monitor/1.0.0"));
 
         payload.Message = pjson->GetMessageW();
         payload.MessageLength = static_cast<int>(pjson->GetSize());

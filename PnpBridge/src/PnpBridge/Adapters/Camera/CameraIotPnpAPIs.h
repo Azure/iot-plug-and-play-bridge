@@ -44,6 +44,14 @@ CameraPnpInterfaceRelease(
 extern DISCOVERY_ADAPTER        CameraPnpAdapter;
 extern PNP_ADAPTER     CameraPnpInterface;
 
+// Declare camera command callbacks here.
+void 
+CameraPnpCallback_TakePhoto(
+    const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext, 
+    PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, 
+    void* userContextCallback
+    );
+
 #ifdef __cplusplus
 }
 #endif
