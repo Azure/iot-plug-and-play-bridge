@@ -26,6 +26,8 @@ PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename,
 */
 PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *configString, JSON_Value** config);
 
+JSON_Object* Configuration_GetMatchParametersForDevice(JSON_Object* device);
+
 JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device);
 
 JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device);
@@ -39,6 +41,8 @@ JSON_Array* Configuration_GetConfiguredDevices(JSON_Value* config);
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message, JSON_Object** Device);
 
 const char* Configuration_GetConnectionString(JSON_Value* config);
+
+PNPBRIDGE_RESULT PnpBridgeConfig_ValidateConfiguration(JSON_Value* config);
 
 #ifdef __cplusplus
 }
