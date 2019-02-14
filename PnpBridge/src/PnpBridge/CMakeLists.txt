@@ -15,43 +15,54 @@ endif()
 set(pnp_bridge_c_files
     ./ConfigurationParser.c
     ./DiscoveryManager.c
+    ./IotHubComms.c
     ./PnpAdapterManger.c
     ./PnpBridge.c
+    ./PnpBridgeService.c
     ./utility.c
+    ./Core/PnpAdapterInterface.c
+    ./Core/PnpBridgeMemory.c
     ./Adapters/AdapterManifest.c
+    ./Adapters/Camera/CameraIotPnpAPIs.cpp
+    ./Adapters/Camera/CameraCaptureEngineCallbacks.cpp
+    ./Adapters/Camera/CameraCaptureEngine.cpp
+    ./Adapters/Camera/CameraPnpDiscovery.cpp
+    ./Adapters/Camera/CameraIotPnpDevice.cpp
+    ./Adapters/Camera/JsonWrapper.cpp
+    ./Adapters/Camera/CameraStatConsumer.cpp
+    ./Adapters/CoreDeviceHealth/CoreDeviceHealth.c
+    ./Adapters/CoreDeviceHealth/WindowsPnPDeviceDiscovery.c
+    ./Adapters/SerialPnp/SerialPnp.c
 )
 
-    # ./PnpBridgeService.c
-    # ./Adapters/SerialPnp/SerialPnp.c
-    # ./Adapters/Camera/CameraIotPnpAPIs.cpp
-    # ./Adapters/Camera/CameraPnpDiscovery.cpp
-    # ./Adapters/Camera/CameraStatConsumer.cpp
-    # ./Adapters/Camera/JsonWrapper.cpp
-    # ./Adapters/Camera/CameraIotPnpDevice.cpp
-    # ./Adapters/CoreDeviceHealth/CoreDeviceHealth.h
-    # ./Adapters/CoreDeviceHealth/WindowsPnpDeviceDiscovery.h
-
 set(pnp_bridge_h_files
-    ./CmdAndPropHandler.h
     ./common.h
     ./ConfigurationParser.h
     ./DiscoveryAdapterInterface.h
     ./DiscoveryManager.h
+    ./IotHubComms.h
     ./PnpAdapterInterface.h
     ./PnpAdapterManager.h
     ./PnpBridge.h
+    ./PnpBridgeCommon.h
     ./PnpBridgeh.h
+    ./Core/PnpBridgeMemory.h
+    ./Adapters/PnpAdapterManifest.h
+    ./Adapters/DiscoveryAdapterManifest.h
+    ./Adapters/CmdAndPropHandler.h
+    ./Adapters/Camera/CameraCaptureEngine.h
+    ./Adapters/Camera/CameraCaptureEngineCallbacks.h
+    ./Adapters/Camera/CameraIotPnpAPIs.h
+    ./Adapters/Camera/CameraIotPnpDevice.h
+    ./Adapters/Camera/CameraPnpDiscovery.h
+    ./Adapters/Camera/CameraStatConsumer.h
+    ./Adapters/Camera/JsonWrapper.h
+    ./Adapters/Camera/pch.h
+    ./Adapters/CoreDeviceHealth/CoreDeviceHealth.h
+    ./Adapters/CoreDeviceHealth/WindowsPnpDeviceDiscovery.h
+    ./Adapters/SerialPnp/SerialPnp.h
 )
 
-    # ./Adapters/Camera/CameraIotPnpAPIs.h
-    # ./Adapters/Camera/CameraIotPnpDevice.h
-    # ./Adapters/Camera/CameraPnpDiscovery.h
-    # ./Adapters/Camera/CameraStatConsumer.h
-    # ./Adapters/JsonWrapper.h
-    # ./Adapters/pch.h
-    # ./Adapters/CoreDeviceHealth/CoreDeviceHealth.c
-    # ./Adapters/CoreDeviceHealth/WindowsPnPDeviceDiscovery.c
-    
 set(pnp_bridge_libs)
 
 set(install_staticlibs

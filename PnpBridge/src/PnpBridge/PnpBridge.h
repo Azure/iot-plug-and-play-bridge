@@ -9,6 +9,43 @@
 		  |_|                 |___/
 */
 
+// TODO: REMOVE THE COMMENTS
+// NOTES TO SELF:
+
+//
+// Config update requires bridge tear down and restart
+//
+
+//
+// Discovered Device -> Bind -> CreatePnpInterfaces -> Create Pnp Interface client ->
+// Create Pnp Adapter Interface -> Associate it with the adapter and store the device config pointer -> Get All interface for all adapters -> publish
+//
+
+/*
+
+0. TEST FOR MEMORY LEAKS USING APPVERIFIER
+
+SerialPnp
+ 1. Closing serial handle
+ 2. Test publishing 2 interfaces (multiple)
+ 3. Test overlapped IO
+
+PnpBridge
+ 4. DPS connection & test
+ 5. FT to create a tear down in a loop *** MOCK the PNP CLIENT SDK
+ 6. Release PnpInterfaces..
+ 7. Persistent device should get callback when device is discovered
+
+CoreDevice
+ 7. Enumerate devices
+ 8. Add properties based on original device schema
+
+CMAKE
+ 9. Clean up warnings to get a clean build
+
+*/
+// ***************
+
 #pragma once
 
 #ifdef __cplusplus

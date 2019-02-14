@@ -32,17 +32,30 @@ PNPBRIDGE_RESULT PnpAdapterManager_ValidatePnpAdapter(PPNP_ADAPTER  pnpAdapter, 
 
 PNPBRIDGE_RESULT PnpAdapterManager_InitializeAdapter(PPNP_ADAPTER_TAG* adapterTag, PPNP_ADAPTER adapter) {
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
-    PPNP_ADAPTER_TAG adapterT = calloc(1, sizeof(PNP_ADAPTER_TAG));
-    if (NULL == adapterT) {
+    PPNP_ADAPTER_TAG adapterT = NULL;
+    TRY
+    {
+        adapterT = calloc(1, sizeof(PNP_ADAPTER_TAG));
+        if (NULL == adapterT) {
+            result = PNPBRIDGE_INSUFFICIENT_MEMORY;
+            LEAVE;
+        }
 
+        adapterT->adapter = adapter;
+        adapterT->pnpInterfaceList = singlylinkedlist_create();
+        adapterT->pnpInterfaceListLock = Lock_Init();
+        if (NULL == adapterT->pnpInterfaceListLock) {
+            result = PNPBRIDGE_INSUFFICIENT_MEMORY;
+            LEAVE;
+        }
+
+        *adapterTag = adapterT;
     }
-
-    adapterT->adapter = adapter;
-    adapterT->pnpInterfaceList = singlylinkedlist_create();
-    adapterT->pnpInterfaceListLock = Lock_Init();
-
-    if (!PNPBRIDGE_SUCCESS(result)) {
-        PnpAdapterManager_ReleaseAdapter(adapterT);
+    FINALLY 
+    {
+        if (!PNPBRIDGE_SUCCESS(result)) {
+            PnpAdapterManager_ReleaseAdapter(adapterT);
+        }
     }
 
     return result;
@@ -93,10 +106,12 @@ PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr, JSON
     // Load a list of static modules and build an interface map
     for (int i = 0; i < PnpAdapterCount; i++) {
         PPNP_ADAPTER  pnpAdapter = PNP_ADAPTER_MANIFEST[i];
-        adapter->pnpAdapters[i] = calloc(1, sizeof(PNP_ADAPTER_TAG));
-        adapter->pnpAdapters[i]->adapter = pnpAdapter;
-        adapter->pnpAdapters[i]->pnpInterfaceList = singlylinkedlist_create();
-        adapter->pnpAdapters[i]->pnpInterfaceListLock = Lock_Init();
+        
+        result = PnpAdapterManager_InitializeAdapter(&adapter->pnpAdapters[i], pnpAdapter);
+        if (!PNPBRIDGE_SUCCESS(result)) {
+            LogError("Failed to initialize PnpAdapter %s", pnpAdapter->identity);
+            continue;
+        }
 
         if (NULL == pnpAdapter->identity) {
             LogError("Invalid Identity specified for a PnpAdapter");
@@ -167,7 +182,7 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
 
 PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key) {
     bool containsMessageKey = false;
-    char* interfaceId = NULL;
+//    char* interfaceId = NULL;
     JSON_Object* pnpParams = json_object_get_object(Message, PNP_CONFIG_NAME_PNP_PARAMETERS);
     char* getIdentity = (char*) json_object_get_string(pnpParams, PNP_CONFIG_IDENTITY_NAME);
     MAP_RESULT mapResult;
@@ -270,20 +285,6 @@ bool PnpAdapterManager_IsInterfaceIdPublished(PPNP_ADAPTER_MANAGER adapterMgr, c
     }
 
     return false;
-}
-
-PNPBRIDGE_RESULT PnpAdapterManager_ReleasePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNPADAPTER_INTERFACE_HANDLE interfaceClient) {
-    if (NULL == interfaceClient) {
-        return PNPBRIDGE_INVALID_ARGS;
-    }
-
-    PPNPADAPTER_INTERFACE pnpInterface = (PPNPADAPTER_INTERFACE)interfaceClient;
-
-    // Get the module index
-    PPNP_ADAPTER  pnpAdapter = PNP_ADAPTER_MANIFEST[pnpInterface->key];
-    //pnpAdapter->releaseInterface(interfaceClient);
-
-    return PNPBRIDGE_OK;
 }
 
 void PnpAdapterManager_AddInterface(PPNP_ADAPTER_TAG adapter, PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface) {

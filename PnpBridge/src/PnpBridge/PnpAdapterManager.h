@@ -31,11 +31,17 @@ typedef struct _PNP_ADAPTER_MANAGER {
     PPNP_ADAPTER_TAG* pnpAdapters;
 } PNP_ADAPTER_MANAGER, *PPNP_ADAPTER_MANAGER;
 
+typedef enum {
+    PublishInvalid,
+    PublishAlways,
+    PublishOnDeviceFound
+} PublishMode;
+
 // Pnp adapter interface structure
 typedef struct _PNPADAPTER_INTERFACE {
     void* context;
     int key;
-    bool persistent;
+    PublishMode publishMode;
     char* interfaceId;
     PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     PNPADPATER_INTERFACE_INIT_PARAMS params;
@@ -70,7 +76,6 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter);
 
 PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key);
 PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, int key, JSON_Object* deviceConfig, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
-PNPBRIDGE_RESULT PnpAdapterManager_ReleasePnpInterface(PPNP_ADAPTER_MANAGER adapter, PNPADAPTER_INTERFACE_HANDLE Interface);
 
 PNPBRIDGE_RESULT PnpAdapterManager_GetAllInterfaces(PPNP_ADAPTER_MANAGER adapterMgr, PNP_INTERFACE_CLIENT_HANDLE** interfaces, int* count);
 bool PnpAdapterManager_IsInterfaceIdPublished(PPNP_ADAPTER_MANAGER adapterMgr, const char* interfaceId);

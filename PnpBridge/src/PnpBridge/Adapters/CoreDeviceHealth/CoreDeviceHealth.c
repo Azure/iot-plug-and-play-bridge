@@ -100,9 +100,7 @@ int CoreDevice_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_C
     const char* interfaceId = json_object_get_string(args, "InterfaceId");
     const char* hardwareId = json_object_get_string(args, "HardwareId");
     const char* symbolicLink = json_object_get_string(args, "SymbolicLink");
-    const char* persistent = json_object_get_string(args, "Persistent");
-
-	PNPADAPTER_INTERFACE_HANDLE Interface = NULL;
+    const char* publishMode = json_object_get_string(args, "PublishMode");
 
     pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, NULL, NULL, NULL);
     if (NULL == pnpInterfaceClient) {
@@ -121,7 +119,7 @@ int CoreDevice_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_C
         }
     }
 
-    if (NULL != persistent && stricmp(persistent, "true") == 0) {
+    if (NULL != publishMode && stricmp(publishMode, "true") == 0) {
         return 0;
     }
 

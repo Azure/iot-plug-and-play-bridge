@@ -26,7 +26,7 @@
           "HardwareId": "USB\\VID_07DE&PID_11F3"
         }
       },
-      "Persistent" : "true",
+      "PublishMode" : "Always",
       "InterfaceId": "http://windows.com/coredevicehealth/v1",
       "PnpParameters": {
           "Identity": "core-device-health"

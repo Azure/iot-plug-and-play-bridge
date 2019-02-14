@@ -113,10 +113,12 @@ void PnpBridge_Release(PPNP_BRIDGE pnpBridge) {
 
 int PnpBridge_Worker_Thread(void* threadArgument)
 {
+    AZURE_UNREFERENCED_PARAMETER(threadArgument);
+
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
     // Publish persistent Pnp Interfaces
-    result = DiscoveryAdapterManager_NotifyPersistentInterfaces(g_PnpBridge->discoveryMgr, g_PnpBridge->configuration);
+    result = DiscoveryAdapterManager_PublishAlwaysInterfaces(g_PnpBridge->discoveryMgr, g_PnpBridge->configuration);
     if (!PNPBRIDGE_SUCCESS(result)) {
         goto exit;
     }

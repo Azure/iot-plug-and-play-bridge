@@ -8,8 +8,6 @@
 extern PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[];
 extern const int DiscoveryAdapterCount;
 
-DISCOVERY_ADAPTER discoveryInterface = { 0 };
-
 void DiscoveryAdapterChangeHandler(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
 PNPBRIDGE_RESULT DiscoveryManager_StarDiscoveryAdapter(PDISCOVERY_MANAGER discoveryManager, PDISCOVERY_ADAPTER  discoveryInterface, JSON_Object* deviceParams, JSON_Object* adapterParams, int key);
 
@@ -109,17 +107,18 @@ PNPBRIDGE_RESULT DiscoveryManager_StarDiscoveryAdapter(PDISCOVERY_MANAGER discov
 const char* PnpBridge_DeviceChangeMessageformat = "{ \
                                            \"Identity\": \"pnpbridge-core\", \
                                            \"InterfaceId\": \"%s\", \
-                                           \"Persistent\": \"true\", \
+                                           \"PublishMode\": \"true\", \
                                            \"MatchParameters\": %s \
                                          }";
 
-PNPBRIDGE_RESULT DiscoveryAdapterManager_NotifyPersistentInterfaces(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config) {
+PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config) {
+    AZURE_UNREFERENCED_PARAMETER(discoveryManager);
     JSON_Array *devices = Configuration_GetConfiguredDevices(config);
 
     for (int i = 0; i < (int)json_array_get_count(devices); i++) {
         JSON_Object* device = json_array_get_object(devices, i);
-        const char* persistentString = json_object_get_string(device, PNP_CONFIG_PERSISTENT_NAME);
-        if (NULL != persistentString && stricmp(persistentString, "true") == 0) {
+        const char* publishModeString = json_object_get_string(device, PNP_CONFIG_NAME_PUBLISH_MODE);
+        if (NULL != publishModeString && stricmp(publishModeString, "always") == 0) {
             PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { 0 };
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_PERSIST;
 
@@ -176,31 +175,10 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
             JSON_Object* adapterParams = NULL;
             adapterParams = Configuration_GetDiscoveryParameters(config, discoveryInterface->Identity);
 
-            //PSTART_DISCOVERY_PARAMS threadContext;
-
-            //// threadContext memory will be freed during cleanup.
-            //threadContext = malloc(sizeof(START_DISCOVERY_PARAMS));
-            //if (NULL == threadContext) {
-            //    return PNPBRIDGE_INSUFFICIENT_MEMORY;
-            //}
-
-            //threadContext->adapterParams = adapterParams;
-            //threadContext->deviceParams = deviceParams;
-            //threadContext->discoveryInterface = discoveryInterface;
-            //threadContext->key = i;
-            //threadContext->discoveryManager = discoveryManager;
-
-            //if (THREADAPI_OK != ThreadAPI_Create(&threadContext->workerThreadHandle, DiscoveryManager_StarDiscovery_Worker_Thread, threadContext)) {
-            //    LogError("Failed to create PnpBridge_Worker_Thread \n");
-            //    threadContext->workerThreadHandle = NULL;
-            //    return PNPBRIDGE_FAILED;
-            //}
-            int result = DiscoveryManager_StarDiscoveryAdapter(discoveryManager, discoveryInterface, deviceParams, adapterParams, i);
+            result = DiscoveryManager_StarDiscoveryAdapter(discoveryManager, discoveryInterface, deviceParams, adapterParams, i);
             if (PNPBRIDGE_OK != result) {
-                return result;
+                LEAVE;
             }
-
-            //singlylinkedlist_add(discoveryManager->startDiscoveryThreadHandles, threadContext);
         }
     }
     FINALLY

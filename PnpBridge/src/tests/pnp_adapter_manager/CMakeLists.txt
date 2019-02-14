@@ -1,4 +1,4 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 add_subdirectory(PnpBridge)
-# add_subdirectory(tests)
+add_subdirectory(tests)

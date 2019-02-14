@@ -1246,6 +1246,7 @@ int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
 }
 
 int SerialPnp_Initialize(const char* adapterArgs) {
+    AZURE_UNREFERENCED_PARAMETER(adapterArgs);
 	return 0;
 }
 

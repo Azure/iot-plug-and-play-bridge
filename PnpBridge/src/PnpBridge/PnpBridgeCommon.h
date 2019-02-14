@@ -67,7 +67,7 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 
 #define PNP_CONFIG_IDENTITY_NAME "Identity"
 #define PNP_CONFIG_NAME_INTERFACE_ID "InterfaceId"
-#define PNP_CONFIG_PERSISTENT_NAME "Persistent"
+#define PNP_CONFIG_NAME_PUBLISH_MODE "PublishMode"
 #define PNP_CONFIG_MATCH_FILTERS_NAME "MatchFilters"
 #define PNP_CONFIG_MATCH_TYPE_NAME "MatchType"
 #define PNP_CONFIG_NAME_MATCH_PARAMETERS "MatchParameters"

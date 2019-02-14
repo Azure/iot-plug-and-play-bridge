@@ -18,7 +18,7 @@ extern "C"
     } PNPBRIDGE_MEMORY_PARAMS, *PPNPBRIDGE_OBJECT_PARAMS;
 
     typedef struct _PNPBRIDGE_MEMORY_TAG {
-        int count;
+        volatile long count;
         int size;
         void* memory;
         PNPBRIDGE_MEMORY_PARAMS params;

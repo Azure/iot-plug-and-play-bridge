@@ -52,18 +52,6 @@ typedef int(*PNPADAPTER_BIND_PNP_INTERFACE)(PNPADAPTER_CONTEXT adapterHandle,
                                             PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle,
                                             PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload);
 
-// NOTES TO SELF:
-
-//
-// Config update requires bridge tear down and restart
-//
-
-// Discovered Device -> Bind -> CreatePnpInterfaces -> Create Pnp Interface client ->
-// Create Pnp Adapter Interface -> Associate it with the adapter and store the device config pointer -> Get All interface for all adapters -> publish
-//
-
-// ***************
-
 /**
 * @brief    PNPADAPTER_RELEASE_PNP_INTERFACE uninitializes the pnp interface.
 *
