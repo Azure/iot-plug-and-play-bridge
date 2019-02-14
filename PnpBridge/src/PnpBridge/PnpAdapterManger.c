@@ -42,8 +42,8 @@ PNPBRIDGE_RESULT PnpAdapterManager_InitializeAdapter(PPNP_ADAPTER_TAG* adapterTa
         }
 
         adapterT->adapter = adapter;
-        adapterT->pnpInterfaceList = singlylinkedlist_create();
         adapterT->pnpInterfaceListLock = Lock_Init();
+        adapterT->pnpInterfaceList = singlylinkedlist_create();
         if (NULL == adapterT->pnpInterfaceListLock) {
             result = PNPBRIDGE_INSUFFICIENT_MEMORY;
             LEAVE;
@@ -62,17 +62,32 @@ PNPBRIDGE_RESULT PnpAdapterManager_InitializeAdapter(PPNP_ADAPTER_TAG* adapterTa
 }
 
 void PnpAdapterManager_ReleaseAdapter(PPNP_ADAPTER_TAG adapterTag) {
-    if (NULL != adapterTag) {
-        if (NULL != adapterTag->pnpInterfaceList) {
-            singlylinkedlist_destroy(adapterTag->pnpInterfaceList);
-        }
-
-        if (NULL != adapterTag->pnpInterfaceListLock) {
-            Lock_Deinit(adapterTag->pnpInterfaceListLock);
-        }
-
-        free(adapterTag);
+    if (NULL == adapterTag) {
+        return;
     }
+
+    if (NULL != adapterTag->pnpInterfaceList) {
+        SINGLYLINKEDLIST_HANDLE pnpInterfaces = adapterTag->pnpInterfaceList;
+        Lock(adapterTag->pnpInterfaceListLock);
+        LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
+        while (NULL != handle) {
+            PPNPADAPTER_INTERFACE_TAG adapterInterface = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(handle);
+            // Disconnect the adapter interface from the list. The cleanup of adapte interface
+            // will be done when destroy API is called
+            if (NULL != adapterInterface->adapterEntry) {
+                adapterInterface->adapterEntry = NULL;
+            }
+            adapterInterface->params.releaseInterface(adapterInterface);
+            
+            handle = singlylinkedlist_get_next_item(handle);
+        }
+        Unlock(adapterTag->pnpInterfaceListLock);
+
+        singlylinkedlist_destroy(adapterTag->pnpInterfaceList);
+        Lock_Deinit(adapterTag->pnpInterfaceListLock);
+    }
+
+    free(adapterTag);
 }
 
 PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr, JSON_Value* config) {
@@ -164,16 +179,22 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
         {
             for (int i = 0; i < (int)count; i++) {
                 int index = values[i][0];
-                PPNP_ADAPTER  pnpAdapter = PNP_ADAPTER_MANIFEST[index];
-                if (NULL != pnpAdapter->shutdown) {
-                    pnpAdapter->shutdown();
+                PPNP_ADAPTER_TAG  adapterT = adapter->pnpAdapters[index];
+                if (NULL != adapterT) {
+                    // Release all interfaces
+                    PnpAdapterManager_ReleaseAdapter(adapterT);
+
+                    PPNP_ADAPTER adapter = PNP_ADAPTER_MANIFEST[index];
+                    if (NULL != adapter->shutdown) {
+                        adapter->shutdown();
+                    }
                 }
             }
         }
     }
 
     if (NULL != adapter->pnpAdapters) {
-        free(adapter->pnpAdapters);;
+        free(adapter->pnpAdapters);
     }
 
     Map_Destroy(adapter->pnpAdapterMap);
@@ -182,7 +203,6 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
 
 PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key) {
     bool containsMessageKey = false;
-//    char* interfaceId = NULL;
     JSON_Object* pnpParams = json_object_get_object(Message, PNP_CONFIG_NAME_PNP_PARAMETERS);
     char* getIdentity = (char*) json_object_get_string(pnpParams, PNP_CONFIG_IDENTITY_NAME);
     MAP_RESULT mapResult;
@@ -214,14 +234,14 @@ PNPBRIDGE_RESULT PnpAdapterManager_CreatePnpInterface(PPNP_ADAPTER_MANAGER adapt
                   PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) 
 {
     // Get the module using the key as index
-    PPNP_ADAPTER_TAG  pnpAdapter = adapterMgr->pnpAdapters[key];
+    PPNP_ADAPTER_TAG  adapterT = adapterMgr->pnpAdapters[key];
     PNP_ADAPTER_CONTEXT_TAG context = { 0 };
 
-    context.adapter = pnpAdapter;
+    context.adapter = adapterT;
     context.deviceConfig = deviceConfig;
 
     // Invoke interface binding method
-    int ret = pnpAdapter->adapter->createPnpInterface(&context, pnpDeviceClientHandle, DeviceChangePayload);
+    int ret = adapterT->adapter->createPnpInterface(&context, pnpDeviceClientHandle, DeviceChangePayload);
     if (ret < 0) {
         return PNPBRIDGE_FAILED;
     }
@@ -253,13 +273,15 @@ PNPBRIDGE_RESULT PnpAdapterManager_GetAllInterfaces(PPNP_ADAPTER_MANAGER adapter
             PPNP_ADAPTER_TAG  pnpAdapter = adapterMgr->pnpAdapters[i];
 
             SINGLYLINKEDLIST_HANDLE pnpInterfaces = pnpAdapter->pnpInterfaceList;
+            Lock(pnpAdapter->pnpInterfaceListLock);
             LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
             while (NULL != handle) {
-                PPNPADAPTER_INTERFACE adapterInterface = (PNP_INTERFACE_CLIENT_HANDLE) singlylinkedlist_item_get_value(handle);
+                PPNPADAPTER_INTERFACE_TAG adapterInterface = (PNP_INTERFACE_CLIENT_HANDLE) singlylinkedlist_item_get_value(handle);
                 pnpClientHandles[x] = PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface);
                 handle = singlylinkedlist_get_next_item(handle);
                 x++;
             }
+            Unlock(pnpAdapter->pnpInterfaceListLock);
         }
     }
 
@@ -274,14 +296,16 @@ bool PnpAdapterManager_IsInterfaceIdPublished(PPNP_ADAPTER_MANAGER adapterMgr, c
         PPNP_ADAPTER_TAG  pnpAdapter = adapterMgr->pnpAdapters[i];
 
         SINGLYLINKEDLIST_HANDLE pnpInterfaces = pnpAdapter->pnpInterfaceList;
+        Lock(pnpAdapter->pnpInterfaceListLock);
         LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
         while (NULL != handle) {
-            PPNPADAPTER_INTERFACE adapterInterface = (PNP_INTERFACE_CLIENT_HANDLE)singlylinkedlist_item_get_value(handle);
+            PPNPADAPTER_INTERFACE_TAG adapterInterface = (PNP_INTERFACE_CLIENT_HANDLE)singlylinkedlist_item_get_value(handle);
             if (stricmp(adapterInterface->interfaceId, interfaceId)) {
                 return true;
             }
             handle = singlylinkedlist_get_next_item(handle);
         }
+        Unlock(pnpAdapter->pnpInterfaceListLock);
     }
 
     return false;
@@ -290,17 +314,19 @@ bool PnpAdapterManager_IsInterfaceIdPublished(PPNP_ADAPTER_MANAGER adapterMgr, c
 void PnpAdapterManager_AddInterface(PPNP_ADAPTER_TAG adapter, PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface) {
     LIST_ITEM_HANDLE handle = NULL;
     Lock(adapter->pnpInterfaceListLock);
+
     handle = singlylinkedlist_add(adapter->pnpInterfaceList, pnpAdapterInterface);
     Unlock(adapter->pnpInterfaceListLock);
 
     if (NULL != handle) {
-        PPNPADAPTER_INTERFACE interface = (PPNPADAPTER_INTERFACE)pnpAdapterInterface;
+        PPNPADAPTER_INTERFACE_TAG interface = (PPNPADAPTER_INTERFACE_TAG)pnpAdapterInterface;
         interface->adapterEntry = handle;
     }
+    // Handle failure case when singlylinkedlist_add returns NULL
 }
 
 void PnpAdapterManager_RemoveInterface(PPNP_ADAPTER_TAG adapter, PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface) {
-    PPNPADAPTER_INTERFACE interface = (PPNPADAPTER_INTERFACE)pnpAdapterInterface;
+    PPNPADAPTER_INTERFACE_TAG interface = (PPNPADAPTER_INTERFACE_TAG)pnpAdapterInterface;
     if (NULL == interface->adapterEntry) {
         return;
     }

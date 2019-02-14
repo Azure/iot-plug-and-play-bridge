@@ -13,7 +13,6 @@ PNP_ADAPTER CameraPnpInterface = {
     CameraPnpInterfaceBind,
     CameraPnpInterfaceShutdown
 };
-//    CameraPnpInterfaceRelease,
 
 // Camera discovery API entry points.
 CameraPnpDiscovery*  g_pPnpDiscovery = nullptr;
@@ -87,9 +86,9 @@ CameraPnpInterfaceBind(
     JSON_Value*                         jmsg;
     JSON_Object*                        jobj;
 
-	PNPADAPTER_INTERFACE_HANDLE Interface = NULL;
+	PNPADAPTER_INTERFACE_HANDLE adapterInterface = nullptr;
 
-    if (nullptr == Interface || nullptr == payload || nullptr == payload->Context)
+    if (nullptr == payload || nullptr == payload->Context)
     {
         return E_INVALIDARG;
     }
@@ -104,13 +103,17 @@ CameraPnpInterfaceBind(
     pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, nullptr, nullptr, nullptr);
     RETURN_HR_IF_NULL (E_UNEXPECTED, pnpInterfaceClient);
 
-    //PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+    // Create PnpAdapter Interface
+    PNPADPATER_INTERFACE_INIT_PARAMS interfaceParams = { 0 };
+    interfaceParams.releaseInterface = CameraPnpInterfaceRelease;
+
+    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_Create(adapterHandle, interfaceId, pnpInterfaceClient, &adapterInterface, &interfaceParams))
 
     pIotPnp = std::make_unique<CameraIotPnpDevice>();
-    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(Interface), nullptr /* cameraName.c_str() */));
+    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface), nullptr /* cameraName.c_str() */));
     RETURN_IF_FAILED (pIotPnp->StartTelemetryWorker());
 
-    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_SetContext(Interface, (void*)pIotPnp.get()));
+    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_SetContext(adapterInterface, (void*)pIotPnp.get()));
 
     // Our interface context now owns the object.
     pIotPnp.release();
@@ -137,6 +140,8 @@ CameraPnpInterfaceRelease(
     // Clear our context to make sure we don't keep a stale
     // object around.
     (void) PnpAdapterInterface_SetContext(Interface, nullptr);
+
+    PnpAdapterInterface_Destroy(Interface);
 
     return S_OK;
 }

@@ -11,28 +11,28 @@ int PnpAdapterInterface_Create(PNPADAPTER_CONTEXT adapterHandle, const char* int
                                PPNPADPATER_INTERFACE_INIT_PARAMS params)
 {
     int result = 0;
-    PPNPADAPTER_INTERFACE interface = NULL;
+    PPNPADAPTER_INTERFACE_TAG interface = NULL;
+    PPNP_ADAPTER_CONTEXT_TAG adapterContext = adapterHandle;
 
     TRY 
     {
         // validate params
-        if (NULL == params) {
-            return -1;
-        }
-
-        if (NULL == params->releaseInterface || NULL == pnpInterface) {
-            return -1;
+        if (NULL == params || NULL == params->releaseInterface || NULL == pnpInterface) {
+            result = -1;
+            LEAVE;
         }
 
         // Create a pnp adapter interface
-        interface = calloc(1, sizeof(PNPADAPTER_INTERFACE));
+        interface = calloc(1, sizeof(PNPADAPTER_INTERFACE_TAG));
         if (NULL == interface) {
+            result = -1;
             LEAVE;
         }
 
         interface->pnpInterfaceClient = pnpInterface;
         interface->interfaceId = malloc(strlen(interfaceId) + 1);
         if (NULL == interface->interfaceId) {
+            result = -1;
             LEAVE;
         }
 
@@ -42,14 +42,13 @@ int PnpAdapterInterface_Create(PNPADAPTER_CONTEXT adapterHandle, const char* int
         // Copy the params
         memcpy(&interface->params, params, sizeof(interface->params));
 
-        PPNP_ADAPTER_CONTEXT_TAG adapterContext = adapterHandle;
-
         // Copy adapter context
         interface->adapterContext = calloc(1, sizeof(PPNP_ADAPTER_CONTEXT_TAG));
         if (NULL == interface->adapterContext) {
+            result = -1;
             LEAVE;
         }
-        memcpy(&interface->adapterContext, adapterContext, sizeof(interface->adapterContext));
+        memcpy(interface->adapterContext, adapterContext, sizeof(interface->adapterContext));
 
         // Add this interface to the list of interfaces under the adapter context
         PnpAdapterManager_AddInterface(adapterContext->adapter, interface);
@@ -59,6 +58,7 @@ int PnpAdapterInterface_Create(PNPADAPTER_CONTEXT adapterHandle, const char* int
     FINALLY 
     {
         if (result < 0) {
+           /* PnpAdapterManager_RemoveInterface(adapterContext->adapter, pnpAdapterInterface);*/
             PnpAdapterInterface_Destroy(interface);
         }
     }
@@ -71,7 +71,7 @@ void PnpAdapterInterface_Destroy(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface
         return;
     }
 
-    PPNPADAPTER_INTERFACE interface = (PPNPADAPTER_INTERFACE)pnpAdapterInterface;
+    PPNPADAPTER_INTERFACE_TAG interface = (PPNPADAPTER_INTERFACE_TAG)pnpAdapterInterface;
     if (NULL != interface->interfaceId) {
         free(interface->interfaceId);
     }
@@ -81,6 +81,7 @@ void PnpAdapterInterface_Destroy(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface
         if (NULL != interface->adapterEntry) {
             PnpAdapterManager_RemoveInterface(adapterContext->adapter, pnpAdapterInterface);
         }
+        free(interface->adapterContext);
     }
 }
 
@@ -89,7 +90,7 @@ PNP_INTERFACE_CLIENT_HANDLE PnpAdapterInterface_GetPnpInterfaceClient(PNPADAPTER
         return NULL;
     }
 
-    PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpAdapterInterface;
+    PPNPADAPTER_INTERFACE_TAG interfaceClient = (PPNPADAPTER_INTERFACE_TAG)pnpAdapterInterface;
     return interfaceClient->pnpInterfaceClient;
 }
 
@@ -98,7 +99,7 @@ PNPBRIDGE_RESULT PnpAdapterInterface_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpA
         return PNPBRIDGE_INVALID_ARGS;
     }
 
-    PPNPADAPTER_INTERFACE interfaceClient = (PPNPADAPTER_INTERFACE)pnpAdapterInterface;
+    PPNPADAPTER_INTERFACE_TAG interfaceClient = (PPNPADAPTER_INTERFACE_TAG)pnpAdapterInterface;
     interfaceClient->context = context;
 
     return PNPBRIDGE_OK;
@@ -109,6 +110,6 @@ void* PnpAdapterInterface_GetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInter
         return NULL;
     }
 
-    PPNPADAPTER_INTERFACE adapterInterface = (PPNPADAPTER_INTERFACE)pnpAdapterInterface;
+    PPNPADAPTER_INTERFACE_TAG adapterInterface = (PPNPADAPTER_INTERFACE_TAG)pnpAdapterInterface;
     return adapterInterface->context;
 }

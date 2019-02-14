@@ -25,6 +25,8 @@ typedef struct _PNP_BRIDGE {
     // PnpBridge config document
     JSON_Value* configuration;
 
+    bool shutdown;
+
 } PNP_BRIDGE, *PPNP_BRIDGE;
 
 void PnpBridge_Release(PPNP_BRIDGE pnpBridge);

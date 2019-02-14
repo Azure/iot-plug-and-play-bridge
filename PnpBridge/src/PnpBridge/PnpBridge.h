@@ -32,9 +32,11 @@ SerialPnp
 
 PnpBridge
  4. DPS connection & test
+
  5. FT to create a tear down in a loop *** MOCK the PNP CLIENT SDK
- 6. Release PnpInterfaces..
+ 6. Release PnpInterfaces.. - DONE
  7. Persistent device should get callback when device is discovered
+ 7.1 Use event to notify PnpBridgeWorker thread exit
 
 CoreDevice
  7. Enumerate devices
@@ -42,6 +44,7 @@ CoreDevice
 
 CMAKE
  9. Clean up warnings to get a clean build
+ 10. Creating VS filters: https://stackoverflow.com/questions/33808087/cmake-how-to-create-visual-studio-filters
 
 */
 // ***************

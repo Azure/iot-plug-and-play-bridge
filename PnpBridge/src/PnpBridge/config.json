@@ -13,30 +13,17 @@
           "HardwareId": "USB\\VID_06CB&PID_00B3"
         }
       },
-      "InterfaceId": "http://windows.com/coredevicehealth/v1",
+      "InterfaceId": "http://windows.com/coredevicehealth/1.0.0",
       "PnpParameters": {
         "Identity": "core-device-health"
       }
     },
     {
-      "_comment": "DEVICE1 - RANDOM device",
-      "MatchFilters": {
-        "MatchType": "Exact",
-        "MatchParameters": {
-          "HardwareId": "USB\\VID_07DE&PID_11F3"
-        }
-      },
-      "PublishMode" : "Always",
-      "InterfaceId": "http://windows.com/coredevicehealth/v1",
-      "PnpParameters": {
-          "Identity": "core-device-health"
-      }
-    },
-    {
       "_comment": "DEVICE2 - MCU sensor hub which reports Azure IoT Pnp interfaces",
       "MatchFilters": {
-        "MatchType": "*"
+        "MatchType": "Exact"
       },
+      "SelfDescribing": "true",
       "PnpParameters": {
         "Identity": "serial-pnp-interface"
       },
@@ -72,21 +59,6 @@
         "DeviceInterfaceClasses": [
           "A5DCBF10-6530-11D2-901F-00C04FB951ED"
         ]
-      },
-      {
-        "Identity": "camera-health-monitor",
-        "_comment1": "USB Device class",
-        "DeviceInterfaceClasses": [
-          "A5DCBF10-6530-11D2-901F-00C04FB951ED"
-        ]
-      }
-    ]
-  },
-  "PnpAdapters": {
-    "EnabledAdapters": {
-    },
-    "Parameters": [
-      {
       }
     ]
   }

@@ -8,6 +8,12 @@ extern "C"
 {
 #endif
 
+typedef struct _CORE_DEVICE_TAG {
+    PNP_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle;
+    HCMNOTIFICATION hNotifyCtx;
+    char* symbolicLink;
+    volatile bool state;
+} CORE_DEVICE_TAG, *PCORE_DEVICE_TAG;
 
 #ifdef __cplusplus
 }

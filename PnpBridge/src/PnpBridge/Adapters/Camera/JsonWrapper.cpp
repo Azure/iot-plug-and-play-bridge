@@ -54,33 +54,33 @@ JsonWrapper::AddValueAsString(
     char sz[MAX_32BIT_DECIMAL_DIGIT] = { };
 
     RETURN_HR_IF_NULL (E_INVALIDARG, m_object);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
+RETURN_HR_IF_NULL(E_INVALIDARG, name);
 
-    RETURN_IF_FAILED (StringCchPrintfA(sz, _countof(sz), "%u", val));
+RETURN_IF_FAILED(StringCchPrintfA(sz, _countof(sz), "%u", val));
 
-    // json_object_set_string returns 0 on success and -1 on
-    // failure.  Failure for this can be either via invalid
-    // arg (i.e., JSON_Object is invalid) or we ran out of 
-    // memory.  We'll assume, since this is only called by our 
-    // object and the methods are protected, that the parameters
-    // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
+// json_object_set_string returns 0 on success and -1 on
+// failure.  Failure for this can be either via invalid
+// arg (i.e., JSON_Object is invalid) or we ran out of 
+// memory.  We'll assume, since this is only called by our 
+// object and the methods are protected, that the parameters
+// are valid.  So only failure would be E_OUTOFMEMORY.
+RETURN_HR_IF(E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
 
-    return S_OK;
+return S_OK;
 }
 
 HRESULT
 JsonWrapper::AddValueAsString(
     _In_z_ LPCSTR name,
     _In_ LONGLONG val
-    )
+)
 {
     char sz[MAX_64BIT_DECIMAL_DIGIT] = { };
 
-    RETURN_HR_IF_NULL (E_INVALIDARG, m_object);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
+    RETURN_HR_IF_NULL(E_INVALIDARG, m_object);
+    RETURN_HR_IF_NULL(E_INVALIDARG, name);
 
-    RETURN_IF_FAILED (StringCchPrintfA(sz, _countof(sz), "%I64d", val));
+    RETURN_IF_FAILED(StringCchPrintfA(sz, _countof(sz), "%I64d", val));
 
     // json_object_set_string returns 0 on success and -1 on
     // failure.  Failure for this can be either via invalid
@@ -88,7 +88,7 @@ JsonWrapper::AddValueAsString(
     // memory.  We'll assume, since this is only called by our 
     // object and the methods are protected, that the parameters
     // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
+    RETURN_HR_IF(E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
 
     return S_OK;
 }
@@ -97,13 +97,13 @@ HRESULT
 JsonWrapper::AddValueAsString(
     _In_z_ LPCSTR name,
     _In_ double val
-    )
+)
 {
     HRESULT hr = S_OK;
     char    sz[MAX_64BIT_DECIMAL_DIGIT] = { };
 
-    RETURN_HR_IF_NULL (E_INVALIDARG, m_object);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
+    RETURN_HR_IF_NULL(E_INVALIDARG, m_object);
+    RETURN_HR_IF_NULL(E_INVALIDARG, name);
 
     hr = StringCchPrintfA(sz, _countof(sz), "%.3f", val);
     if (hr == S_OK || hr == STRSAFE_E_INSUFFICIENT_BUFFER)
@@ -112,7 +112,7 @@ JsonWrapper::AddValueAsString(
         // we truncated the string, assume we're fine.
         hr = S_OK;
     }
-    RETURN_IF_FAILED (hr);
+    RETURN_IF_FAILED(hr);
 
     // json_object_set_string returns 0 on success and -1 on
     // failure.  Failure for this can be either via invalid
@@ -120,7 +120,7 @@ JsonWrapper::AddValueAsString(
     // memory.  We'll assume, since this is only called by our 
     // object and the methods are protected, that the parameters
     // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
+    RETURN_HR_IF(E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
 
     return S_OK;
 }
@@ -129,14 +129,14 @@ HRESULT
 JsonWrapper::AddHresultAsString(
     _In_z_ LPCSTR name,
     _In_ HRESULT hr
-    )
+)
 {
     char sz[MAX_32BIT_HEX_DIGIT] = { };
 
-    RETURN_HR_IF_NULL (E_INVALIDARG, m_object);
-    RETURN_HR_IF_NULL (E_INVALIDARG, name);
+    RETURN_HR_IF_NULL(E_INVALIDARG, m_object);
+    RETURN_HR_IF_NULL(E_INVALIDARG, name);
 
-    RETURN_IF_FAILED (StringCchPrintfA(sz, _countof(sz), "0x%08X", hr));
+    RETURN_IF_FAILED(StringCchPrintfA(sz, _countof(sz), "0x%08X", hr));
 
     // json_object_set_string returns 0 on success and -1 on
     // failure.  Failure for this can be either via invalid
@@ -144,7 +144,23 @@ JsonWrapper::AddHresultAsString(
     // memory.  We'll assume, since this is only called by our 
     // object and the methods are protected, that the parameters
     // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF (E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
+    RETURN_HR_IF(E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
+
+    return S_OK;
+}
+
+HRESULT
+JsonWrapper::AddObject(
+    _In_z_ LPCSTR name,
+    _In_z_ LPCSTR object
+    )
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, m_object);
+    RETURN_HR_IF_NULL(E_INVALIDARG, name);
+    RETURN_HR_IF_NULL(E_INVALIDARG, object);
+
+    JSON_Value* value = json_parse_string(object);
+    RETURN_HR_IF(E_OUTOFMEMORY, JSONFailure == json_object_set_value(m_object, name, value));
 
     return S_OK;
 }

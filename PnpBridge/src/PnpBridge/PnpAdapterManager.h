@@ -38,7 +38,7 @@ typedef enum {
 } PublishMode;
 
 // Pnp adapter interface structure
-typedef struct _PNPADAPTER_INTERFACE {
+typedef struct _PNPADAPTER_INTERFACE_TAG {
     void* context;
     int key;
     PublishMode publishMode;
@@ -47,7 +47,7 @@ typedef struct _PNPADAPTER_INTERFACE {
     PNPADPATER_INTERFACE_INIT_PARAMS params;
     PNPADAPTER_CONTEXT adapterContext;
     LIST_ITEM_HANDLE adapterEntry;
-} PNPADAPTER_INTERFACE, *PPNPADAPTER_INTERFACE;
+} PNPADAPTER_INTERFACE_TAG, *PPNPADAPTER_INTERFACE_TAG;
 
 /**
 * @brief    PnpAdapterManager_Create creates the Azure Pnp Interface adapter manager.
