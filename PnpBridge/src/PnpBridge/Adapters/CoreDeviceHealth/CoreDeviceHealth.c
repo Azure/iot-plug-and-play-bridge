@@ -60,6 +60,9 @@ CoreDevice_OnDeviceNotification(
 {
     PCORE_DEVICE_TAG device = context;
 
+    UNREFERENCED_PARAMETER(hNotify);
+    UNREFERENCED_PARAMETER(eventDataSize);
+
     char buff[512];
     sprintf_s(buff, 512, "%S", eventData->u.DeviceInterface.SymbolicLink);
 
@@ -105,7 +108,7 @@ int CoreDevice_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_C
     JSON_Object* args = jmsg;
     PCORE_DEVICE_TAG device = NULL;
     const char* interfaceId = json_object_get_string(args, "InterfaceId");
-    const char* hardwareId = json_object_get_string(args, "HardwareId");
+    //const char* hardwareId = json_object_get_string(args, "HardwareId");
     const char* symbolicLink = json_object_get_string(args, "SymbolicLink");
     const char* publishMode = json_object_get_string(args, "PublishMode");
     int result = 0;
@@ -128,7 +131,7 @@ int CoreDevice_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_C
         interfaceParams.releaseInterface = CoreDevice_ReleaseInterface;
         PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
 
-        int result = PnpAdapterInterface_Create(adapterHandle, interfaceId, pnpInterfaceClient, &pnpAdapterInterface, &interfaceParams);
+        result = PnpAdapterInterface_Create(adapterHandle, interfaceId, pnpInterfaceClient, &pnpAdapterInterface, &interfaceParams);
         if (result < 0) {
             goto end;
         }
@@ -228,6 +231,7 @@ int SendDeviceDisconnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCor
 }
 
 int CoreDevice_Initialize(const char* adapterArgs) {
+    UNREFERENCED_PARAMETER(adapterArgs);
     return 0;
 }
 

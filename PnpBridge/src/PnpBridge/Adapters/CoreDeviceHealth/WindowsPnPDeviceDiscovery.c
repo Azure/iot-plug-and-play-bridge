@@ -35,6 +35,9 @@ OnDeviceNotification(
     _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
     _In_ DWORD eventDataSize)
 {
+    UNREFERENCED_PARAMETER(hNotify);
+    UNREFERENCED_PARAMETER(eventDataSize);
+    UNREFERENCED_PARAMETER(context);
 
     if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) {
         if (DeviceChangeHandler != NULL) {
@@ -57,7 +60,7 @@ OnDeviceNotification(
 
             // Find the hardware Id
             DevPropSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
-            status = CM_Get_Device_Interface_Property(
+            status = CM_Get_Device_Interface_PropertyW(
                             eventData->u.DeviceInterface.SymbolicLink,
                             &DEVPKEY_Device_InstanceId,
                             &DevPropType,
@@ -66,19 +69,19 @@ OnDeviceNotification(
                             0);
 
             if (status != CR_SUCCESS) {
-                return -1;
+                return 1;
             }
 
-            status = CM_Locate_DevNode(
+            status = CM_Locate_DevNodeW(
                         &Devinst,
                         deviceInstance,
                         CM_LOCATE_DEVNODE_NORMAL);
 
             if (status != CR_SUCCESS) {
-                return -1;
+                return 1;
             }
 
-            status = CM_Get_DevNode_Property(
+            status = CM_Get_DevNode_PropertyW(
                         Devinst,
                         &DEVPKEY_Device_HardwareIds,
                         &PropType,
@@ -119,6 +122,7 @@ OnDeviceNotification(
             STRING_delete(asJson);
         }
     }
+
     return 0;
 }
 
@@ -128,6 +132,8 @@ int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallbac
     HCMNOTIFICATION hNotifyCtx = NULL;
     JSON_Value* jmsg;
     JSON_Object* jobj;
+
+    UNREFERENCED_PARAMETER(deviceArgs);
 
     g_deviceWatchers = singlylinkedlist_create();
     if (NULL == g_deviceWatchers) {
@@ -143,7 +149,7 @@ int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallbac
     for (int j = 0; j < (int)json_array_get_count(interfaceClasses); j++) {
         GUID guid = { 0 };
         const char *interfaceClass = json_array_get_string(interfaceClasses, j);
-        if (UuidFromStringA((char *)interfaceClass, &guid) != RPC_S_OK) {
+        if (UuidFromStringA((RPC_CSTR)interfaceClass, &guid) != RPC_S_OK) {
             return -1;
         }
 

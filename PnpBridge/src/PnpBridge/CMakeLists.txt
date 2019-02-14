@@ -18,7 +18,6 @@ set(pnp_bridge_c_files
     ./IotHubComms.c
     ./PnpAdapterManger.c
     ./PnpBridge.c
-    ./PnpBridgeService.c
     ./utility.c
     ./Core/PnpAdapterInterface.c
     ./Core/PnpBridgeMemory.c
@@ -63,6 +62,8 @@ set(pnp_bridge_h_files
     ./Adapters/SerialPnp/SerialPnp.h
 )
 
+add_definitions("-D_UNICODE") 
+
 set(pnp_bridge_libs)
 
 set(install_staticlibs
@@ -95,8 +96,7 @@ add_executable(${PROJECT_NAME}
     ${pnp_bridge_h_files}
 )
 
-target_link_libraries(${PROJECT_NAME} ${pnp_bridge_libs})
-target_link_libraries(${PROJECT_NAME} iothub_client parson pnp_client iothub_client_http_transport iothub_client_amqp_transport iothub_client_amqp_ws_transport iothub_client_mqtt_transport iothub_client_mqtt_ws_transport umqtt aziotsharedutil)
+target_link_libraries(${PROJECT_NAME} ${pnp_bridge_libs} iothub_client parson pnp_client iothub_client_http_transport iothub_client_amqp_transport iothub_client_amqp_ws_transport iothub_client_mqtt_transport iothub_client_mqtt_ws_transport umqtt aziotsharedutil cfgmgr32 mfplat mfsensorgroup)
 
 set(pnp_bridge_libs
     ${PROJECT_NAME}

@@ -25,7 +25,7 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4232")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4232")
     # Make warning as error
-    add_definitions(/WX)
+    # add_definitions(/WX)
 else()
     # Make warning as error
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")

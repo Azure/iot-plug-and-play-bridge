@@ -165,21 +165,21 @@ exit:
     return result;
 }
 
-void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
+void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapterMgr) {
     const char* const* keys;
     const char* const* values;
     size_t count;
 
-    if (NULL != adapter->pnpAdapterMap) {
+    if (NULL != adapterMgr->pnpAdapterMap) {
         // Call shutdown on all interfaces
-        if (Map_GetInternals(adapter->pnpAdapterMap, &keys, &values, &count) != MAP_OK) {
+        if (Map_GetInternals(adapterMgr->pnpAdapterMap, &keys, &values, &count) != MAP_OK) {
             LogError("Map_GetInternals failed to get all pnp adapters");
         }
         else
         {
             for (int i = 0; i < (int)count; i++) {
                 int index = values[i][0];
-                PPNP_ADAPTER_TAG  adapterT = adapter->pnpAdapters[index];
+                PPNP_ADAPTER_TAG  adapterT = adapterMgr->pnpAdapters[index];
                 if (NULL != adapterT) {
                     // Release all interfaces
                     PnpAdapterManager_ReleaseAdapter(adapterT);
@@ -193,12 +193,12 @@ void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapter) {
         }
     }
 
-    if (NULL != adapter->pnpAdapters) {
-        free(adapter->pnpAdapters);
+    if (NULL != adapterMgr->pnpAdapters) {
+        free(adapterMgr->pnpAdapters);
     }
 
-    Map_Destroy(adapter->pnpAdapterMap);
-    free(adapter);
+    Map_Destroy(adapterMgr->pnpAdapterMap);
+    free(adapterMgr);
 }
 
 PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key) {

@@ -198,7 +198,6 @@
     <ClCompile Include="PnpBridge.c" />
     <ClCompile Include="DiscoveryManager.c" />
     <ClCompile Include="PnpAdapterManger.c" />
-    <ClCompile Include="PnpBridgeService.c" />
     <ClCompile Include="utility.c" />
   </ItemGroup>
   <ItemGroup>

@@ -61,6 +61,7 @@ CameraPnpInterfaceInitialize(
     _In_ const char* adapterArgs
     )
 {
+    UNREFERENCED_PARAMETER(adapterArgs);
     return S_OK;
 }
 
