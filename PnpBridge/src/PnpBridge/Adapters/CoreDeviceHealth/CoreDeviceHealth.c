@@ -17,14 +17,14 @@
 
 #include "parson.h"
 
-PNP_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle = NULL;
+#include "adapters/CoreDeviceHealth/CoreDeviceHealth.h"
 
 void WindowsPnpSendEventCallback(PNP_SEND_TELEMETRY_STATUS pnpSendEventStatus, void* userContextCallback)
 {
     LogInfo("WindowsPnpSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
 }
 
-int Sample_SendEventAsync(char* eventName, char* data)
+int Sample_SendEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle, char* eventName, char* data)
 {
     int result;
     PNP_CLIENT_RESULT pnpClientResult;
@@ -49,9 +49,6 @@ int Sample_SendEventAsync(char* eventName, char* data)
     return result;
 }
 
-volatile bool state = false;
-SINGLYLINKEDLIST_HANDLE g_coreDeviceWatchers = NULL;
-
 DWORD
 __stdcall
 CoreDevice_OnDeviceNotification(
@@ -61,51 +58,94 @@ CoreDevice_OnDeviceNotification(
     _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
     _In_ DWORD eventDataSize)
 {
-    char* deviceSymbolicLink = context;
+    PCORE_DEVICE_TAG device = context;
+
+    UNREFERENCED_PARAMETER(hNotify);
+    UNREFERENCED_PARAMETER(eventDataSize);
 
     char buff[512];
     sprintf_s(buff, 512, "%S", eventData->u.DeviceInterface.SymbolicLink);
 
     if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL) {
-        if (state && strcmp(buff, deviceSymbolicLink)  == 0) {
-            state = false;
+        if (device->state && strcmp(buff, device->symbolicLink)  == 0) {
+            device->state = false;
             LogInfo("device removed %S", eventData->u.DeviceInterface.SymbolicLink);
-            Sample_SendEventAsync("DeviceStatus", "Disconnected");
+            Sample_SendEventAsync(device->pnpinterfaceHandle, "DeviceStatus", "Disconnected");
         }
     }
     else if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) {
-        if (!state && strcmp(buff, deviceSymbolicLink) == 0) {
-            state = true;
+        if (!device->state && strcmp(buff, device->symbolicLink) == 0) {
+            device->state = true;
             LogInfo("device connected %S", eventData->u.DeviceInterface.SymbolicLink);
-            Sample_SendEventAsync("DeviceStatus", "Connected");
+            Sample_SendEventAsync(device->pnpinterfaceHandle, "DeviceStatus", "Connected");
         }
     }
     return 0;
 }
 
-HCMNOTIFICATION CoreDevice_hNotifyCtx = NULL;
 
-int CoreDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD param) {
+int CoreDevice_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
+    PCORE_DEVICE_TAG device = PnpAdapterInterface_GetContext(pnpInterface);
+
+    if (NULL != device) {
+        if (NULL != device->hNotifyCtx) {
+            CM_Unregister_Notification(device->hNotifyCtx);
+        }
+        if (NULL != device->symbolicLink) {
+            free(device->symbolicLink);
+        }
+        free(device);
+    }
+    return 0;
+}
+
+int CoreDevice_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD param) {
     DWORD cmRet;
     CM_NOTIFY_FILTER cmFilter;
     PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     JSON_Value* jvalue = json_parse_string(param->Message);
     JSON_Object* jmsg = json_value_get_object(jvalue);
     JSON_Object* args = jmsg;
+    PCORE_DEVICE_TAG device = NULL;
     const char* interfaceId = json_object_get_string(args, "InterfaceId");
-    const char* hardwareId = json_object_get_string(args, "HardwareId");
+    //const char* hardwareId = json_object_get_string(args, "HardwareId");
     const char* symbolicLink = json_object_get_string(args, "SymbolicLink");
+    const char* publishMode = json_object_get_string(args, "PublishMode");
+    int result = 0;
 
-    if (Interface == NULL) {
-        return -1;
+    device = calloc(1, sizeof(CORE_DEVICE_TAG));
+    if (NULL != device) {
+        result = -1;
+        goto end;
     }
 
     pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, NULL, NULL, NULL);
     if (NULL == pnpInterfaceClient) {
-        return -1;
+        result = -1;
+        goto end;
     }
 
-    PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+    // Create PnpAdapter Interface
+    {
+        PNPADPATER_INTERFACE_INIT_PARAMS interfaceParams = { 0 };
+        interfaceParams.releaseInterface = CoreDevice_ReleaseInterface;
+        PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
+
+        result = PnpAdapterInterface_Create(adapterHandle, interfaceId, pnpInterfaceClient, &pnpAdapterInterface, &interfaceParams);
+        if (result < 0) {
+            goto end;
+        }
+        PnpAdapterInterface_SetContext(pnpAdapterInterface, device);
+    }
+
+    // Don't bind the interface for publishMode always. There will be a device
+    // arrived notification from the discovery adapter.
+    if (NULL != publishMode && stricmp(publishMode, "always") == 0) {
+        goto end;
+    }
+
+    device->symbolicLink = malloc(strlen(symbolicLink)+1);
+    strcpy_s(device->symbolicLink, strlen(symbolicLink) + 1, symbolicLink);
 
     ZeroMemory(&cmFilter, sizeof(cmFilter));
     cmFilter.cbSize = sizeof(cmFilter);
@@ -115,20 +155,29 @@ int CoreDevice_CreatePnpInterface(PNPADAPTER_INTERFACE_HANDLE Interface, PNP_DEV
 
     cmRet = CM_Register_Notification(
         &cmFilter,
-        (void*)symbolicLink,
+        (void*)device,
         CoreDevice_OnDeviceNotification,
-        &CoreDevice_hNotifyCtx
+        &device->hNotifyCtx
         );
 
     if (cmRet != CR_SUCCESS) {
-        return -1;
+        result = -1;
+        goto end;
     }
 
-    pnpinterfaceHandle = pnpInterfaceClient;
-    state = true;
+    device->pnpinterfaceHandle = pnpInterfaceClient;
+    device->state = true;
 
-    Sample_SendEventAsync("DeviceStatus", "Connected");
-
+    Sample_SendEventAsync(device->pnpinterfaceHandle, "DeviceStatus", "Connected");
+end:
+    if (result < 0) {
+        if (NULL != device) {
+            if (NULL != device->symbolicLink) {
+                free(device->symbolicLink);
+            }
+            free(device);
+        }
+    }
     return 0;
 }
 
@@ -181,30 +230,18 @@ int SendDeviceDisconnectedEventAsync(PNP_INTERFACE_CLIENT_HANDLE pnpInterfaceCor
     return result;
 }
 
-int CoreDevice_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
-    return 0;
-}
-
 int CoreDevice_Initialize(const char* adapterArgs) {
-    g_coreDeviceWatchers = singlylinkedlist_create();
-    if (NULL == g_coreDeviceWatchers) {
-        return -1;
-    }
-
+    UNREFERENCED_PARAMETER(adapterArgs);
     return 0;
 }
 
 int CoreDevice_Shutdown() {
-    if (NULL != g_coreDeviceWatchers) {
-        singlylinkedlist_destroy(g_coreDeviceWatchers);
-    }
     return 0;
 }
 
 PNP_ADAPTER CoreDeviceHealthInterface = {
-    .Identity = "core-device-health",
-    .Initialize = CoreDevice_Initialize,
-    .Shutdown = CoreDevice_Shutdown,
-    .CreatePnpInterface = CoreDevice_CreatePnpInterface,
-    .ReleaseInterface = CoreDevice_ReleaseInterface,
+    .identity = "core-device-health",
+    .initialize = CoreDevice_Initialize,
+    .shutdown = CoreDevice_Shutdown,
+    .createPnpInterface = CoreDevice_CreatePnpInterface,
 };

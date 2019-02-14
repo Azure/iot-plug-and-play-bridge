@@ -19,8 +19,7 @@ public:
     HRESULT                 AddValueAsString(_In_z_ LPCSTR name, _In_ LONGLONG val);
     HRESULT                 AddValueAsString(_In_z_ LPCSTR name, _In_ double val);
     HRESULT                 AddHresultAsString(_In_z_ LPCSTR name, _In_ HRESULT hr);
-    HRESULT                 AddValue(_In_z_ LPCSTR name, _In_z_ LPCWSTR val);
-    HRESULT                 AddValue(_In_z_ LPCSTR name, _In_z_ LPCSTR val);
+    HRESULT                 AddObject(_In_z_ LPCSTR name, _In_z_ LPCSTR object);
     HRESULT                 AddFormatString(_In_z_ LPCSTR name, _In_z_ LPCSTR format, ...);
     size_t                  GetSize();
     const char*             GetMessage();

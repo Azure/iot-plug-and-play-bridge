@@ -228,7 +228,7 @@ CameraCaptureEngine::GetDefaultCamera(
         }
 
         pwzInterfaceList = std::make_unique<WCHAR[]>(cchInterfaceList);
-        cr = CM_Get_Device_Interface_List((GUID*)&guidCategory, nullptr, pwzInterfaceList.get(), cchInterfaceList, CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+        cr = CM_Get_Device_Interface_ListW((GUID*)&guidCategory, nullptr, pwzInterfaceList.get(), cchInterfaceList, CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
         if (cr != CR_SUCCESS)
         {
             pwzInterfaceList = nullptr;

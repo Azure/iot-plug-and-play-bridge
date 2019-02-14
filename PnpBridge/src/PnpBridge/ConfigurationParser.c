@@ -16,6 +16,76 @@ PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename,
     return PNPBRIDGE_OK;
 }
 
+PNPBRIDGE_RESULT PnpBridgeConfig_ValidateConfiguration(JSON_Value* config) {
+    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
+
+    // Check for mandatory parameters
+    TRY
+    {
+        // Devices
+        {
+            JSON_Array* devices = Configuration_GetConfiguredDevices(config);
+            for (int i = 0; i < (int)json_array_get_count(devices); i++) {
+                JSON_Object *device = json_array_get_object(devices, i);
+
+                // InterfaceId or SelfDescribing
+                {
+                    const char* selfDescribing = json_object_dotget_string(device, PNP_CONFIG_NAME_SELF_DESCRIBING);
+                    const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_NAME_INTERFACE_ID);
+                    if (NULL == selfDescribing) {
+                        if (NULL == interfaceId) {
+                            LogError("A device is missing InterfaceId");
+                        }
+                    }
+                    else {
+                        if (NULL != interfaceId) {
+                            LogError("A self describing device shouldn't have interface id");
+                        }
+                    }
+                }
+
+                // PnpParameters
+                {
+                    JSON_Object* pnpParams = Configuration_GetPnpParametersForDevice(device);
+                    if (NULL == pnpParams) {
+                        LogError("A device is missing PnpParameters");
+                        result = PNPBRIDGE_INVALID_ARGS;
+                        LEAVE;
+                    }
+
+                    // PnpParameters -> Idenitity
+                    const char* identity = json_object_dotget_string(pnpParams, PNP_CONFIG_IDENTITY_NAME);
+                    if (NULL == identity) {
+                        LogError("PnpParameter is missing Adapter identity");
+                        result = PNPBRIDGE_INVALID_ARGS;
+                        LEAVE;
+                    }
+                }
+
+                // DiscoveryParameters
+                {
+                    JSON_Object* discParams = Configuration_GetDiscoveryParametersForDevice(device);
+                    if (discParams) {
+                        // DiscoveryParameters -> Idenitity
+                        const char* identity = json_object_dotget_string(discParams, PNP_CONFIG_IDENTITY_NAME);
+                        if (NULL == identity) {
+                            LogError("DiscoveryParameters is missing Adapter identity");
+                            result = PNPBRIDGE_INVALID_ARGS;
+                            LEAVE;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    FINALLY
+    {
+
+    }
+
+    return result;
+}
+
 PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromString(const char *configString, JSON_Value** config) {
     if (NULL == configString || NULL == config) {
         return PNPBRIDGE_INVALID_ARGS;
@@ -41,10 +111,19 @@ JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device) {
         return NULL;
     }
 
-    JSON_Object* discoveryParams = json_object_dotget_object(device, "PnpParameters");
-    return discoveryParams;
+    JSON_Object* pnpParams = json_object_dotget_object(device, "PnpParameters");
+    return pnpParams;
 }
 
+JSON_Object* Configuration_GetMatchParametersForDevice(JSON_Object* device) {
+    if (device == NULL) {
+        return NULL;
+    }
+
+    JSON_Object* filterParams = json_object_dotget_object(device, "MatchFilters");
+    JSON_Object* matchParams = json_object_dotget_object(filterParams, "MatchParameters");
+    return matchParams;
+}
 
 JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device) {
     if (device == NULL) {
@@ -79,7 +158,7 @@ JSON_Object* Configuration_GetAdapterParameters(JSON_Value* config, const char* 
 
     for (int j = 0; j < (int)json_array_get_count(params); j++) {
         JSON_Object *param = json_array_get_object(params, j);
-        const char* id = json_object_dotget_string(param, "Identity");
+        const char* id = json_object_dotget_string(param, PNP_CONFIG_IDENTITY_NAME);
         if (NULL != id) {
             if (strcmp(id, identity) == 0) {
                 return param;
@@ -91,86 +170,82 @@ JSON_Object* Configuration_GetAdapterParameters(JSON_Value* config, const char* 
 }
 
 JSON_Object* Configuration_GetPnpParameters(JSON_Value* config, const char* identity) {
-    return Configuration_GetAdapterParameters(config, identity, "PnpAdapters");
+    return Configuration_GetAdapterParameters(config, identity, PNP_CONFIG_NAME_PNP_ADAPTERS);
 }
 
 JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config,const char* identity) {
-    return Configuration_GetAdapterParameters(config, identity, "DiscoveryAdapters");
+    return Configuration_GetAdapterParameters(config, identity, PNP_CONFIG_NAME_DISCOVERY_ADAPTERS);
 }
 
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message, JSON_Object** Device) {
     JSON_Array *devices = Configuration_GetConfiguredDevices(config);
     JSON_Object* discMatchParams;
-    int res = -1;
-    bool foundMatch = false;
+    char* pnpAdapterIdentity = NULL;
+    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
-    const char* formatId = json_object_dotget_string(Message, "Identity");
-    discMatchParams = json_object_get_object(Message, "MatchParameters");
+    *Device = NULL;
 
-    // There needs to be only one match at the end.
-    for (int i = 0; i < (int)json_array_get_count(devices); i++) {
-        JSON_Object *device = json_array_get_object(devices, i);
-        JSON_Object* moduleParams = Configuration_GetPnpParametersForDevice(device);
-        if (NULL == moduleParams) {
-            continue;
-        }
-
-        const char* deviceFormatId = json_object_dotget_string(moduleParams, "Identity");
-        if (strcmp(deviceFormatId, formatId) == 0) {
-            JSON_Object* matchCriteria = json_object_dotget_object(device, "MatchFilters");
-            const char* matchType = json_object_get_string(matchCriteria, "MatchType");
-            if (strcmp(matchType, "*") == 0) {
-                if (true == foundMatch) {
-                    LogError("Found multiple devices in the config that match the filter");
-                    res = -1;
-                    goto end;
-                }
-
-                foundMatch = true;
-                res = 0;
-                *Device = device;
+    TRY
+    {
+        discMatchParams = json_object_get_object(Message, PNP_CONFIG_NAME_MATCH_PARAMETERS);
+        for (int i = 0; i < (int)json_array_get_count(devices); i++) {
+            JSON_Object* device = json_array_get_object(devices, i);
+            JSON_Object* pnpParams = Configuration_GetPnpParametersForDevice(device);
+            if (NULL == pnpParams) {
                 continue;
             }
+
+            JSON_Object* matchCriteria = json_object_dotget_object(device, PNP_CONFIG_MATCH_FILTERS_NAME);
+            const char* matchType = json_object_get_string(matchCriteria, PNP_CONFIG_MATCH_TYPE_NAME);
+            const char* currPnpAdapterId = json_object_get_string(pnpParams, PNP_CONFIG_IDENTITY_NAME);
+            bool exactMatch = stricmp(matchType, "exact") == 0;
 
             if (NULL == discMatchParams) {
                 continue;
             }
 
-            JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, "MatchParameters");
+            JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, PNP_CONFIG_NAME_MATCH_PARAMETERS);
             const size_t matchParameterCount = json_object_get_count(matchParameters);
-            for (int i = 0; i < (int)matchParameterCount; i++) {
-                const char* name = json_object_get_name(matchParameters, i);
-                const char* value = json_object_get_string(matchParameters, name);
+            bool foundMatch = false;
+            for (int j = 0; j < (int)matchParameterCount; j++) {
+                const char* name = json_object_get_name(matchParameters, j);
+                const char* value1 = json_object_get_string(matchParameters, name);
 
                 if (!json_object_dothas_value(discMatchParams, name)) {
-                    res = -1;
-                    goto end;
+                    break;
                 }
 
                 const char* value2 = json_object_get_string(discMatchParams, name);
-                if (strstr(value2, value) == 0) {
-                    res = -1;
-                    goto end;
+                bool match;
+                if (exactMatch) {
+                    match = 0 != strstr(value2, value1);
                 }
                 else {
-                    if (true == foundMatch) {
-                        LogError("Found multiple devices in the config that match the filter");
-                        res = -1;
-                        goto end;
-                    }
-
-                    const char* interfaceId = json_object_dotget_string(device, "InterfaceId");
-                    json_object_set_string(Message, "InterfaceId", interfaceId);
+                    match = 0 == stricmp(value2, value1);
+                }
+                if (false == match) {
+                    foundMatch = false;
+                    break;
+                }
+                else {
                     foundMatch = true;
-                    *Device = device;
-                    res = 0;
                 }
             }
-            res = 0;
-            goto end;
+
+            if (foundMatch) {
+                pnpAdapterIdentity = (char*)currPnpAdapterId;
+                *Device = device;
+                result = PNPBRIDGE_OK;
+                LEAVE;
+            }
+        }
+    }
+    FINALLY
+    {
+        if (NULL == *Device) {
+            result = PNPBRIDGE_INVALID_ARGS;
         }
     }
 
-end:
-    return res;
+    return result;
 }
