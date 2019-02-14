@@ -160,7 +160,7 @@ CameraPnpInterfaceBind(
     RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_Create(adapterHandle, interfaceId, pnpInterfaceClient, &adapterInterface, &interfaceParams))
 
     pIotPnp = std::make_unique<CameraIotPnpDevice>();
-    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface), nullptr /* cameraName.c_str() */));
+    RETURN_IF_FAILED(pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface), pnpDeviceClientHandle, nullptr /* cameraName.c_str() */));
     RETURN_IF_FAILED (pIotPnp->StartTelemetryWorker());
 
     RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_SetContext(adapterInterface, (void*)pIotPnp.get()));
