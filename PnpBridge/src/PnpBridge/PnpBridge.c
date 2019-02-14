@@ -9,6 +9,7 @@
 #include "IotHubComms.h"
 
 #include "PnpBridgeh.h"
+#include <iothub_client.h>
 
 // Global instance of PnpBridge
 PPNP_BRIDGE g_PnpBridge = NULL;
@@ -339,6 +340,52 @@ void PnpBridge_Stop(PPNP_BRIDGE pnpBridge) {
 }
 
 #include <windows.h>
+
+int
+PnpBridge_UploadToBlobAsync(
+    _In_z_ const char* pszDestination,
+    _In_reads_bytes_(cbData) const unsigned char* pbData,
+    _In_ size_t cbData,
+    _In_ IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK iotHubClientFileUploadCallback,
+    _In_opt_ void* context
+    )
+{
+    IOTHUB_CLIENT_RESULT    iotResult = IOTHUB_CLIENT_OK;
+
+    if (NULL == g_PnpBridge->deviceHandle)
+    {
+        return PNPBRIDGE_FAILED;
+    }
+
+    if (NULL == pszDestination || (NULL == pbData && cbData > 0) ||
+        (NULL != pbData && cbData == 0) ||
+        NULL == iotHubClientFileUploadCallback)
+    {
+        return PNPBRIDGE_INVALID_ARGS;
+    }
+
+    iotResult = IoTHubClient_UploadToBlobAsync(g_PnpBridge->deviceHandle,
+        pszDestination,
+        pbData,
+        cbData,
+        iotHubClientFileUploadCallback,
+        context);
+    switch (iotResult)
+    {
+    case IOTHUB_CLIENT_OK:
+        return PNPBRIDGE_OK;
+        break;
+    case IOTHUB_CLIENT_INVALID_ARG:
+    case IOTHUB_CLIENT_INVALID_SIZE:
+        return PNPBRIDGE_INVALID_ARGS;
+        break;
+    case IOTHUB_CLIENT_INDEFINITE_TIME:
+    case IOTHUB_CLIENT_ERROR:
+    default:
+        return PNPBRIDGE_FAILED;
+        break;
+    }
+}
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
