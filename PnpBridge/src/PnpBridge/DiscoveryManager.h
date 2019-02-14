@@ -27,6 +27,8 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
 */
 PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config);
 
+PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config);
+
 void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager);
 
 #ifdef __cplusplus

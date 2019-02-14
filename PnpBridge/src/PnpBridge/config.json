@@ -13,7 +13,7 @@
           "HardwareId": "USB\\VID_06CB&PID_00B3"
         }
       },
-      "InterfaceId": "http://windows.com/coredevicehealth/v1",
+      "InterfaceId": "http://windows.com/coredevicehealth/1.0.0",
       "PnpParameters": {
         "Identity": "core-device-health"
       }
@@ -21,8 +21,9 @@
     {
       "_comment": "DEVICE2 - MCU sensor hub which reports Azure IoT Pnp interfaces",
       "MatchFilters": {
-        "MatchType": "*"
+        "MatchType": "Exact"
       },
+      "SelfDescribing": "true",
       "PnpParameters": {
         "Identity": "serial-pnp-interface"
       },
@@ -37,9 +38,12 @@
     {
       "_comment": "DEVICE3 - Standard Video Camera connected to a PC, for now the first camera only.",
       "MatchFilters": {
-        "MatchType": "*"
+        "MatchType": "Exact",
+        "MatchParameters": {
+          "HardwareId": "UVC_Webcam_00"
+        }
       },
-      "InterfaceId": "http://windows.com/camera_health_monitor/1.0.0",
+      "InterfaceId": "http://windows.com/camera_health_monitor/v1",
       "PnpParameters": {
         "Identity": "camera-health-monitor"
       }
@@ -51,26 +55,6 @@
     "Parameters": [
       {
         "Identity": "windows-pnp-discovery",
-        "_comment1": "USB Device class",
-        "DeviceInterfaceClasses": [
-          "A5DCBF10-6530-11D2-901F-00C04FB951ED"
-        ]
-      },
-      {
-        "Identity": "camera-health-monitor",
-        "_comment1": "USB Device class",
-        "DeviceInterfaceClasses": [
-          "A5DCBF10-6530-11D2-901F-00C04FB951ED"
-        ]
-      }
-    ]
-  },
-  "PnpAdapters": {
-    "EnabledAdapters": {
-    },
-    "Parameters": [
-      {
-        "Identity": "camera-health-monitor",
         "_comment1": "USB Device class",
         "DeviceInterfaceClasses": [
           "A5DCBF10-6530-11D2-901F-00C04FB951ED"

@@ -1,9 +1,7 @@
 #define CONC(A, B) CONC_(A, B)
 #define CONC_(A, B) A##B
 
-static void SerialPnp_PropertyUpdateHandler(const char* propertyName, unsigned const char* propertyInitial, size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback);
-
-#define PROP_HANDLER(index) void CONC(SerialPnp_PropertyUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))(unsigned const char* propertyInitial, \
+#define PROP_HANDLER(index) void CONC(PnpBridge_PropertyUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))(unsigned const char* propertyInitial, \
     size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback) \
     {PROP_HANDLER_ADAPTER_METHOD(index, propertyInitial, propertyInitialLen, propertyDataUpdated, propertyDataUpdatedLen, \
      desiredVersion, userContextCallback);};
@@ -29,9 +27,13 @@ PROP_HANDLER(17);
 PROP_HANDLER(18);
 PROP_HANDLER(19);
 
-#define PROP_HANDLER_METHOD(index) &CONC(SerialPnp_PropertyUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))
+#define PROP_HANDLER_METHOD(index) &CONC(PnpBridge_PropertyUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))
 
-void* PredefinedPropertyHandlerTables[] = {
+
+typedef void(*PropertyHandlersFunction)(unsigned const char* propertyInitial,
+    size_t propertyInitialLen, unsigned const char* propertyDataUpdated, size_t propertyDataUpdatedLen, int desiredVersion, void* userContextCallback);
+
+PropertyHandlersFunction PredefinedPropertyHandlerTables[] = {
     PROP_HANDLER_METHOD(0),
     PROP_HANDLER_METHOD(1),
     PROP_HANDLER_METHOD(2),
@@ -54,7 +56,7 @@ void* PredefinedPropertyHandlerTables[] = {
     PROP_HANDLER_METHOD(19)
 };
 
-#define CMD_HANDLER(index) void CONC(SerialPnp_CommandUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))( \
+#define CMD_HANDLER(index) void CONC(PnpBridge_CommandUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))( \
     const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext, PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, void* userContextCallback) \
     {CMD_HANDLER_ADAPTER_METHOD(index, pnpClientCommandContext, pnpClientCommandResponseContext, userContextCallback);};
 
@@ -79,9 +81,11 @@ CMD_HANDLER(17);
 CMD_HANDLER(18);
 CMD_HANDLER(19);
 
-#define CMD_HANDLER_METHOD(index) &CONC(SerialPnp_CommandUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))
+#define CMD_HANDLER_METHOD(index) &CONC(PnpBridge_CommandUpdateHandler, CONC(CMD_PROP_HANDLER_ADAPTER_NAME, index))
 
-void* PredefinedCommandHandlerTables[] = {
+typedef void(*CommandHandlersFunction)(const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext, PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, void* userContextCallback);
+
+CommandHandlersFunction PredefinedCommandHandlerTables[] = {
     CMD_HANDLER_METHOD(0),
     CMD_HANDLER_METHOD(1),
     CMD_HANDLER_METHOD(2),

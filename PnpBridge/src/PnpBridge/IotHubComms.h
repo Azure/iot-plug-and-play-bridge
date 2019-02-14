@@ -8,12 +8,9 @@ extern "C"
 {
 #endif
 
-typedef struct _CORE_DEVICE_TAG {
-    PNP_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle;
-    HCMNOTIFICATION hNotifyCtx;
-    char* symbolicLink;
-    volatile bool state;
-} CORE_DEVICE_TAG, *PCORE_DEVICE_TAG;
+IOTHUB_DEVICE_HANDLE InitializeIotHubDeviceHandle(const char* connectionString);
+
+int AppRegisterPnPInterfacesAndWait(PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PNP_INTERFACE_CLIENT_HANDLE* interfaces, int count);
 
 #ifdef __cplusplus
 }
