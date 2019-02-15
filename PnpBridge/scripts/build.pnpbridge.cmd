@@ -4,10 +4,10 @@ goto START
 
 :Usage
 echo Usage: build.prereq.cmd x86^|ARM^|x64 Debug^|Release [WindowsSDKVersion]
-echo    WindowsSDKVersion............... Default is 10.0.17763.0, specify another version if necessary
+echo    WinSDKVer............... Default is 10.0.14393.0, specify another version if necessary
 echo    [/?].................... Displays this usage string.
 echo    Example:
-echo        build.azure-c-sdk.cmd x64 Debug 10.0.17763.0
+echo        build.pnpbridge.cmd x64 Debug 10.0.17763.0
 endlocal
 exit /b 1
 
@@ -24,7 +24,7 @@ if [%1] == [] (
 )
 
 if /I [%TARGETARCH%] == [x86] (
-	set TARGETPLATFORM=Win32
+    set TARGETPLATFORM=Win32
 ) else (
     set TARGETPLATFORM=%TARGETARCH%
 )
@@ -41,10 +41,10 @@ if [%3] == [] (
     set TARGETPLATVER=%3
 )
 
-pushd %~dp0..\deps\azure-iot-sdk-c-pnp
+pushd %~dp0..
 
 echo .
-echo "Using CMAKE to set up Azure projects"
+echo "Using CMAKE to set up Azure PnpBridge projects"
 echo.
 
 set OUTPUTDIR=%TARGETPLATFORM%_%TARGETCONFIG%
@@ -52,18 +52,7 @@ set OUTPUTDIR=%TARGETPLATFORM%_%TARGETCONFIG%
 md %OUTPUTDIR%
 pushd %OUTPUTDIR%
 if /I [%TARGETARCH%] == [x86] (
-<<<<<<< HEAD
 cmake -G "Visual Studio 15 2017" .. -Dskip_samples=ON ..
-)
-
-if /I [%TARGETARCH%] == [arm] (
-cmake -G "Visual Studio 15 2017 ARM" .. -Dskip_samples=ON ..
-)
-
-if /I [%TARGETARCH%] == [x64] (
-cmake -G "Visual Studio 15 2017 Win64" .. -Dskip_samples=ON ..
-=======
-cmake -G "Visual Studio 15 2017" ..
 )
 
 if /I [%TARGETARCH%] == [arm] (
@@ -71,8 +60,7 @@ cmake -G "Visual Studio 15 2017 ARM" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simu
 )
 
 if /I [%TARGETARCH%] == [x64] (
-cmake -G "Visual Studio 15 2017 Win64" ..
->>>>>>> 3f78fc7feec1c17f868fa3305a736b7be7c0ecff
+cmake -G "Visual Studio 15 2017 Win64" .. -Dskip_samples=ON ..
 )
 popd
 
@@ -82,7 +70,7 @@ echo "Building Azure SDK libraries"
 echo .
 
 pushd %OUTPUTDIR%
-msbuild %~dp0..\deps\azure-iot-sdk-c-pnp\%OUTPUTDIR%\azure_iot_sdks.sln /p:Configuration=%TARGETCONFIG% /p:Platform=%TARGETPLATFORM% /p:TargetPlatformVersion=%TARGETPLATVER%
+msbuild %~dp0..\%OUTPUTDIR%\azure_iot_pnp_bridge.sln /p:Configuration=%TARGETCONFIG% /p:Platform=%TARGETPLATFORM% /p:TargetPlatformVersion=%TARGETPLATVER%
 if errorlevel 1 goto BuildError
 
 popd

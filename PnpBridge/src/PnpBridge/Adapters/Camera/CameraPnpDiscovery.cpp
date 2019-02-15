@@ -82,10 +82,13 @@ CameraPnpDiscovery::InitializePnpDiscovery(
     {
         PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { };
         std::unique_ptr<JsonWrapper>    pjson = std::make_unique<JsonWrapper>();
+        std::unique_ptr<JsonWrapper>    pmatchjson = std::make_unique<JsonWrapper>();
 
         RETURN_IF_FAILED (pjson->Initialize());
         RETURN_IF_FAILED (pjson->AddFormatString("Identity", "camera-health-monitor"));
-        RETURN_IF_FAILED (pjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
+        RETURN_IF_FAILED (pmatchjson->Initialize());
+        RETURN_IF_FAILED (pmatchjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
+        RETURN_IF_FAILED (pjson->AddObject("MatchParameters", pmatchjson->GetMessageW()));
 
         payload.Message = pjson->GetMessageW();
         payload.MessageLength = static_cast<int>(pjson->GetSize());
@@ -96,6 +99,7 @@ CameraPnpDiscovery::InitializePnpDiscovery(
         pfnCallback(&payload);
 
         // $$LEAKLEAK!!!
+        pmatchjson->Detach();
         pjson->Detach();
     }
 

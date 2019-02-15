@@ -31,7 +31,7 @@ CameraPnpInterfaceShutdown(
 
 int
 CameraPnpInterfaceBind(
-    _In_ PNPADAPTER_INTERFACE_HANDLE Interface, 
+    _In_ PNPADAPTER_CONTEXT adapterHandle,
     _In_ PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, 
     _In_ PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload
     );
@@ -43,6 +43,14 @@ CameraPnpInterfaceRelease(
 
 extern DISCOVERY_ADAPTER        CameraPnpAdapter;
 extern PNP_ADAPTER     CameraPnpInterface;
+
+// Declare camera command callbacks here.
+void 
+CameraPnpCallback_TakePhoto(
+    const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext, 
+    PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, 
+    void* userContextCallback
+    );
 
 #ifdef __cplusplus
 }
