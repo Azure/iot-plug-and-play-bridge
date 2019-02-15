@@ -77,6 +77,9 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_NAME_PNP_ADAPTERS "PnpAdapters"
 #define PNP_CONFIG_NAME_DISCOVERY_ADAPTERS "DiscoveryAdapters"
 #define PNP_CONFIG_NAME_SELF_DESCRIBING "SelfDescribing"
+#define PNP_CONFIG_NAME_PUBLISH_MODE_ALWAYS "Always"
+
+#define PNP_BRIDGE_STRING_MAX_SIZE 512
 
 #ifdef __cplusplus
 }

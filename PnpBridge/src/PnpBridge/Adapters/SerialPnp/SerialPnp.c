@@ -879,7 +879,7 @@ static void SerialPnp_PropertyUpdateHandler(const char* propertyName, unsigned c
     propertyResponse.statusCode = 200;
     propertyResponse.statusDescription = "Property Updated Successfully";
 
-    pnpClientResult = PnP_InterfaceClient_ReportReadWritePropertyStatusAsync(deviceContext->pnpAdapterInterface, propertyName, &propertyResponse, NULL, NULL);
+    pnpClientResult = PnP_InterfaceClient_ReportReadWritePropertyStatusAsync(PnpAdapterInterface_GetPnpInterfaceClient(deviceContext->pnpAdapterInterface), propertyName, &propertyResponse, NULL, NULL);
 }
 
 // PnPSampleEnvironmentalSensor_SetCommandResponse is a helper that fills out a PNP_CLIENT_COMMAND_RESPONSE

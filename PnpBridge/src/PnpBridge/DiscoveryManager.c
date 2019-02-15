@@ -50,11 +50,6 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
         return PNPBRIDGE_FAILED;
     }
 
-   /* discoveryMgr->startDiscoveryThreadHandles = singlylinkedlist_create();
-    if (NULL == discoveryMgr->startDiscoveryThreadHandles) {
-        return PNPBRIDGE_FAILED;
-    }*/
-
     *discoveryManager = discoveryMgr;
 
     return PNPBRIDGE_OK;
@@ -104,13 +99,6 @@ PNPBRIDGE_RESULT DiscoveryManager_StarDiscoveryAdapter(PDISCOVERY_MANAGER discov
     return PNPBRIDGE_OK;
 }
 
-const char* PnpBridge_DeviceChangeMessageformat = "{ \
-                                           \"Identity\": \"pnpbridge-core\", \
-                                           \"InterfaceId\": \"%s\", \
-                                           \"PublishMode\": \"true\", \
-                                           \"MatchParameters\": %s \
-                                         }";
-
 PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config) {
     AZURE_UNREFERENCED_PARAMETER(discoveryManager);
     JSON_Array *devices = Configuration_GetConfiguredDevices(config);
@@ -118,7 +106,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANA
     for (int i = 0; i < (int)json_array_get_count(devices); i++) {
         JSON_Object* device = json_array_get_object(devices, i);
         const char* publishModeString = json_object_get_string(device, PNP_CONFIG_NAME_PUBLISH_MODE);
-        if (NULL != publishModeString && stricmp(publishModeString, "always") == 0) {
+        if (NULL != publishModeString && stricmp(publishModeString, PNP_CONFIG_NAME_PUBLISH_MODE_ALWAYS) == 0) {
             PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { 0 };
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_PERSIST;
 
@@ -127,7 +115,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANA
             const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_NAME_INTERFACE_ID);
             if (NULL != interfaceId && NULL != matchParams) {
                 char msg[512] = { 0 };
-                sprintf_s(msg, 512, PnpBridge_DeviceChangeMessageformat, interfaceId, json_serialize_to_string(json_object_get_wrapping_value(matchParams)));
+                sprintf_s(msg, 512, DISCOVERY_MANAGER_ALWAY_PUBLISH_PAYLOAD, interfaceId, json_serialize_to_string(json_object_get_wrapping_value(matchParams)));
                     
                 payload.Message = msg;
                 payload.MessageLength = (int)strlen(msg);
