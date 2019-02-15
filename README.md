@@ -3,12 +3,19 @@
 
 ## Introduction
 Azure PnP Bridge is the open source effort from Microsoft to bridge PC Device PnP with Azure IoT PnP in order to make it easy for device developers to easily connect many PC peripherals to Azure in order to easily enable remote managing and monitoring peripherals and PC gateways at scale.  Azure PnP Bridge also make it easy to perform analytics on edge as well as moving data to Azure in order to perform analytics in the cloud.  
+
 Azure PnP Bridge is a standalone executable that developers can drop onto their PC/IoT Gateway devices, with simple configuration, this service can bridge the device PnP with Azure PnP and send telemetry and event data to Azure Cloud.  Developers continue leveraging existing Device Provisioning and Azure Cloud services.  
 
+Azure PnP Bridge is created by the Microsoft Core OS team that owns sensors, buses and connectivities with decades of drivers, platform and developer API experience.  
+
+Support on Linux will come in the near future.    
 
 ## Pre-Requisite
-- Windows 10 OS:
-  - For Serial, HIDUSB devices, OS version 1809 or newer is required
+
+#### Operating System Requirement
+
+- Windows:
+  - OS version 1809 or newer is required.
   - For Camera monitoring functionality, current Insider Preview OS version is required.
   - One of the following OS flavors:
     - Windows IoT Enterprise
@@ -16,13 +23,14 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
     - Windows Desktop SKU
     - Windows IoT Core (if no camera monitoring is needed)
 
+- Linux - Coming In Future.
+
 - Hardware:
   - Any hardware capable supporting above OS SKUs and versions.
-  - Supported peripherals (refer to 
+  - Supported peripherals, please refer to section below.
 
 - Private Preview of Azure IoT Central at https://aka.ms/iotc-demo.
 
-- IoT Edge (this is not required)
 
 ## Azure PnP Bridge Architecture
 ![Architecture](./PnpBridge/docs/Pictures/AzurePnPBridge.png)
@@ -51,9 +59,13 @@ Azure PnP Bridge is a standalone executable that developers can drop onto their 
 
 Azure PnP Bridge comes with set of supported peripherals:
 - Peripherals connected over Serial COM ports or Serial over USB
-    - Please refer Arduino/MCU programming guide on how to enable Azure PNP Interfaces
+    - Please refer ./SerialPnP/Readme.md programming guide on how to enable Azure PNP Interfaces
     - Peripherals connected HID over USB
-    - All cameras supported by Windows OS (Webcam, MIPI cameras and IP of RGB/IR/Depth cameras).
+- All cameras supported by Windows OS (Webcam, MIPI cameras and IP of RGB/IR/Depth cameras).
+  - Windows: https://techcommunity.microsoft.com/t5/Camera-Platform-and-Experiences/ct-p/MicrosoftCamera 
+- I2C (Coming soon)
+  - Windows: https://docs.microsoft.com/en-us/uwp/api/Windows.Devices.I2c
+
 
 For serial/USB peripheral devices that are not included in current source code, developers can update the Azure PnP Bridge code to enable their custom protocols.
 
