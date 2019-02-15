@@ -21,8 +21,15 @@
 #include <vector>
 #include <cfgmgr32.h>
 #include <initguid.h>
+#include <guiddef.h>
 #include <devpkey.h>
+#include <mfapi.h>
 #include <mfidl.h>
+#include <mfcaptureengine.h>
+
+// Need ComPtr.
+#include <wrl\client.h>
+using namespace Microsoft::WRL;
 
 // PnpBridge headers.
 #include <PnpBridge.h>
@@ -230,6 +237,8 @@ LONGLONG
 GetQPCInHns(
     );
 
+#include "CameraCaptureEngineCallbacks.h"
+#include "CameraCaptureEngine.h"
 #include "JsonWrapper.h"
 #include "CameraStatConsumer.h"
 #include "CameraIotPnpDevice.h"

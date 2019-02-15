@@ -34,6 +34,9 @@ public:
     void                                                Shutdown();
     HRESULT                                             PreStats(_Inout_ FSStatisticsEntry& stats_pre, _Out_ LONGLONG* llPreTs);
     HRESULT                                             PostStats(_Inout_ FSStatisticsEntry& stats_post, _Out_ LONGLONG* llPostTs);
+    HRESULT                                             TakePhoto();
+    HRESULT                                             GetJpegFrameSize(_Out_ ULONG* pcbJpegFrameSize);
+    HRESULT                                             GetJpegFrame(_Inout_ PBYTE pbJpegFrame, _In_ ULONG cbJpegFrame, _Out_opt_ ULONG* pcbWritten);
 
 protected:
 
@@ -61,4 +64,8 @@ protected:
     std::vector<HCMNOTIFICATION>                        m_vecWatcherHandles;
     std::wstring                                        m_SymbolicLinkName;
     std::wstring                                        m_SymbolicLinkNameReceived;
+    bool                                                m_fCoInit;
+    bool                                                m_fMfStartup;
+    std::unique_ptr<BYTE[]>                             m_jpegFrame;
+    size_t                                              m_jpegFrameSize;
 };

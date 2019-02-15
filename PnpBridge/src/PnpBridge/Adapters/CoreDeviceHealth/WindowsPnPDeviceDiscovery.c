@@ -35,6 +35,9 @@ OnDeviceNotification(
     _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
     _In_ DWORD eventDataSize)
 {
+    UNREFERENCED_PARAMETER(hNotify);
+    UNREFERENCED_PARAMETER(eventDataSize);
+    UNREFERENCED_PARAMETER(context);
 
     if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) {
         if (DeviceChangeHandler != NULL) {
@@ -52,14 +55,12 @@ OnDeviceNotification(
             LPWSTR SingleDeviceId;
             int msgLen = 512;
             STRING_HANDLE asJson;
-           // JSON_Value* json;
-           // JSON_Object* jsonObject;
 
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_ARRIVAL;
 
             // Find the hardware Id
             DevPropSize = MAX_DEVICE_ID_LEN * sizeof(WCHAR);
-            status = CM_Get_Device_Interface_Property(
+            status = CM_Get_Device_Interface_PropertyW(
                             eventData->u.DeviceInterface.SymbolicLink,
                             &DEVPKEY_Device_InstanceId,
                             &DevPropType,
@@ -68,19 +69,19 @@ OnDeviceNotification(
                             0);
 
             if (status != CR_SUCCESS) {
-                return -1;
+                return 1;
             }
 
-            status = CM_Locate_DevNode(
+            status = CM_Locate_DevNodeW(
                         &Devinst,
                         deviceInstance,
                         CM_LOCATE_DEVNODE_NORMAL);
 
             if (status != CR_SUCCESS) {
-                return -1;
+                return 1;
             }
 
-            status = CM_Get_DevNode_Property(
+            status = CM_Get_DevNode_PropertyW(
                         Devinst,
                         &DEVPKEY_Device_HardwareIds,
                         &PropType,
@@ -111,9 +112,6 @@ OnDeviceNotification(
             STRING_HANDLE asJson1 = STRING_new_JSON(msg1);
             sprintf_s(msg, msgLen, deviceChangeMessageformat, STRING_c_str(asJson), STRING_c_str(asJson1));
 
-           // json = json_parse_string(msg);
-           // jsonObject = json_value_get_object(json);
-
             payload.Message = msg;
 
             payload.Context = malloc(sizeof(eventData->u.DeviceInterface.ClassGuid));
@@ -124,6 +122,7 @@ OnDeviceNotification(
             STRING_delete(asJson);
         }
     }
+
     return 0;
 }
 
@@ -131,22 +130,26 @@ int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallbac
     DWORD cmRet;
     CM_NOTIFY_FILTER cmFilter;
     HCMNOTIFICATION hNotifyCtx = NULL;
+    JSON_Value* jmsg;
+    JSON_Object* jobj;
+
+    UNREFERENCED_PARAMETER(deviceArgs);
 
     g_deviceWatchers = singlylinkedlist_create();
     if (NULL == g_deviceWatchers) {
         return -1;
     }
 
-    JSON_Value*                         jmsg;
-    JSON_Object*                        jobj;
     jmsg = json_parse_string(adapterArgs);
     jobj = json_value_get_object(jmsg);
     JSON_Array* interfaceClasses =  json_object_dotget_array(jobj, "DeviceInterfaceClasses");
 
+    DeviceChangeHandler = DeviceChangeCallback;
+
     for (int j = 0; j < (int)json_array_get_count(interfaceClasses); j++) {
+        GUID guid = { 0 };
         const char *interfaceClass = json_array_get_string(interfaceClasses, j);
-        GUID guid;
-        if (UuidFromStringA((char *)interfaceClass, &guid) != RPC_S_OK) {
+        if (UuidFromStringA((RPC_CSTR)interfaceClass, &guid) != RPC_S_OK) {
             return -1;
         }
 
@@ -156,10 +159,10 @@ int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallbac
         cmFilter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
         cmFilter.u.DeviceInterface.ClassGuid = guid;
         cmRet = CM_Register_Notification(
-                        &cmFilter,                      // PCM_NOTIFY_FILTER pFilter,
-                        NULL,                           // PVOID pContext,
-                        (PCM_NOTIFY_CALLBACK)OnDeviceNotification,                 // PCM_NOTIFY_CALLBACK pCallback,
-                        &hNotifyCtx                     // PHCMNOTIFICATION pNotifyContext
+                        &cmFilter,
+                        NULL,
+                        (PCM_NOTIFY_CALLBACK)OnDeviceNotification,
+                        &hNotifyCtx
                         );
 
         if (cmRet != CR_SUCCESS) {
@@ -167,10 +170,6 @@ int WindowsPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallbac
         }
         singlylinkedlist_add(g_deviceWatchers, hNotifyCtx);
     }
-
-    DeviceChangeHandler = DeviceChangeCallback;
-
-    //EnumerateDevices()
 
     return 0;
 }

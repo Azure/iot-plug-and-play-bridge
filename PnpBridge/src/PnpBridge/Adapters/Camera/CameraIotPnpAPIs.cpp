@@ -11,9 +11,53 @@ PNP_ADAPTER CameraPnpInterface = {
     "camera-health-monitor",
     CameraPnpInterfaceInitialize,
     CameraPnpInterfaceBind,
-    CameraPnpInterfaceRelease,
     CameraPnpInterfaceShutdown
 };
+
+// Forward decls for callback functions:
+void 
+CameraPnpCallback_TakePhoto(
+    const PNP_CLIENT_COMMAND_REQUEST* pnpClientCommandContext, 
+    PNP_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, 
+    void* userContextCallback
+    )
+{
+    CameraIotPnpDevice* p = (CameraIotPnpDevice*)userContextCallback;
+    std::string         strResponse;
+
+    UNREFERENCED_PARAMETER (pnpClientCommandContext);
+
+    if (nullptr == p)
+    {
+        // Nothing we can do, we need the context!
+        pnpClientCommandResponseContext->version            = PNP_CLIENT_COMMAND_RESPONSE_VERSION_1;
+        pnpClientCommandResponseContext->status             = 500;
+        pnpClientCommandResponseContext->responseDataLen    = 0;
+    }
+    else
+    {
+        pnpClientCommandResponseContext->version            = PNP_CLIENT_COMMAND_RESPONSE_VERSION_1;
+        pnpClientCommandResponseContext->status             = (S_OK == p->TakePhotoOp(strResponse) ? 200 : 500);
+        pnpClientCommandResponseContext->responseDataLen    = 0;
+    }
+}
+
+static const char* s_CameraPnpCommandNames[] = {
+    "takephoto"
+};
+
+static const PNP_COMMAND_EXECUTE_CALLBACK s_CameraPnpCommandCallbacks[] = {
+    CameraPnpCallback_TakePhoto
+};
+
+static const PNP_CLIENT_COMMAND_CALLBACK_TABLE s_CameraPnpCommandTable = 
+{
+    PNP_CLIENT_COMMAND_CALLBACK_VERSION_1, // version of structure
+    sizeof(s_CameraPnpCommandNames) / sizeof(s_CameraPnpCommandNames[0]),
+    (const char**)s_CameraPnpCommandNames,
+    (const PNP_COMMAND_EXECUTE_CALLBACK*)s_CameraPnpCommandCallbacks
+};
+
 
 // Camera discovery API entry points.
 CameraPnpDiscovery*  g_pPnpDiscovery = nullptr;
@@ -62,6 +106,7 @@ CameraPnpInterfaceInitialize(
     _In_ const char* adapterArgs
     )
 {
+    UNREFERENCED_PARAMETER(adapterArgs);
     return S_OK;
 }
 
@@ -74,7 +119,7 @@ CameraPnpInterfaceShutdown(
 
 int
 CameraPnpInterfaceBind(
-    _In_ PNPADAPTER_INTERFACE_HANDLE Interface,
+    _In_ PNPADAPTER_CONTEXT adapterHandle,
     _In_ PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle,
     _In_ PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload
     )
@@ -87,8 +132,9 @@ CameraPnpInterfaceBind(
     JSON_Value*                         jmsg;
     JSON_Object*                        jobj;
 
+    PNPADAPTER_INTERFACE_HANDLE adapterInterface = nullptr;
 
-    if (nullptr == Interface || nullptr == payload || nullptr == payload->Context)
+    if (nullptr == payload || nullptr == payload->Context)
     {
         return E_INVALIDARG;
     }
@@ -96,20 +142,28 @@ CameraPnpInterfaceBind(
     p = (CameraPnpDiscovery*)payload->Context;
     RETURN_IF_FAILED (p->GetFirstCamera(cameraName));
 
+    // Make the camera IoT device early so we can pass it to the
+    // interface client create call.
+    pIotPnp = std::make_unique<CameraIotPnpDevice>();
+
     jmsg =  json_parse_string(payload->Message);
     jobj = json_value_get_object(jmsg);
 
-    interfaceId = "http://windows.com/camera_health_monitor/v1"; //json_object_get_string(jobj, "InterfaceId");
-    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, nullptr, nullptr, nullptr);
+    interfaceId = "http://windows.com/camera_health_monitor/1.0.0"; //json_object_get_string(jobj, "InterfaceId");
+    pnpInterfaceClient = PnP_InterfaceClient_Create(pnpDeviceClientHandle, interfaceId, nullptr, &s_CameraPnpCommandTable, pIotPnp.get());
     RETURN_HR_IF_NULL (E_UNEXPECTED, pnpInterfaceClient);
 
-    PnpAdapter_SetPnpInterfaceClient(Interface, pnpInterfaceClient);
+    // Create PnpAdapter Interface
+    PNPADPATER_INTERFACE_INIT_PARAMS interfaceParams = { 0 };
+    interfaceParams.releaseInterface = CameraPnpInterfaceRelease;
+
+    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_Create(adapterHandle, interfaceId, pnpInterfaceClient, &adapterInterface, &interfaceParams))
 
     pIotPnp = std::make_unique<CameraIotPnpDevice>();
-    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapter_GetPnpInterfaceClient(Interface), nullptr /* cameraName.c_str() */));
+    RETURN_IF_FAILED (pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface), nullptr /* cameraName.c_str() */));
     RETURN_IF_FAILED (pIotPnp->StartTelemetryWorker());
 
-    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapter_SetContext(Interface, (void*)pIotPnp.get()));
+    RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_SetContext(adapterInterface, (void*)pIotPnp.get()));
 
     // Our interface context now owns the object.
     pIotPnp.release();
@@ -122,7 +176,7 @@ CameraPnpInterfaceRelease(
     _In_ PNPADAPTER_INTERFACE_HANDLE Interface
     )
 {
-    CameraIotPnpDevice* p = (CameraIotPnpDevice*)PnpAdapter_GetContext(Interface);
+    CameraIotPnpDevice* p = (CameraIotPnpDevice*)PnpAdapterInterface_GetContext(Interface);
 
     if (p != nullptr)
     {
@@ -135,7 +189,9 @@ CameraPnpInterfaceRelease(
 
     // Clear our context to make sure we don't keep a stale
     // object around.
-    (void) PnpAdapter_SetContext(Interface, nullptr);
+    (void) PnpAdapterInterface_SetContext(Interface, nullptr);
+
+    PnpAdapterInterface_Destroy(Interface);
 
     return S_OK;
 }

@@ -13,27 +13,24 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\Adapters">
-      <UniqueIdentifier>{3524bf36-1d0b-46dc-ada9-78d0803fe1ec}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Adapters\CoreDeviceHealth">
-      <UniqueIdentifier>{28fe5595-e94e-4bac-ac50-03299b219cd8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\inc">
       <UniqueIdentifier>{92a538f9-7056-4277-a567-906bc28ce6a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Adapters\Camera">
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{2ed2ef04-8f74-4d43-87b5-1da519b4d2f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\adapters">
+      <UniqueIdentifier>{3524bf36-1d0b-46dc-ada9-78d0803fe1ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\adapters\CoreDeviceHealth">
+      <UniqueIdentifier>{28fe5595-e94e-4bac-ac50-03299b219cd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\adapters\Camera">
       <UniqueIdentifier>{83239274-3c8a-4c29-a27a-4d7aafc2f2e3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Adapters\SerialPnp">
+    <Filter Include="Source Files\adapters\SerialPnp">
       <UniqueIdentifier>{611fd0c7-a77f-4116-bf8a-c41bded6d8a3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Adapters\Sample">
-      <UniqueIdentifier>{05fcc339-7478-4508-9685-0279a2e32c46}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -55,39 +52,51 @@
       <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h">
-      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
+      <Filter>Source Files\adapters\CoreDeviceHealth</Filter>
     </ClInclude>
     <ClInclude Include="PnpBridgeCommon.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h">
-      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
+      <Filter>Source Files\adapters\CoreDeviceHealth</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\Camera\CameraIotPnpDevice.h">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\Camera\CameraPnpDiscovery.h">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\Camera\CameraStatConsumer.h">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\Camera\pch.h">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\Camera\JsonWrapper.h">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\Camera\CameraIotPnpAPIs.h">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Adapters\SerialPnp\SerialPnp.h">
-      <Filter>Source Files\Adapters\SerialPnp</Filter>
+      <Filter>Source Files\adapters\SerialPnp</Filter>
     </ClInclude>
     <ClInclude Include="PnpBridgeh.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="PnpBridge.h">
+      <Filter>Source Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\Camera\CameraCaptureEngine.h">
+      <Filter>Source Files\adapters\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\Camera\CameraCaptureEngineCallbacks.h">
+      <Filter>Source Files\adapters\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="adapters\CmdAndPropHandler.h">
+      <Filter>Source Files\adapters</Filter>
+    </ClInclude>
+    <ClInclude Include="IotHubComms.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
   </ItemGroup>
@@ -102,7 +111,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c">
-      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
+      <Filter>Source Files\adapters\CoreDeviceHealth</Filter>
     </ClCompile>
     <ClCompile Include="PnpAdapterManger.c">
       <Filter>Source Files</Filter>
@@ -114,34 +123,46 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.c">
-      <Filter>Source Files\Adapters\CoreDeviceHealth</Filter>
+      <Filter>Source Files\adapters\CoreDeviceHealth</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\Camera\CameraIotPnpDevice.cpp">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\Camera\CameraPnpDiscovery.cpp">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\Camera\CameraStatConsumer.cpp">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\Camera\JsonWrapper.cpp">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\Camera\CameraIotPnpAPIs.cpp">
-      <Filter>Source Files\Adapters\Camera</Filter>
+      <Filter>Source Files\adapters\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\SerialPnp\SerialPnp.c">
-      <Filter>Source Files\Adapters\SerialPnp</Filter>
+      <Filter>Source Files\adapters\SerialPnp</Filter>
     </ClCompile>
     <ClCompile Include="Adapters\AdapterManifest.c">
-      <Filter>Source Files\Adapters</Filter>
+      <Filter>Source Files\adapters</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\Camera\CameraCaptureEngine.cpp">
+      <Filter>Source Files\adapters\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\Camera\CameraCaptureEngineCallbacks.cpp">
+      <Filter>Source Files\adapters\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="core\PnpBridgeMemory.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\PnpAdapterInterface.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="IotHubComms.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="config.json" />
-    <None Include="CmdAndPropHandler.h">
-      <Filter>Source Files\Adapters</Filter>
-    </None>
   </ItemGroup>
 </Project>
