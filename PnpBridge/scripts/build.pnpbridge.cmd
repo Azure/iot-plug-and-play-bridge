@@ -52,15 +52,15 @@ set OUTPUTDIR=%TARGETPLATFORM%_%TARGETCONFIG%
 md %OUTPUTDIR%
 pushd %OUTPUTDIR%
 if /I [%TARGETARCH%] == [x86] (
-cmake -G "Visual Studio 15 2017" .. -Dskip_samples=ON ..
+cmake -G "Visual Studio 15 2017" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simulator:BOOL=OFF -Dbuild_provisioning_service_client=ON -Duse_prov_client_core=ON -Dskip_samples=ON ..
 )
 
 if /I [%TARGETARCH%] == [arm] (
-cmake -G "Visual Studio 15 2017 ARM" .. -Dskip_samples=ON ..
+cmake -G "Visual Studio 15 2017 ARM" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simulator:BOOL=OFF -Dbuild_provisioning_service_client=ON -Duse_prov_client_core=ON -Dskip_samples=ON ..
 )
 
 if /I [%TARGETARCH%] == [x64] (
-cmake -G "Visual Studio 15 2017 Win64" .. -Dskip_samples=ON ..
+cmake -G "Visual Studio 15 2017 Win64" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simulator:BOOL=OFF -Dbuild_provisioning_service_client=ON -Duse_prov_client_core=ON -Dskip_samples=ON ..
 )
 popd
 
