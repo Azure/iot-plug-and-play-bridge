@@ -15,20 +15,12 @@
 PPNP_BRIDGE g_PnpBridge = NULL;
 
 PNPBRIDGE_RESULT PnpBridge_Initialize(PPNP_BRIDGE* pnpBridge, JSON_Value* config) {
-    const char* connectionString;
+
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
     PPNP_BRIDGE pbridge = NULL;
 
-    connectionString = Configuration_GetConnectionString(config);
-
     TRY
     {
-        if (NULL == connectionString) {
-            LogError("Connection string not specified in the config\n");
-            result = PNPBRIDGE_FAILED;
-            LEAVE;
-        }
-
         pbridge = (PPNP_BRIDGE)calloc(1, sizeof(PNP_BRIDGE));
 
         if (NULL == pbridge) {
@@ -49,17 +41,89 @@ PNPBRIDGE_RESULT PnpBridge_Initialize(PPNP_BRIDGE* pnpBridge, JSON_Value* config
         pbridge->shutdown = false;
 
         // Connect to Iot Hub and create a PnP device client handle
-        if ((pbridge->deviceHandle = InitializeIotHubDeviceHandle(connectionString)) == NULL)
         {
-            LogError("Could not allocate IoTHub Device handle\n");
-            result = PNPBRIDGE_FAILED;
-            LEAVE;
-        }
-        else if ((pbridge->pnpDeviceClientHandle = PnP_DeviceClient_CreateFromDeviceHandle(pbridge->deviceHandle)) == NULL)
-        {
-            LogError("PnP_DeviceClient_CreateFromDeviceHandle failed\n");
-            result = PNPBRIDGE_FAILED;
-            LEAVE;
+            JSON_Object* pnpBridgeParameters = Configuration_GetPnpBridgeParameters(config);
+            if (NULL == pnpBridgeParameters) {
+                LogError("PnpBridgeParameters is missing in config");
+                result = PNPBRIDGE_INVALID_ARGS;
+                LEAVE;
+            }
+
+            bool traceOn = false;
+            const char* traceOnStr = json_object_get_string(pnpBridgeParameters, "traceOn");
+            if (NULL != traceOnStr && stricmp(traceOnStr, "true")) {
+                LogInfo("Tracing enabled in config");
+                traceOn = true;
+            }
+
+            // Check connection type
+            const char* connectionType = json_object_get_string(pnpBridgeParameters, "ConnectionType");
+            if (NULL == connectionType) {
+                LogError("ConnectionType is not specified in config");
+                result = PNPBRIDGE_INVALID_ARGS;
+                LEAVE;
+            }
+
+            if (0 == stricmp(connectionType, "dps")) {
+                // Get DPS parameters
+                JSON_Object* dpsSettings = json_object_get_object(pnpBridgeParameters, "DpsSettings");
+                if (NULL == dpsSettings) {
+                    LogError("Dps settings are missing in config");
+                    result = PNPBRIDGE_INVALID_ARGS;
+                    LEAVE;
+                }
+
+                const char* globalProvUri = json_object_get_string(dpsSettings, "GlobalProvUri");;
+                const char* idScope = json_object_get_string(dpsSettings, "IdScope");;
+                const char* deviceId = json_object_get_string(dpsSettings, "DeviceId");;
+                const char* deviceKey = json_object_get_string(dpsSettings, "DeviceKey");;
+                const char* deviceCapabilityModelUri = json_object_get_string(dpsSettings, "DeviceCapabilityModelUri");;
+                const char* modelRepositoryUri = json_object_get_string(dpsSettings, "ModelRepositoryUri");
+
+                if (NULL == globalProvUri || NULL == idScope || NULL == deviceId || NULL == deviceKey || NULL == deviceCapabilityModelUri || NULL == modelRepositoryUri) {
+                    LogError("Missing dps settings (GlobalProvUri/IdScope/DeviceId/DeviceCapabilityModelUri/ModelRepositoryUri are missing in config");
+                    result = PNPBRIDGE_INVALID_ARGS;
+                    LEAVE;
+                }
+
+                // Connect to Iot Hub
+                if (NULL == (pbridge->deviceHandle = PnPSampleDevice_InitializeIotHubViaProvisioning(traceOn, globalProvUri, idScope, deviceId, deviceKey, deviceCapabilityModelUri, modelRepositoryUri)))
+                {
+                    LogError("Could not allocate IoTHub Device handle\n");
+                    result = PNPBRIDGE_FAILED;
+                    LEAVE;
+                }
+
+            }
+            else if (0 == stricmp(connectionType, "ConnectionString")) {
+                // Using connection string
+                const char* connectionString = Configuration_GetConnectionString(config);
+                if (NULL == connectionString) {
+                    LogError("Connection string not specified in the config\n");
+                    result = PNPBRIDGE_FAILED;
+                    LEAVE;
+                }
+
+                // Connect to Iot Hub
+                if (NULL == (pbridge->deviceHandle = InitializeIotHubDeviceHandle(traceOn, connectionString)))
+                {
+                    LogError("Could not allocate IoTHub Device handle\n");
+                    result = PNPBRIDGE_FAILED;
+                    LEAVE;
+                }
+            }
+            else {
+                result = PNPBRIDGE_INVALID_ARGS;
+                LEAVE;
+            }
+
+            // Create PnpDeviceHandle
+            if ((pbridge->pnpDeviceClientHandle = PnP_DeviceClient_CreateFromDeviceHandle(pbridge->deviceHandle)) == NULL)
+            {
+                LogError("PnP_DeviceClient_CreateFromDeviceHandle failed\n");
+                result = PNPBRIDGE_FAILED;
+                LEAVE;
+            }
         }
 
         *pnpBridge = pbridge;
@@ -188,7 +252,7 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
         }
 
         jobj = json_value_get_object(jmsg);
-        if (Configuration_IsDeviceConfigured(pnpBridge->configuration, jobj, &jdevice) < 0) {
+        if (PNPBRIDGE_OK != Configuration_IsDeviceConfigured(pnpBridge->configuration, jobj, &jdevice)) {
             LogInfo("Device is not configured. Dropping the change notification");
             LEAVE;
         }
@@ -206,7 +270,7 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
 
         // Create an Pnp interface
         char* interfaceId = NULL;
-        char* selfDescribing = (char*)json_object_get_string(jdevice, PNP_CONFIG_NAME_SELF_DESCRIBING);;
+        char* selfDescribing = (char*)json_object_get_string(jdevice, PNP_CONFIG_NAME_SELF_DESCRIBING);
         if (NULL != selfDescribing && 0 == stricmp(selfDescribing, "true")) {
             interfaceId = (char*)json_object_get_string(jobj, "InterfaceId");
             if (NULL == interfaceId) {
@@ -277,7 +341,7 @@ PNPBRIDGE_RESULT PnpBridge_Main() {
         }
 
         // Check if config file has mandatory parameters
-        result = PnpBridgeConfig_ValidateConfiguration(config);
+        result = Configuration_ValidateConfiguration(config);
         if (PNPBRIDGE_OK != result) {
             LogError("Config file is invalid");
             LEAVE;

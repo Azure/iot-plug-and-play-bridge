@@ -31,6 +31,13 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANA
 
 void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager);
 
+#define DISCOVERY_MANAGER_ALWAY_PUBLISH_PAYLOAD "{ \
+                                                     \"Identity\": \"pnpbridge-core\", \
+                                                     \"InterfaceId\": \"%s\", \
+                                                     \"PublishMode\": \"Always\", \
+                                                     \"MatchParameters\": %s \
+                                                   }"
+
 #ifdef __cplusplus
 }
 #endif

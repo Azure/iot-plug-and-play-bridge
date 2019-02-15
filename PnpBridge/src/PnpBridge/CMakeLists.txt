@@ -80,6 +80,7 @@ include_directories(../../deps/azure-iot-sdk-c-pnp/deps/parson)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/pnp_client/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/provisioning_client/inc)
 include_directories(${pnp_bridge_INC_FOLDER})
 
 IF(WIN32)
@@ -101,7 +102,7 @@ foreach(source IN LISTS pnp_bridge_c_files pnp_bridge_h_files)
     source_group("${source_path_msvc}" FILES "${source}")
 endforeach()
 
-target_link_libraries(${PROJECT_NAME} ${pnp_bridge_libs} iothub_client parson pnp_client iothub_client_http_transport iothub_client_amqp_transport iothub_client_amqp_ws_transport iothub_client_mqtt_transport iothub_client_mqtt_ws_transport umqtt aziotsharedutil cfgmgr32 mfplat mfsensorgroup)
+target_link_libraries(${PROJECT_NAME} ${pnp_bridge_libs} iothub_client parson pnp_client iothub_client_http_transport iothub_client_amqp_transport iothub_client_amqp_ws_transport iothub_client_mqtt_transport iothub_client_mqtt_ws_transport umqtt aziotsharedutil msr_riot prov_mqtt_transport hsm_security_client prov_device_ll_client prov_auth_client utpm cfgmgr32 mfplat mfsensorgroup)
 
 set(pnp_bridge_libs
     ${PROJECT_NAME}
