@@ -177,64 +177,74 @@ JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config,const char*
     return Configuration_GetAdapterParameters(config, identity, PNP_CONFIG_NAME_DISCOVERY_ADAPTERS);
 }
 
-PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message, JSON_Object** Device) {
+PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* message, JSON_Object** device) {
     JSON_Array *devices = Configuration_GetConfiguredDevices(config);
     JSON_Object* discMatchParams;
     char* pnpAdapterIdentity = NULL;
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
-    *Device = NULL;
+    *device = NULL;
 
     TRY
     {
-        discMatchParams = json_object_get_object(Message, PNP_CONFIG_NAME_MATCH_PARAMETERS);
+        discMatchParams = json_object_get_object(message, PNP_CONFIG_NAME_MATCH_PARAMETERS);
         for (int i = 0; i < (int)json_array_get_count(devices); i++) {
-            JSON_Object* device = json_array_get_object(devices, i);
-            JSON_Object* pnpParams = Configuration_GetPnpParametersForDevice(device);
+            bool foundMatch = false;
+            JSON_Object* dev = json_array_get_object(devices, i);
+            JSON_Object* pnpParams = Configuration_GetPnpParametersForDevice(dev);
             if (NULL == pnpParams) {
                 continue;
             }
 
-            JSON_Object* matchCriteria = json_object_dotget_object(device, PNP_CONFIG_MATCH_FILTERS_NAME);
+            JSON_Object* matchCriteria = json_object_dotget_object(dev, PNP_CONFIG_MATCH_FILTERS_NAME);
+          
             const char* matchType = json_object_get_string(matchCriteria, PNP_CONFIG_MATCH_TYPE_NAME);
             const char* currPnpAdapterId = json_object_get_string(pnpParams, PNP_CONFIG_IDENTITY_NAME);
             bool exactMatch = stricmp(matchType, "exact") == 0;
 
-            if (NULL == discMatchParams) {
-                continue;
+            if (NULL != discMatchParams) {
+                JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, PNP_CONFIG_NAME_MATCH_PARAMETERS);
+                const size_t matchParameterCount = json_object_get_count(matchParameters);
+                for (int j = 0; j < (int)matchParameterCount; j++) {
+                    const char* name = json_object_get_name(matchParameters, j);
+                    const char* value1 = json_object_get_string(matchParameters, name);
+
+                    if (!json_object_dothas_value(discMatchParams, name)) {
+                        break;
+                    }
+
+                    const char* value2 = json_object_get_string(discMatchParams, name);
+                    bool match;
+                    if (exactMatch) {
+                        match = 0 != strstr(value2, value1);
+                    }
+                    else {
+                        match = 0 == stricmp(value2, value1);
+                    }
+                    if (false == match) {
+                        foundMatch = false;
+                        break;
+                    }
+                    else {
+                        foundMatch = true;
+                    }
+                }
             }
-
-            JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, PNP_CONFIG_NAME_MATCH_PARAMETERS);
-            const size_t matchParameterCount = json_object_get_count(matchParameters);
-            bool foundMatch = false;
-            for (int j = 0; j < (int)matchParameterCount; j++) {
-                const char* name = json_object_get_name(matchParameters, j);
-                const char* value1 = json_object_get_string(matchParameters, name);
-
-                if (!json_object_dothas_value(discMatchParams, name)) {
-                    break;
-                }
-
-                const char* value2 = json_object_get_string(discMatchParams, name);
-                bool match;
-                if (exactMatch) {
-                    match = 0 != strstr(value2, value1);
-                }
-                else {
-                    match = 0 == stricmp(value2, value1);
-                }
-                if (false == match) {
-                    foundMatch = false;
-                    break;
-                }
-                else {
-                    foundMatch = true;
+            else {
+                char* selfDescribing = (char*)json_object_get_string(dev, PNP_CONFIG_NAME_SELF_DESCRIBING);
+                if (NULL != selfDescribing && 0 == stricmp(selfDescribing, "true")) {
+                    JSON_Object* discAdapterParams = Configuration_GetDiscoveryParametersForDevice(dev);
+                    const char* discAdapterId = json_object_get_string(discAdapterParams, PNP_CONFIG_IDENTITY_NAME);
+                    const char* messageId = json_object_get_string(message, PNP_CONFIG_IDENTITY_NAME);
+                    if (NULL != discAdapterId && NULL != messageId && 0 == stricmp(discAdapterId, messageId)) {
+                        foundMatch = true;
+                    }
                 }
             }
 
             if (foundMatch) {
                 pnpAdapterIdentity = (char*)currPnpAdapterId;
-                *Device = device;
+                *device = dev;
                 result = PNPBRIDGE_OK;
                 LEAVE;
             }
@@ -242,7 +252,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
     }
     FINALLY
     {
-        if (NULL == *Device) {
+        if (NULL == *device) {
             result = PNPBRIDGE_INVALID_ARGS;
         }
     }
