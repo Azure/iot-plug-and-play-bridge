@@ -16,7 +16,7 @@ PNPBRIDGE_RESULT PnpBridgeConfig_ReadConfigurationFromFile(const char *filename,
     return PNPBRIDGE_OK;
 }
 
-PNPBRIDGE_RESULT PnpBridgeConfig_ValidateConfiguration(JSON_Value* config) {
+PNPBRIDGE_RESULT Configuration_ValidateConfiguration(JSON_Value* config) {
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
     // Check for mandatory parameters
@@ -132,6 +132,15 @@ JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device) 
 
     JSON_Object* discoveryParams = json_object_dotget_object(device, "DiscoveryParameters");
     return discoveryParams;
+}
+
+JSON_Object* Configuration_GetPnpBridgeParameters(JSON_Value* config) {
+    JSON_Object* jsonObject = json_value_get_object(config);
+    JSON_Object *pnpBridgeParams = json_object_dotget_object(jsonObject, "PnpBridgeParameters");
+    if (NULL == pnpBridgeParams) {
+        return NULL;
+    }
+    return pnpBridgeParams;
 }
 
 const char* Configuration_GetConnectionString(JSON_Value* config) {
