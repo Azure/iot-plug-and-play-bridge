@@ -67,14 +67,15 @@ CoreDevice_OnDeviceNotification(
     sprintf_s(buff, 512, "%S", eventData->u.DeviceInterface.SymbolicLink);
 
     if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL) {
-        if (device->state && strcmp(buff, device->symbolicLink)  == 0) {
+        if (device->state && stricmp(buff, device->symbolicLink)  == 0) {
             device->state = false;
+
             LogInfo("device removed %S", eventData->u.DeviceInterface.SymbolicLink);
             Sample_SendEventAsync(device->pnpinterfaceHandle, "DeviceStatus", "Disconnected");
         }
     }
     else if (action == CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL) {
-        if (!device->state && strcmp(buff, device->symbolicLink) == 0) {
+        if (!device->state && stricmp(buff, device->symbolicLink) == 0) {
             device->state = true;
             LogInfo("device connected %S", eventData->u.DeviceInterface.SymbolicLink);
             Sample_SendEventAsync(device->pnpinterfaceHandle, "DeviceStatus", "Connected");
