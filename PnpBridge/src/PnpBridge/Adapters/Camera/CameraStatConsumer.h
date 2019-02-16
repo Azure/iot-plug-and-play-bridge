@@ -37,7 +37,6 @@ public:
     HRESULT                                             TakePhoto();
     HRESULT                                             GetJpegFrameSize(_Out_ ULONG* pcbJpegFrameSize);
     HRESULT                                             GetJpegFrame(_Inout_ PBYTE pbJpegFrame, _In_ ULONG cbJpegFrame, _Out_opt_ ULONG* pcbWritten);
-
 protected:
 
     static void  WINAPI                                 ProcessETWEventCallback(_In_ PEVENT_RECORD precord);

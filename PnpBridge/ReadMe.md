@@ -53,7 +53,7 @@ The message format should conform to below template:
 }
 ```
 
-For devices that self-describe an Azure IoT PnP interface, the template should contain "InterfaceId" in the root document object.
+For devices that self descre Azure IoT PnP interface, the template should contain "InterfaceId" in the root document object.
 
 There are currently 3 discovery adapters in PnP Bridge:
 
