@@ -31,7 +31,7 @@
     <ProjectGuid>{8756FD40-34AF-4000-AAB9-C2A14E75B23B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>PnpBridge</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17642.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
