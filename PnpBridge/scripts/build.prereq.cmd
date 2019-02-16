@@ -7,7 +7,7 @@ echo Usage: build.prereq.cmd x86^|ARM^|x64 Debug^|Release [WindowsSDKVersion]
 echo    WindowsSDKVersion............... Default is 10.0.17763.0, specify another version if necessary
 echo    [/?].................... Displays this usage string.
 echo    Example:
-echo        build.azure-c-sdk.cmd x64 Debug 10.0.17763.0
+echo        build.prereq.cmd x64 Debug WindowsSDKVersion
 endlocal
 exit /b 1
 
@@ -24,7 +24,7 @@ if [%1] == [] (
 )
 
 if /I [%TARGETARCH%] == [x86] (
-	set TARGETPLATFORM=Win32
+    et TARGETPLATFORM=Win32
 ) else (
     set TARGETPLATFORM=%TARGETARCH%
 )
@@ -52,27 +52,15 @@ set OUTPUTDIR=%TARGETPLATFORM%_%TARGETCONFIG%
 md %OUTPUTDIR%
 pushd %OUTPUTDIR%
 if /I [%TARGETARCH%] == [x86] (
-<<<<<<< HEAD
-cmake -G "Visual Studio 15 2017" .. -Dskip_samples=ON ..
+cmake -G "Visual Studio 15 2017" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simulator:BOOL=ON -Dbuild_provisioning_service_client=ON -Duse_prov_client_core=ON -Dskip_samples=ON ..
 )
 
 if /I [%TARGETARCH%] == [arm] (
-cmake -G "Visual Studio 15 2017 ARM" .. -Dskip_samples=ON ..
+cmake -G "Visual Studio 15 2017 ARM" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simulator:BOOL=ON -Dbuild_provisioning_service_client=ON -Duse_prov_client_core=ON -Dskip_samples=ON ..
 )
 
 if /I [%TARGETARCH%] == [x64] (
-cmake -G "Visual Studio 15 2017 Win64" .. -Dskip_samples=ON ..
-=======
-cmake -G "Visual Studio 15 2017" ..
-)
-
-if /I [%TARGETARCH%] == [arm] (
-cmake -G "Visual Studio 15 2017 ARM" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simulator:BOOL=OFF -Dbuild_provisioning_service_client=ON -Duse_prov_client_core=ON -Dskip_samples=ON ..
-)
-
-if /I [%TARGETARCH%] == [x64] (
-cmake -G "Visual Studio 15 2017 Win64" ..
->>>>>>> 3f78fc7feec1c17f868fa3305a736b7be7c0ecff
+cmake -G "Visual Studio 15 2017 Win64" .. -Duse_prov_client:BOOL=ON -Duse_tpm_simulator:BOOL=ON -Dbuild_provisioning_service_client=ON -Duse_prov_client_core=ON -Dskip_samples=ON ..
 )
 popd
 

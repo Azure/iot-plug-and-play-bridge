@@ -27,7 +27,16 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
 */
 PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config);
 
+PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANAGER discoveryManager, JSON_Value* config);
+
 void DiscoveryAdapterManager_Stop(PDISCOVERY_MANAGER discoveryManager);
+
+#define DISCOVERY_MANAGER_ALWAY_PUBLISH_PAYLOAD "{ \
+                                                     \"Identity\": \"pnpbridge-core\", \
+                                                     \"InterfaceId\": \"%s\", \
+                                                     \"PublishMode\": \"Always\", \
+                                                     \"MatchParameters\": %s \
+                                                   }"
 
 #ifdef __cplusplus
 }

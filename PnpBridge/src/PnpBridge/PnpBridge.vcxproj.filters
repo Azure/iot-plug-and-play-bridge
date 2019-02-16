@@ -107,9 +107,6 @@
     <ClCompile Include="utility.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PnpBridgeService.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c">
       <Filter>Source Files\adapters\CoreDeviceHealth</Filter>
     </ClCompile>

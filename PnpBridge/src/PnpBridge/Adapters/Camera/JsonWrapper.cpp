@@ -54,17 +54,17 @@ JsonWrapper::AddValueAsString(
     char sz[MAX_32BIT_DECIMAL_DIGIT] = { };
 
     RETURN_HR_IF_NULL (E_INVALIDARG, m_object);
-    RETURN_HR_IF_NULL(E_INVALIDARG, name);
+RETURN_HR_IF_NULL(E_INVALIDARG, name);
 
-    RETURN_IF_FAILED(StringCchPrintfA(sz, _countof(sz), "%u", val));
+RETURN_IF_FAILED(StringCchPrintfA(sz, _countof(sz), "%u", val));
 
-    // json_object_set_string returns 0 on success and -1 on
-    // failure.  Failure for this can be either via invalid
-    // arg (i.e., JSON_Object is invalid) or we ran out of 
-    // memory.  We'll assume, since this is only called by our 
-    // object and the methods are protected, that the parameters
-    // are valid.  So only failure would be E_OUTOFMEMORY.
-    RETURN_HR_IF(E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
+// json_object_set_string returns 0 on success and -1 on
+// failure.  Failure for this can be either via invalid
+// arg (i.e., JSON_Object is invalid) or we ran out of 
+// memory.  We'll assume, since this is only called by our 
+// object and the methods are protected, that the parameters
+// are valid.  So only failure would be E_OUTOFMEMORY.
+RETURN_HR_IF(E_OUTOFMEMORY, JSONFailure == json_object_set_string(m_object, name, sz));
 
 return S_OK;
 }
