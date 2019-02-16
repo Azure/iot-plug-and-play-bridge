@@ -1,6 +1,6 @@
 # Azure IoT PnP Bridge
 
-Azure IoT PnP Bridge is an open source effort from Microsoft to expose peripherals on a Device (Gateway) to Microsoft Azure IoT services using Azure IoT PnP Interfaces. The vision is to enable IoT developers to light up peripherals and expose it to Azure IoT services at scale with mininimum amount of device side code. The bridge would also provide peripheral monitoring and remote managing.
+Azure IoT PnP Bridge is an open source effort from Microsoft to expose peripherals on a Device (Gateway) to Microsoft Azure IoT services using Azure IoT PnP Interfaces. The vision is to enable IoT developers to light up peripherals and expose it to Azure IoT services at scale with mininimum amount of device side code. The bridge would also provide peripheral monitoring and remote management.
 
 ## Compile the Bridge
 
@@ -53,7 +53,7 @@ The message format should conform to below template:
 }
 ```
 
-For devices that self descre Azure IoT PnP interface, the template should contain "InterfaceId" in the root document object.
+For devices that self describe Azure IoT PnP interface(s), the template should contain "InterfaceId" in the root document object.
 
 There are currently 3 discovery adapters in PnP Bridge:
 
@@ -89,13 +89,11 @@ If there are any initial parameters that needs to be passed as part of the Disco
 
 ### PnP Adapter
 
-A PnP Adapter implements the bindings of Azure IoT PnP interface. 
-
-There are currently 3 discovery adapters in PnP Bridge:
+A PnP Adapter implements the bindings of Azure IoT PnP interface. There are currently 3 PnP adapters in the PnP Bridge:
 
 * CoreDeviceHealth: Implements basic device health interface
 * CameraPnP: Implements camera specific health interface
-* SerialPnp: Binds to the PnP interface reported by the MCU
+* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](..\SerialPnP\Readme.md)
 
 ## Authoring new PnP Bridge Adapters
 
