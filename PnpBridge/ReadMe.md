@@ -1,6 +1,4 @@
-# Azure IoT PnP Bridge
-
-Azure IoT PnP Bridge is an open source effort from Microsoft to expose peripherals on a Device (Gateway) to Microsoft Azure IoT services using Azure IoT PnP Interfaces. The vision is to enable IoT developers to light up peripherals and expose it to Azure IoT services at scale with mininimum amount of device side code. The bridge would also provide peripheral monitoring and remote management.
+# Building, Deplying and Extending the Azure IoT PnP Bridge
 
 ## Compile the Bridge
 
@@ -16,14 +14,29 @@ Azure IoT PnP Bridge is an open source effort from Microsoft to expose periphera
 
 ### Build Azure IoT PnP Bridge
 
-After cloning Azure IoT PnP Bridge repo, run following commands in "Developer Command Prompt for VS 2017":
-  * cd src\PnpBridge
-  * git submodule update --init --recursive 
-  * cd Scripts
-  * build.prereq.cmd
-  * Open src\PnpBridge\PnpBridge.vcxproj with "Visual Studio 2017"
-  * Ensure build target is set to Release|Debug and x86|x64 matches to the build.prereq.cmd's build and build the solution
-  * Pnpbridge.exe is the Azure PnP Bridge binary
+#### Step 1: Get the required dependencies for the Azure PnP Bridge
+After cloning the Azure PnP Bridge repo to your machine, open the "Developer Command Prompt for VS 2017" and navigate to the directory of the cloned repo:
+```
+%REPO_DIR%\> cd PnpBridge
+
+%REPO_DIR%\PnpBridge\> git submodule update --init --recursive
+```
+
+At this step, if you confirmed you have access to the Azure repo but are not able to successfully clone the required repos, you might be hitting authentication issues. To resolve this, install the [Git Credential Manager for Windows](https://github.com/Microsoft/Git-Credential-Manager-for-Windows/releases)
+
+#### Step 2: Build the prerequisite components for the Azure PnP Bridge
+```
+%REPO_DIR%\> cd PnpBridge\Scripts
+
+%REPO_DIR%\PnpBridge\Scripts\> build.prereq.cmd
+```
+
+#### Step 3: Build the Azure PnP Bridge
+
+1. Open `PnpBridge\src\PnpBridge\PnpBridge.vcxproj` with "Visual Studio 2017"
+2. Ensure build target matches the build.prereq.cmd's build (e.g. Release|Debug and x86|x64)
+3. Build the solution
+4. The built `Pnpbridge.exe` is the Azure PnP Bridge binary
 
 ## Quickstart
 
@@ -48,7 +61,7 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
     }
   ```
 
-  Using connection string:
+  Using your own connection string:
 
   ```JSON
   {
@@ -58,6 +71,7 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
   ```
 
 * Start PnpBridge by running it in a command prompt.
+  + Note: If you have either a built-in camera or a USB camera connected to your PC running the PnpBridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, PnpBridge console output window will show the monitoring stats and the framerate of the camera will be reported through Azure IoT PnP interface to Azure.     
 
 ## PnP Bridge Components
 
@@ -82,7 +96,7 @@ There are currently 3 discovery adapters in PnP Bridge:
 
 * WindowPnPDiscovery: Reports a PnP device based on a device class provided as part of PnP Bridge configuration
 * CameraDisovery: Reports a camera on Windows
-* SerialPnp: Reports a serial PnP device. This uses self describing Azure IoT PnP interface.
+* SerialPnp: Reports a [SerialPnP device](..\SerialPnP\Readme.md). This allows devices like MCUs to self describe Azure IoT PnP interface.
 
 Here's an example output of json message published by WindowPnPDiscovery adapter:
 
@@ -260,5 +274,5 @@ Source code for Azure IoT PnP Bridge
 
 ### Support
 
-For any questions contact - [Azure IoT PnP Bridge](mailto:bf1dde55.microsoft.com@amer.teams.ms)
+For any questions raise an issue or contact - [Azure IoT PnP Bridge](mailto:bf1dde55.microsoft.com@amer.teams.ms)
 
