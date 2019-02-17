@@ -40,17 +40,17 @@ Azure PnP Bridge can be deployed as a standalone executable that can be dropped 
 
 ### Peripherals supported by default
 
-Azure PnP Bridge supports the following types of peripherals by default. Developers can extend the Azure PnP Bridge to support additional peripherals. See [readme under PnPBridge](PnpBridge\readme.md)
+Azure PnP Bridge supports the following types of peripherals by default. Developers can extend the Azure PnP Bridge to support additional peripherals. See [readme under PnPBridge](./PnpBridge/ReadMe.md)
 - Peripherals such as MCUs that are typically accessed over serial ports:
-    - Refer to the [SerialPnP\Readme](SerialPnP\readme.md) for information on how such devices can self-describe their interfaces.
+    - Refer to the [SerialPnP\Readme](./SerialPnP/Readme.md) for information on how such devices can self-describe their interfaces.
 - USB or other peripherals that can be discovered by Windows
 - All cameras supported by Windows OS (Webcam, MIPI cameras and IP of RGB/IR/Depth cameras).
 
-See [PnPBridge\Readme.md](PnpBridge\readme.md) for information on how to write simple adapters to extend to other peripherals.
+See [PnPBridge\Readme.md](./PnpBridge/ReadMe.md) for information on how to write simple adapters to extend to other peripherals.
 
 ### Get Started
 
-Follow [PnPBridge\Readme.md](PnpBridge\readme.md) to get started on building, deploying and extending the PnP Bridge.
+Follow [PnPBridge\Readme.md](./PnpBridge/ReadMe.md) to get started on building, deploying and extending the PnP Bridge.
 
 
 ## Contributing
