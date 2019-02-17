@@ -96,7 +96,7 @@ There are currently 3 discovery adapters in PnP Bridge:
 
 * WindowPnPDiscovery: Reports a PnP device based on a device class provided as part of PnP Bridge configuration
 * CameraDisovery: Reports a camera on Windows
-* SerialPnp: Reports a [SerialPnP device](..\SerialPnP\Readme.md). This allows devices like MCUs to self describe Azure IoT PnP interface.
+* SerialPnp: Reports a [SerialPnP device](./../SerialPnP/Readme.md). This allows devices like MCUs to self describe Azure IoT PnP interface.
 
 Here's an example output of json message published by WindowPnPDiscovery adapter:
 
@@ -130,7 +130,7 @@ A PnP Adapter implements the bindings of Azure IoT PnP interface. There are curr
 
 * CoreDeviceHealth: Implements basic device health interface
 * CameraPnP: Implements camera specific health interface
-* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](..\SerialPnP\Readme.md)
+* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](./../SerialPnP/Readme.md)
 
 ### Configuration file
 
