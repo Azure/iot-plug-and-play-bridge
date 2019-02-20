@@ -7,12 +7,12 @@
 | Windows |  :heavy_check_mark: |
 | Linux | :heavy_multiplication_x: |
 
-### Development Pre-Requisite
+### Development Pre-Requisites
 * In order to build Private Preview Azure PnP Bridge, you need to join Microsoft Azure team: https://github.com/Azure
 * Ensure CMake and Visual Studio 2017 are installed. **CMake should be in the search PATH.**
 * Download Windows 17763 SDK: https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk
 
-### Build Azure IoT PnP Bridge
+### Build the Azure IoT PnP Bridge
 
 #### Step 1: Get the required dependencies for the Azure PnP Bridge
 After cloning the Azure PnP Bridge repo to your machine, open the "Developer Command Prompt for VS 2017" and navigate to the directory of the cloned repo:
@@ -26,14 +26,14 @@ At this step, if you confirmed you have access to the Azure repo but are not abl
 
 #### Step 2: Build the prerequisite components for the Azure PnP Bridge
 ```
-%REPO_DIR%\> cd PnpBridge\Scripts
+%REPO_DIR%\PnpBridge\> cd Scripts
 
 %REPO_DIR%\PnpBridge\Scripts\> build.prereq.cmd
 ```
 
 #### Step 3: Build the Azure PnP Bridge
 
-1. Open `PnpBridge\src\PnpBridge\PnpBridge.vcxproj` with "Visual Studio 2017"
+1. Open `\PnpBridge\src\PnpBridge\PnpBridge.vcxproj` with "Visual Studio 2017"
 2. Ensure build target matches the build.prereq.cmd's build (e.g. Release|Debug and x86|x64)
 3. Build the solution
 4. The built `Pnpbridge.exe` is the Azure PnP Bridge binary
@@ -42,7 +42,7 @@ At this step, if you confirmed you have access to the Azure repo but are not abl
 
 To try out Azure IoT PnP Bridge, follow the steps bellow:
 
-* Create an Azure IoT device using Microsoft Azure documentation online and obtain the connections string. If using DPS, the bridge supports symmetric key for the device.
+* Create an Azure IoT device using Microsoft Azure documentation online and obtain the connections string. If using DPS, the bridge supports symmetric (e.g. Shared Access Signature or SAS) key for securely connecting to the device.
 * Modify the folowing parameters under PnpBridgeParameters node in the config file (config.json):
 
   Using DPS:
@@ -56,10 +56,11 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
         "DeviceId": "[Device ID",
         "DeviceKey": "[Device primary key]=",
         "DeviceCapabilityModelUri": "[Device capability model URI]",
-        "ModelRepositoryUri": "[Model reporsitory URI]"
+        "ModelRepositoryUri": "[Model repository URI]"
       }
     }
   ```
+  > Note: If using Azure IoT Central, the primary connection fields you will need to change in the default config file are IdScope, DeviceId, DeviceKey, and DeviceCapabilityModelUri. Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity) for how to generate the IdScope, DeviceId, and DeviceKey for your device. The DeviceCapabilityModelUri is the "Id" that is listed for your device's Device Capability Model in Azure IoT Central.
 
   Using your own connection string:
 
@@ -147,7 +148,7 @@ Following are the valid configuration fields:
       DeviceId: Unique device id
       DeviceKey: Primary device key
       DeviceCapabilityModelUri: Device capability model URI
-      ModelRepositoryUri: Model reporsitory URI
+      ModelRepositoryUri: Model repository URI
     ConnectionString: Connection String
     traceOn: Enable tracing [OPTIONAL] [Default is true]
   
@@ -156,19 +157,19 @@ Following are the valid configuration fields:
       MatchFilters: Set of identifiers to match the device reported by discovery adapter [REQUIRED]
         MatchType: Exact or Contains. Performs a comparision between the MatchParameters
                    elements and the MatchParameters provided by DiscoveryAdapter [REQUIRED]
-        MatchParameters: Json array containig user defined parameters [REQUIRED]
+        MatchParameters: Json array containing user defined parameters [REQUIRED]
       InterfaceId: Interface Id to be published for this device. This can be skipped if a
                    device is self describing [REQUIRED/ Except when SelfDescribing = true]
       SelfDescribing: This device will report the PnP interface schema and the InterfaceId.
                       When using this option, DiscoveryParameters must be specified [OPTIONAL] [true/false]
       PnpParameters: PnP adapter parameters is MUST for every device. This is used to bind 
                      the right PnpAdapter for this device [REQUIRED]
-        Identity: PnpAdapter Idenity
+        Identity: PnpAdapter Identity
       DiscoveryParameters: Discovery parameters are used in case of self describing devices [OPTIONAL]
-        Identity: Discovery adapter Idenity is used to map this device to discovery adapter [REQUIRED]
+        Identity: Discovery adapter Identity is used to map this device to discovery adapter [REQUIRED]
   DiscoveryAdapters: Json object with Discovery Adapter parameters
     Parameters: Json Array containing user defined Initialization arguments for the discovery adapter
-      Identity: Discovery adapter idenity used to map the discovery adapter [REQUIRED]
+      Identity: Discovery adapter Identity used to map the discovery adapter [REQUIRED]
 ```
 
 ## Authoring new PnP Bridge Adapters

@@ -23,7 +23,7 @@ The library implements the following features
 ### Getting Started (All Platforms)
 
 #### Adding SerialPnP library to your project
-To get started using the library, bring the `SerialPnP.cpp` and `SerialPnP.h` files into your
+To get started using the library, bring the `SerialPnP.c` and `SerialPnP.h` files into your
 project directory and add them to your project. The library requires platform-specific functionality
 to be implemented by the developer or platform implementer. The platform must also provide `malloc` and `free` functions.
 
@@ -62,8 +62,8 @@ The above functions are expected to provide support for serial and reset functio
 For serial, the implementation of these functions should maintain a suitable buffer which
 is asynchronously accessed by SerialPnP using the above functions.
 
-Example implementation of these functions is available here (TODO), which demonstrates
-how the Arduino standard library functions are wrapped to provider SerialPnP support.
+Example implementation of these functions is available in [ArduinoSerialPnP.cpp](./ArduinoExample/ArduinoSerialPnP.cpp), which demonstrates
+how the Arduino standard library functions are wrapped to provide SerialPnP support.
 
 #### SerialPnP initialization
 To expose interfaces using SerialPnP, the library must first be initialized.
@@ -136,7 +136,7 @@ The SerialPnP library handles serialization and execution of gateway driven func
 to achieve the following:
 - Reading properties from device
 - Writing properties to device
-- Executing methods on device
+- Executing commands on device
 
 The library defines a `SerialPnPCb` method signature as below:
 ```typedef void (*SerialPnPCb)(void*, void*);```
@@ -144,19 +144,17 @@ The library defines a `SerialPnPCb` method signature as below:
 Callback methods do not return a value, but rather operate on the two pointer
 parameters. The first parameter will be input, and the second will be output.
 
-No typing is provided for the parameters - a callback for a given property and method
+No typing is provided for the parameters - a callback for a given property and command
 is expected to know what schema is selected as part of input definition and have its
 method declared appropriately.
 
-A property callback is expected to examine the parameters to determine if the callback
-is being made to read or write the value of the property. Where only output parameter is defined,
-the callback should place the existing value of the property into the variable pointed to by the
-output parameter. Where input and output parameter are both defined, the callback should perform
-any necessary validation on the input parameter, update the property if validation succeeds,
-and place the new value of the property into the output value.
+Property callbacks can be called in two ways:
+1. The input parameter is null, and only the output parameter is defined.
+    - In this case, the callback is being used to read a property. The callback should place the current value of the property into the variable pointed to by the output parameter. Operating on the input parameter when it is null will result in instability.
+2. Both the input parameter and output parameters are defined.
+    - In this case the callback is being used to write a property. The callback should perform any necessary validation on the input parameter, update the property if validation succeeds, and place the new value of the property into the output value.
 
-A command callback should read the input parameter and write the output parameter as
-relevant to the functionality of the callback in question.
+Command callbacks will be called with both input and output parameters defined. Command callbacks should read the input parameter and write the output parameter as relevant to the functionality of the callback in question.
 
 An example implementation of the property and command callbacks as used in our example
 thermometer can be seen below:
@@ -206,4 +204,4 @@ provided:
 - `SerialPnP_SendEventFloat(const char* EventShortId, float Value)`
 
 #### Examples
-Please see (TODO) for an example implementation of the SerialPnP library on an Arduino.
+Please see [ArduinoSerialPnP.cpp](./ArduinoExample/ArduinoSerialPnP.cpp) for an example implementation of the SerialPnP library on an Arduino and [ArduinoExample.ino](./ArduinoExample/ArduinoExample.ino) for example usage of the SerialPnP library on an Arduino device.
