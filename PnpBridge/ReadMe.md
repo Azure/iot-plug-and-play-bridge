@@ -186,10 +186,10 @@ To extend PnP Bridge in order to support new device discovery and implement new 
         const char* identity;
 
         // Discovery Adapter wide initialization callback
-        DISCOVERYAPAPTER_START_DISCOVER startDiscovery;
+        DISCOVERYADAPTER_START_DISCOVERY startDiscovery;
         
         // Discovery Adapter wide shutdown callback
-        DISCOVERYAPAPTER_STOP_DISCOVERY stopDiscovery;
+        DISCOVERYADAPTER_STOP_DISCOVERY stopDiscovery;
     } DISCOVERY_ADAPTER, *PDISCOVERY_ADAPTER;
   ```
 

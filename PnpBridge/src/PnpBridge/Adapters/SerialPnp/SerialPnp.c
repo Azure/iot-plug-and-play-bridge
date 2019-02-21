@@ -913,7 +913,7 @@ void SerialPnp_CommandUpdateHandler(const char* commandName, const PNP_CLIENT_CO
 
     deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
 
-    char* response;
+    char* response = NULL;
     SerialPnp_CommandHandler(deviceContext, commandName, (char*)pnpClientCommandContext->requestData, &response);
     SerialPnp_SetCommandResponse(pnpClientCommandResponseContext, response, 200);
 }

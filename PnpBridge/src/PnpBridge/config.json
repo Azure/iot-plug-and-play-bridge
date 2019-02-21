@@ -2,16 +2,16 @@
   "_comment_PnpBridgeParameters": "PnpBridge configurable parameters",
   "PnpBridgeParameters": {
     "_comment_ConnectionType": "dps (symmetric key support only)/connectionstring",
-    "ConnectionType": "dps",
+    "ConnectionType": "[To fill in dps/connectionstring]",
     "DpsSettings": {
-      "GlobalProvUri": "global.azure-devices-provisioning.net",
-      "IdScope": "0ne00040DC0",
-      "DeviceId": "26816ade-3bdd-48d3-8d37-6598957cc362",
-      "DeviceKey": "n4RFIRiA23ZGGUkyeCm4cvCt7vQD7afk6hKQBZJYP1A=",
-      "DeviceCapabilityModelUri": "http://pnpbridge-demo1/models/Hydro/1.0.0",
-      "ModelRepositoryUri": "http://pnpbridge-demo1/models"
+      "GlobalProvUri": "[To fill in]",
+      "IdScope": "[To fill in]",
+      "DeviceId": "[To fill in]",
+      "DeviceKey": "[To fill in]",
+      "DeviceCapabilityModelUri": "[To fill in]",
+      "ModelRepositoryUri": "[To fill in]"
     },
-    "ConnectionString": "HostName=iot-pnp-hub1.azure-devices.net;DeviceId=win-gateway2;SharedAccessKey=YgPpLi1YFDMFxPTbsu+EEIROPyODcqEL+B+Z59XSk4M=",
+    "ConnectionString": "[To fill in]",
     "traceOn": "false"
   },
   "_comment_Devices": "Array of devices for Azure Pnp interface should be published",
@@ -54,7 +54,7 @@
           "HardwareId": "UVC_Webcam_00"
         }
       },
-      "InterfaceId": "http://windows.com/camera_health_monitor/v1",
+      "InterfaceId": "http://windows.com/camera_health_monitor/1.0.0",
       "PnpParameters": {
         "Identity": "camera-health-monitor"
       }
