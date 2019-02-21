@@ -24,7 +24,7 @@ extern "C"
     typedef void(*PNPBRIDGE_NOTIFY_DEVICE_CHANGE)(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
 
     /**
-    * @brief    DISCOVERYAPAPTER_START_DISCOVER callback is called to notify a discovery adapter to start discovery.
+    * @brief    DISCOVERYADAPTER_START_DISCOVERY callback is called to notify a discovery adapter to start discovery.
     *
 
     * @param    DeviceChangeCallback           PnpBridge callback method to be called when an adapter discovers device.
@@ -35,20 +35,20 @@ extern "C"
     *
     * @returns  integer greater than zero on success and other values on failure.
     */
-    typedef int(*DISCOVERYAPAPTER_START_DISCOVER)(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, const char* deviceArgs, const char* adapterArgs);
+    typedef int(*DISCOVERYADAPTER_START_DISCOVERY)(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback, const char* deviceArgs, const char* adapterArgs);
 
     /**
-    * @brief    DISCOVERYAPAPTER_STOP_DISCOVERY callback is called to notify a discovery adapter to stop discovery.
+    * @brief    DISCOVERYADAPTER_STOP_DISCOVERY callback is called to notify a discovery adapter to stop discovery.
     *
 
     * @returns  integer greater than zero on success and other values on failure.
     */
-    typedef int(*DISCOVERYAPAPTER_STOP_DISCOVERY)();
+    typedef int(*DISCOVERYADAPTER_STOP_DISCOVERY)();
 
     typedef struct _DISCOVERY_ADAPTER {
         const char* Identity;
-        DISCOVERYAPAPTER_START_DISCOVER StartDiscovery;
-        DISCOVERYAPAPTER_STOP_DISCOVERY StopDiscovery;
+        DISCOVERYADAPTER_START_DISCOVERY StartDiscovery;
+        DISCOVERYADAPTER_STOP_DISCOVERY StopDiscovery;
     } DISCOVERY_ADAPTER, *PDISCOVERY_ADAPTER;
 
     int PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload);
