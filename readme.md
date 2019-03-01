@@ -26,9 +26,11 @@ Azure PnP Bridge can be deployed as a standalone executable on any IoT device, P
 
 - Private Preview of Azure IoT PnP: https://github.com/Azure/Azure-IoT-PnP-Preview/. The included build scripts will automatically clone the required Azure IoT PnP C SDK for you.
 
-- Private Preview of Azure IoT Central at https://aka.ms/iotc-demo (optional, a fully-managed IoT SaaS solution with UI that can be used to monitor and manage your device from Azure)
+- Private Preview of Azure IoT Central at https://aka.ms/iotc-demo (Optional, a fully-managed IoT SaaS solution with UI that can be used to monitor and manage your device from Azure)
 
-- Azure IoT Edge (optional, can be used to help deploy, run, and manage software on the device)
+- Optional: [Azure IoT Edge](https://docs.microsoft.com/en-us/azure/iot-edge/) (can be used to help deploy, run, and manage software on the device)
+
+- Optional: Private Preview of Azure IoT Device Agent https://github.com/ms-iot/azure-client-tools-pnp-preview (Pre-built client built on top of the Azure IoT PnP SDK that provides device provisioning and management capabilities out of the box. It also provides lifecycle management for the Azure connection and auto-discovery/loading/unloading of the PnP interfaces implemented by the Device Agent and its extensible plugins)
 
 ## Azure PnP Bridge Architecture
 ![Architecture](./PnpBridge/docs/Pictures/AzurePnPBridge.png)

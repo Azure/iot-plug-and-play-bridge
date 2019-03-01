@@ -259,6 +259,9 @@ To extend PnP Bridge in order to support new device discovery and implement new 
 
 Note: Adapter callbacks are invoked in a sequential fashion. An adapter shouldn't block a callback since this will prevent PnpBridge from making forward progress.
 
+## Sample Camera Adapter
+The following [readme](src/PnpBridge/Adapters/Camera/readme.md) provides details on a sample camera adapter that can be enabled with this preview.
+
 ## Folder Structure
 
 ### /deps/azure-iot-sdk-c-pnp
