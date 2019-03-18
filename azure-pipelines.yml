@@ -1,0 +1,15 @@
+trigger:
+- pipeline-ci
+pool:
+  vmImage: 'VS2017-Win2016'
+steps:
+# - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
+#   submodules: recursive 
+# MSBuild
+# Build with MSBuild
+- task: CmdLine@2
+- script: PnpBridge/scripts/build.pnpbridge.cmd
+  workingDirectory: #
+  displayName: #
+  failOnStderr: #
+  #env: # mapping of environment variables to add
