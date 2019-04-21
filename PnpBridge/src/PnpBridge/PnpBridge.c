@@ -51,7 +51,7 @@ PNPBRIDGE_RESULT PnpBridge_Initialize(PPNP_BRIDGE* pnpBridge, JSON_Value* config
 
             bool traceOn = false;
             const char* traceOnStr = json_object_get_string(pnpBridgeParameters, "traceOn");
-            if (NULL != traceOnStr && stricmp(traceOnStr, "true")) {
+            if (NULL != traceOnStr && strcmp(traceOnStr, "true")) {
                 LogInfo("Tracing enabled in config");
                 traceOn = true;
             }
@@ -64,7 +64,7 @@ PNPBRIDGE_RESULT PnpBridge_Initialize(PPNP_BRIDGE* pnpBridge, JSON_Value* config
                 LEAVE;
             }
 
-            if (0 == stricmp(connectionType, "dps")) {
+            if (0 == strcmp(connectionType, "dps")) {
                 // Get DPS parameters
                 JSON_Object* dpsSettings = json_object_get_object(pnpBridgeParameters, "DpsSettings");
                 if (NULL == dpsSettings) {
@@ -95,7 +95,7 @@ PNPBRIDGE_RESULT PnpBridge_Initialize(PPNP_BRIDGE* pnpBridge, JSON_Value* config
                 }
 
             }
-            else if (0 == stricmp(connectionType, "ConnectionString")) {
+            else if (0 == strcmp(connectionType, "ConnectionString")) {
                 // Using connection string
                 const char* connectionString = Configuration_GetConnectionString(config);
                 if (NULL == connectionString) {
@@ -221,7 +221,7 @@ PNPBRIDGE_RESULT PnpBridge_ValidateDeviceChangePayload(PPNPBRIDGE_DEVICE_CHANGE_
     return PNPBRIDGE_OK;
 }
 
-PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
+int PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD DeviceChangePayload) {
     PPNP_BRIDGE pnpBridge = g_PnpBridge;
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
     bool containsFilter = false;
@@ -271,7 +271,7 @@ PNPBRIDGE_RESULT PnpBridge_DeviceChangeCallback(PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD
         // Create an Pnp interface
         char* interfaceId = NULL;
         char* selfDescribing = (char*)json_object_get_string(jdevice, PNP_CONFIG_NAME_SELF_DESCRIBING);
-        if (NULL != selfDescribing && 0 == stricmp(selfDescribing, "true")) {
+        if (NULL != selfDescribing && 0 == strcmp(selfDescribing, "true")) {
             interfaceId = (char*)json_object_get_string(jobj, "InterfaceId");
             if (NULL == interfaceId) {
                 LogError("Interface id is missing for self descrbing device");
@@ -403,15 +403,14 @@ void PnpBridge_Stop(PPNP_BRIDGE pnpBridge) {
     Unlock(pnpBridge->dispatchLock);
 }
 
-#include <windows.h>
 
 int
 PnpBridge_UploadToBlobAsync(
-    _In_z_ const char* pszDestination,
-    _In_reads_bytes_(cbData) const unsigned char* pbData,
-    _In_ size_t cbData,
-    _In_ IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK iotHubClientFileUploadCallback,
-    _In_opt_ void* context
+    const char* pszDestination,
+    const unsigned char* pbData,
+    size_t cbData,
+    IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK iotHubClientFileUploadCallback,
+    void* context
     )
 {
     IOTHUB_CLIENT_RESULT    iotResult = IOTHUB_CLIENT_OK;
@@ -451,6 +450,9 @@ PnpBridge_UploadToBlobAsync(
     }
 }
 
+#ifdef WIN32
+#include <windows.h>
+
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
     switch (fdwCtrlType)
@@ -474,3 +476,11 @@ int main()
 
     PnpBridge_Main();
 }
+#else
+
+int main()
+{
+    PnpBridge_Main();
+}
+
+#endif

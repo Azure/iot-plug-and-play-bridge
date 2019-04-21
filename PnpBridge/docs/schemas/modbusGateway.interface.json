@@ -1,0 +1,282 @@
+{
+    "@id": "http://azureiot.com/preview/interfaces/modbusGateway/0.0.1",
+    "@type": "Interface",
+    "displayName": "ModbusGateway",
+    "comment": [
+        "The Modbus gateway interface is implemented by the Modbus gateway. It is used to:",
+        "- Configure the Modbus protocols in use.",
+        "- Map Modbus devices to addresses and protocols.",
+        "- Map Modbus device registers to P&P interfaces."
+    ],
+    "contents": [
+        {
+            "@type": "Property",
+            "name": "deviceMap",
+            "comment": "Use to map Modbus devices to addresses and protocols.",
+            "writable": true,
+            "schema": {
+                "@type": "Map",
+                "mapKey": {
+                    "name": "deviceName",
+                    "schema": "string"
+                },
+                "mapValue": {
+                    "name": "deviceConfig",
+                    "schema": {
+                        "@type": "Object",
+                        "fields": [
+                            {
+                                "name": "unitId",
+                                "comment": "The id (or slave address) of the Modbus device",
+                                "schema": "integer"
+                            },
+                            {
+                                "name": "deviceType",
+                                "comment": "The device type name in the interfaceMap property",
+                                "schema": "string"
+                            },
+                            {
+                                "name": "tcp",
+                                "comment": "The TCP configuration for this device. Use either the tcp or rtu property, but not both",
+                                "schema": {
+                                    "@type": "Object",
+                                    "fields": [
+                                        {
+                                            "name": "host",
+                                            "comment": "Ipv4 address of the Modbus device",
+                                            "schema": "string"
+                                        },
+                                        {
+                                            "name": "port",
+                                            "comment": "Port number of the Modbus device. Modbus default hould be 502.",
+                                            "schema": "integer"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "name": "rtu",
+                                "comment": "The RTU configuration for this device. Use either the tcp or rtu property, but not both",
+                                "schema": {
+                                    "@type": "Object",
+                                    "fields": [
+                                        {
+                                            "name": "port",
+                                            "comment": "serial port name. ex: \"/dev/ttyS0\"",
+                                            "schema": "string"
+                                        },
+                                        {
+                                            "name": "baudRate",
+                                            "comment": "Baud rate of the serial port. (valid values: ...9600, 14400,19200...)",
+                                            "schema": "string"
+                                        },
+                                        {
+                                            "name": "dataBits",
+                                            "comment": "Data Bit for thesSerial port. (valid values: 7, 8)",
+                                            "schema": "integer"
+                                        },
+                                        {
+                                            "name": "parity",
+                                            "comment": "Parity used for the serial port. (valid values: \"ODD\", \"EVEN\", \"NONE\")",
+                                            "schema": {
+                                                "@type": "Enum",
+                                                "enumValues": [
+                                                    {
+                                                        "name": "None",
+                                                        "enumValue": 0
+                                                    },
+                                                    {
+                                                        "name": "Odd",
+                                                        "enumValue": 1
+                                                    },
+                                                    {
+                                                        "name": "Even",
+                                                        "enumValue": 2
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "name": "stopBits",
+                                            "comment": "Stop Bit used for the serial port.",
+                                            "schema": {
+                                                "@type": "Enum",
+                                                "enumValues": [
+                                                    {
+                                                        "name": "One",
+                                                        "enumValue": 1
+                                                    },
+                                                    {
+                                                        "name": "Two",
+                                                        "enumValue": 2
+                                                    },
+                                                    {
+                                                        "name": "OnePointFive",
+                                                        "enumValue": 3
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "@type": "Property",
+            "name": "interfaceMap",
+            "comment": "Use to map Modbus device types to P&P interfaces.",
+            "writable": true,
+            "schema": {
+                "@type": "Map",
+                "mapKey": {
+                    "name": "deviceType",
+                    "schema": "string"
+                },
+                "mapValue": {
+                    "name": "interfaceConfig",
+                    "schema": {
+                        "@type": "Object",
+                        "fields": [
+                            {
+                                "name": "interfaceId",
+                                "comment": "The id of the P&P interface.",
+                                "schema": "string"
+                            },
+                            {
+                                "name": "telemetry",
+                                "schema": {
+                                    "@type": "Map",
+                                    "mapKey": {
+                                        "name": "telemetryName",
+                                        "schema": "string"
+                                    },
+                                    "mapValue": {
+                                        "name": "telemetryConfig",
+                                        "schema": {
+                                            "@type": "Object",
+                                            "fields": [
+                                                {
+                                                    "name": "startAddress",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "length",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "dataType",
+                                                    "schema": "string"
+                                                },
+                                                {
+                                                    "name": "defaultFrequency",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "conversionCoefficient",
+                                                    "schema": "double"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "name": "properties",
+                                "schema": {
+                                    "@type": "Map",
+                                    "mapKey": {
+                                        "name": "propertyName",
+                                        "schema": "string"
+                                    },
+                                    "mapValue": {
+                                        "name": "propertyConfig",
+                                        "schema": {
+                                            "@type": "Object",
+                                            "fields": [
+                                                {
+                                                    "name": "startAddress",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "length",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "dataType",
+                                                    "schema": "string"
+                                                },
+                                                {
+                                                    "name": "defaultFrequency",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "conversionCoefficient",
+                                                    "schema": "double"
+                                                },
+                                                {
+                                                    "name": "access",
+                                                    "schema": {
+                                                        "@type": "Enum",
+                                                        "enumValues": [
+                                                            {
+                                                                "name": "readOnly",
+                                                                "enumValue": 1
+                                                            },
+                                                            {
+                                                                "name": "readWrite",
+                                                                "enumValue": 2
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "name": "commands",
+                                "schema": {
+                                    "@type": "Map",
+                                    "mapKey": {
+                                        "name": "commandName",
+                                        "schema": "string"
+                                    },
+                                    "mapValue": {
+                                        "name": "commandConfig",
+                                        "schema": {
+                                            "@type": "Object",
+                                            "fields": [
+                                                {
+                                                    "name": "startAddress",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "length",
+                                                    "schema": "integer"
+                                                },
+                                                {
+                                                    "name": "dataType",
+                                                    "schema": "string"
+                                                },
+                                                {
+                                                    "name": "conversionCoefficient",
+                                                    "schema": "double"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "@context": "http://azureiot.com/v0/contexts/Interface.json"
+}

@@ -121,7 +121,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;..\..\deps\azure-iot-sdk-c-pnp\provisioning_client\inc;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -138,7 +138,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;..\..\deps\azure-iot-sdk-c-pnp\provisioning_client\inc;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -156,7 +156,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;..\..\deps\azure-iot-sdk-c-pnp\provisioning_client\inc;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -176,7 +176,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;..\..\deps\azure-iot-sdk-c-pnp\provisioning_client\inc;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -197,7 +197,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;..\..\deps\azure-iot-sdk-c-pnp\provisioning_client\inc;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -218,7 +218,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\deps\azure-iot-sdk-c-pnp\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\c-utility\pal\windows;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\..\deps\parson;..\..\deps\azure-iot-sdk-c-pnp\deps\uhttp\deps\c-utility\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc;..\..\deps\azure-iot-sdk-c-pnp\iothub_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\inc\internal;..\..\deps\azure-iot-sdk-c-pnp\pnp_client\samples\pnp_command_sample\.;..\..\deps\azure-iot-sdk-c-pnp\provisioning_client\inc;%(AdditionalIncludeDirectories);adapters\CoreDeviceHealth;adapters\serial;.;</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -244,7 +244,16 @@
     <ClInclude Include="adapters\CmdAndPropHandler.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.h" />
     <ClInclude Include="Adapters\CoreDeviceHealth\WindowsPnpDeviceDiscovery.h" />
+    <ClInclude Include="Adapters\ModbusPnp\ModbusCapability.h" />
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnection.h" />
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnectionHelper.h" />
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusRtuConnection.h" />
+    <ClInclude Include="Adapters\ModbusPnp\ModbusPnp.h" />
+    <ClInclude Include="Adapters\ModbusPnp\CmdPropHandlers.h" />
+    <ClInclude Include="Adapters\ModbusPnp\ModbusEnum.h" />
+    <ClInclude Include="Adapters\SerialPnp\CmdAndPropHandler.h" />
     <ClInclude Include="IotHubComms.h" />
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusTCPConnection.h" />
     <ClInclude Include="PnpBridge.h" />
     <ClInclude Include="ConfigurationParser.h" />
     <ClInclude Include="DiscoveryAdapterInterface.h" />
@@ -267,11 +276,17 @@
     <ClCompile Include="Adapters\Camera\JsonWrapper.cpp" />
     <ClCompile Include="Adapters\CoreDeviceHealth\CoreDeviceHealth.c" />
     <ClCompile Include="Adapters\CoreDeviceHealth\WindowsPnPDeviceDiscovery.c" />
+    <ClCompile Include="Adapters\ModbusPnp\ModbusCapability.c" />
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnection.c" />
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnectionHelper.c" />
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusRtuConnection.c" />
+    <ClCompile Include="Adapters\ModbusPnp\ModbusPnp.c" />
     <ClCompile Include="Adapters\SerialPnp\SerialPnp.c" />
     <ClCompile Include="ConfigurationParser.c" />
     <ClCompile Include="core\PnpAdapterInterface.c" />
     <ClCompile Include="core\PnpBridgeMemory.c" />
     <ClCompile Include="IotHubComms.c" />
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusTCPConnection.c" />
     <ClCompile Include="PnpBridge.c" />
     <ClCompile Include="DiscoveryManager.c" />
     <ClCompile Include="PnpAdapterManger.c" />

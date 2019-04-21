@@ -24,7 +24,7 @@ if [%1] == [] (
 )
 
 if /I [%TARGETARCH%] == [x86] (
-    et TARGETPLATFORM=Win32
+    set TARGETPLATFORM=Win32
 ) else (
     set TARGETPLATFORM=%TARGETARCH%
 )

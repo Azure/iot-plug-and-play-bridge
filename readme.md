@@ -1,5 +1,3 @@
-[![Build Status](https://xgrow18.visualstudio.com/busesiot/_apis/build/status/AzurePnPBridgePreview%20(Master)?branchName=master)](https://xgrow18.visualstudio.com/busesiot/_build/latest?definitionId=7&branchName=master)
-
 # This pre-release is confidential
 Access to this pre-release software is confidential and should not be disclosed or shared with other parties per your NDA with Microsoft.
 

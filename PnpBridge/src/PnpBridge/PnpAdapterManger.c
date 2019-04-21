@@ -300,7 +300,7 @@ bool PnpAdapterManager_IsInterfaceIdPublished(PPNP_ADAPTER_MANAGER adapterMgr, c
         LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
         while (NULL != handle) {
             PPNPADAPTER_INTERFACE_TAG adapterInterface = (PNP_INTERFACE_CLIENT_HANDLE)singlylinkedlist_item_get_value(handle);
-            if (stricmp(adapterInterface->interfaceId, interfaceId)) {
+            if (strcmp(adapterInterface->interfaceId, interfaceId)) {
                 return true;
             }
             handle = singlylinkedlist_get_next_item(handle);

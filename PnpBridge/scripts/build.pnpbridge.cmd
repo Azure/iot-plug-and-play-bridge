@@ -69,15 +69,8 @@ echo .
 echo "Building Azure SDK libraries"
 echo .
 
-if ["%MSBUILDFULLPATH%"] == [] (
-    set MSBUILDPATH=msbuild.exe
-) else (
-    set MSBUILDPATH="%MSBUILDFULLPATH%"
-)
-echo "MSBuild path: %MSBUILDFULLPATH%"
-    
 pushd %OUTPUTDIR%
-%MSBUILDPATH% %~dp0..\%OUTPUTDIR%\azure_iot_pnp_bridge.sln /p:Configuration=%TARGETCONFIG% /p:Platform=%TARGETPLATFORM% /p:TargetPlatformVersion=%TARGETPLATVER%
+msbuild %~dp0..\%OUTPUTDIR%\azure_iot_pnp_bridge.sln /p:Configuration=%TARGETCONFIG% /p:Platform=%TARGETPLATFORM% /p:TargetPlatformVersion=%TARGETPLATVER%
 if errorlevel 1 goto BuildError
 
 popd
@@ -90,3 +83,4 @@ popd
 exit /b 1
 
 :Success
+

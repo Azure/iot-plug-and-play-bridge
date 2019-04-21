@@ -5,8 +5,21 @@ if (POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
 
-#
-#making a global variable to know if we are on linux, windows, or macosx.
+macro(compileAsC99)
+    if (CMAKE_VERSION VERSION_LESS "3.1")
+        if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+            set (CMAKE_C_FLAGS "--std=c99 ${CMAKE_C_FLAGS}")
+            if (NOT IN_OPENWRT)
+                set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+            endif()
+        endif()
+    else()
+        set (CMAKE_C_STANDARD 99)
+        set (CMAKE_CXX_STANDARD 11)
+    endif()
+endmacro(compileAsC99)
+
+# making a global variable to know if we are on linux, windows, or macosx.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(WINDOWS TRUE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
