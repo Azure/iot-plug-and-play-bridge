@@ -106,7 +106,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_PublishAlwaysInterfaces(PDISCOVERY_MANA
     for (int i = 0; i < (int)json_array_get_count(devices); i++) {
         JSON_Object* device = json_array_get_object(devices, i);
         const char* publishModeString = json_object_get_string(device, PNP_CONFIG_NAME_PUBLISH_MODE);
-        if (NULL != publishModeString && stricmp(publishModeString, PNP_CONFIG_NAME_PUBLISH_MODE_ALWAYS) == 0) {
+        if (NULL != publishModeString && strcmp(publishModeString, PNP_CONFIG_NAME_PUBLISH_MODE_ALWAYS) == 0) {
             PNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload = { 0 };
             payload.ChangeType = PNPBRIDGE_INTERFACE_CHANGE_PERSIST;
 
@@ -152,7 +152,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER discoveryManag
                 if (NULL != params) {
                     const char* discoveryIdentity = json_object_get_string(params, PNP_CONFIG_IDENTITY_NAME);
                     if (NULL != discoveryIdentity) {
-                        if (stricmp(discoveryIdentity, discoveryInterface->Identity) == 0) {
+                        if (strcmp(discoveryIdentity, discoveryInterface->Identity) == 0) {
                             deviceParams = params;
                             break;
                         }

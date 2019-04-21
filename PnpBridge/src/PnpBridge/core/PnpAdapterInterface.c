@@ -94,7 +94,7 @@ PNP_INTERFACE_CLIENT_HANDLE PnpAdapterInterface_GetPnpInterfaceClient(PNPADAPTER
     return interfaceClient->pnpInterfaceClient;
 }
 
-PNPBRIDGE_RESULT PnpAdapterInterface_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface, void* context) {
+int PnpAdapterInterface_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface, void* context) {
     if (NULL == pnpAdapterInterface) {
         return PNPBRIDGE_INVALID_ARGS;
     }

@@ -38,11 +38,11 @@ typedef struct _PNPBRIDGE_DEVICE_CHANGE_PAYLOAD {
 
 int
 PnpBridge_UploadToBlobAsync(
-    _In_z_ const char* pszDestination,
-    _In_reads_bytes_(cbData) const unsigned char* pbData,
-    _In_ size_t cbData,
-    _In_ IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK iotHubClientFileUploadCallback,
-    _In_opt_ void* context
+    const char* pszDestination,
+    const unsigned char* pbData,
+    size_t cbData,
+    IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK iotHubClientFileUploadCallback,
+    void* context
 );
 
 #ifdef __cplusplus

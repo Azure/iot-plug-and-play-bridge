@@ -10,13 +10,33 @@
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/lock.h"
 
+// TODO: Fix this missing reference
+#ifndef AZURE_UNREFERENCED_PARAMETER
+#define AZURE_UNREFERENCED_PARAMETER(param)   (void)(param)
+#endif
+
+#ifdef WIN32
 #include <Windows.h>
 #include <cfgmgr32.h>
 #include <ctype.h>
+#else
+typedef unsigned int DWORD;
+typedef uint8_t byte;
+typedef int HANDLE;
+typedef short USHORT;
+typedef uint16_t UINT16;
+
+#include <errno.h>
+#include <string.h>
+#include <fcntl.h>
+
+#include <termios.h>
+#include <unistd.h>
+#endif
 
 #include "parson.h"
 
-#include "Adapters\SerialPnp\SerialPnp.h"
+#include "Adapters/SerialPnp/SerialPnp.h"
 
 // BEGIN - PNPCSDK#20
 // https://github.com/Azure/azure-iot-sdk-c-pnp/issues/20
@@ -35,7 +55,7 @@ void SerialPnp_CommandUpdateHandlerRedirect(int index,
 #define PROP_HANDLER_ADAPTER_METHOD SerialPnp_PropertyUpdateHandlerRedirect
 #define CMD_HANDLER_ADAPTER_METHOD SerialPnp_CommandUpdateHandlerRedirect
 
-#include "adapters/CmdAndPropHandler.h"
+#include "Adapters/SerialPnp/CmdAndPropHandler.h"
 // END - PNPCSDK#20
 
 int SerialPnp_UartReceiver(void* context)
@@ -91,7 +111,11 @@ void SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, in
     }
 
     DWORD write_size = 0;
+#ifdef WIN32
     if (!WriteFile(serialDevice->hSerial, SerialPnp_TxPacket, txLength, &write_size, NULL))
+#else
+    if ((write_size = write(serialDevice->hSerial, (const void *)SerialPnp_TxPacket, (size_t)txLength)) == -1)
+#endif
     {
         LogError("write failed");
     }
@@ -151,10 +175,10 @@ byte* SerialPnp_StringSchemaToBinary(Schema Schema, byte* buffer, int* length)
     {
         bd = malloc(sizeof(byte) * 1);
         *length = 1;
-        if (stricmp(data, "true")) {
+        if (strcmp(data, "true")) {
             bd[0] = 1;
         }
-        else if (stricmp(data, "false")) {
+        else if (strcmp(data, "false")) {
             bd[0] = 1;
         }
         else {
@@ -525,6 +549,7 @@ typedef struct _SERIAL_DEVICE {
 SINGLYLINKEDLIST_HANDLE SerialDeviceList = NULL;
 int SerialDeviceCount = 0;
 
+#ifdef WIN32
 int SerialPnp_FindSerialDevices()
 {
     CONFIGRET cmResult = CR_SUCCESS;
@@ -567,6 +592,7 @@ int SerialPnp_FindSerialDevices()
 
     return 0;
 }
+#endif
 
 const char* serialDeviceChangeMessageformat = "{ \
                                                  \"Identity\": \"serial-pnp-discovery\" \
@@ -602,7 +628,69 @@ int SerialPnp_OpenDeviceWorker(void* context) {
     return 0;
 }
 
+#ifndef WIN32
+int set_interface_attribs(int fd, int speed, int parity)
+{
+    struct termios tty;
+    memset(&tty, 0, sizeof tty);
+    if (tcgetattr(fd, &tty) != 0) {
+        LogError("error %d from tcgetattr", errno);
+        return -1;
+    }
+
+    cfsetospeed(&tty, speed);
+    cfsetispeed(&tty, speed);
+
+    tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
+                                                    // disable IGNBRK for mismatched speed tests; otherwise receive break
+                                                    // as \000 chars
+    tty.c_iflag &= ~IGNBRK;         // disable break processing
+    tty.c_lflag = 0;                // no signaling chars, no echo,
+                                    // no canonical processing
+    tty.c_oflag = 0;                // no remapping, no delays
+    tty.c_cc[VMIN] = 1;            // read doesn't block
+    tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+
+    //tty.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
+                                    // enable reading
+    tty.c_cflag &= ~(PARENB | PARODD);      // shut off parity
+    tty.c_cflag |= parity;
+    tty.c_cflag &= ~CSTOPB;
+    tty.c_cflag &= ~CRTSCTS;
+
+    if (tcsetattr(fd, TCSANOW, &tty) != 0)
+    {
+        LogError("error %d from tcsetattr", errno);
+        return -1;
+    }
+    return 0;
+}
+
+void
+set_blocking(int fd, int should_block)
+{
+    struct termios tty;
+    memset(&tty, 0, sizeof tty);
+    if (tcgetattr(fd, &tty) != 0)
+    {
+        LogError("error %d from tggetattr", errno);
+        return;
+    }
+
+    tty.c_cc[VMIN] = should_block ? 1 : 0;
+    tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+
+    if (tcsetattr(fd, TCSANOW, &tty) != 0)
+        LogError("error %d setting term attributes", errno);
+}
+
+#endif 
+
+
 int SerialPnp_OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback) {
+#ifdef WIN32
     HANDLE hSerial = CreateFileA(port,
         GENERIC_READ | GENERIC_WRITE,
         0, // must be opened with exclusive-access
@@ -635,9 +723,25 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVI
         //error setting serial port state
         return -1;
     }
+#else 
+    char *portname = "/dev/ttyACM0";
+    int fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+    if (fd < 0) {
+        LogError("error %d opening %s: %s", errno, portname, strerror(errno));
+        return -1;
+    }
+
+    set_interface_attribs(fd, B115200, 0);  // set speed to 115,200 bps, 8n1 (no parity)
+    //set_blocking(fd, 1);  // set no blocking
+#endif
 
     PSERIAL_DEVICE_CONTEXT deviceContext = malloc(sizeof(SERIAL_DEVICE_CONTEXT));
+
+#ifdef WIN32
     deviceContext->hSerial = hSerial;
+#else 
+    deviceContext->hSerial = fd;
+#endif
     deviceContext->pnpAdapterInterface = NULL;
     deviceContext->SerialDeviceChangeCallback = DeviceChangeCallback;
     deviceContext->InterfaceDefinitions = singlylinkedlist_create();
@@ -656,12 +760,16 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate, PNPBRIDGE_NOTIFY_DEVI
 
 void SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType)
 {
-    BYTE inb = 0;
+    byte inb = 0;
     DWORD dwRead = 0;
     *receivedPacket = NULL;
     *length = 0;
 
+#ifdef WIN32
     while (ReadFile(serialDevice->hSerial, &inb, 1, &dwRead, NULL)) {
+#else
+    while ((dwRead = read(serialDevice->hSerial, (void*)&inb, 1)) != -1) {
+#endif
         // Check for a start of packet byte
         if (inb == 0x5A)
         {
@@ -669,6 +777,7 @@ void SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPack
             serialDevice->RxEscaped = false;
             continue;
         }
+	//LogInfo("packet %x", inb);
 
         // Check for an escape byte
         if (inb == 0xEF)
@@ -774,7 +883,7 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
         return -1;
     }
 
-    UNREFERENCED_PARAMETER(adapterArgs);
+    AZURE_UNREFERENCED_PARAMETER(adapterArgs);
 
     const char* port = NULL;
     const char* useComDevInterfaceStr;
@@ -784,7 +893,7 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
     JSON_Object* args = json_value_get_object(jvalue);
 
     useComDevInterfaceStr = (const char*)json_object_dotget_string(args, "UseComDeviceInterface");
-    if ((NULL != useComDevInterfaceStr) && (0 == stricmp(useComDevInterfaceStr, "true"))) {
+    if ((NULL != useComDevInterfaceStr) && (0 == strcmp(useComDevInterfaceStr, "true"))) {
         useComDeviceInterface = true;
     }
 
@@ -805,8 +914,12 @@ int SerialPnp_StartDiscovery(PNPBRIDGE_NOTIFY_DEVICE_CHANGE DeviceChangeCallback
     PSERIAL_DEVICE seriaDevice = NULL;
     DWORD baudRate = atoi(baudRateParam);
     if (useComDeviceInterface) {
-        if (SerialPnp_FindSerialDevices() < 0) {
+#ifdef WIN32
+        if (SerialPnp_FindSerialDevices() < 0)
+#endif
+       	{
             LogError("Failed to get com port %s", port);
+	    return -1;
         }
 
         LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(SerialDeviceList);
@@ -862,8 +975,8 @@ static void SerialPnp_PropertyUpdateHandler(const char* propertyName, unsigned c
     PNP_CLIENT_READWRITE_PROPERTY_RESPONSE propertyResponse;
     PSERIAL_DEVICE_CONTEXT deviceContext;
 
-    UNREFERENCED_PARAMETER(propertyInitial);
-    UNREFERENCED_PARAMETER(propertyInitialLen);
+    AZURE_UNREFERENCED_PARAMETER(propertyInitial);
+    AZURE_UNREFERENCED_PARAMETER(propertyInitialLen);
 
     LogInfo("Processed property.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
 
@@ -979,7 +1092,7 @@ const InterfaceDefinition* SerialPnp_GetInterface(PSERIAL_DEVICE_CONTEXT deviceC
     LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
     while (interfaceDefHandle != NULL) {
         const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
-        if (stricmp(interfaceDef->Id, interfaceId) == 0) {
+        if (strcmp(interfaceDef->Id, interfaceId) == 0) {
             return interfaceDef;
         }
         interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
@@ -1056,7 +1169,7 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_CL
                 }
 
                 serialPropertyTable.numCallbacks = propertyCount;
-                serialPropertyTable.propertyNames = propertyNames;
+                serialPropertyTable.propertyNames = (const char **)propertyNames;
                 serialPropertyTable.callbacks = propertyUpdateTable;
                 serialPropertyTable.version = 1;
             }
@@ -1094,7 +1207,7 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT adapterHandle, PNP_DEVICE_CL
                 }
 
                 serialCommandTable.numCommandCallbacks = commandCount;
-                serialCommandTable.commandNames = commandNames;
+                serialCommandTable.commandNames = (const char **)commandNames;
                 serialCommandTable.commandCallbacks = commandUpdateTable;
                 serialCommandTable.version = 1;
             }
@@ -1222,9 +1335,15 @@ int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
         return 0;
     }
 
+#ifdef WIN32
     if (NULL != deviceContext->hSerial) {
         CloseHandle(deviceContext->hSerial);
     }
+#else
+    if (0 < deviceContext->hSerial) {
+        close(deviceContext->hSerial);
+    }
+#endif
 
     if (deviceContext->InterfaceDefinitions) {
         LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
@@ -1246,7 +1365,7 @@ int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
 }
 
 int SerialPnp_Initialize(const char* adapterArgs) {
-    UNREFERENCED_PARAMETER(adapterArgs);
+    AZURE_UNREFERENCED_PARAMETER(adapterArgs);
     return 0;
 }
 
@@ -1266,3 +1385,4 @@ PNP_ADAPTER SerialPnpInterface = {
     .shutdown = SerialPnp_Shutdown,
     .createPnpInterface = SerialPnp_CreatePnpInterface
 };
+

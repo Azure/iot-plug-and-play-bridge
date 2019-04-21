@@ -209,7 +209,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
           
             const char* matchType = json_object_get_string(matchCriteria, PNP_CONFIG_MATCH_TYPE_NAME);
             const char* currPnpAdapterId = json_object_get_string(pnpParams, PNP_CONFIG_IDENTITY_NAME);
-            bool exactMatch = stricmp(matchType, "exact") == 0;
+            bool exactMatch = strcmp(matchType, "exact") == 0;
 
             if (NULL != discMatchParams) {
                 JSON_Object* matchParameters = json_object_dotget_object(matchCriteria, PNP_CONFIG_NAME_MATCH_PARAMETERS);
@@ -228,7 +228,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
                         match = 0 != strstr(value2, value1);
                     }
                     else {
-                        match = 0 == stricmp(value2, value1);
+                        match = 0 == strcmp(value2, value1);
                     }
                     if (false == match) {
                         foundMatch = false;
@@ -241,11 +241,11 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
             }
             else {
                 char* selfDescribing = (char*)json_object_get_string(dev, PNP_CONFIG_NAME_SELF_DESCRIBING);
-                if (NULL != selfDescribing && 0 == stricmp(selfDescribing, "true")) {
+                if (NULL != selfDescribing && 0 == strcmp(selfDescribing, "true")) {
                     JSON_Object* discAdapterParams = Configuration_GetDiscoveryParametersForDevice(dev);
                     const char* discAdapterId = json_object_get_string(discAdapterParams, PNP_CONFIG_IDENTITY_NAME);
                     const char* messageId = json_object_get_string(message, PNP_CONFIG_IDENTITY_NAME);
-                    if (NULL != discAdapterId && NULL != messageId && 0 == stricmp(discAdapterId, messageId)) {
+                    if (NULL != discAdapterId && NULL != messageId && 0 == strcmp(discAdapterId, messageId)) {
                         foundMatch = true;
                     }
                 }

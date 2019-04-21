@@ -1,4 +1,4 @@
-# Building, Deplying and Extending the Azure IoT PnP Bridge
+# Building, Deploying and Extending the Azure IoT PnP Bridge
 
 ## Compile the Bridge
 
@@ -9,7 +9,7 @@
 
 ### Development Pre-Requisites
 * In order to build Private Preview Azure PnP Bridge, you need to join Microsoft Azure team: https://github.com/Azure
-* Ensure CMake and Visual Studio 2017 are installed. **CMake should be in the search PATH.**
+* Ensure CMake (https://cmake.org/download/) and Visual Studio 2017 are installed. **CMake should be in the search PATH.**
 * Download Windows 17763 SDK: https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk
 
 ### Build the Azure IoT PnP Bridge
@@ -279,4 +279,3 @@ Source code for Azure IoT PnP Bridge
 ### Support
 
 For any questions raise an issue or contact - [Azure IoT PnP Bridge](mailto:bf1dde55.microsoft.com@amer.teams.ms)
-

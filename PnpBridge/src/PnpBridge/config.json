@@ -30,6 +30,89 @@
       }
     },
     {
+      "_comment": "DEVICE4 - Modbus Sensor",
+      "MatchFilters": {
+        "MatchType": "Exact"
+      },
+      "SelfDescribing": "true",
+      "PnpParameters": {
+        "Identity": "modbus-pnp-interface"
+      },
+      "DiscoveryParameters": {
+        "Identity": "modbus-pnp-discovery",
+        "_comment": "NOTE: ComPort parameter will be used when UseComDeviceInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
+        "deviceConfig": {
+          "unitId": 1,
+          "rtu": null,
+          "tcp": {
+            "host": "192.168.1.111",
+            "port": 502
+          }
+        },
+        "interfaceConfig": {
+          "interfaceId": "http://contoso.com/Co2Detector/1.0.0",
+          "telemetry": {
+            "co2": {
+              "startAddress": "40001",
+              "length": 1,
+              "dataType": "integer",
+              "defaultFrequency": 5000,
+              "conversionCoefficient": 1
+            },
+            "temperature": {
+              "startAddress": "40003",
+              "length": 1,
+              "dataType": "decimal",
+              "defaultFrequency": 5000,
+              "conversionCoefficient": 0.01
+            }
+          },
+          "properties": {
+            "firmwareVersion": {
+              "startAddress": "40482",
+              "length": 1,
+              "dataType": "hexstring",
+              "defaultFrequency": 60000,
+              "conversionCoefficient": 1,
+              "access": 1
+            },
+            "modelName": {
+              "startAddress": "40483",
+              "length": 2,
+              "dataType": "string",
+              "defaultFrequency": 60000,
+              "conversionCoefficient": 1,
+              "access": 1
+            },
+            "alarmStatus_co2": {
+              "startAddress": "00305",
+              "length": 1,
+              "dataType": "boolean",
+              "defaultFrequency": 1000,
+              "conversionCoefficient": 1,
+              "access": 1
+            },
+            "alarmThreshold_co2": {
+              "startAddress": "40225",
+              "length": 1,
+              "dataType": "integer",
+              "defaultFrequency": 30000,
+              "conversionCoefficient": 1,
+              "access": 2
+            }
+          },
+          "commands": {
+            "clearAlarm_co2": {
+              "startAddress": "00305",
+              "length": 1,
+              "dataType": "flag",
+              "conversionCoefficient": 1
+            }
+          }
+        }
+      }
+    },
+    {
       "_comment": "DEVICE2 - MCU sensor hub which reports Azure IoT Pnp interfaces",
       "MatchFilters": {
         "MatchType": "Exact"
@@ -40,7 +123,7 @@
       },
       "DiscoveryParameters": {
         "Identity": "serial-pnp-discovery",
-        "ComPort": "COM4",
+        "ComPort": "COM1",
         "_comment": "NOTE: ComPort parameter will be used when UseComDeviceInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
         "UseComDeviceInterface": "false",
         "BaudRate": "115200"

@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/PnpBridge/src/PnpBridge/.vs
+/PnpBridge/src/PnpBridge/Debug
+/PnpBridge/src/PnpBridge/x64/Debug
+/PnpBridge/src/PnpBridge/PnpBridge.sln

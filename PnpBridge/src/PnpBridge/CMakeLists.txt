@@ -10,18 +10,24 @@ if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
 
-# compileAsC99()
+compileAsC99()
 
-set(pnp_bridge_c_files
+set(pnp_bridge_c_shared_files
     ConfigurationParser.c
     DiscoveryManager.c
     IotHubComms.c
     PnpAdapterManger.c
     PnpBridge.c
     utility.c
-    Core/PnpAdapterInterface.c
-    Core/PnpBridgeMemory.c
+    core/PnpAdapterInterface.c
+    core/PnpBridgeMemory.c
     Adapters/AdapterManifest.c
+    Adapters/SerialPnp/SerialPnp.c
+)
+
+if(MSVC)
+set(pnp_bridge_c_files
+    ${pnp_bridge_c_shared_files}
     Adapters/Camera/CameraIotPnpAPIs.cpp
     Adapters/Camera/CameraCaptureEngineCallbacks.cpp
     Adapters/Camera/CameraCaptureEngine.cpp
@@ -31,10 +37,20 @@ set(pnp_bridge_c_files
     Adapters/Camera/CameraStatConsumer.cpp
     Adapters/CoreDeviceHealth/CoreDeviceHealth.c
     Adapters/CoreDeviceHealth/WindowsPnPDeviceDiscovery.c
-    Adapters/SerialPnp/SerialPnp.c
+    Adapters/ModbusPnp/ModbusCapability.c
+    Adapters/ModbusPnp/ModbusPnp.c
+    Adapters/ModbusPnp/ModbusConnection/ModbusConnection.c
+    Adapters/ModbusPnp/ModbusConnection/ModbusConnectionHelper.c
+    Adapters/ModbusPnp/ModbusConnection/ModbusRtuConnection.c
+    Adapters/ModbusPnp/ModbusConnection/ModbusTCPConnection.c
 )
+else()
+set(pnp_bridge_c_files
+    ${pnp_bridge_c_shared_files}
+)
+endif()
 
-set(pnp_bridge_h_files
+set(pnp_bridge_h_shared_files
     common.h
     ConfigurationParser.h
     DiscoveryAdapterInterface.h
@@ -45,10 +61,16 @@ set(pnp_bridge_h_files
     PnpBridge.h
     PnpBridgeCommon.h
     PnpBridgeh.h
-    Core/PnpBridgeMemory.h
+    core/PnpBridgeMemory.h
     Adapters/PnpAdapterManifest.h
     Adapters/DiscoveryAdapterManifest.h
     Adapters/CmdAndPropHandler.h
+    Adapters/SerialPnp/SerialPnp.h
+)
+
+if(MSVC)
+set(pnp_bridge_h_files
+    ${pnp_bridge_h_shared_files}
     Adapters/Camera/CameraCaptureEngine.h
     Adapters/Camera/CameraCaptureEngineCallbacks.h
     Adapters/Camera/CameraIotPnpAPIs.h
@@ -59,12 +81,22 @@ set(pnp_bridge_h_files
     Adapters/Camera/pch.h
     Adapters/CoreDeviceHealth/CoreDeviceHealth.h
     Adapters/CoreDeviceHealth/WindowsPnpDeviceDiscovery.h
-    Adapters/SerialPnp/SerialPnp.h
+    Adapters/ModbusPnp/CmdPropHandlers.h
+    Adapters/ModbusPnp/ModbusCapability.h
+    Adapters/ModbusPnp/ModbusEnum.h
+    Adapters/ModbusPnp/ModbusPnp.h
+    Adapters/ModbusPnp/ModbusConnection/ModbusConnection.h
+    Adapters/ModbusPnp/ModbusConnection/ModbusConnectionHelper.h
+    Adapters/ModbusPnp/ModbusConnection/ModbusRtuConnection.h
+    Adapters/ModbusPnp/ModbusConnection/ModbusTCPConnection.h
 )
+else()
+set(pnp_bridge_h_files
+    ${pnp_bridge_h_shared_files}
+)
+endif()
 
 add_definitions("-D_UNICODE") 
-
-set(pnp_bridge_libs)
 
 set(install_staticlibs
     ${PROJECT_NAME}
@@ -102,15 +134,27 @@ foreach(source IN LISTS pnp_bridge_c_files pnp_bridge_h_files)
     source_group("${source_path_msvc}" FILES "${source}")
 endforeach()
 
-target_link_libraries(${PROJECT_NAME} ${pnp_bridge_libs} iothub_client parson pnp_client iothub_client_http_transport iothub_client_amqp_transport iothub_client_amqp_ws_transport iothub_client_mqtt_transport iothub_client_mqtt_ws_transport umqtt aziotsharedutil msr_riot prov_mqtt_transport hsm_security_client prov_device_ll_client prov_auth_client utpm cfgmgr32 mfplat mfsensorgroup)
-
-set(pnp_bridge_libs
-    ${PROJECT_NAME}
-    ${pnp_bridge_libs}
+set(pnp_bridge_common_libs
+    iothub_client 
+    parson
+    pnp_client
+    iothub_client_http_transport
+    iothub_client_amqp_transport
+    iothub_client_amqp_ws_transport
+    iothub_client_mqtt_transport
+    iothub_client_mqtt_ws_transport
+    umqtt
+    aziotsharedutil 
+    msr_riot
+    prov_mqtt_transport
+    hsm_security_client
+    prov_device_ll_client
+    prov_auth_client
+    utpm
 )
 
-# install(FILES ${pnp_bridge_h_install_files}
-    # DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/pnp)
-# install(TARGETS ${install_staticlibs}
-    # ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    # LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+if(MSVC)
+target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs} cfgmgr32 mfplat mfsensorgroup)
+else()
+target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})
+endif()

@@ -31,6 +31,12 @@
     <Filter Include="Source Files\adapters\SerialPnp">
       <UniqueIdentifier>{611fd0c7-a77f-4116-bf8a-c41bded6d8a3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\adapters\ModbusPnp">
+      <UniqueIdentifier>{8f0ab421-7869-4cc1-ab3a-2ede1d18851a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\adapters\ModbusPnp\ModbusConnections">
+      <UniqueIdentifier>{a9e2ee02-88b6-446c-8f09-7d96485935bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -99,6 +105,33 @@
     <ClInclude Include="IotHubComms.h">
       <Filter>Source Files\inc</Filter>
     </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\ModbusPnp.h">
+      <Filter>Source Files\adapters\ModbusPnp</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\ModbusCapability.h">
+      <Filter>Source Files\adapters\ModbusPnp</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\CmdPropHandlers.h">
+      <Filter>Source Files\adapters\ModbusPnp</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\SerialPnp\CmdAndPropHandler.h">
+      <Filter>Source Files\adapters\SerialPnp</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusTCPConnection.h">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnection.h">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusRtuConnection.h">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnectionHelper.h">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
+    </ClInclude>
+    <ClInclude Include="Adapters\ModbusPnp\ModbusEnum.h">
+      <Filter>Source Files\adapters\ModbusPnp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PnpBridge.c">
@@ -157,6 +190,24 @@
     </ClCompile>
     <ClCompile Include="IotHubComms.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\ModbusPnp\ModbusPnp.c">
+      <Filter>Source Files\adapters\ModbusPnp</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\ModbusPnp\ModbusCapability.c">
+      <Filter>Source Files\adapters\ModbusPnp</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusTCPConnection.c">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnection.c">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusRtuConnection.c">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
+    </ClCompile>
+    <ClCompile Include="Adapters\ModbusPnp\ModbusConnection\ModbusConnectionHelper.c">
+      <Filter>Source Files\adapters\ModbusPnp\ModbusConnections</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
