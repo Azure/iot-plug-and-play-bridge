@@ -1,0 +1,163 @@
+{
+  "$schema" : "../../../pnpbridge/src/pnpbridge_config_schema.json",
+  "pnp_bridge_parameters": {
+    "_comment_connection_type": "dps (symmetric key support only)/connectionstring",
+    "connection_parameters": {
+      "connection_type" : "connection_string",
+      "connection_string" : "[To fill in]",
+	  "device_capability_model_uri": "[To fill in]",
+      "auth_parameters" : {
+        "auth_type" : "symmetric_key",
+        "symmetric_key" : "[To fill in]"
+      },
+      "dps_parameters" : {
+        "global_prov_uri" : "[To fill in]",
+        "id_scope": "[To fill in]",
+        "device_id": "[To fill in]",
+        "model_repository_uri": "[To fill in]"
+      }
+    },
+    "trace_on": false
+  },
+  "config_source": "local",
+  "_comment_devices": "Array of devices for Azure Pnp interface should be published",
+  "devices": [
+	{
+      "_comment": "DEVICE1 - USB device",
+      "match_filters": {
+        "match_type": "exact",
+        "match_parameters": {
+          "hardware_id": "USB\\VID_06CB&PID_00B3"
+        }
+      },
+      "interface_id": "http://windows.com/coredevicehealth/1.0.0",
+      "pnp_parameters": {
+        "identity": "core-device-health"
+      }
+    },
+    {
+      "_comment": "DEVICE4 - Modbus Sensor",
+      "match_filters": {
+        "match_type": "exact"
+      },
+      "self_describing": "true",
+      "pnp_parameters": {
+        "identity": "modbus-pnp-interface"
+      },
+      "discovery_parameters": {
+        "identity": "modbus-pnp-discovery",
+        "_comment": "NOTE: ComPort parameter will be used when UseComDeviceInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
+        "deviceConfig": {
+          "unitId": 1,
+          "rtu": null,
+          "tcp": {
+            "host": "192.168.1.111",
+            "port": 502
+          }
+        },
+        "interfaceConfig": {
+          "interfaceId": "http://contoso.com/Co2Detector/1.0.0",
+          "telemetry": {
+            "co2": {
+              "startAddress": "40001",
+              "length": 1,
+              "dataType": "integer",
+              "defaultFrequency": 5000,
+              "conversionCoefficient": 1
+            },
+            "temperature": {
+              "startAddress": "40003",
+              "length": 1,
+              "dataType": "decimal",
+              "defaultFrequency": 5000,
+              "conversionCoefficient": 0.01
+            }
+          },
+          "properties": {
+            "firmwareVersion": {
+              "startAddress": "40482",
+              "length": 1,
+              "dataType": "hexstring",
+              "defaultFrequency": 60000,
+              "conversionCoefficient": 1,
+              "access": 1
+            },
+            "modelName": {
+              "startAddress": "40483",
+              "length": 2,
+              "dataType": "string",
+              "defaultFrequency": 60000,
+              "conversionCoefficient": 1,
+              "access": 1
+            },
+            "alarmStatus_co2": {
+              "startAddress": "00305",
+              "length": 1,
+              "dataType": "boolean",
+              "defaultFrequency": 1000,
+              "conversionCoefficient": 1,
+              "access": 1
+            },
+            "alarmThreshold_co2": {
+              "startAddress": "40225",
+              "length": 1,
+              "dataType": "integer",
+              "defaultFrequency": 30000,
+              "conversionCoefficient": 1,
+              "access": 2
+            }
+          },
+          "commands": {
+            "clearAlarm_co2": {
+              "startAddress": "00305",
+              "length": 1,
+              "dataType": "flag",
+              "conversionCoefficient": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "_comment": "DEVICE2 - MCU sensor hub which reports Azure IoT Pnp interfaces",
+      "match_filters": {
+        "match_type": "exact"
+      },
+      "self_describing": "true",
+      "pnp_parameters": {
+        "identity": "serial-pnp-interface"
+      },
+      "discovery_parameters": {
+        "identity": "serial-pnp-discovery",
+        "com_port": "COM1",
+        "_comment": "NOTE: com_port parameter will NOT be used when use_com_device_interface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting use_com_device_interface to false will pick the first available COM interface.",
+        "use_com_device_interface": "false",
+        "baud_rate": "115200"
+      }
+    },
+    {
+      "_comment": "DEVICE3 - Standard Video Camera connected to a PC, for now the first camera only.",
+      "match_filters": {
+        "match_type": "exact",
+        "match_parameters": {
+          "hardware_id": "UVC_Webcam_00"
+        }
+      },
+      "interface_id": "http://windows.com/camera_health_monitor/1.0.0",
+      "pnp_parameters": {
+        "identity": "camera-health-monitor"
+      }
+    }
+  ],
+  "discovery_adapters": {
+    "parameters": [
+      {
+        "identity": "core-device-discovery",
+        "_comment1": "USB Device class",
+        "device_interface_classes": [
+          "A5DCBF10-6530-11D2-901F-00C04FB951ED"
+        ]
+      }
+    ]
+  }
+}

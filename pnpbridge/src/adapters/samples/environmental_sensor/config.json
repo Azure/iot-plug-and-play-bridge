@@ -1,0 +1,51 @@
+{
+  "$schema" : "../../../pnpbridge/src/pnpbridge_config_schema.json",
+  "pnp_bridge_parameters": {
+    "_comment_connection_type": "dps (symmetric key support only)/connectionstring",
+    "connection_parameters": {
+      "connection_type" : "connection_string",
+      "connection_string" : "[To fill in]",
+	  "device_capability_model_uri": "[To fill in]",
+      "auth_parameters" : {
+        "auth_type" : "symmetric_key",
+        "symmetric_key" : "[To fill in]"
+      },
+      "dps_parameters" : {
+        "global_prov_uri" : "[To fill in]",
+        "id_scope": "[To fill in]",
+        "device_id": "[To fill in]",
+        "model_repository_uri": "[To fill in]"
+      }
+    },
+    "trace_on": false
+  },
+  "config_source": "local",
+  "_comment_devices": "Array of devices for Azure Pnp interface should be published",
+  "devices": [
+    {
+      "_comment": "Enviornment Sensor Sample Device",
+      "match_filters": {
+        "match_type": "exact",
+        "match_parameters": {
+          "sensor_id": "10"
+        }
+      },
+      "interface_id": "http://contoso.com/EnvironmentalSensor/1.0.0",
+      "pnp_parameters": {
+        "identity": "environment-sensor-sample-pnp-adapter"
+      },
+	  "discovery_parameters": {
+        "identity": "environment-sensor-sample-discovery-adapter",
+		"sensor_id": "10"
+      }
+    }
+  ],
+  "discovery_adapters": {
+    "parameters": [
+      {
+        "identity": "environment-sensor-sample-discovery-adapter",
+        "_comment_sensor_id": "Report a dummy device with SensorId 10 to pnp bridge"
+      }
+    ]
+  }
+}
