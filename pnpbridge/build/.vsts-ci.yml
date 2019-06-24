@@ -5,9 +5,8 @@ resources:
 trigger:
     branches:
         include:
+        - public-preview
         - pnpbridge_w
-        - feature1
-        - feature2
 phases:
 - phase: checksubmodule
   queue:
