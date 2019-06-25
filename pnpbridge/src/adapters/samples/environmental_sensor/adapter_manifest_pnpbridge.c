@@ -7,17 +7,12 @@
 extern DISCOVERY_ADAPTER EnvironmentSensorDiscovery;
 extern PNP_ADAPTER EnvironmentSensorInterface;
 
-extern DISCOVERY_ADAPTER CoreDeviceDiscovery;
-extern PNP_ADAPTER CoreDeviceHealth;
-
 PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
-    &EnvironmentSensorDiscovery,
-    &CoreDeviceDiscovery
+    &EnvironmentSensorDiscovery
 };
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
-    &EnvironmentSensorInterface,
-    &CoreDeviceHealth
+    &EnvironmentSensorInterface
 };
 
 const int DiscoveryAdapterCount = sizeof(DISCOVERY_ADAPTER_MANIFEST) / sizeof(PDISCOVERY_ADAPTER);

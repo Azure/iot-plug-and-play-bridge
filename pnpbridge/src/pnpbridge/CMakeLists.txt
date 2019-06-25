@@ -27,7 +27,6 @@ set(pnp_bridge_c_core_files
 
 # Core PnpBridge headers
 set(pnp_bridge_h_core_files
-    ./inc/common.h
     ./inc/configuration_parser.h
     ./inc/discoveryadapter_api.h
     ./inc/discoveryadapter_manager.h
@@ -39,8 +38,6 @@ set(pnp_bridge_h_core_files
     ./inc/pnpbridgeh.h
     ./inc/pnpbridge_memory.h
     ./inc/pnpmessage_api.h
-    ./inc/pnpadapter_manifest.h
-    ./inc/discoveryadapter_manifest.h
 )
 
 # set(install_staticlibs
