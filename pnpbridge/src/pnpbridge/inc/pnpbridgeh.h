@@ -35,8 +35,6 @@ typedef struct _PNP_BRIDGE {
 
 void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
 
-int PnpMessage_SetInterfaceId(PNPMESSAGE Message, const char* InterfaceId);
-
 #ifdef __cplusplus
 }
 #endif

@@ -7,7 +7,7 @@
 #include <initguid.h>
 #include <devpkey.h>
 
-#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -191,8 +191,8 @@ CoreDeviceDiscovery_Enumerate(
 
 int 
 CoreDevice_StartDiscovery(
-    const PNPMEMORY DeviceArgs,
-    const PNPMEMORY AdapterArgs
+    _In_ const PNPMEMORY DeviceArgs,
+    _In_ const PNPMEMORY AdapterArgs
     )
 {
     DWORD cmRet;

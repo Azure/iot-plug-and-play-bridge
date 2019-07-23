@@ -62,8 +62,12 @@ const ModbusCommand* ModbusPnp_LookupCommand(SINGLYLINKEDLIST_HANDLE interfaceDe
 	return NULL;
 }
 
-void ModbusPnp_CommandHandler(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext, DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext, void* userContextCallback)
-    //PMODBUS_DEVICE_CONTEXT modbusDevice, const char* commandName, char* data, char** response)
+void 
+ModbusPnp_CommandHandler(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext,
+    void* userContextCallback
+    )
 {
     PMODBUS_DEVICE_CONTEXT modbusDevice = (PMODBUS_DEVICE_CONTEXT) userContextCallback;
 	const ModbusCommand* command = ModbusPnp_LookupCommand(modbusDevice->InterfaceDefinitions, dtClientCommandContext->commandName, 0);

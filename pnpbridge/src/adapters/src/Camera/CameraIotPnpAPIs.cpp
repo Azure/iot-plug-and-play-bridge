@@ -14,6 +14,21 @@ PNP_ADAPTER CameraPnpInterface = {
     CameraPnpInterfaceShutdown
 };
 
+void 
+CameraPnpCallback_ProcessCommandUpdate(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
+    void* userInterfaceContext
+    ) 
+{
+    if (strcmp(dtCommandRequest->commandName, "takephoto") == 0) {
+        CameraPnpCallback_TakePhoto(dtCommandRequest, dtCommandResponse, userInterfaceContext);
+    }
+    else {
+        LogError("Unknown command request");
+    }
+}
+
 // Forward decls for callback functions:
 void 
 CameraPnpCallback_TakePhoto(
@@ -41,23 +56,6 @@ CameraPnpCallback_TakePhoto(
         pnpClientCommandResponseContext->responseDataLen    = 0;
     }
 }
-
-static const char* s_CameraPnpCommandNames[] = {
-    "takephoto"
-};
-
-static const DIGITALTWIN_COMMAND_EXECUTE_CALLBACK s_CameraPnpCommandCallbacks[] = {
-    CameraPnpCallback_TakePhoto
-};
-
-static const DIGITALTWIN_CLIENT_COMMAND_CALLBACK_TABLE s_CameraPnpCommandTable =
-{
-    DIGITALTWIN_CLIENT_COMMAND_CALLBACK_VERSION_1, // version of structure
-    sizeof(s_CameraPnpCommandNames) / sizeof(s_CameraPnpCommandNames[0]),
-    (const char**)s_CameraPnpCommandNames,
-    (const DIGITALTWIN_COMMAND_EXECUTE_CALLBACK*)s_CameraPnpCommandCallbacks
-};
-
 
 // Camera discovery API entry points.
 CameraPnpDiscovery*  g_pPnpDiscovery = nullptr;
@@ -133,6 +131,7 @@ CameraPnpInterfaceBind(
     PNPADAPTER_INTERFACE_HANDLE         adapterInterface = nullptr;
     PNPMESSAGE_PROPERTIES*              pnpMsgProps = nullptr;
     DIGITALTWIN_CLIENT_RESULT           dtRes;
+    PNPMESSAGE_PROPERTIES*              props;
 
     pnpMsgProps = PnpMessage_AccessProperties(payload);
 
@@ -151,13 +150,14 @@ CameraPnpInterfaceBind(
     jmsg =  json_parse_string(PnpMessage_GetMessage(payload));
     jobj = json_value_get_object(jmsg);
     interfaceId = PnpMessage_GetInterfaceId(payload);
+    props = PnpMessage_AccessProperties(payload);
 
     //s_CameraPnpCommandTable
-    dtRes = DigitalTwin_InterfaceClient_Create(interfaceId,
+    dtRes = DigitalTwin_InterfaceClient_Create(interfaceId, props->ComponentName,
                 nullptr, pIotPnp.get(), &pnpInterfaceClient);
     RETURN_HR_IF(E_UNEXPECTED, DIGITALTWIN_CLIENT_OK != dtRes);
 
-    dtRes = DigitalTwin_InterfaceClient_SetCommandsCallbacks(pnpInterfaceClient, &s_CameraPnpCommandTable);
+    dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, CameraPnpCallback_ProcessCommandUpdate);
     RETURN_HR_IF(E_UNEXPECTED, DIGITALTWIN_CLIENT_OK != dtRes);
 
     // Create PnpAdapter Interface

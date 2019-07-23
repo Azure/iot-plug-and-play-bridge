@@ -43,6 +43,8 @@ set(pnp_bridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "this is what
 include_directories(inc)
 include_directories(../../../../deps/azure-iot-sdk-c-pnp/deps/parson)
 include_directories(../../../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/azure-macro-utils-c/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
 include_directories(../../../../deps/azure-iot-sdk-c-pnp/digitaltwin_client/inc)
 include_directories(../../../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
 include_directories(../../../../deps/azure-iot-sdk-c-pnp/provisioning_client/inc)
@@ -70,8 +72,8 @@ set(pnp_bridge_common_libs
     utpm
     pnpbridge
     pnpbridge_adapters
-    pnpbridge_serial
     digitaltwin_client
+    pnpbridge_serial
 )
 
 if(WIN32)

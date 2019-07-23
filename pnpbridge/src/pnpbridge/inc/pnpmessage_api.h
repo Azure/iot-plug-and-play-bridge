@@ -20,9 +20,21 @@ typedef enum _PNPMESSAGE_CHANGE_TYPE {
 typedef struct _PNPMESSAGE_CHANGE_PROPERTIES {
     void* Context;
     PNPMESSAGE_CHANGE_TYPE ChangeType;
+    char* ComponentName;
 } PNPMESSAGE_PROPERTIES;
 
 typedef void* PNPMESSAGE;
+
+const char*
+PnpMessage_GetInterfaceId(
+    _In_ PNPMESSAGE Message
+    );
+
+int
+PnpMessage_SetInterfaceId(
+    PNPMESSAGE Message,
+    const char* InterfaceId
+    );
 
 int 
 PnpMessage_CreateMessage(
@@ -35,18 +47,7 @@ PnpMessage_SetMessage(
     const char* Payload
     );
 
-int 
-PnpMessage_SetInterfaceId(
-    _In_ PNPMESSAGE Message,
-    _In_ const char* InterfaceId
-    );
-
-char* 
-PnpMessage_GetInterfaceId(
-    _In_ PNPMESSAGE Message
-    );
-
-char* 
+const char*
 PnpMessage_GetMessage(
     _In_ PNPMESSAGE Message
     );

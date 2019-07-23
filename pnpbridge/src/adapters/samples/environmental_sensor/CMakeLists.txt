@@ -16,6 +16,7 @@ set(pnpbridge_adaptersample_c_files
     ./environmental_sensor.c
     ./environmental_sensor_pnpbridge_discovery.c
     ./environmental_sensor_pnpbridge.c
+    ./adapter_manifest_pnpbridge.c
 )
 
 set(pnpbridge_adaptersample_h_files
@@ -30,6 +31,8 @@ set(pnp_bridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/../pnpbridge/inc CACHE INTER
 
 include_directories(../../deps/azure-iot-sdk-c-pnp/deps/parson)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/azure-macro-utils-c/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/digitaltwin_client/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
 

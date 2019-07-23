@@ -382,7 +382,10 @@ JSON_Object* Configuration_GetMatchParametersForDevice(JSON_Object* device)
     return matchParams;
 }
 
-JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device)
+JSON_Object* 
+Configuration_GetDiscoveryParametersForDevice(
+    _In_ JSON_Object* device
+    )
 {    
     if (device == NULL) {
         return NULL;

@@ -13,11 +13,15 @@ extern "C"
 
 #include <stdio.h>
 
+#if !defined(_MSC_VER)
+#include <nosal.h>
+#endif
+
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
 
 #include "iothub_transport_ll.h"
 #include "iothub_message.h"
@@ -38,12 +42,13 @@ extern "C"
 #include <iothubtransportmqtt.h>
 
 #include <digitaltwin_device_client.h>
-#include <digitaltwin_module_client.h>
 #include <digitaltwin_interface_client.h>
 
 #include "parson.h"
 
 #include <assert.h>
+
+#define DIGITALTWIN_MODULE_CLIENT_HANDLE void*
 
 #define TRY
 #define LEAVE   goto __tryLabel;
@@ -55,6 +60,7 @@ extern "C"
     PNPBRIDGE_OK, \
     PNPBRIDGE_INSUFFICIENT_MEMORY, \
     PNPBRIDGE_FILE_NOT_FOUND, \
+    PNPBRIDGE_NOT_SUPPORTED, \
     PNPBRIDGE_INVALID_ARGS, \
     PNPBRIDGE_CONFIG_READ_FAILED, \
     PNPBRIDGE_DUPLICATE_ENTRY, \
@@ -99,6 +105,7 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_DEVICES "devices"
 #define PNP_CONFIG_IDENTITY "identity"
 #define PNP_CONFIG_INTERFACE_ID "interface_id"
+#define PNP_CONFIG_COMPONENT_NAME "component_name"
 #define PNP_CONFIG_PUBLISH_MODE "publish_mode"
 #define PNP_CONFIG_MATCH_FILTERS "match_filters"
 #define PNP_CONFIG_MATCH_TYPE "match_type"
@@ -159,7 +166,9 @@ typedef struct _MESSAGE_QUEUE {
 
     LOCK_HANDLE QueueLock;
 
-    int PublishCount;
+    volatile int PublishCount;
+
+    volatile int InCount;
 
     THREAD_HANDLE Worker;
 
@@ -175,6 +184,11 @@ typedef struct _MESSAGE_QUEUE {
 PNPBRIDGE_RESULT 
 PnpMessageQueue_Create(
     PMESSAGE_QUEUE* PnpMessageQueue
+    );
+
+void
+PnpMessageQueue_Release(
+    PMESSAGE_QUEUE Queue
     );
 
 // Thread entry callback
@@ -195,21 +209,11 @@ PnpMesssageQueue_Remove(
     PNPMESSAGE* PnpMessage
     );
 
-PDLIST_ENTRY
-PnpMesssageQueue_GetPublishQ(
-    PMESSAGE_QUEUE Queue
-    );
-
 PNPBRIDGE_RESULT
 PnpMesssageQueue_AddToPublishQ(
     PMESSAGE_QUEUE Queue,
     PNPMESSAGE PnpMessage
 );
-
-void
-PnpMessageQueue_Release(
-    PMESSAGE_QUEUE Queue
-    );
 
 int PnpBridge_ProcessPnpMessage(PNPMESSAGE PnpMessage);
 

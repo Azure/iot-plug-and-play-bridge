@@ -3,7 +3,7 @@
 
 #include <pnpbridge.h>
 
-#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -37,15 +37,6 @@ typedef uint16_t UINT16;
 #include "parson.h"
 
 #include "serial_pnp.h"
-
-// BEGIN - PNPCSDK#20
-// https://github.com/Azure/azure-iot-sdk-c-pnp/issues/20
-// Temporary redirection for property and command handling since PnP C SDK property change 
-// callback doesn't provide the command name.
-
-//#define CMD_PROP_HANDLER_ADAPTER_NAME SerialPnp
-//#include <cmdandprophandler.h>
-// END - PNPCSDK#20
 
 int SerialPnp_UartReceiver(void* context)
 {
@@ -877,7 +868,12 @@ void SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte
     LogInfo("Receieved descriptor response, of length %d", *length);
 }
 
-int SerialPnp_StartDiscovery(PNPMEMORY deviceArgs, PNPMEMORY adapterArgs) {
+int 
+SerialPnp_StartDiscovery(
+    _In_ PNPMEMORY deviceArgs,
+    _In_ PNPMEMORY adapterArgs
+    ) 
+{
     if (deviceArgs == NULL) {
         return -1;
     }
@@ -1017,7 +1013,13 @@ static void SerialPnp_SetCommandResponse(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pn
 }
 
 
-void SerialPnp_CommandUpdateHandler(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext, DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext, void* userContextCallback) {
+void 
+SerialPnp_CommandUpdateHandler(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext,
+    void* userContextCallback
+    )
+{
     PSERIAL_DEVICE_CONTEXT deviceContext;
 
     // LogInfo("Processed command frequency property updated.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
@@ -1077,94 +1079,17 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
     while (interfaceDefHandle != NULL) {
         PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface = NULL;
         DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
-        char** propertyNames = NULL;
         int propertyCount = 0;
-        DIGITALTWIN_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
-        DIGITALTWIN_CLIENT_PROPERTY_UPDATED_CALLBACK_TABLE serialPropertyTable = { 0 };
-        char** commandNames = NULL;
         int commandCount = 0;
-        DIGITALTWIN_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
-        DIGITALTWIN_CLIENT_COMMAND_CALLBACK_TABLE serialCommandTable = { 0 };
         const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
 
-        // Construct property table
-        {
-            SINGLYLINKEDLIST_HANDLE property = interfaceDef->Properties;
-            propertyCount = SerialPnp_GetListCount(interfaceDef->Properties);
-
-            if (propertyCount > 0) {
-                LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(property);
-                const PropertyDefinition* ev;
-
-                propertyNames = malloc(sizeof(char*)*propertyCount);
-                if (NULL == propertyNames) {
-                    result = -1;
-                    goto exit;
-                }
-
-                propertyUpdateTable = malloc(sizeof(DIGITALTWIN_PROPERTY_UPDATE_CALLBACK*)*propertyCount);
-                if (NULL == propertyUpdateTable) {
-                    result = -1;
-                    goto exit;
-                }
-
-                eventDef = singlylinkedlist_get_head_item(property);
-                int x = 0;
-                while (eventDef != NULL) {
-                    ev = singlylinkedlist_item_get_value(eventDef);
-                    propertyNames[x] = ev->defintion.Name;
-                    propertyUpdateTable[x] = SerialPnp_PropertyUpdateHandler;
-                    x++;
-                    eventDef = singlylinkedlist_get_next_item(eventDef);
-                }
-
-                serialPropertyTable.numCallbacks = propertyCount;
-                serialPropertyTable.propertyNames = (const char **)propertyNames;
-                serialPropertyTable.callbacks = propertyUpdateTable;
-                serialPropertyTable.version = 1;
-            }
-        }
-
-        // Construct command table
-        {
-            SINGLYLINKEDLIST_HANDLE command = interfaceDef->Commands;
-            commandCount = SerialPnp_GetListCount(command);
-
-            if (commandCount > 0) {
-                LIST_ITEM_HANDLE cmdDef;
-                int x = 0;
-                const CommandDefinition* cv;
-
-                commandNames = malloc(sizeof(char*)*commandCount);
-                if (NULL == commandNames) {
-                    result = -1;
-                    goto exit;
-                }
-
-                commandUpdateTable = malloc(sizeof(DIGITALTWIN_COMMAND_EXECUTE_CALLBACK*)*commandCount);
-                if (NULL == commandUpdateTable) {
-                    result = -1;
-                    goto exit;
-                }
-
-                cmdDef = singlylinkedlist_get_head_item(command);
-                while (cmdDef != NULL) {
-                    cv = singlylinkedlist_item_get_value(cmdDef);
-                    commandNames[x] = cv->defintion.Name;
-                    commandUpdateTable[x] = SerialPnp_CommandUpdateHandler;
-                    x++;
-                    cmdDef = singlylinkedlist_get_next_item(cmdDef);
-                }
-
-                serialCommandTable.numCommandCallbacks = commandCount;
-                serialCommandTable.commandNames = (const char **)commandNames;
-                serialCommandTable.commandCallbacks = commandUpdateTable;
-                serialCommandTable.version = 1;
-            }
-        }
+        propertyCount = SerialPnp_GetListCount(interfaceDef->Properties);
+        commandCount = SerialPnp_GetListCount(interfaceDef->Commands);
 
         DIGITALTWIN_CLIENT_RESULT dtRes;
+        PNPMESSAGE_PROPERTIES* props = PnpMessage_AccessProperties(msg);
         dtRes = DigitalTwin_InterfaceClient_Create(interfaceId,
+                                props->ComponentName,
                                 NULL,
                                 deviceContext,
                                 &pnpInterfaceClient);
@@ -1174,7 +1099,8 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
         }
 
         if (propertyCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallbacks(pnpInterfaceClient, &serialPropertyTable);
+            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient,
+                        SerialPnp_PropertyUpdateHandler);
             if (DIGITALTWIN_CLIENT_OK != dtRes) {
                 result = -1;
                 goto exit;
@@ -1182,7 +1108,8 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
         }
 
         if (commandCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallbacks(pnpInterfaceClient, &serialCommandTable);
+            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, 
+                        SerialPnp_CommandUpdateHandler);
             if (DIGITALTWIN_CLIENT_OK != dtRes) {
                 result = -1;
                 goto exit;
@@ -1201,20 +1128,6 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
             if (result < 0) {
                 goto exit;
             }
-        }
-
-        if (NULL != propertyUpdateTable) {
-            free(propertyUpdateTable);
-        }
-        if (NULL != propertyNames) {
-            free(propertyNames);
-        }
-
-        if (NULL != commandUpdateTable) {
-            free(commandUpdateTable);
-        }
-        if (NULL != commandNames) {
-            free(commandNames);
         }
 
         // Save the PnpAdapterInterface in device context

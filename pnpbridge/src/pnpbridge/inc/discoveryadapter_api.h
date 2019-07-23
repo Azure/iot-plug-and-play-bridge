@@ -13,6 +13,9 @@ TODOC: PROVIDE DETAILS OF PNPMESSAGE
 #ifndef PNPBRIDGE_DISCOVERY_ADAPTER_INTERFACE_H
 #define PNPBRIDGE_DISCOVERY_ADAPTER_INTERFACE_H
 
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -78,9 +81,11 @@ typedef int
 
 * @returns  integer greater than zero on success and other values on failure.
 */
-int 
-DiscoveryAdapter_ReportDevice(
-    _In_ PNPMESSAGE Message
+
+MOCKABLE_FUNCTION(,
+int,
+DiscoveryAdapter_ReportDevice,
+    _In_ PNPMESSAGE, Message
     );
 
 typedef struct _DISCOVERY_ADAPTER {

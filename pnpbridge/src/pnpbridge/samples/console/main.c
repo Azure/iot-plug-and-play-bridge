@@ -15,6 +15,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 
     default:
         return FALSE;
+        //
     }
 }
 #else 

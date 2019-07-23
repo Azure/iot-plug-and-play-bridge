@@ -1,6 +1,6 @@
 #include <PnpBridge.h>
 
-#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -14,7 +14,7 @@
 
 
 const char* modbusDeviceChangeMessageformat = "{ \
-                                                 \"Identity\": \"modbus-pnp-discovery\" \
+                                                 \"identity\": \"modbus-pnp-discovery\" \
                                                }";
 
 #pragma region PnpDiscovery
@@ -678,17 +678,26 @@ cleanup:
 
 #pragma region PnpDiscovery
 
-int ModbusPnp_StartDiscovery(const char* deviceArgs, const char* adapterArgs) {
-	if (deviceArgs == NULL) {
+int 
+ModbusPnp_StartDiscovery(
+    _In_ PNPMEMORY DeviceArgs,
+    _In_ PNPMEMORY AdapterArgs
+    )
+{
+	if (DeviceArgs == NULL) {
 		return -1;
 	}
-	UNREFERENCED_PARAMETER(adapterArgs);
+	UNREFERENCED_PARAMETER(AdapterArgs);
+
+    LogInfo("Starting modbus discovery adapter");
 
 	// Parse Modbus DeviceConfig
 	ModbusDeviceConfig* deviceConfig = calloc(1, sizeof(ModbusDeviceConfig));
 	deviceConfig->ConnectionType = UNKOWN;
 
-	JSON_Value* jvalue = json_parse_string(deviceArgs);
+    PDEVICE_ADAPTER_PARMAETERS deviceParams = (PDEVICE_ADAPTER_PARMAETERS) PnpMemory_GetBuffer(DeviceArgs, NULL);
+
+	JSON_Value* jvalue = json_parse_string(deviceParams->AdapterParameters[0]);
 	JSON_Object* args = json_value_get_object(jvalue);
 	JSON_Object* deviceConfigObj = json_object_dotget_object(args, "deviceConfig");
 
@@ -707,9 +716,8 @@ int ModbusPnp_StartDiscovery(const char* deviceArgs, const char* adapterArgs) {
 		return -1;
 	}
 
-	if (UNKOWN == deviceConfig->ConnectionType)
-	{
-		LogError("Mssing Modbus connection settings.");
+	if (UNKOWN == deviceConfig->ConnectionType)	{
+		LogError("Missing Modbus connection settings.");
 		return -1;
 	}
 
@@ -864,11 +872,9 @@ ModbusPnp_CreatePnpInterface(
 		char** propertyNames = NULL;
 		int propertyCount = 0;
         DIGITALTWIN_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
-        DIGITALTWIN_CLIENT_PROPERTY_UPDATED_CALLBACK_TABLE modbusPropertyTable = { 0 };
 		char** commandNames = NULL;
 		int commandCount = 0;
         DIGITALTWIN_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
-        DIGITALTWIN_CLIENT_COMMAND_CALLBACK_TABLE modbusCommandTable = { 0 };
 		const ModbusInterfaceConfig* interfaceConfig = singlylinkedlist_item_get_value(interfaceDefHandle);
         DIGITALTWIN_CLIENT_RESULT dtRes;
 
@@ -934,10 +940,10 @@ ModbusPnp_CreatePnpInterface(
 					propertyUpdateTable[i] = ModbusPnp_PropertyHandler;
 				}
 
-				modbusPropertyTable.numCallbacks = readWritePropertyCount;
+			/*	modbusPropertyTable.numCallbacks = readWritePropertyCount;
 				modbusPropertyTable.propertyNames = propertyNames;
 				modbusPropertyTable.callbacks = propertyUpdateTable;
-				modbusPropertyTable.version = 1;
+				modbusPropertyTable.version = 1;*/
 			}
 		}
 
@@ -979,14 +985,15 @@ ModbusPnp_CreatePnpInterface(
 					}
 				}
 
-				modbusCommandTable.numCommandCallbacks = commandCount;
+				/*modbusCommandTable.numCommandCallbacks = commandCount;
 				modbusCommandTable.commandNames = commandNames;
 				modbusCommandTable.commandCallbacks = commandUpdateTable;
-				modbusCommandTable.version = 1;
+				modbusCommandTable.version = 1;*/
 			}
 		}
 
         dtRes = DigitalTwin_InterfaceClient_Create(interfaceId,
+                    "modbus",
 			        NULL,
 			        deviceContext, 
                     &pnpInterfaceClient);
@@ -996,7 +1003,7 @@ ModbusPnp_CreatePnpInterface(
         }
 
         if (propertyCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallbacks(pnpInterfaceClient, &modbusPropertyTable);
+            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, ModbusPnp_PropertyHandler);
             if (DIGITALTWIN_CLIENT_OK != dtRes) {
                 result = -1;
                 goto exit;
@@ -1004,7 +1011,7 @@ ModbusPnp_CreatePnpInterface(
         }
 
         if (commandCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallbacks(pnpInterfaceClient, &modbusCommandTable);
+            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, ModbusPnp_CommandHandler);
             if (DIGITALTWIN_CLIENT_OK != dtRes) {
                 result = -1;
                 goto exit;

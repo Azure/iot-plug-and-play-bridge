@@ -251,9 +251,10 @@ PnpBridge_ProcessPnpMessage(
 
         // Create an Pnp interface
         char* interfaceId = NULL;
+        char* componentName = NULL;
         char* selfDescribing = (char*)json_object_get_string(jdevice, PNP_CONFIG_SELF_DESCRIBING);
         if (NULL != selfDescribing && 0 == strcmp(selfDescribing, "true")) {
-            interfaceId = (char*)json_object_get_string(jobj, "InterfaceId");
+            interfaceId = msg->InterfaceId;
             if (NULL == interfaceId) {
                 LogError("Interface id is missing for self descrbing device");
                 result = PNPBRIDGE_INVALID_ARGS;
@@ -268,8 +269,18 @@ PnpBridge_ProcessPnpMessage(
                 LEAVE;
             }
 
+            componentName = (char*)json_object_get_string(jdevice, PNP_CONFIG_COMPONENT_NAME);
+            if (NULL == interfaceId) {
+                LogError("Interface Id is missing in config for the device");
+                result = PNPBRIDGE_INVALID_ARGS;
+                LEAVE;
+            }
+
             // Add interfaceId to the message
             PnpMessage_SetInterfaceId(PnpMessage, interfaceId);
+
+            // Add the component name
+            mallocAndStrcpy_s(&PnpMessage_AccessProperties(PnpMessage)->ComponentName, componentName);
         }
 
         if (PnpAdapterManager_IsInterfaceIdPublished(pnpBridge->PnpMgr, interfaceId)) {
@@ -355,10 +366,9 @@ DiscoveryAdapter_ReportDevice(
     PnpMesssageQueue_Add(queue, PnpMessage);
 
     // Notify the worker
+    Lock(queue->WaitConditionLock);
     Condition_Post(queue->WaitCondition);
-    Lock(queue->WaitCondition);
-    Condition_Post(queue->WaitCondition);
-    Unlock(queue->WaitCondition);
+    Unlock(queue->WaitConditionLock);
 
     return 0;
 }
@@ -404,7 +414,9 @@ PnpBridge_Main()
         // Prevent main thread from returning by waiting for the
         // exit condition to be set. This condition will be set when
         // the bridge has received a stop signal
+        Lock(pnpBridge->ExitLock);
         Condition_Wait(pnpBridge->ExitCondition, pnpBridge->ExitLock, 0);
+        Unlock(pnpBridge->ExitLock);
     } FINALLY  {
         g_PnpBridge = NULL;
 
@@ -424,7 +436,9 @@ PnpBridge_Stop()
 
     if (PNP_BRIDGE_TEARING_DOWN != g_PnpBridgeState) {
         g_PnpBridgeState = PNP_BRIDGE_TEARING_DOWN;
+        Lock(g_PnpBridge->ExitLock);
         Condition_Post(g_PnpBridge->ExitCondition);
+        Unlock(g_PnpBridge->ExitLock);
     }
 }
 

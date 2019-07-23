@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifndef PNPBRIDGE_NOSAL_H
+#define PNPBRIDGE_NOSAL_H
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -35,3 +38,5 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#endif //PNPBRIDGE_NOSAL_H 

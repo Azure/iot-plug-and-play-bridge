@@ -3,7 +3,7 @@
 
 #include <PnpBridge.h>
 
-#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -146,6 +146,7 @@ CoreDevice_CreatePnpInterface(
     const char* interfaceId = PnpMessage_GetInterfaceId(param);
     const char* symbolicLink = json_object_get_string(args, "symbolic_link");
     const char* publishMode = json_object_get_string(args, "PublishMode");
+    PNPMESSAGE_PROPERTIES* props = PnpMessage_AccessProperties(param);
 
     device = calloc(1, sizeof(CORE_DEVICE_TAG));
     if (NULL == device) {
@@ -153,7 +154,7 @@ CoreDevice_CreatePnpInterface(
         goto exit;
     }
 
-    dtres = DigitalTwin_InterfaceClient_Create(interfaceId, 
+    dtres = DigitalTwin_InterfaceClient_Create(interfaceId, props->ComponentName,
                 NULL, NULL, &pnpInterfaceClient);
     if (DIGITALTWIN_CLIENT_OK != dtres) {
         result = -1;

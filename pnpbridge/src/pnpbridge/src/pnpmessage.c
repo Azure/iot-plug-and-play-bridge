@@ -3,7 +3,7 @@
 // Custom destroy method for PNPMESSAGE's PNPMEMORY
 void 
 PnpMessage_Destroy(
-    PNPMEMORY Message
+    _In_ PNPMEMORY Message
     )
 {
     PPNPBRIDGE_CHANGE_PAYLOAD msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(Message, NULL);
@@ -15,10 +15,21 @@ PnpMessage_Destroy(
     if (msg->InterfaceId) {
         free((void*)msg->InterfaceId);
     }
+
+    if (msg->Properties.ComponentName) {
+        free(msg->Properties.ComponentName);
+    }
 }
 
-const char* PnpMessage_GetMessageBuffer(PNPMESSAGE Message, int *Length) {
-    PPNPBRIDGE_CHANGE_PAYLOAD msg = (PPNPBRIDGE_CHANGE_PAYLOAD) PnpMemory_GetBuffer(Message, NULL);
+const char* 
+PnpMessage_GetMessageBuffer(
+    _In_ PNPMESSAGE Message,
+    _Out_opt_ int *Length
+    )
+{
+    PPNPBRIDGE_CHANGE_PAYLOAD msg;
+    
+    msg = (PPNPBRIDGE_CHANGE_PAYLOAD) PnpMemory_GetBuffer(Message, NULL);
 
     if (Length) {
         *Length = msg->MessageLength;
@@ -26,7 +37,11 @@ const char* PnpMessage_GetMessageBuffer(PNPMESSAGE Message, int *Length) {
     return msg->Message;
 }
 
-int PnpMessage_CreateMessage(PNPMESSAGE* Message) {
+int 
+PnpMessage_CreateMessage(
+    _In_ PNPMESSAGE* Message
+    )
+{
     PNPMEMORY_ATTRIBUTES attrib = { 0 };
     PNPMESSAGE* message = NULL;
     attrib.destroyCallback = PnpMessage_Destroy;
@@ -44,8 +59,17 @@ int PnpMessage_CreateMessage(PNPMESSAGE* Message) {
     return 0;
 }
 
-int PnpMessage_SetMessage(PNPMESSAGE Message, const char* payload) {
-    PPNPBRIDGE_CHANGE_PAYLOAD msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(Message, NULL);
+int 
+PnpMessage_SetMessage(
+    _In_ PNPMESSAGE Message,
+    _In_ const char* payload
+    )
+{
+    PPNPBRIDGE_CHANGE_PAYLOAD msg;
+    
+    assert(NULL != Message);
+    
+    msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(Message, NULL);
 
     // Allocate memory for the payload
     int length = (int) strlen(payload);
@@ -60,9 +84,16 @@ int PnpMessage_SetMessage(PNPMESSAGE Message, const char* payload) {
     return 0;
 }
 
-char* PnpMessage_GetMessage(PNPMESSAGE Message) 
+const char* 
+PnpMessage_GetMessage(
+    _In_ PNPMESSAGE Message
+    )
 {
-    PPNPBRIDGE_CHANGE_PAYLOAD msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(Message, NULL);
+    PPNPBRIDGE_CHANGE_PAYLOAD msg;
+
+    assert(NULL != Message);
+    
+    msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(Message, NULL);
 
     return (char*) msg->Message;
 }
@@ -73,7 +104,11 @@ PnpMessage_SetInterfaceId(
     const char* InterfaceId
     )
 {
-    PPNPBRIDGE_CHANGE_PAYLOAD msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(Message, NULL);
+    PPNPBRIDGE_CHANGE_PAYLOAD msg;
+    
+    assert(NULL != Message);
+
+    msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(Message, NULL);
 
     // Allocate memory for the payload
     int length = (int) strlen(InterfaceId);
@@ -87,9 +122,9 @@ PnpMessage_SetInterfaceId(
     return 0;
 }
 
-char* 
+const char*
 PnpMessage_GetInterfaceId(
-    PNPMESSAGE Message
+    _In_ PNPMESSAGE Message
     ) 
 {
     PPNPBRIDGE_CHANGE_PAYLOAD msg = NULL;
@@ -102,7 +137,7 @@ PnpMessage_GetInterfaceId(
 
 PNPMESSAGE_PROPERTIES* 
 PnpMessage_AccessProperties(
-    PNPMESSAGE Message
+    _In_ PNPMESSAGE Message
     )
 {
     PPNPBRIDGE_CHANGE_PAYLOAD msg = NULL;
@@ -115,15 +150,15 @@ PnpMessage_AccessProperties(
 
 void
 PnpMessage_AddReference(
-    PNPMESSAGE Message
-)
+    _In_ PNPMESSAGE Message
+    )
 {
     PnpMemory_AddReference(Message);
 }
 
 void
 PnpMessage_ReleaseReference(
-    PNPMESSAGE Message
+    _In_ PNPMESSAGE Message
     )
 {
     PnpMemory_ReleaseReference(Message);
@@ -131,7 +166,7 @@ PnpMessage_ReleaseReference(
 
 int 
 PnpMessageQueue_Worker(
-    void* threadArgument
+    _In_ void* threadArgument
     )
 {
     PMESSAGE_QUEUE queue = NULL;
@@ -143,11 +178,19 @@ PnpMessageQueue_Worker(
         PNPMESSAGE message = NULL;
 
         // TODO: check status
-        Condition_Wait(queue->WaitCondition, queue->WaitConditionLock, 0);
+        Lock(queue->WaitConditionLock);
 
         if (queue->TearDown) {
+            Unlock(queue->WaitConditionLock);
             ThreadAPI_Exit(0);
         }
+
+        if (0 == queue->InCount) {
+            Condition_Wait(queue->WaitCondition, queue->WaitConditionLock, 0);
+        }
+
+        Unlock(queue->WaitConditionLock);
+
         // Due to SDK limitation of not being able to incrementally publish
         // interface unload all Pnp adapters and re-init the interface
         // Steps for this:
@@ -169,7 +212,7 @@ PnpMessageQueue_Worker(
             PnpMesssageQueue_AddToPublishQ(queue, message);
         }
 
-        PDLIST_ENTRY head = PnpMesssageQueue_GetPublishQ(queue);
+        PDLIST_ENTRY head = &queue->PublishQueue;
         PDLIST_ENTRY current = head->Flink;
         while (current->Blink != head->Blink) {
             PDLIST_ENTRY next = current->Flink;
@@ -196,7 +239,7 @@ PnpMessageQueue_Worker(
 
 PNPBRIDGE_RESULT
 PnpMessageQueue_Create(
-    PMESSAGE_QUEUE* PnpMessageQueue
+    _In_ PMESSAGE_QUEUE* PnpMessageQueue
     )
 {
     PMESSAGE_QUEUE queue = NULL;
@@ -226,8 +269,6 @@ PnpMessageQueue_Create(
             result = PNPBRIDGE_INSUFFICIENT_MEMORY;
             LEAVE;
         }
-
-        Lock(queue->WaitConditionLock);
 
         queue->WaitCondition = Condition_Init();
         if (NULL == queue->WaitCondition) {
@@ -278,6 +319,8 @@ PnpMesssageQueue_Add(
 
     DList_AppendTailList(&Queue->IngressQueue, &msg->Entry);
 
+    Queue->InCount++;
+
     // Release the queue lock
     Unlock(Queue->QueueLock);
 
@@ -286,11 +329,13 @@ PnpMesssageQueue_Add(
 
 PNPBRIDGE_RESULT
 PnpMesssageQueue_AddToPublishQ(
-    PMESSAGE_QUEUE Queue,
-    PNPMESSAGE PnpMessage
+    _In_ PMESSAGE_QUEUE Queue,
+    _In_ PNPMESSAGE PnpMessage
     )
 {
-    PPNPBRIDGE_CHANGE_PAYLOAD msg = (PPNPBRIDGE_CHANGE_PAYLOAD)PnpMemory_GetBuffer(PnpMessage, NULL);
+    PPNPBRIDGE_CHANGE_PAYLOAD msg;
+    
+    msg = (PPNPBRIDGE_CHANGE_PAYLOAD) PnpMemory_GetBuffer(PnpMessage, NULL);
 
     DList_InitializeListHead(&msg->Entry);
 
@@ -301,18 +346,10 @@ PnpMesssageQueue_AddToPublishQ(
     return PNPBRIDGE_OK;
 }
 
-PDLIST_ENTRY
-PnpMesssageQueue_GetPublishQ(
-    PMESSAGE_QUEUE Queue
-    )
-{
-    return &Queue->PublishQueue;
-}
-
 PNPBRIDGE_RESULT 
 PnpMesssageQueue_Remove(
-    PMESSAGE_QUEUE Queue,
-    PNPMESSAGE* PnpMessage
+    _In_ PMESSAGE_QUEUE Queue,
+    _Out_ PNPMESSAGE* PnpMessage
     )
 {
     *PnpMessage = NULL;
@@ -327,6 +364,7 @@ PnpMesssageQueue_Remove(
         if (NULL != currentEntry) {
             msg = containingRecord(currentEntry, PNPBRIDGE_CHANGE_PAYLOAD, Entry);
             *PnpMessage = msg->Self;
+            Queue->InCount--;
         }
     }
 
@@ -337,13 +375,16 @@ PnpMesssageQueue_Remove(
 
 void
 PnpMessageQueue_Release(
-    PMESSAGE_QUEUE Queue
+    _In_ PMESSAGE_QUEUE Queue
     )
 {
     assert(NULL != Queue);
 
     Queue->TearDown = true;
+
+    Lock(Queue->WaitConditionLock);
     Condition_Post(Queue->WaitCondition);
+    Lock(Queue->WaitConditionLock);
 
     // Wait for message queue worker to complete
     if (NULL != Queue->Worker) {

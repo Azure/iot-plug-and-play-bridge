@@ -12,41 +12,47 @@
 #ifndef PNPBRIDGE_H
 #define PNPBRIDGE_H
 
+#if !defined(_MSC_VER)
+#include <nosal.h>
+#endif
+
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
+
 #include <digitaltwin_interface_client.h>
+
+#include <pnpbridge_memory.h>
+#include <pnpmessage_api.h>
+#include <discoveryadapter_api.h>
+#include <pnpadapter_api.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#if !defined(_MSC_VER)
-#include <nosal.h>
-#endif
-
-#include <pnpbridge_memory.h>
-
 typedef void* MX_IOT_HANDLE;
 
-DIGITALTWIN_DEVICE_CLIENT_HANDLE IotHandle_GetPnpDeviceClient(MX_IOT_HANDLE IotHandle);
+// Getter method for DigitalTwin client handle from a device/module
+MOCKABLE_FUNCTION(,
+DIGITALTWIN_DEVICE_CLIENT_HANDLE,
+IotHandle_GetPnpDeviceClient,
+    _In_ MX_IOT_HANDLE, IotHandle
+    );
 
-#include <pnpmessage_api.h>
-#include <discoveryadapter_api.h>
-#include <pnpadapter_api.h>
+MOCKABLE_FUNCTION(, int, PnpBridge_Main);
 
-int
-PnpBridge_Main();
+MOCKABLE_FUNCTION(, void, PnpBridge_Stop);
 
-void
-PnpBridge_Stop();
-
-int
-PnpBridge_UploadToBlobAsync(
-    const char* pszDestination,
-    const unsigned char* pbData,
-    size_t cbData,
-    IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK iotHubClientFileUploadCallback,
-    void* context
-);
+MOCKABLE_FUNCTION(,
+int,
+PnpBridge_UploadToBlobAsync,
+    const char*, pszDestination,
+    const unsigned char*, pbData,
+    size_t, cbData,
+    IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK, iotHubClientFileUploadCallback,
+    void*, context
+    );
 
 #ifdef __cplusplus
 }

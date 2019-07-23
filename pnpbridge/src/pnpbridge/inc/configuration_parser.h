@@ -8,6 +8,9 @@ extern "C"
 {
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
+
 // AUTH mechanisms for connecting to IOT device
 typedef enum AUTH_TYPE {
     AUTH_TYPE_TPM,
@@ -125,21 +128,53 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
 *
 * @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
 */
-PNPBRIDGE_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* ConfigJson, PNPBRIDGE_CONFIGURATION* BridgeConfig);
+MOCKABLE_FUNCTION(,
+PNPBRIDGE_RESULT,
+PnpBridgeConfig_RetrieveConfiguration,
+    JSON_Value*, ConfigJson,
+    PNPBRIDGE_CONFIGURATION*, BridgeConfig
+    );
 
-JSON_Object* Configuration_GetMatchParametersForDevice(JSON_Object* device);
+MOCKABLE_FUNCTION(, 
+JSON_Object*, 
+Configuration_GetMatchParametersForDevice,
+    JSON_Object*, device
+    );
 
-JSON_Object* Configuration_GetDiscoveryParametersForDevice(JSON_Object* device);
+MOCKABLE_FUNCTION(,
+JSON_Object*,
+Configuration_GetDiscoveryParametersForDevice,
+    _In_ JSON_Object*, device
+    );
 
-JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device);
+MOCKABLE_FUNCTION(, 
+JSON_Object*,
+Configuration_GetPnpParametersForDevice,
+    JSON_Object*, device
+    );
 
-JSON_Object* Configuration_GetPnpParameters(JSON_Value* config, const char* identity);
+MOCKABLE_FUNCTION(, 
+JSON_Object*,
+Configuration_GetPnpParameters,
+    JSON_Value*, config, const char*, identity
+    );
 
-JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config, const char *identity);
+MOCKABLE_FUNCTION(, 
+JSON_Object*,
+Configuration_GetDiscoveryParameters,
+    JSON_Value*, config, const char, *identity
+    );
 
-JSON_Array* Configuration_GetConfiguredDevices(JSON_Value* config);
+MOCKABLE_FUNCTION(,
+JSON_Array*,
+Configuration_GetConfiguredDevices, JSON_Value*, config
+    );
 
-PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* Message, JSON_Object** Device);
+MOCKABLE_FUNCTION(, 
+PNPBRIDGE_RESULT,
+Configuration_IsDeviceConfigured,
+    JSON_Value*, config, JSON_Object*, Message, JSON_Object**, Device
+    );
 
 #ifdef __cplusplus
 }

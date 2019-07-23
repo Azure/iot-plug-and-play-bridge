@@ -30,7 +30,8 @@
           "sensor_id": "10"
         }
       },
-      "interface_id": "http://contoso.com/EnvironmentalSensor/1.0.0",
+      "interface_id": "urn:contoso:com:EnvironmentalSensor:1",
+      "component_name": "MyComponent",
       "pnp_parameters": {
         "identity": "environment-sensor-sample-pnp-adapter"
       },

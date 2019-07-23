@@ -40,6 +40,8 @@ set(pnpbridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/../../pnpbridge/inc CACHE INT
 include_directories(../inc)
 include_directories(../../../deps/azure-iot-sdk-c-pnp/deps/parson)
 include_directories(../../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/azure-macro-utils-c/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
 include_directories(../../../deps/azure-iot-sdk-c-pnp/digitaltwin_client/inc)
 
 include_directories(${pnpbridge_INC_FOLDER})

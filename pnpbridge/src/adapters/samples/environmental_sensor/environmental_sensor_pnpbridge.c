@@ -3,7 +3,7 @@
 
 #include <pnpbridge.h>
 
-#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -32,7 +32,7 @@ int EnvironmentSensor_TelemetryWorker(void* context) {
             return 0;
         }
 
-        DigitalTwinSampleEnvironmentalSensor_SendTelemetryMessages(device->pnpinterfaceHandle);
+        DigitalTwinSampleEnvironmentalSensor_SendTelemetryMessagesAsync(device->pnpinterfaceHandle);
 
         // Sleep for 5 sec
         ThreadAPI_Sleep(5000);
@@ -77,8 +77,10 @@ EnvironmentSensor_CreatePnpInterface(
     PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
     PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
     int res = 0;
+    PNPMESSAGE_PROPERTIES* props = NULL;
 
     interfaceId = PnpMessage_GetInterfaceId(Message);
+    props = PnpMessage_AccessProperties(Message);
 
     device = calloc(1, sizeof(ENVIRONMENT_SENSOR));
     if (NULL == device) {
@@ -89,7 +91,7 @@ EnvironmentSensor_CreatePnpInterface(
     device->ShuttingDown = false;
 
     // Create PNP interface using PNP device SDK
-    pnpInterfaceClient = DigitalTwinSampleEnvironmentalSensor_CreateInterface((char*)interfaceId);
+    pnpInterfaceClient = DigitalTwinSampleEnvironmentalSensor_CreateInterface((char*)interfaceId, props->ComponentName);
     if (NULL == pnpInterfaceClient) {
         res = -1;
         goto end;

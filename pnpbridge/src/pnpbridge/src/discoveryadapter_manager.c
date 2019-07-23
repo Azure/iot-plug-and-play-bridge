@@ -59,8 +59,15 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
     return PNPBRIDGE_OK;
 }
 
-PNPBRIDGE_RESULT DiscoveryManager_StarDiscoveryAdapter(PDISCOVERY_MANAGER discoveryManager, PDISCOVERY_ADAPTER  discoveryInterface,
-        SINGLYLINKEDLIST_HANDLE DeviceAdapterParamsList, int DeviceAdapterParamsCount, JSON_Object* adapterParams, int key)
+PNPBRIDGE_RESULT 
+DiscoveryManager_StarDiscoveryAdapter(
+    PDISCOVERY_MANAGER discoveryManager,
+    PDISCOVERY_ADAPTER  discoveryInterface,
+    SINGLYLINKEDLIST_HANDLE DeviceAdapterParamsList,
+    int DeviceAdapterParamsCount,
+    JSON_Object* adapterParams,
+    int key
+    )
 {
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
     char* adapterParamString = NULL;

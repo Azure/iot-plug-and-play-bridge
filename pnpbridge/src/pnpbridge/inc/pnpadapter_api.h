@@ -4,6 +4,9 @@
 #ifndef PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
 #define PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
 
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -121,10 +124,11 @@ PNPADPATER_INTERFACE_PARAMS_INIT(
 *
 * @returns  Result indicating status of pnp adapter interface creation
 */
-int 
-PnpAdapterInterface_Create(
-    PPNPADPATER_INTERFACE_PARAMS params,
-    PPNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface
+MOCKABLE_FUNCTION(,
+int,
+PnpAdapterInterface_Create,
+    PPNPADPATER_INTERFACE_PARAMS, params,
+    PPNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
     );
 
 /**
@@ -133,7 +137,11 @@ PnpAdapterInterface_Create(
 * @param    pnpAdapterInterface          Handle to pnp adapter interface
 *
 */
-void PnpAdapterInterface_Destroy(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface);
+MOCKABLE_FUNCTION(,
+void,
+PnpAdapterInterface_Destroy,
+    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
+    );
 
 /**
 * @brief    PnpAdapter_GetPnpInterfaceClient gets the Azure iot pnp interface client handle
@@ -142,7 +150,11 @@ void PnpAdapterInterface_Destroy(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface
 *
 * @returns  Handle to Azure Pnp Interface client
 */
-DIGITALTWIN_INTERFACE_CLIENT_HANDLE PnpAdapterInterface_GetPnpInterfaceClient(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface);
+MOCKABLE_FUNCTION(,
+DIGITALTWIN_INTERFACE_CLIENT_HANDLE,
+PnpAdapterInterface_GetPnpInterfaceClient,
+    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
+    );
 
 /**
 * @brief    PnpAdapter_SetContext sets a context for pnp adapter interface handle
@@ -153,7 +165,12 @@ DIGITALTWIN_INTERFACE_CLIENT_HANDLE PnpAdapterInterface_GetPnpInterfaceClient(PN
 *
 * @returns  integer greater than zero on success and other values on failure.
 */
-int PnpAdapterInterface_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface, void* context);
+MOCKABLE_FUNCTION(,
+int,
+PnpAdapterInterface_SetContext,
+    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface,
+    void*, context
+    );
 
 /**
 * @brief    PnpAdapter_GetContext gets context set by pnp adapter.
@@ -164,7 +181,11 @@ int PnpAdapterInterface_SetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterfa
 *
 * @returns  void* context
 */
-void* PnpAdapterInterface_GetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface);
+MOCKABLE_FUNCTION(,
+void*,
+PnpAdapterInterface_GetContext,
+    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
+    );
 
 /*
 	PnpAdapter Binding info

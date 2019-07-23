@@ -6,12 +6,6 @@ if (POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
 
-# Include the common build rules for the C SDK
-include("${CMAKE_CURRENT_LIST_DIR}/deps/azure-iot-sdk-c-pnp/c-utility/configs/azure_iot_build_rules.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/deps/azure-iot-sdk-c-pnp/c-utility/configs/azure_c_shared_utilityFunctions.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/deps/azure-iot-sdk-c-pnp/configs/azure_iot_sdksFunctions.cmake")
-
-#2
 #set(run_e2e_tests OFF CACHE BOOL "skip e2e tests" FORCE)
 # TODO: Skip azure c sdk unit tests
 
@@ -24,8 +18,17 @@ set(original_run_unittests ${run_unittests})
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
-# TODO check where this is getting set
-set(use_installed_dependencies OFF)
+
+set(compileOption_C "" CACHE STRING "passes a string to the command line of the C compiler")
+set(compileOption_CXX "" CACHE STRING "passes a string to the command line of the C++ compiler")
+set(linkerOption "" CACHE STRING "passes a string to the shared and exe linker options of the C compiler")
+
+# Include the common build rules for the C SDK
+include("${CMAKE_CURRENT_LIST_DIR}/deps/azure-iot-sdk-c-pnp/c-utility/configs/azure_iot_build_rules.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/deps/azure-iot-sdk-c-pnp/c-utility/configs/azure_c_shared_utilityFunctions.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/deps/azure-iot-sdk-c-pnp/configs/azure_iot_sdksFunctions.cmake")
+
+#set(use_installed_dependencies OFF)
 
 if(${original_run_e2e_tests} OR ${original_run_unittests})
     set(SHARED_UTIL_REAL_TEST_FOLDER ${CMAKE_CURRENT_LIST_DIR}/deps/azure-iot-sdk-c-pnp/c-utility/tests/real_test_files CACHE INTERNAL "this is what needs to be included when doing test sources" FORCE)
@@ -33,18 +36,15 @@ if(${original_run_e2e_tests} OR ${original_run_unittests})
 	enable_testing()
 endif()
 
+# Now add the pnp C sdk with test dir flags disabled
 add_subdirectory(deps/azure-iot-sdk-c-pnp)
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 
-#2
-
-
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF)" OFF)
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
-
 
 # Enable IoT SDK to act as a module for Edge
 if(${use_edge_modules})

@@ -271,7 +271,7 @@ echo build.cmd [options]
 echo options:
 echo  -c, --clean                   delete artifacts from previous build before building
 echo  --config ^<value^>            [Debug] build configuration (e.g. Debug, Release)
-echo  --platform ^<value^>          [x64] build platform (e.g. Win32, x64, arm, ...)
+echo  --platform ^<value^>          [Win32] build platform (e.g. Win32, x64, arm, ...)
 echo  --winsdkver                   [10.0.17763.0] windows sdk version
 echo  --make_nuget ^<value^>        [no] generates the binaries to be used for nuget packaging (e.g. yes, no)
 echo  --run-e2e-tests               run end-to-end tests

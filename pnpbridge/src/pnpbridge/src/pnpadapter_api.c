@@ -126,7 +126,11 @@ void* PnpAdapterInterface_GetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInter
     return adapterInterface->context;
 }
 
-DIGITALTWIN_DEVICE_CLIENT_HANDLE IotHandle_GetPnpDeviceClient(MX_IOT_HANDLE IotHandle) {
+DIGITALTWIN_DEVICE_CLIENT_HANDLE 
+IotHandle_GetPnpDeviceClient(
+    MX_IOT_HANDLE IotHandle
+    ) 
+{
     MX_IOT_HANDLE_TAG* iotHandle = (MX_IOT_HANDLE_TAG*)IotHandle;
 
     return iotHandle->u1.IotDevice.PnpDeviceClientHandle;

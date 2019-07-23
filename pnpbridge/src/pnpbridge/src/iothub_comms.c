@@ -248,7 +248,9 @@ IotComms_PnPInterfaceRegisteredCallback(
 {
     PPNP_REGISTRATION_CONTEXT registrationContext = (PPNP_REGISTRATION_CONTEXT)userContextCallback;
     registrationContext->RegistrationStatus = (pnpInterfaceStatus == DIGITALTWIN_CLIENT_OK) ? APP_PNP_REGISTRATION_SUCCEEDED : APP_PNP_REGISTRATION_FAILED;
+    Lock(registrationContext->Lock);
     Condition_Post(registrationContext->Condition);
+    Unlock(registrationContext->Lock);
 }
 
 #define DIGITALTWIN_SAMPLE_DEVICE_CAPABILITY_MODEL_URI "http://azureiot.com/TestDeviceCapabilityModule/1.0.0"
@@ -270,7 +272,6 @@ IotComms_RegisterPnPInterfaces(
     callbackContext.RegistrationStatus = APP_PNP_REGISTRATION_PENDING;
     callbackContext.Condition = Condition_Init();
     callbackContext.Lock = Lock_Init();
-    Lock(callbackContext.Lock);
 
     // DigitalTwinClient doesn't support incremental publishing of PnP Interface
     // Inorder to workaround this we will destroy the DigitalTwinClient and recreate it
@@ -283,9 +284,8 @@ IotComms_RegisterPnPInterfaces(
                         InterfaceCount, IotComms_PnPInterfaceRegisteredCallback, &callbackContext);
     }
     else {
-        pnpResult = DigitalTwin_ModuleClient_RegisterInterfacesAsync(
-                        IotHandle->u1.IotModule.pnpModuleClientHandle, DIGITALTWIN_SAMPLE_DEVICE_CAPABILITY_MODEL_URI, Interfaces,
-                        InterfaceCount, IotComms_PnPInterfaceRegisteredCallback, &callbackContext);
+        LogError("Module support is not present in public preview");
+        pnpResult = PNPBRIDGE_NOT_SUPPORTED;
     }
 
     if (DIGITALTWIN_CLIENT_OK != pnpResult) {
@@ -293,7 +293,9 @@ IotComms_RegisterPnPInterfaces(
         goto end;
     }
 
+    Lock(callbackContext.Lock);
     Condition_Wait(callbackContext.Condition, callbackContext.Lock, 0);
+    Unlock(callbackContext.Lock);
 
     if (callbackContext.RegistrationStatus != APP_PNP_REGISTRATION_SUCCEEDED) {
         LogError("PnP has failed to register.\n");
@@ -385,44 +387,6 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotDevice(bool TraceOn, PCONNECTION_PARA
     return NULL;
 }
 
-PNPBRIDGE_RESULT IotComms_InitializeIotModuleHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams)
-{
-    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
-
-    TRY {
-        // Mark this handle as module
-        IotHandle->IsModule = true;
-
-        AZURE_UNREFERENCED_PARAMETER(TraceOn);
-        AZURE_UNREFERENCED_PARAMETER(ConnectionParams);
-
-        // Connect to Iot Hub Module
-        IotHandle->u1.IotModule.moduleHandle = IoTHubModuleClient_CreateFromEnvironment(MQTT_Protocol);
-        if (NULL == IotHandle->u1.IotModule.moduleHandle) {
-            LogError("IoTHubModuleClient_CreateFromEnvironment failed\n");
-            result = PNPBRIDGE_FAILED;
-            LEAVE;
-        }
-
-        // Create PnpModuleClient
-        if (DIGITALTWIN_CLIENT_OK != DigitalTwin_ModuleClient_CreateFromModuleHandle(
-                IotHandle->u1.IotModule.moduleHandle, &IotHandle->u1.IotModule.pnpModuleClientHandle)) 
-        {
-            LogError("PnP_ModuleClient_CreateFromModuleHandle failed\n");
-            result = PNPBRIDGE_FAILED;
-            LEAVE;
-        }
-
-        // We have completed initializing the pnp client
-        IotHandle->DeviceClientInitialized = true;
-
-    } FINALLY {
-
-    }
-
-    return result;
-}
-
 PNPBRIDGE_RESULT 
 IotComms_InitializeIotDeviceHandle(
     MX_IOT_HANDLE_TAG* IotHandle, 
@@ -470,12 +434,7 @@ IotComms_DigitalTwinClient_Initalize(
         }
     }
     else {
-        if (DIGITALTWIN_CLIENT_OK != DigitalTwin_ModuleClient_CreateFromModuleHandle(
-            IotHandle->u1.IotDevice.deviceHandle, &IotHandle->u1.IotModule.pnpModuleClientHandle))
-        {
-            LogError("DigitalTwin_ModuleClient_CreateFromModuleHandle failed\n");
-            result = PNPBRIDGE_FAILED;
-        }
+        result = PNPBRIDGE_NOT_SUPPORTED;
     }
 
     IotHandle->DigitalTwinClientInitialized = (PNPBRIDGE_OK == result);
@@ -493,7 +452,7 @@ IotComms_DigitalTwinClient_Destroy(
             DigitalTwin_DeviceClient_Destroy(IotHandle->u1.IotDevice.PnpDeviceClientHandle);
         }
         else {
-            DigitalTwin_ModuleClient_Destroy(IotHandle->u1.IotModule.moduleHandle);
+            LogError("Module support is not present in public preview");
         }
     }
 
@@ -503,7 +462,7 @@ IotComms_DigitalTwinClient_Destroy(
 PNPBRIDGE_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams)
 {
     if (ConnectionParams->ConnectionType == CONNECTION_TYPE_EDGE_MODULE) {
-        return IotComms_InitializeIotModuleHandle(IotHandle, TraceOn, ConnectionParams);
+        return PNPBRIDGE_NOT_SUPPORTED;
     }
     else {
         return IotComms_InitializeIotDeviceHandle(IotHandle, TraceOn, ConnectionParams);

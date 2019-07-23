@@ -30,7 +30,8 @@
           "hardware_id": "USB\\VID_06CB&PID_00B3"
         }
       },
-      "interface_id": "http://windows.com/coredevicehealth/1.0.0",
+      "interface_id": "urn:contoso:com:coredevicehealth:1",
+      "component_name": "MyComponent1",
       "pnp_parameters": {
         "identity": "core-device-health"
       }
@@ -41,6 +42,7 @@
         "match_type": "exact"
       },
       "self_describing": "true",
+      "component_name": "MyComponent2",
       "pnp_parameters": {
         "identity": "modbus-pnp-interface"
       },
@@ -56,7 +58,7 @@
           }
         },
         "interfaceConfig": {
-          "interfaceId": "http://contoso.com/Co2Detector/1.0.0",
+          "interfaceId": "urn:contoso:com:Co2Detector:1",
           "telemetry": {
             "co2": {
               "startAddress": "40001",
@@ -124,6 +126,7 @@
         "match_type": "exact"
       },
       "self_describing": "true",
+      "component_name": "MyComponent3",
       "pnp_parameters": {
         "identity": "serial-pnp-interface"
       },
@@ -143,7 +146,8 @@
           "hardware_id": "UVC_Webcam_00"
         }
       },
-      "interface_id": "http://windows.com/camera_health_monitor/1.0.0",
+      "interface_id": "urn:contoso:com:camera_health_monitor:1",
+      "component_name": "MyComponent4",
       "pnp_parameters": {
         "identity": "camera-health-monitor"
       }
