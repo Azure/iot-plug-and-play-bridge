@@ -19,6 +19,7 @@
 #include <memory>
 #include <list>
 #include <vector>
+#include <string>
 #include <cfgmgr32.h>
 #include <initguid.h>
 #include <guiddef.h>
