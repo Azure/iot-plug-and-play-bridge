@@ -19,6 +19,7 @@
 #include <Windows.h>
 #include <cfgmgr32.h>
 #include <ctype.h>
+#include <winerror.h>
 #else
 typedef unsigned int DWORD;
 typedef uint8_t byte;
@@ -58,30 +59,36 @@ int SerialPnp_UartReceiver(void* context)
     return 0;
 }
 
-
-void SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length)
+int SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length)
 {
-    int txLength = 1 + Length;
+    DWORD write_size = 0;
+    int error = 0;
+
+    DWORD txLength = 1 + Length; // "+1" for start of frame byte
     // First iterate through and find out our new length
     for (int i = 0; i < Length; i++)
     {
-        if ((OutPacket[i] == 0x5A) || (OutPacket[i] == 0xEF))
+        if ((SERIALPNP_START_OF_FRAME_BYTE == OutPacket[i]) || (SERIALPNP_ESCAPE_BYTE == OutPacket[i]))
         {
             txLength++;
         }
     }
 
     // Now construct outgoing buffer
-    byte* SerialPnp_TxPacket = malloc(sizeof(byte) *txLength);
-
+    byte* SerialPnp_TxPacket = malloc(sizeof(byte) * txLength);
+    if (!SerialPnp_TxPacket)
+    {
+        LogError("Error out of memory");
+        return -1;
+    }
     txLength = 1;
     SerialPnp_TxPacket[0] = 0x5A; // Start of frame
     for (int i = 0; i < Length; i++)
     {
         // Escape these bytes where necessary
-        if ((OutPacket[i] == 0x5A) || (OutPacket[i] == 0xEF))
+        if ((SERIALPNP_START_OF_FRAME_BYTE == OutPacket[i]) || (SERIALPNP_ESCAPE_BYTE == OutPacket[i]))
         {
-            SerialPnp_TxPacket[txLength++] = 0xEF;
+            SerialPnp_TxPacket[txLength++] = SERIALPNP_ESCAPE_BYTE;
             SerialPnp_TxPacket[txLength++] = (byte)(OutPacket[i] - 1);
         }
         else
@@ -90,18 +97,43 @@ void SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, in
         }
     }
 
-    DWORD write_size = 0;
+
 #ifdef WIN32
-    if (!WriteFile(serialDevice->hSerial, SerialPnp_TxPacket, txLength, &write_size, NULL))
+    if (!WriteFile(serialDevice->hSerial, SerialPnp_TxPacket, txLength, &write_size, &serialDevice->osWriter))
+    {
+        // Write returned immediately, but is asynchronous
+        if (ERROR_IO_PENDING != (error = GetLastError()))
+        {
+            // Write returned actual error and not just pending
+            LogError("write failed: %d", error);
+            return -1;
+        }
+        else
+        {
+            if (!GetOverlappedResult(serialDevice->hSerial, &serialDevice->osWriter, &write_size, TRUE))
+            {
+                error = GetLastError();
+                LogError("write failed: %d", error);
+                return -1;
+            }
+        }
+    }
 #else
     if ((write_size = write(serialDevice->hSerial, (const void *)SerialPnp_TxPacket, (size_t)txLength)) == -1)
-#endif
     {
         LogError("write failed");
+        error = -1;
     }
-
+#endif
+    // there might not be an explicit error from the above, but check that all the bytes got transmitted 
+    if (write_size != txLength)
+    {
+        LogError("Timeout while writing");
+        return -1;
+    }
     free(SerialPnp_TxPacket);
-}
+    return 0;
+        }
 
 const EventDefinition* SerialPnp_LookupEvent(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, char* EventName, int InterfaceId)
 {
@@ -110,6 +142,10 @@ const EventDefinition* SerialPnp_LookupEvent(SINGLYLINKEDLIST_HANDLE interfaceDe
 
     for (int i = 0; i < InterfaceId - 1; i++)
     {
+        if (NULL == interfaceDefHandle)
+        {
+            return NULL;
+        }
         interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
     }
     interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
@@ -117,9 +153,11 @@ const EventDefinition* SerialPnp_LookupEvent(SINGLYLINKEDLIST_HANDLE interfaceDe
     SINGLYLINKEDLIST_HANDLE events = interfaceDef->Events;
     LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(events);
     const EventDefinition* ev;
-    while (eventDef != NULL) {
+    while (NULL != eventDef)
+    {
         ev = singlylinkedlist_item_get_value(eventDef);
-        if (strcmp(ev->defintion.Name, EventName) == 0) {
+        if (strcmp(ev->defintion.Name, EventName) == 0)
+        {
             return ev;
         }
         eventDef = singlylinkedlist_get_next_item(eventDef);
@@ -128,64 +166,94 @@ const EventDefinition* SerialPnp_LookupEvent(SINGLYLINKEDLIST_HANDLE interfaceDe
     return NULL;
 }
 
-byte* SerialPnp_StringSchemaToBinary(Schema Schema, byte* buffer, int* length)
+byte* SerialPnp_StringSchemaToBinary(Schema schema, byte* buffer, int* length)
 {
     byte* bd = NULL;
-    char* data = (char*) buffer;
+    char* data = (char*)buffer;
 
-    if ((Schema == Float) || (Schema == Int))
+    if ((Float == schema) || (Int == schema))
     {
         bd = malloc(sizeof(byte) * 4);
+        if (!bd)
+        {
+            LogError("Error out of memory");
+            return NULL;
+        }
         *length = 4;
 
-        if (Schema == Float)
+        if (schema == Float)
         {
             float x = 0;
             x = (float)atof(data);
             memcpy(bd, &x, sizeof(float));
         }
-        else if (Schema == Int)
+        else if (schema == Int)
         {
             int x;
             x = atoi(data);
             memcpy(bd, &x, sizeof(int));
         }
     }
-    else if (Schema == Boolean)
+    else if (Boolean == schema)
     {
         bd = malloc(sizeof(byte) * 1);
+        if (!bd)
+        {
+            LogError("Error out of memory");
+            return NULL;
+        }
+
         *length = 1;
-        if (strcmp(data, "true")) {
+        if (strcmp(data, "true"))
+        {
             bd[0] = 1;
         }
-        else if (strcmp(data, "false")) {
-            bd[0] = 1;
+        else if (strcmp(data, "false"))
+        {
+            bd[0] = 0;
         }
-        else {
+        else
+        {
             free(bd);
             *length = 0;
             bd = NULL;
         }
     }
+    else
+    {
+        LogError("Unknown schema");
+    }
 
     return bd;
 }
 
-char* SerialPnp_BinarySchemaToString(Schema Schema, byte* Data, byte length)
+char* SerialPnp_BinarySchemaToString(Schema schema, byte* Data, byte length)
 {
-    char* rxstrdata = malloc(256);
-
-    if ((Schema == Float) && (length == 4))
+    const int MAXRXSTRLEN = 12; // longest case INT_MIN = -2147483648 (11 characters + 1)
+    char* rxstrdata = malloc(MAXRXSTRLEN);
+    if (!rxstrdata)
     {
-        float *fa = malloc(sizeof(float));
-        memcpy(fa, Data, 4);
-        sprintf_s(rxstrdata, 256, "%.6f", *fa);
+        LogError("Error out of memory");
+        return NULL;
     }
-    else if (((Schema == Int) && (length == 4)))
+
+    if ((Float == schema) && (4 == length))
     {
-        int *fa = malloc(sizeof(int));
-        memcpy(fa, Data, 4);
-        sprintf_s(rxstrdata, 256, "%d", *fa);
+        sprintf_s(rxstrdata, MAXRXSTRLEN, "%.6f", *((float*)Data));
+    }
+    else if (((Int == schema) && (4 == length)))
+    {
+        sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
+    }
+    else if (((Boolean == schema) && (1 == length)))
+    {
+        sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
+    }
+    else
+    {
+        LogError("Unknown schema");
+        free(rxstrdata);
+        return NULL;
     }
 
     return rxstrdata;
@@ -194,22 +262,47 @@ char* SerialPnp_BinarySchemaToString(Schema Schema, byte* Data, byte length)
 void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length)
 {
     // Got an event
-    if (packet[2] == 0x0A) {
-        byte rxNameLength = packet[5];
-        byte rxInterfaceId = packet[4];
-        DWORD rxDataSize = length - rxNameLength - 6;
+    if (SERIALPNP_PACKET_TYPE_EVENT_NOTIFICATION == packet[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
+    {
+        byte rxInterfaceId = packet[SERIALPNP_PACKET_INTERFACE_NUMBER_OFFSET];
+        byte rxNameLength = packet[SERIALPNP_PACKET_NAME_LENGTH_OFFSET];
+        DWORD rxDataSize = length - rxNameLength - SERIALPNP_PACKET_NAME_OFFSET;
 
-        //string event_name = Encoding.UTF8.GetString(packet, 6, rxNameLength);
-        char* event_name = malloc(sizeof(char)*(rxNameLength + 1));
-        memcpy(event_name, packet + 6, rxNameLength);
+        char* event_name = malloc(sizeof(char) * (rxNameLength + 1));
+        if (!event_name)
+        {
+            LogError("Error out of memory");
+            return;
+        }
+        memcpy(event_name, packet + SERIALPNP_PACKET_NAME_OFFSET, rxNameLength);
         event_name[rxNameLength] = '\0';
 
         const EventDefinition* ev = SerialPnp_LookupEvent(device->InterfaceDefinitions, event_name, rxInterfaceId);
+        if (!ev)
+        {
+            LogError("Couldn't find event");
+            free(event_name);
+            return;
+        }
 
-        byte* rxData = malloc(sizeof(byte)*rxDataSize);
-        memcpy(rxData, packet + 6 + rxNameLength, rxDataSize);
+        byte* rxData = malloc(sizeof(byte) * rxDataSize);
+        if (!rxData)
+        {
+            LogError("Error out of memory");
+            free(event_name);
+            return;
+        }
+
+        memcpy(rxData, packet + SERIALPNP_PACKET_NAME_OFFSET + rxNameLength, rxDataSize);
 
         char* rxstrdata = SerialPnp_BinarySchemaToString(ev->DataSchema, rxData, (byte)rxDataSize);
+        if (!rxstrdata)
+        {
+            LogError("Unknown schema");
+            free(event_name);
+            free(rxData);
+            return;
+        }
         LogInfo("%s: %s", ev->defintion.Name, rxstrdata);
 
         SerialPnp_SendEventAsync(PnpAdapterInterface_GetPnpInterfaceClient(device->pnpAdapterInterface), ev->defintion.Name, rxstrdata);
@@ -217,13 +310,10 @@ void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DW
         free(event_name);
         free(rxData);
     }
-    // Got a command update
-    else if (packet[2] == 0x08)
+    // Got a property update
+    else if (SERIALPNP_PACKET_TYPE_PROPERTY_NOTIFICATION == packet[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
     {
         // TODO
-    }
-    else if (packet[2] == 0x08) {
-
     }
 }
 
@@ -234,16 +324,26 @@ const PropertyDefinition* SerialPnp_LookupProperty(SINGLYLINKEDLIST_HANDLE inter
 
     for (int i = 0; i < InterfaceId - 1; i++)
     {
+        if (NULL == interfaceDefHandle)
+        {
+            return NULL;
+        }
         interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
     }
     interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
+    if (NULL == interfaceDef)
+    {
+        return NULL;
+    }
 
     SINGLYLINKEDLIST_HANDLE property = interfaceDef->Properties;
     LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(property);
     const PropertyDefinition* ev;
-    while (eventDef != NULL) {
+    while (NULL != eventDef)
+    {
         ev = singlylinkedlist_item_get_value(eventDef);
-        if (strcmp(ev->defintion.Name, propertyName) == 0) {
+        if (strcmp(ev->defintion.Name, propertyName) == 0)
+        {
             return ev;
         }
         eventDef = singlylinkedlist_get_next_item(eventDef);
@@ -259,6 +359,10 @@ const CommandDefinition* SerialPnp_LookupCommand(SINGLYLINKEDLIST_HANDLE interfa
 
     for (int i = 0; i < InterfaceId - 1; i++)
     {
+        if (NULL == interfaceDefHandle)
+        {
+            return NULL;
+        }
         interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
     }
     interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
@@ -266,9 +370,11 @@ const CommandDefinition* SerialPnp_LookupCommand(SINGLYLINKEDLIST_HANDLE interfa
     SINGLYLINKEDLIST_HANDLE command = interfaceDef->Commands;
     LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(command);
     const CommandDefinition* ev;
-    while (eventDef != NULL) {
+    while (NULL != eventDef)
+    {
         ev = singlylinkedlist_item_get_value(eventDef);
-        if (strcmp(ev->defintion.Name, commandName) == 0) {
+        if (strcmp(ev->defintion.Name, commandName) == 0)
+        {
             return ev;
         }
         eventDef = singlylinkedlist_get_next_item(eventDef);
@@ -282,95 +388,133 @@ int SerialPnp_PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* p
     const PropertyDefinition* prop = SerialPnp_LookupProperty(serialDevice->InterfaceDefinitions, property, 0);
     byte* input = (byte*)data;
 
-    if (prop == NULL) {
+    if (NULL == prop)
+    {
         return -1;
     }
 
     // otherwise serialize data
-    int length = 0;
-    byte* inputPayload = SerialPnp_StringSchemaToBinary(prop->DataSchema, input, &length);
+    int dataLength = 0;
+    byte* inputPayload = SerialPnp_StringSchemaToBinary(prop->DataSchema, input, &dataLength);
+    if (!inputPayload)
+    {
+        return -1;
+    }
 
     int nameLength = (int)strlen(property);
-    int txlength = 6 + nameLength + length;
+    int txlength = SERIALPNP_PACKET_NAME_OFFSET + nameLength + dataLength;
     byte* txPacket = malloc(txlength);
-
-    txPacket[0] = (byte)(txlength & 0xFF);
-    txPacket[1] = (byte)(txlength >> 8);
-    txPacket[2] = 0x07; // command request
-                        // [3] is reserved
-    txPacket[4] = (byte)0;
-    txPacket[5] = (byte)nameLength;
-
-    memcpy(txPacket + 6, property, nameLength);
-    if (inputPayload != NULL) {
-        memcpy(txPacket + 6 + nameLength, inputPayload, length);
+    if (!txPacket)
+    {
+        LogError("Error out of memory");
+        free(inputPayload);
+        return -1;
     }
+
+    txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = (byte)(txlength & 0xFF);
+    txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET + 1] = (byte)(txlength >> 8);
+    txPacket[SERIALPNP_PACKET_PACKET_TYPE_OFFSET] = SERIALPNP_PACKET_TYPE_PROPERTY_REQUEST;
+    // txPacket[3] is reserved
+    txPacket[SERIALPNP_PACKET_INTERFACE_NUMBER_OFFSET] = (byte)0;
+    txPacket[SERIALPNP_PACKET_NAME_LENGTH_OFFSET] = (byte)nameLength;
+
+    memcpy(txPacket + SERIALPNP_PACKET_NAME_OFFSET, property, nameLength);
+    memcpy(txPacket + SERIALPNP_PACKET_NAME_OFFSET + nameLength, inputPayload, dataLength);
 
     LogInfo("Setting property %s to %s", property, input);
 
     SerialPnp_TxPacket(serialDevice, txPacket, txlength);
 
-    //ThreadAPI_Sleep(2000);
-
-    if (inputPayload != NULL) {
-        free(inputPayload);
-    }
-
+    free(inputPayload);
     free(txPacket);
 
     return 0;
 }
 
-
 int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* command, char* data, char** response)
 {
+    Lock(serialDevice->CommandLock);
+
     const CommandDefinition* cmd = SerialPnp_LookupCommand(serialDevice->InterfaceDefinitions, command, 0);
     byte* input = (byte*)data;
 
-    if (cmd == NULL)
+    if (NULL == cmd)
     {
+        Unlock(serialDevice->CommandLock);
         return -1;
     }
 
     // otherwise serialize data
     int length = 0;
     byte* inputPayload = SerialPnp_StringSchemaToBinary(cmd->RequestSchema, input, &length);
+    if (!inputPayload)
+    {
+        Unlock(serialDevice->CommandLock);
+        return -1;
+    }
 
     int nameLength = (int)strlen(command);
-    int txlength = 6 + nameLength + length;
+    int txlength = SERIALPNP_PACKET_NAME_OFFSET + nameLength + length;
     byte* txPacket = malloc(txlength);
-
-    txPacket[0] = (byte)(txlength & 0xFF);
-    txPacket[1] = (byte)(txlength >> 8);
-    txPacket[2] = 0x05; // command request
-                        // [3] is reserved
-    txPacket[4] = (byte)0;
-    txPacket[5] = (byte)nameLength;
-
-    memcpy(txPacket + 6, command, nameLength);
-    if (inputPayload != NULL) {
-        memcpy(txPacket + 6 + nameLength, inputPayload, length);
+    if (!txPacket)
+    {
+        LogError("Error out of memory");
+        free(inputPayload);
+        Unlock(serialDevice->CommandLock);
+        return -1;
     }
+
+    txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = (byte)(txlength & 0xFF);
+    txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET + 1] = (byte)(txlength >> 8);
+    txPacket[SERIALPNP_PACKET_PACKET_TYPE_OFFSET] = SERIALPNP_PACKET_TYPE_COMMAND_REQUEST;
+    //txPacket[3] is reserved
+    txPacket[SERIALPNP_PACKET_INTERFACE_NUMBER_OFFSET] = (byte)0;
+    txPacket[SERIALPNP_PACKET_NAME_LENGTH_OFFSET] = (byte)nameLength;
+
+    memcpy(txPacket + SERIALPNP_PACKET_NAME_OFFSET, command, nameLength);
+    memcpy(txPacket + SERIALPNP_PACKET_NAME_OFFSET + nameLength, inputPayload, length);
 
     LogInfo("Invoking command %s to %s", command, input);
 
-    SerialPnp_TxPacket(serialDevice, txPacket, txlength);
-
-    byte* responsePacket;
-    SerialPnp_RxPacket(serialDevice, &responsePacket, (DWORD*)&length, 0x02);
-
-    char* stval = SerialPnp_BinarySchemaToString(cmd->ResponseSchema, responsePacket, (byte)length);
-    *response = stval;
-
-    if (inputPayload != NULL) {
+    if (0 != SerialPnp_TxPacket(serialDevice, txPacket, txlength))
+    {
+        LogError("Error: command not sent to device.");
         free(inputPayload);
+        free(txPacket);
+        Unlock(serialDevice->CommandLock);
+        return -1;
     }
 
+    Lock(serialDevice->CommandResponseWaitLock);
+    if (COND_OK != Condition_Wait(serialDevice->CommandResponseWaitCondition, serialDevice->CommandResponseWaitLock, 60000))
+    {
+        LogError("Timeout waiting for response from device");
+        free(inputPayload);
+        free(txPacket);
+        Unlock(serialDevice->CommandLock);
+        Unlock(serialDevice->CommandResponseWaitLock);
+        return -1;
+    }
+    Unlock(serialDevice->CommandResponseWaitLock);
+
+    byte* responsePacket = serialDevice->pbMainBuffer;
+    int dataOffset = SERIALPNP_PACKET_NAME_OFFSET + nameLength;
+    byte* commandResponse = responsePacket + dataOffset;
+    char* stval = SerialPnp_BinarySchemaToString(cmd->ResponseSchema, commandResponse, (byte)length);
+    free(inputPayload);
+    free(responsePacket);
     free(txPacket);
 
+    if (!stval)
+    {
+        Unlock(serialDevice->CommandLock);
+        return -1;
+    }
+
+    *response = stval;
+    Unlock(serialDevice->CommandLock);
     return 0;
 }
-
 
 void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byte* descriptor, DWORD length)
 {
@@ -403,6 +547,12 @@ void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byt
             c += 2;
 
             char* interface_id = malloc(sizeof(char)*(interface_id_length + 1));
+            if (!interface_id)
+            {
+                LogError("Error out of memory");
+                free(indef);
+                return;
+            }
             memcpy(interface_id, descriptor + c, interface_id_length);
             interface_id[interface_id_length] = '\0';
             LogInfo("Interface ID : %s", interface_id);
@@ -419,21 +569,45 @@ void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byt
 
                 // extract common field properties
                 byte ptype = descriptor[c++];
-
                 byte pname_length = descriptor[c++];
+
                 char* pname = malloc(sizeof(char)*(pname_length + 1));
+                if (!pname)
+                {
+                    LogError("Error out of memory");
+                    free(interface_id);
+                    free(indef);
+                    return;
+                }
                 memcpy(pname, descriptor + c, pname_length);
                 pname[pname_length] = '\0';
                 c += pname_length;
 
                 byte pdisplay_name_length = descriptor[c++];
                 char* pdisplay_name = malloc(sizeof(char)*(pdisplay_name_length + 1));
+                if (!pdisplay_name)
+                {
+                    LogError("Error out of memory");
+                    free(interface_id);
+                    free(pname);
+                    free(indef);
+                    return;
+                }
                 memcpy(pdisplay_name, descriptor + c, pdisplay_name_length);
                 pdisplay_name[pdisplay_name_length] = '\0';
                 c += pdisplay_name_length;
 
                 byte pdescription_length = descriptor[c++];
                 char* pdescription = malloc(sizeof(char)*(pdescription_length + 1));
+                if (!pdescription)
+                {
+                    LogError("Error out of memory");
+                    free(interface_id);
+                    free(pname);
+                    free(pdisplay_name);
+                    free(indef);
+                    return;
+                }
                 memcpy(pdescription, descriptor + c, pdescription_length);
                 pdescription[pdescription_length] = '\0';
                 c += pdescription_length;
@@ -450,6 +624,16 @@ void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byt
                 if (ptype == 0x01) // command
                 {
                     CommandDefinition* tfdef = calloc(1, sizeof(CommandDefinition));
+                    if (!tfdef)
+                    {
+                        LogError("Error out of memory");
+                        free(interface_id);
+                        free(pname);
+                        free(pdisplay_name);
+                        free(pdescription);
+                        free(indef);
+                        return;
+                    }
                     tfdef->defintion = fielddef;
 
                     UINT16 prequest_schema = (UINT16)(descriptor[c] | (descriptor[c + 1] << 8));
@@ -462,13 +646,34 @@ void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byt
 
                     singlylinkedlist_add(indef->Commands, tfdef);
                 }
-                else if (ptype == 0x02) // command
+                else if (ptype == 0x02) // property
                 {
                     PropertyDefinition* tfdef = calloc(1, sizeof(PropertyDefinition));
+                    if (!tfdef)
+                    {
+                        LogError("Error out of memory");
+                        free(interface_id);
+                        free(pname);
+                        free(pdisplay_name);
+                        free(pdescription);
+                        free(indef);
+                        return;
+                    }
                     tfdef->defintion = fielddef;
 
                     byte punit_length = descriptor[c++];
-                    char* punit = malloc(sizeof(char)*(punit_length + 1));
+                    char* punit = malloc(sizeof(char) * (punit_length + 1));
+                    if (!punit)
+                    {
+                        LogError("Unexpected error");
+                        free(interface_id);
+                        free(pname);
+                        free(pdisplay_name);
+                        free(pdescription);
+                        free(tfdef);
+                        free(indef);
+                        return;
+                    }
                     memcpy(punit, descriptor + c, punit_length);
                     punit[punit_length] = '\0';
                     c += punit_length;
@@ -493,10 +698,31 @@ void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byt
                 else if (ptype == 0x03) // event
                 {
                     EventDefinition* tfdef = calloc(1, sizeof(EventDefinition));
+                    if (!tfdef)
+                    {
+                        LogError("Unexpected error");
+                        free(interface_id);
+                        free(pname);
+                        free(pdisplay_name);
+                        free(pdescription);
+                        free(indef);
+                        return;
+                    }
                     tfdef->defintion = fielddef;
 
                     byte punit_length = descriptor[c++];
-                    char* punit = malloc(sizeof(char)*(punit_length + 1));
+                    char* punit = malloc(sizeof(char) * (punit_length + 1));
+                    if (!punit)
+                    {
+                        LogError("Error out of memory");
+                        free(interface_id);
+                        free(pname);
+                        free(pdisplay_name);
+                        free(pdescription);
+                        free(tfdef);
+                        free(indef);
+                        return;
+                    }
                     memcpy(punit, descriptor + c, punit_length);
                     punit[punit_length] = '\0';
                     c += punit_length;
@@ -506,7 +732,6 @@ void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byt
                     UINT16 schema = (UINT16)(descriptor[c] | (descriptor[c + 1] << 8));
                     c += 2;
                     tfdef->DataSchema = schema;
-
                     tfdef->Units = punit;
 
                     singlylinkedlist_add(indef->Events, tfdef);
@@ -522,7 +747,8 @@ void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byt
     }
 }
 
-typedef struct _SERIAL_DEVICE {
+typedef struct _SERIAL_DEVICE
+{
     char* InterfaceName;
 } SERIAL_DEVICE, *PSERIAL_DEVICE;
 
@@ -543,11 +769,17 @@ int SerialPnp_FindSerialDevices()
         (LPGUID)&GUID_DEVINTERFACE_COMPORT,
         NULL,
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
-    if (CR_SUCCESS != cmResult) {
+    if (CR_SUCCESS != cmResult)
+    {
         return -1;
     }
 
     deviceInterfaceList = malloc(bufferSize * sizeof(char));
+    if (!deviceInterfaceList)
+    {
+        LogError("Error out of memory");
+        return -1;
+    }
 
     cmResult = CM_Get_Device_Interface_ListA(
         (LPGUID)&GUID_DEVINTERFACE_COMPORT,
@@ -555,7 +787,8 @@ int SerialPnp_FindSerialDevices()
         deviceInterfaceList,
         bufferSize,
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
-    if (CR_SUCCESS != cmResult) {
+    if (CR_SUCCESS != cmResult)
+    {
         return -1;
     }
 
@@ -564,7 +797,20 @@ int SerialPnp_FindSerialDevices()
         currentDeviceInterface += strlen(currentDeviceInterface) + 1)
     {
         PSERIAL_DEVICE serialDevs = malloc(sizeof(SERIAL_DEVICE));
+        if (!serialDevs)
+        {
+            LogError("Error out of memory");
+            free(deviceInterfaceList);
+            return -1;
+        }
         serialDevs->InterfaceName = malloc((strlen(currentDeviceInterface) + 1) * sizeof(char));
+        if (!serialDevs->InterfaceName)
+        {
+            LogError("Error out of memory");
+            free(deviceInterfaceList);
+            free(serialDevs);
+            return -1;
+        }
         strcpy_s(serialDevs->InterfaceName, strlen(currentDeviceInterface) + 1, currentDeviceInterface);
         singlylinkedlist_add(SerialDeviceList, serialDevs);
         SerialDeviceCount++;
@@ -575,17 +821,36 @@ int SerialPnp_FindSerialDevices()
 #endif
 
 const char* serialDeviceChangeMessageformat = "{ \
-                                                 \"Identity\": \"serial-pnp-discovery\" \
+                                                 \"identity\": \"serial-pnp-discovery\" \
                                                }";
 
-int SerialPnp_OpenDeviceWorker(void* context) {
+int SerialPnp_OpenDeviceWorker(void* context)
+{
     byte* desc;
     DWORD length;
-
     PSERIAL_DEVICE_CONTEXT deviceContext = context;
-
-    SerialPnp_ResetDevice(deviceContext);
-    SerialPnp_DeviceDescriptorRequest(deviceContext, &desc, &length);
+    int retries = SERIALPNP_RESET_OR_DESCRIPTOR_MAX_RETRIES;
+    while (0 != SerialPnp_ResetDevice(deviceContext))
+    {
+        LogError("Error sending reset request. Retrying...");
+        if (0 == --retries)
+        {
+            LogError("Error exceeded max number of reset request retries. ");
+            return -1;
+        }
+        ThreadAPI_Sleep(5000);
+    }
+    retries = SERIALPNP_RESET_OR_DESCRIPTOR_MAX_RETRIES;
+    while (0 != SerialPnp_DeviceDescriptorRequest(deviceContext, &desc, &length))
+    {
+        LogError("Descriptor response not received. Retrying...");
+        if (0 == --retries)
+        {
+            LogError("Error exceeded max number of descriptor request retries. ");
+            return -1;
+        }
+        ThreadAPI_Sleep(5000);
+    }
 
     SerialPnp_ParseDescriptor(deviceContext->InterfaceDefinitions, desc, length);
 
@@ -593,18 +858,21 @@ int SerialPnp_OpenDeviceWorker(void* context) {
     JSON_Object* jsonObject = json_value_get_object(json);
 
     LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (interfaceItem != NULL) {
+    while (NULL != interfaceItem)
+    {
         const InterfaceDefinition* def = (const InterfaceDefinition*)singlylinkedlist_item_get_value(interfaceItem);
+        //json_object_set_string(jsonObject, "InterfaceId", def->Id);
+
         PNPMESSAGE payload = NULL;
         PNPMESSAGE_PROPERTIES* props = NULL;
 
         PnpMessage_CreateMessage(&payload);
 
-        props = PnpMessage_AccessProperties(payload);
         PnpMessage_SetMessage(payload, json_serialize_to_string(json_object_get_wrapping_value(jsonObject)));
         PnpMessage_SetInterfaceId(payload, def->Id);
-
-        props->Context = deviceContext;
+        
+        props = PnpMessage_AccessProperties(payload);
+        props->Context = deviceContext; 
 
         // Notify the pnpbridge of device discovery
         DiscoveryAdapter_ReportDevice(payload);
@@ -624,7 +892,8 @@ int set_interface_attribs(int fd, int speed, int parity)
 {
     struct termios tty;
     memset(&tty, 0, sizeof tty);
-    if (tcgetattr(fd, &tty) != 0) {
+    if (tcgetattr(fd, &tty) != 0)
+    {
         LogError("error %d from tcgetattr", errno);
         return -1;
     }
@@ -676,25 +945,26 @@ set_blocking(int fd, int should_block)
     if (tcsetattr(fd, TCSANOW, &tty) != 0)
         LogError("error %d setting term attributes", errno);
 }
-
 #endif 
 
-
-int SerialPnp_OpenDevice(const char* port, DWORD baudRate) {
+int SerialPnp_OpenDevice(const char* port, DWORD baudRate)
+{
 #ifdef WIN32
     HANDLE hSerial = CreateFileA(port,
         GENERIC_READ | GENERIC_WRITE,
         0, // must be opened with exclusive-access
-        0, //NULL, no security attributes
+        0, // NULL, no security attributes
         OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
         0);
 
-    if (hSerial == INVALID_HANDLE_VALUE) {
+    if (hSerial == INVALID_HANDLE_VALUE)
+    {
         // Handle the error
         int error = GetLastError();
         LogError("Failed to open com port %s, %x", port, error);
-        if (error == ERROR_FILE_NOT_FOUND) {
+        if (error == ERROR_FILE_NOT_FOUND)
+        {
             return -1;
         }
 
@@ -703,21 +973,35 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate) {
 
     DCB dcbSerialParams = { 0 };
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-    if (!GetCommState(hSerial, &dcbSerialParams)) {
+    if (!GetCommState(hSerial, &dcbSerialParams))
+    {
         return -1;
     }
     dcbSerialParams.BaudRate = baudRate;
     dcbSerialParams.ByteSize = 8;
     dcbSerialParams.StopBits = ONESTOPBIT;
     dcbSerialParams.Parity = NOPARITY;
-    if (!SetCommState(hSerial, &dcbSerialParams)) {
+    if (!SetCommState(hSerial, &dcbSerialParams))
+    {
         //error setting serial port state
+        return -1;
+    }
+
+    COMMTIMEOUTS timeouts;
+    timeouts.ReadIntervalTimeout = MAXDWORD;
+    timeouts.ReadTotalTimeoutMultiplier = 0;
+    timeouts.ReadTotalTimeoutConstant = 0;
+    timeouts.WriteTotalTimeoutMultiplier = 0;
+    timeouts.WriteTotalTimeoutConstant = 0;
+    if (!SetCommTimeouts(hSerial, &timeouts))
+    {
         return -1;
     }
 #else 
     char *portname = "/dev/ttyACM0";
     int fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         LogError("error %d opening %s: %s", errno, portname, strerror(errno));
         return -1;
     }
@@ -727,50 +1011,122 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate) {
 #endif
 
     PSERIAL_DEVICE_CONTEXT deviceContext = malloc(sizeof(SERIAL_DEVICE_CONTEXT));
+    if (!deviceContext)
+    {
+        LogError("Error out of memory");
+        return -1;
+    }
+    memset(deviceContext, 0, sizeof(SERIAL_DEVICE_CONTEXT));
+    deviceContext->RxBufferIndex = 0;
+    deviceContext->RxEscaped = false;
+
+    deviceContext->CommandLock = Lock_Init();
+    deviceContext->CommandResponseWaitLock = Lock_Init();
+    deviceContext->CommandResponseWaitCondition = Condition_Init();
+    if (NULL == deviceContext->CommandLock ||
+        NULL == deviceContext->CommandResponseWaitLock ||
+        NULL == deviceContext->CommandResponseWaitCondition)
+    {
+        if (NULL != deviceContext->CommandLock)
+        {
+            Lock_Deinit(deviceContext->CommandLock);
+        }
+        if (NULL != deviceContext->CommandResponseWaitLock)
+        {
+            Lock_Deinit(deviceContext->CommandResponseWaitLock);
+        }
+        if (NULL != deviceContext->CommandResponseWaitCondition)
+        {
+            Lock_Deinit(deviceContext->CommandResponseWaitCondition);
+        }
+        return -1;
+    }
 
 #ifdef WIN32
     deviceContext->hSerial = hSerial;
+    deviceContext->osWriter.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    deviceContext->osReader.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (NULL == deviceContext->osWriter.hEvent ||
+        NULL == deviceContext->osReader.hEvent)
+    {
+        if (NULL != deviceContext->osWriter.hEvent)
+        {
+            CloseHandle(deviceContext->osWriter.hEvent);
+        }
+        if (NULL != deviceContext->osReader.hEvent)
+        {
+            CloseHandle(deviceContext->osReader.hEvent);
+        }
+        return -1;
+    }
 #else 
     deviceContext->hSerial = fd;
 #endif
     deviceContext->pnpAdapterInterface = NULL;
     deviceContext->InterfaceDefinitions = singlylinkedlist_create();
 
-    //deviceContext->osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
     // TODO error handling
     // https://docs.microsoft.com/en-us/previous-versions/ff802693(v=msdn.10)
 
-    if (ThreadAPI_Create(&deviceContext->SerialDeviceWorker, SerialPnp_OpenDeviceWorker, deviceContext) != THREADAPI_OK) {
+    if (THREADAPI_OK != ThreadAPI_Create(&deviceContext->SerialDeviceWorker, SerialPnp_OpenDeviceWorker, deviceContext))
+    {
         LogError("ThreadAPI_Create failed");
     }
 
     return 0;
 }
 
-void SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType)
+int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType)
 {
     byte inb = 0;
     DWORD dwRead = 0;
     *receivedPacket = NULL;
     *length = 0;
+    int error = 0;
 
 #ifdef WIN32
-    while (ReadFile(serialDevice->hSerial, &inb, 1, &dwRead, NULL)) {
+    while (true)
+    {
+        if (!ReadFile(serialDevice->hSerial, &inb, 1, &dwRead, &serialDevice->osReader)) // if completed asynchronously, wait. 
+        {
+            if (ERROR_IO_PENDING != (error = GetLastError()))
+            {
+                // Read returned actual error and not just pending
+                LogError("read failed: %d", error);
+                return -1;
+            }
+            else
+            {
+                if (!GetOverlappedResult(serialDevice->hSerial, &serialDevice->osReader, &dwRead, TRUE))
+                {
+                    error = GetLastError();
+                    LogError("read failed: %d", error);
+                    return -1;
+                }
+            }
+
+        }
+
+        // Read can be successful but with no bytes actually read, shouldn't happen though
+        if (dwRead == 0)
+        {
+            continue;
+        }
+        //LogInfo("read completed successfully");
 #else
-    while ((dwRead = read(serialDevice->hSerial, (void*)&inb, 1)) != -1) {
+    while ((dwRead = read(serialDevice->hSerial, (void*)&inb, 1)) != -1)
+    {
 #endif
         // Check for a start of packet byte
-        if (inb == 0x5A)
+        if (SERIALPNP_START_OF_FRAME_BYTE == inb)
         {
             serialDevice->RxBufferIndex = 0;
             serialDevice->RxEscaped = false;
             continue;
         }
-	//LogInfo("packet %x", inb);
 
         // Check for an escape byte
-        if (inb == 0xEF)
+        if (SERIALPNP_ESCAPE_BYTE == inb)
         {
             serialDevice->RxEscaped = true;
             continue;
@@ -785,87 +1141,135 @@ void SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPack
 
         serialDevice->RxBuffer[serialDevice->RxBufferIndex++] = (byte)inb;
 
-        if (serialDevice->RxBufferIndex >= 4096)
+        if (serialDevice->RxBufferIndex >= MAX_BUFFER_SIZE)
         {
             LogError("Filled Rx buffer. Protocol is bad.");
-            break;
+            return -1;
         }
 
         // Minimum packet length is 4, so once we are >= 4 begin checking
         // the receieve buffer length against the length field.
-        if (serialDevice->RxBufferIndex >= 4)
+        if (serialDevice->RxBufferIndex >= SERIALPNP_MIN_PACKET_LENGTH)
         {
             int PacketLength = (int)((serialDevice->RxBuffer[0]) | (serialDevice->RxBuffer[1] << 8)); // LSB first, L-endian
 
             if (((int)serialDevice->RxBufferIndex == PacketLength) && (packetType == 0x00 || packetType == serialDevice->RxBuffer[2]))
             {
                 *receivedPacket = malloc(serialDevice->RxBufferIndex * sizeof(byte));
+                if (NULL == *receivedPacket)
+                {
+                    LogError("Error out of memory");
+                    return -1;
+                }
                 *length = serialDevice->RxBufferIndex;
                 memcpy(*receivedPacket, serialDevice->RxBuffer, serialDevice->RxBufferIndex);
-                serialDevice->RxBufferIndex = 0; // This should be reset anyway
-                                   // Deliver the newly receieved packet
-                                   //Console.Out.Write("\n");
+                serialDevice->RxBufferIndex = 0; // This should be reset anyway. Deliver the newly receieved packet
+
+                // both the main thread and this thread can be waiting for packets, 
+                // but this function that does the reading only runs on this thread
+                // command responses are expected on the main thread
+                if (SERIALPNP_PACKET_TYPE_COMMAND_RESPONSE == serialDevice->RxBuffer[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
+                {
+                    // signal the main thread in this case, pass back the buffer 
+                    // using the pointer in the serial context instead of the return value
+                    serialDevice->pbMainBuffer = *receivedPacket;
+                    *receivedPacket = NULL;
+                    Lock(serialDevice->CommandResponseWaitLock);
+                    Condition_Post(serialDevice->CommandResponseWaitCondition);
+                    Unlock(serialDevice->CommandResponseWaitLock);
+                }
                 break;
             }
         }
     }
+    return 0;
 }
 
-void SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice) {
+int SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice)
+{
+    int error = 0;
     // Prepare packet
-    byte* resetPacket = calloc(4, sizeof(byte)); // packet header
+    byte resetPacket[3] = { 0 }; // packet header
     byte* responsePacket = NULL;
-    resetPacket[0] = 4; // length 4
-    resetPacket[1] = 0;
-    resetPacket[2] = 0x01; // type reset
-
-    ThreadAPI_Sleep(2000);
+    resetPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = 4; // length 4
+    resetPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET + 1] = 0;
+    resetPacket[SERIALPNP_PACKET_PACKET_TYPE_OFFSET] = SERIALPNP_PACKET_TYPE_RESET_REQUEST;
 
     // Send the new packet
-    SerialPnp_TxPacket(serialDevice, resetPacket, 4);
-
-    ThreadAPI_Sleep(2000);
+    if (0 != SerialPnp_TxPacket(serialDevice, resetPacket, 4))
+    {
+        LogError("Error sending request packet");
+        return -1;
+    }
+    LogInfo("Sent reset request");
 
     DWORD length;
-    SerialPnp_RxPacket(serialDevice, &responsePacket, &length, 0x02);
-
-    if (responsePacket == NULL) {
-        LogError("received NULL for response packet");
-        return;
+    if (0 != SerialPnp_RxPacket(serialDevice, &responsePacket, &length, 0x02))
+    {
+        LogError("Error receiving response packet");
+        return -1;
     }
 
-    if (responsePacket[2] != 0x02)
+    if (NULL == responsePacket)
+    {
+        LogError("received NULL for response packet");
+        error = -1;
+    }
+
+    if (SERIALPNP_PACKET_TYPE_RESET_RESPONSE != responsePacket[2])
     {
         LogError("Bad reset response");
+        error = -1;
     }
 
-    LogInfo("Receieved reset response");
+    if (0 == error)
+    {
+        LogInfo("Receieved reset response");
+    }
+    free(responsePacket);
+    return error;
 }
 
-void SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length)
+int SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length)
 {
     // Prepare packet
-    byte txPacket[4] = { 0 }; // packet header
-    txPacket[0] = 4; // length 4
-    txPacket[1] = 0;
-    txPacket[2] = 0x03; // type descriptor request
-
-                        // Get ready to receieve a reset response
-
+    byte txPacket[3] = { 0 }; // packet header
+    txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = 4; // length 4
+    txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET + 1] = 0;
+    txPacket[SERIALPNP_PACKET_PACKET_TYPE_OFFSET] = SERIALPNP_PACKET_TYPE_DESCRIPTOR_REQUEST;
 
     // Send the new packets
-    SerialPnp_TxPacket(serialDevice, txPacket, 4);
+    if (0 != SerialPnp_TxPacket(serialDevice, txPacket, 4))
+    {
+        LogError("Error sending request packet");
+        return -1;
+    }
     LogInfo("Sent descriptor request");
 
-    SerialPnp_RxPacket(serialDevice, desc, length, 0x04);
+    if (0 != SerialPnp_RxPacket(serialDevice, desc, length, 0x04))
+    {
+        LogError("Error receiving response packet");
+        free(*desc);
+        return -1;
+    }
 
-    if ((*desc)[2] != 0x04)
+    if (NULL == *desc)
+    {
+        LogError("received NULL for response packet");
+        free(*desc);
+
+        return -1;
+    }
+
+    if (SERIALPNP_PACKET_TYPE_DESCRIPTOR_RESPONSE != (*desc)[2])
     {
         LogError("Bad descriptor response");
-        return;
+        free(*desc);
+        return -1;
     }
 
     LogInfo("Receieved descriptor response, of length %d", *length);
+    return 0;
 }
 
 int 
@@ -874,7 +1278,8 @@ SerialPnp_StartDiscovery(
     _In_ PNPMEMORY adapterArgs
     ) 
 {
-    if (deviceArgs == NULL) {
+    if (NULL == deviceArgs)
+    {
         return -1;
     }
 
@@ -884,41 +1289,47 @@ SerialPnp_StartDiscovery(
     const char* useComDevInterfaceStr;
     const char* baudRateParam;
     bool useComDeviceInterface = false;
-    JSON_Value* jvalue = json_parse_string(deviceArgs);
+    JSON_Value* jvalue = json_parse_string(((PDEVICE_ADAPTER_PARMAETERS)(((PPNPBRIDGE_MEMORY_TAG)deviceArgs)->memory))->AdapterParameters[0]);
     JSON_Object* args = json_value_get_object(jvalue);
 
     useComDevInterfaceStr = (const char*)json_object_dotget_string(args, "use_com_device_interface");
-    if ((NULL != useComDevInterfaceStr) && (0 == strcmp(useComDevInterfaceStr, "true"))) {
+    if ((NULL != useComDevInterfaceStr) && (0 == strcmp(useComDevInterfaceStr, "true")))
+    {
         useComDeviceInterface = true;
     }
 
-    if (!useComDeviceInterface) {
+    if (!useComDeviceInterface)
+    {
         port = (const char*)json_object_dotget_string(args, "com_port");
-        if (NULL == port) {
+        if (NULL == port)
+        {
             LogError("ComPort parameter is missing in configuration");
             return -1;
         }
     }
 
     baudRateParam = (const char*)json_object_dotget_string(args, "baud_rate");
-    if (NULL == baudRateParam) {
+    if (NULL == baudRateParam)
+    {
         LogError("BaudRate parameter is missing in configuration");
         return -1;
     }
 
     PSERIAL_DEVICE seriaDevice = NULL;
     DWORD baudRate = atoi(baudRateParam);
-    if (useComDeviceInterface) {
+    if (useComDeviceInterface)
+    {
 #ifdef WIN32
         if (SerialPnp_FindSerialDevices() < 0)
 #endif
-       	{
+        {
             LogError("Failed to get com port %s", port);
-	    return -1;
+            return -1;
         }
 
         LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(SerialDeviceList);
-        if (item == NULL) {
+        if (NULL == item)
+        {
             LogError("No serial device was found %s", port);
             return -1;
         }
@@ -933,7 +1344,8 @@ SerialPnp_StartDiscovery(
     return 0;
 }
 
-int SerialPnp_StopDiscovery() {
+int SerialPnp_StopDiscovery()
+{
     return 0;
 }
 
@@ -947,7 +1359,8 @@ int SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, c
     int result;
     DIGITALTWIN_CLIENT_RESULT pnpClientResult;
 
-    if (pnpInterface == NULL) {
+    if (pnpInterface == NULL)
+    {
         return 0;
     }
 
@@ -964,13 +1377,14 @@ int SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, c
     return result;
 }
 
-static void SerialPnp_PropertyUpdateHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback) {
+static void SerialPnp_PropertyUpdateHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback)
+{
     DIGITALTWIN_CLIENT_RESULT pnpClientResult;
     DIGITALTWIN_CLIENT_PROPERTY_RESPONSE propertyResponse;
     PSERIAL_DEVICE_CONTEXT deviceContext;
 
-    LogInfo("Processed property.  propertyUpdated = %.*s", 
-                (int)dtClientPropertyUpdate->propertyDesiredLen, dtClientPropertyUpdate->propertyDesired);
+    LogInfo("Processed property.  propertyUpdated = %.*s",
+        (int)dtClientPropertyUpdate->propertyDesiredLen, dtClientPropertyUpdate->propertyDesired);
 
     deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
 
@@ -1012,7 +1426,6 @@ static void SerialPnp_SetCommandResponse(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pn
     }
 }
 
-
 void 
 SerialPnp_CommandUpdateHandler(
     const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext,
@@ -1031,11 +1444,14 @@ SerialPnp_CommandUpdateHandler(
     SerialPnp_SetCommandResponse(dtClientCommandResponseContext, response, 200);
 }
 
-const InterfaceDefinition* SerialPnp_GetInterface(PSERIAL_DEVICE_CONTEXT deviceContext, const char* interfaceId) {
+const InterfaceDefinition* SerialPnp_GetInterface(PSERIAL_DEVICE_CONTEXT deviceContext, const char* interfaceId)
+{
     LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (interfaceDefHandle != NULL) {
+    while (interfaceDefHandle != NULL)
+    {
         const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
-        if (strcmp(interfaceDef->Id, interfaceId) == 0) {
+        if (strcmp(interfaceDef->Id, interfaceId) == 0)
+        {
             return interfaceDef;
         }
         interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
@@ -1043,14 +1459,17 @@ const InterfaceDefinition* SerialPnp_GetInterface(PSERIAL_DEVICE_CONTEXT deviceC
     return NULL;
 }
 
-int SerialPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list) {
-    if (NULL == list) {
+int SerialPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list)
+{
+    if (NULL == list)
+    {
         return 0;
     }
 
     LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(list);
     int count = 0;
-    while (NULL != item) {
+    while (NULL != item)
+    {
         count++;
         item = singlylinkedlist_get_next_item(item);
     }
@@ -1076,7 +1495,8 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
 
     // Create an Azure Pnp interface for each interface in the SerialPnp descriptor
     LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (interfaceDefHandle != NULL) {
+    while (interfaceDefHandle != NULL)
+    {
         PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface = NULL;
         DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
         int propertyCount = 0;
@@ -1093,7 +1513,8 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
                                 NULL,
                                 deviceContext,
                                 &pnpInterfaceClient);
-        if (DIGITALTWIN_CLIENT_OK != dtRes) {
+        if (DIGITALTWIN_CLIENT_OK != dtRes)
+        {
             result = -1;
             goto exit;
         }
@@ -1101,7 +1522,8 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
         if (propertyCount > 0) {
             dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient,
                         SerialPnp_PropertyUpdateHandler);
-            if (DIGITALTWIN_CLIENT_OK != dtRes) {
+            if (DIGITALTWIN_CLIENT_OK != dtRes)
+            {
                 result = -1;
                 goto exit;
             }
@@ -1110,7 +1532,8 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
         if (commandCount > 0) {
             dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, 
                         SerialPnp_CommandUpdateHandler);
-            if (DIGITALTWIN_CLIENT_OK != dtRes) {
+            if (DIGITALTWIN_CLIENT_OK != dtRes)
+            {
                 result = -1;
                 goto exit;
             }
@@ -1125,7 +1548,8 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
             interfaceParams.StartInterface = SerialPnp_StartPnpInterface;
 
             result = PnpAdapterInterface_Create(&interfaceParams, &pnpAdapterInterface);
-            if (result < 0) {
+            if (result < 0)
+            {
                 goto exit;
             }
         }
@@ -1150,29 +1574,36 @@ exit:
 }
 
 void SerialPnp_FreeFieldDefinition(FieldDefinition* fdef) {
-    if (NULL != fdef->Description) {
+    if (NULL != fdef->Description)
+    {
         free(fdef->Description);
     }
 
-    if (NULL != fdef->DisplayName) {
+    if (NULL != fdef->DisplayName)
+    {
         free(fdef->DisplayName);
     }
 
-    if (NULL != fdef->Name) {
+    if (NULL != fdef->Name)
+    {
         free(fdef->Name);
     }
 }
 
-void SerialPnp_FreeEventDefinition(SINGLYLINKEDLIST_HANDLE events) {
-    if (NULL == events) {
+void SerialPnp_FreeEventDefinition(SINGLYLINKEDLIST_HANDLE events)
+{
+    if (NULL == events)
+    {
         return;
     }
 
     LIST_ITEM_HANDLE eventItem = singlylinkedlist_get_head_item(events);
-    while (NULL != eventItem) {
+    while (NULL != eventItem)
+    {
         EventDefinition* e = (EventDefinition*)singlylinkedlist_item_get_value(eventItem);
         SerialPnp_FreeFieldDefinition(&e->defintion);
-        if (NULL != e->Units) {
+        if (NULL != e->Units)
+        {
             free(e->Units);
         }
         free(e);
@@ -1180,29 +1611,37 @@ void SerialPnp_FreeEventDefinition(SINGLYLINKEDLIST_HANDLE events) {
     }
 }
 
-void SerialPnp_FreeCommandDefinition(SINGLYLINKEDLIST_HANDLE cmds) {
-    if (NULL == cmds) {
+void SerialPnp_FreeCommandDefinition(SINGLYLINKEDLIST_HANDLE cmds)
+{
+    if (NULL == cmds)
+    {
         return;
     }
 
     LIST_ITEM_HANDLE cmdItem = singlylinkedlist_get_head_item(cmds);
-    while (NULL != cmdItem) {
+    while (NULL != cmdItem)
+    {
         CommandDefinition* c = (CommandDefinition*)singlylinkedlist_item_get_value(cmdItem);
+        SerialPnp_FreeFieldDefinition(&c->defintion);
         free(c);
         cmdItem = singlylinkedlist_get_next_item(cmdItem);
     }
 }
 
-void SerialPnp_FreePropertiesDefinition(SINGLYLINKEDLIST_HANDLE props) {
-    if (NULL == props) {
+void SerialPnp_FreePropertiesDefinition(SINGLYLINKEDLIST_HANDLE props)
+{
+    if (NULL == props)
+    {
         return;
     }
 
     LIST_ITEM_HANDLE propItem = singlylinkedlist_get_head_item(props);
-    while (NULL != propItem) {
+    while (NULL != propItem)
+    {
         PropertyDefinition* p = (PropertyDefinition*)singlylinkedlist_item_get_value(propItem);
         SerialPnp_FreeFieldDefinition(&p->defintion);
-        if (NULL != p->Units) {
+        if (NULL != p->Units)
+        {
             free(p->Units);
         }
         free(p);
@@ -1210,27 +1649,45 @@ void SerialPnp_FreePropertiesDefinition(SINGLYLINKEDLIST_HANDLE props) {
     }
 }
 
-int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
+int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface)
+{
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpAdapterInterface_GetContext(pnpInterface);
 
-    if (NULL == deviceContext) {
+    if (NULL == deviceContext)
+    {
         return 0;
     }
 
 #ifdef WIN32
-    if (NULL != deviceContext->hSerial) {
+    if (NULL != deviceContext->hSerial)
+    {
         CloseHandle(deviceContext->hSerial);
     }
+    if (NULL != deviceContext->osWriter.hEvent)
+    {
+        CloseHandle(deviceContext->osWriter.hEvent);
+    }
+    if (NULL != deviceContext->osReader.hEvent)
+    {
+        CloseHandle(deviceContext->osReader.hEvent);
+    }
 #else
-    if (0 < deviceContext->hSerial) {
+    if (0 < deviceContext->hSerial)
+    {
         close(deviceContext->hSerial);
     }
 #endif
 
-    if (deviceContext->InterfaceDefinitions) {
+    if (deviceContext->InterfaceDefinitions)
+    {
         LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-        while (interfaceItem != NULL) {
+        while (NULL != interfaceItem)
+        {
             InterfaceDefinition* def = (InterfaceDefinition*)singlylinkedlist_item_get_value(interfaceItem);
+            if (NULL != def->Id)
+            {
+                free(def->Id);
+            }
             SerialPnp_FreeEventDefinition(def->Events);
             SerialPnp_FreeCommandDefinition(def->Commands);
             SerialPnp_FreePropertiesDefinition(def->Properties);
@@ -1246,12 +1703,14 @@ int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
     return 0;
 }
 
-int SerialPnp_Initialize(const char* adapterArgs) {
+int SerialPnp_Initialize(const char* adapterArgs)
+{
     AZURE_UNREFERENCED_PARAMETER(adapterArgs);
     return 0;
 }
 
-int SerialPnp_Shutdown() {
+int SerialPnp_Shutdown()
+{
     return 0;
 }
 
