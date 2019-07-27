@@ -1507,9 +1507,9 @@ int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE ms
         commandCount = SerialPnp_GetListCount(interfaceDef->Commands);
 
         DIGITALTWIN_CLIENT_RESULT dtRes;
-        PNPMESSAGE_PROPERTIES* props = PnpMessage_AccessProperties(msg);
+        //PNPMESSAGE_PROPERTIES* props = PnpMessage_AccessProperties(msg);
         dtRes = DigitalTwin_InterfaceClient_Create(interfaceId,
-                                props->ComponentName,
+                                "serial" /* props->ComponentName */, // TODO: add component name into serial interface definition
                                 NULL,
                                 deviceContext,
                                 &pnpInterfaceClient);
