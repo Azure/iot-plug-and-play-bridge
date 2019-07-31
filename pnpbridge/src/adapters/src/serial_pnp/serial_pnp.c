@@ -49,9 +49,9 @@ int SerialPnp_UartReceiver(void* context)
         DWORD length;
 
         SerialPnp_RxPacket(deviceContext, &desc, &length, 0x00);
-        SerialPnp_UnsolicitedPacket(deviceContext, desc, length);
-
-        if (desc != NULL) {
+        if (desc != NULL)
+        {
+            SerialPnp_UnsolicitedPacket(deviceContext, desc, length);
             free(desc);
         }
     }
