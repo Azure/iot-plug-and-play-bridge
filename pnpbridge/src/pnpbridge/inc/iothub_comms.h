@@ -11,7 +11,7 @@ extern "C"
 
 int 
 IotComms_RegisterPnPInterfaces(
-    MX_IOT_HANDLE_TAG IotHandle,
+    MX_IOT_HANDLE_TAG* IotHandle,
     const char* ModelRepoId,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces,
     int InterfaceCount

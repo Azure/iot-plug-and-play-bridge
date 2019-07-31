@@ -315,7 +315,7 @@ DiscoveryAdapter_PublishInterfaces() {
     PnpAdapterManager_GetAllInterfaces(pnpBridge->PnpMgr, &interfaces, &interfaceCount);
 
     LogInfo("Publishing Azure Pnp Interface, count %d", interfaceCount);
-    IotComms_RegisterPnPInterfaces(pnpBridge->IotHandle,
+    IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
         pnpBridge->Configuration.ConnParams->DeviceCapabilityModelUri,
         interfaces, interfaceCount);
 
