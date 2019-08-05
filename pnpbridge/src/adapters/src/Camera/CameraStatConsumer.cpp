@@ -34,6 +34,7 @@ CameraStatConsumer::CameraStatConsumer(
 ,   m_hFlushThread(nullptr)
 ,   m_fCoInit(false)
 ,   m_fMfStartup(false)
+,   m_stats({ 0 })
 {
     ZeroMemory(m_buffer, sizeof(m_buffer));
     ZeroMemory(&m_TraceLogfile, sizeof(m_TraceLogfile));
