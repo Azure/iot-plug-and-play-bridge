@@ -86,10 +86,10 @@ CameraPnpDiscovery::InitializePnpDiscovery(
         PNPMESSAGE_PROPERTIES* props = NULL;
 
         RETURN_IF_FAILED (pjson->Initialize());
-        RETURN_IF_FAILED (pjson->AddFormatString("Identity", "camera-health-monitor"));
+        RETURN_IF_FAILED (pjson->AddFormatString("identity", "camera-health-monitor"));
         RETURN_IF_FAILED (pmatchjson->Initialize());
-        RETURN_IF_FAILED (pmatchjson->AddFormatString("HardwareId", "UVC_Webcam_00"));
-        RETURN_IF_FAILED (pjson->AddObject("MatchParameters", pmatchjson->GetMessageW()));
+        RETURN_IF_FAILED (pmatchjson->AddFormatString("hardware_id", "UVC_Webcam_00"));
+        RETURN_IF_FAILED (pjson->AddObject("match_parameters", pmatchjson->GetMessageW()));
 
         PnpMessage_CreateMessage(&payload);
         PnpMessage_SetMessage(payload, pjson->GetMessageW());

@@ -169,7 +169,7 @@ CameraPnpInterfaceBind(
 
     RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_Create(&interfaceParams, &adapterInterface))
 
-    RETURN_IF_FAILED(pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface), nullptr /* cameraName.c_str() */));
+    RETURN_IF_FAILED(pIotPnp->Initialize(PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface), cameraName.c_str() ));
     RETURN_IF_FAILED (pIotPnp->StartTelemetryWorker());
 
     RETURN_HR_IF (E_UNEXPECTED, 0 != PnpAdapterInterface_SetContext(adapterInterface, (void*)pIotPnp.get()));
