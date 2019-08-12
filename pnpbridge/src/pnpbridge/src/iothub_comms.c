@@ -8,6 +8,8 @@
 // Enable DPS connection to IoT Central
 #define ENABLE_IOT_CENTRAL
 
+#include "iothub_comms.h"
+
 #ifdef ENABLE_IOT_CENTRAL
 // IoT Central requires DPS.  Include required header and constants
 #include "azure_prov_client/iothub_security_factory.h"
@@ -263,7 +265,9 @@ IotComms_RegisterPnPInterfaces(
     MX_IOT_HANDLE_TAG* IotHandle,
     const char* ModelRepoId,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* Interfaces,
-    int InterfaceCount
+    int InterfaceCount,
+    bool traceOn,
+    PCONNECTION_PARAMETERS connectionParams
     )
 {
     PNPBRIDGE_RESULT result;
@@ -276,6 +280,11 @@ IotComms_RegisterPnPInterfaces(
     // DigitalTwinClient doesn't support incremental publishing of PnP Interface
     // Inorder to workaround this we will destroy the DigitalTwinClient and recreate it
     IotComms_DigitalTwinClient_Destroy(IotHandle);
+    result = IotComms_InitializeIotHandle(IotHandle, traceOn, connectionParams);
+    if (PNPBRIDGE_OK != result) {
+        LogError("IotComms_InitializeIotHandle failed\n");
+        goto end;
+    }
     IotComms_DigitalTwinClient_Initalize(IotHandle);
 
     if (!IotHandle->IsModule) {

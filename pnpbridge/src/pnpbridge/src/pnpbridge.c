@@ -311,20 +311,29 @@ DiscoveryAdapter_PublishInterfaces() {
     // Query all the pnp interface clients and publish them
     PPNP_BRIDGE pnpBridge = g_PnpBridge;
     int interfaceCount = 0;
+    PNPBRIDGE_RESULT result;
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces = NULL;
     PnpAdapterManager_GetAllInterfaces(pnpBridge->PnpMgr, &interfaces, &interfaceCount);
 
     LogInfo("Publishing Azure Pnp Interface, count %d", interfaceCount);
-    IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
-        pnpBridge->Configuration.ConnParams->DeviceCapabilityModelUri,
-        interfaces, interfaceCount);
+
+    result = IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
+                                            pnpBridge->Configuration.ConnParams->DeviceCapabilityModelUri,
+                                            interfaces,
+                                            interfaceCount,
+                                            pnpBridge->Configuration.TraceOn,
+                                            pnpBridge->Configuration.ConnParams);
+
+    if (result != PNPBRIDGE_OK) {
+        goto end;
+    }
 
     // Notify interfaces of successful publish
     PnpAdapterManager_InvokeStartInterface(pnpBridge->PnpMgr);
 
+end:
     free(interfaces);
-
-    return 0;
+    return result;
 }
 
 int
