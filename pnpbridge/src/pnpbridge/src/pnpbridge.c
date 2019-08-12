@@ -414,7 +414,7 @@ PnpBridge_Main()
         // Prevent main thread from returning by waiting for the
         // exit condition to be set. This condition will be set when
         // the bridge has received a stop signal
-        Lock(pnpBridge->ExitLock);
+        // ExitLock was taken in call to PnpBridge_Initialize so does not need to be reacquired.
         Condition_Wait(pnpBridge->ExitCondition, pnpBridge->ExitLock, 0);
         Unlock(pnpBridge->ExitLock);
     } FINALLY  {

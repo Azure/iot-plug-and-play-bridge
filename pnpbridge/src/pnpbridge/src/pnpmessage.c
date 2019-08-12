@@ -189,6 +189,11 @@ PnpMessageQueue_Worker(
             Condition_Wait(queue->WaitCondition, queue->WaitConditionLock, 0);
         }
 
+        if (queue->TearDown) {
+            Unlock(queue->WaitConditionLock);
+            ThreadAPI_Exit(0);
+        }
+
         Unlock(queue->WaitConditionLock);
 
         // Due to SDK limitation of not being able to incrementally publish
@@ -384,7 +389,7 @@ PnpMessageQueue_Release(
 
     Lock(Queue->WaitConditionLock);
     Condition_Post(Queue->WaitCondition);
-    Lock(Queue->WaitConditionLock);
+    Unlock(Queue->WaitConditionLock);
 
     // Wait for message queue worker to complete
     if (NULL != Queue->Worker) {
