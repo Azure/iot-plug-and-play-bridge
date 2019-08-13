@@ -33,19 +33,19 @@ Azure PnP Bridge can be deployed as a standalone executable on any IoT device, P
 - Optional: Private Preview of Azure IoT Device Agent https://github.com/ms-iot/azure-client-tools-pnp-preview (Pre-built client built on top of the Azure IoT PnP SDK that provides device provisioning and management capabilities out of the box. It also provides lifecycle management for the Azure connection and auto-discovery/loading/unloading of the PnP interfaces implemented by the Device Agent and its extensible plugins)
 
 ## Azure PnP Bridge Architecture
-![Architecture](./PnpBridge/docs/Pictures/AzurePnPBridge.png)
+![Architecture](./pnpbridge/docs/Pictures/AzurePnPBridge.png)
 
 ## Peripherals supported by default
 
-Azure PnP Bridge supports the following types of peripherals by default. Developers can extend the Azure PnP Bridge to support additional peripherals via the instructions in the [PnP Bridge documentation](./PnpBridge/ReadMe.md).
+Azure PnP Bridge supports the following types of peripherals by default. Developers can extend the Azure PnP Bridge to support additional peripherals via the instructions in the [PnP Bridge documentation](./pnpbridge/ReadMe.md).
 - Peripherals controlled by MCUs that are accessed over serial ports:
-    - Refer to the [SerialPnP documentation](./SerialPnP/Readme.md) for information on how such devices should self-describe their interfaces to the PnP Bridge
+    - Refer to the [SerialPnP documentation](./serialpnp/Readme.md) for information on how such devices should self-describe their interfaces to the PnP Bridge
 - USB peripherals that can be discovered by Windows
 - All cameras supported by Windows OS (Webcam, MIPI cameras and IP of RGB/IR/Depth cameras).
 
 ## Get Started
 
-Follow [PnPBridge\Readme.md](./PnpBridge/ReadMe.md) to get started on building, deploying and extending the PnP Bridge.
+Follow [pnpbridge\Readme.md](./pnpbridge/ReadMe.md) to get started on building, deploying and extending the PnP Bridge.
 
 
 ## Contributing

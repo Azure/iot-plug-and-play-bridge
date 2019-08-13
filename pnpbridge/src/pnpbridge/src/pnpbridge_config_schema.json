@@ -1,0 +1,254 @@
+{
+	"$id": "http://contosso.com/pnpbridge_config.json",
+	"$schema": "http://contosso.com/pnpbridge_config/schema#",
+	"description": "A configuration for sensor bridge",
+	"type": "object",
+	"properties": {
+		"pnp_bridge_parameters": {
+			"$ref": "#/definitions/pnp_bridge_parameters_schema"
+		},
+		"config_source" : { "enum" : ["local", "cloud"] },
+		"devices" : {
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/device_schema"
+			}
+		},
+		"pnp_adapters" : {
+			"$ref": "#/definitions/pnp_adapters_parameters_schema"
+		},
+		"discovery_adapters" : {
+			"$ref": "#/definitions/discovery_adapters_parameters_schema"
+		}
+	},
+	"oneOf": [
+		{
+		   "properties": {
+			   "config_source": { "enum": ["local"] }
+			},
+		    "required": ["devices"]
+		},
+		{
+			"properties": {
+				"config_source": { "enum": ["cloud"] }
+			},
+			"dependencies" : {
+				"config_source": {
+					"not": { "required": ["devices"] }
+				}
+			}
+		}
+	],
+	"definitions": {
+		"pnp_bridge_parameters_schema": {
+			"properties": {
+				"connection_parameters": {
+					"$ref": "#/definitions/connection_parameters_schema"
+				},
+				"trace_on": {
+					"type": "boolean"
+				},
+				"log_path": {
+					"type": "string"
+				}
+			},
+			"required": ["connection_parameters"]
+		},
+		"connection_parameters_schema" : {
+			"properties": {
+				"connection_type": { 
+					"enum": [
+						"connection_string",
+						"dps",
+						"edge_module"
+					]
+				},
+				"auth_parameters": {
+					"$ref": "#/definitions/auth_parameters_schema"
+				}
+			},
+			"oneOf": [
+				{
+				  "properties": {
+					"connection_type": { "enum": ["connection_string"] },
+					"connection_string" : {
+						"type": "string"
+					}
+				  },
+				  "required": ["connection_string"]
+				},
+				{
+				  "properties": {
+					"connection_type": { "enum": ["dps"] },
+					"dps_parameters" : {
+						"$ref": "#/definitions/dps_parameters_schema"
+					}
+				  },
+				  "required": ["dps_parameters"]
+				},
+				{
+					"properties": {
+					  "connection_type": { "enum": ["edge_module"] }
+					}
+				}
+			],
+			"required": ["connection_type"]
+		},
+		"auth_parameters_schema" : {
+			"properties": {
+				"auth_type": { "enum": ["symmetric_key", "x509"] }
+			},
+			"oneOf": [
+				{
+				  "properties": {
+					"auth_type": { "enum": ["symmetric_key"] },
+					"symmetric_key" : {
+						"type": "string"
+					}
+				  },
+				  "required": ["symmetric_key"]
+				},
+				{
+				  "properties": {
+					"auth_type": { "enum": ["x509"] }
+				  }
+				}
+			],
+			"required": ["auth_type"]
+		},
+		"dps_parameters_schema" : {
+			"properties": {
+				"global_prov_uri": { 
+					"type": "string"
+				},
+				"id_scope": { 
+					"type": "string"
+				},
+				"device_id": { 
+					"type": "string"
+				},
+				"device_capability_model_uri": { 
+					"type": "string"
+				},
+				"model_repository_uri": { 
+					"type": "string"
+				}
+			},
+			"required": [
+				"global_prov_uri",
+				"id_scope",
+				"device_id",
+				"device_capability_model_uri",
+				"model_repository_uri"
+			]
+		},
+		"device_schema" : {
+			"properties": {
+				"match_filters": { 
+					"$ref": "#/definitions/device_match_filters_schema"
+				},
+				"pnp_parameters": { 
+					"$ref": "#/definitions/device_pnp_parameters_schema"
+				},
+				"discovery_parameters": { 
+					"$ref": "#/definitions/device_discovery_parameters_schema"
+				},
+				"interface_id": { 
+					"type": "string"
+				},
+				"self_describing": {
+					"enum" : ["true", "false"]
+				}
+			},
+			"required": ["interface_id"],
+			"oneOf": [
+				{
+				   "properties": {
+					   "self_describing": { "enum": ["true"] }
+					},
+					"dependencies" : {
+						"self_describing": {
+							"not": { "required": ["interface_id"] }
+						}
+					}
+				}
+			]
+		},
+		"device_pnp_parameters_schema" : {
+			"properties": {
+				"identity": { 
+					"type": "string"
+				}
+			},
+			"required": [
+				"identity"
+			]
+		},
+		"device_discovery_parameters_schema" : {
+			"properties": {
+				"identity": { 
+					"type": "string"
+				}
+			},
+			"required": [
+				"identity"
+			]
+		},
+		"device_match_filters_schema" : {
+			"properties": {
+				"match_type": { 
+					"enum": [
+						"exact"
+					]
+				},
+				"match_parameters": { 
+					"type" : "object"
+				}
+			},
+			"required": [
+				"match_type", "match_parameters"
+			]
+		},
+		"pnp_adapters_parameters_schema" : {
+			"properties": {
+				"parameters": { 
+					"type" : "array",
+					"items": {
+						"properties": {
+							"identity": { 
+								"type" : "string"
+							}
+						},
+						"required": [
+							"identity"
+						]
+					}
+				}
+			},
+			"required": [
+				"parameters"
+			]
+		},
+		"discovery_adapters_parameters_schema" : {
+			"properties": {
+				"parameters": { 
+					"type" : "array",
+					"items": {
+						"properties": {
+							"identity": { 
+								"type" : "string"
+							}
+						},
+						"required": [
+							"identity"
+						]
+					}
+				}
+			},
+			"required": [
+				"parameters"
+			]
+		}
+	},
+	"required": ["pnp_bridge_parameters", "config_source", "version"]
+}

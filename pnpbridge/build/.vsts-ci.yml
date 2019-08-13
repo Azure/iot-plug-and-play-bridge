@@ -1,0 +1,80 @@
+name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+resources:
+- repo: self
+  clean: true
+trigger:
+    branches:
+        include:
+        - public-preview
+        - pnpbridge_w
+phases:
+- phase: checksubmodule
+  queue:
+    name: Hosted Ubuntu 1604
+  steps:
+  - script: |
+      sudo apt-get update && apt-get install -y \
+      curl \
+      git \
+      python-software-properties \
+      build-essential \
+      pkg-config
+      sudo curl -sL https://deb.nodesource.com/setup_6.x | bash -
+      sudo apt-get install -y nodejs
+    displayName: 'setup'
+  - script: |
+      npm install check_submodules
+    displayName: 'build'
+- phase: ubuntu1604
+  variables:
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-linux-c-ubuntu"
+  queue: Hosted Ubuntu 1604
+  displayName: 'ubuntu1604'
+  steps:
+  - script: 'sudo ./pnpbridge/scripts/linux/build.sh'
+    displayName: 'build'
+    condition: always()
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'cleanup'
+    condition: always()
+- phase: windowsx64
+  queue:
+    name: Hosted VS2017
+  displayName: 'windowsx64'
+  steps:
+  - script: |
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call .\pnpbridge\scripts\windows\build.cmd --platform x64
+- phase: windowsx86
+  queue:
+    name: Hosted VS2017
+  displayName: 'windowsx86'
+  steps:
+  - script: |
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call .\pnpbridge\scripts\windows\build.cmd --platform x86
+- phase: windowsarm
+  queue:
+    name: Hosted VS2017
+  displayName: 'windowsarm'
+  steps:
+  - script: |
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call .\pnpbridge\scripts\windows\build.cmd --platform arm
+- phase: windowsarm64
+  queue:
+    name: Hosted VS2017
+  displayName: 'windowsarm64'
+  steps:
+  - script: |
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call .\pnpbridge\scripts\windows\build.cmd --platform arm64
+- phase: raspberrypi
+  variables:
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c"
+  queue: Hosted Ubuntu 1604
+  displayName: raspberrypi
+  steps:
+  - script: |
+     sudo ./pnpbridge/jenkins/raspberrypi_c.sh
+    displayName: 'build'
