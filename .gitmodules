@@ -1,3 +1,4 @@
-[submodule "pnpbridge/deps/azure-iot-sdk-c-pnp"]
+[submodule "azure-iot-sdk-c-pnp"]
 	path = pnpbridge/deps/azure-iot-sdk-c-pnp
-	url = https://github.com/Azure/azure-iot-sdk-c-pnp
+	url = https://github.com/Azure/azure-iot-sdk-c
+    branch = public-preview-pnp

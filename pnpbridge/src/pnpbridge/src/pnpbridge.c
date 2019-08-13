@@ -311,20 +311,29 @@ DiscoveryAdapter_PublishInterfaces() {
     // Query all the pnp interface clients and publish them
     PPNP_BRIDGE pnpBridge = g_PnpBridge;
     int interfaceCount = 0;
+    PNPBRIDGE_RESULT result;
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces = NULL;
     PnpAdapterManager_GetAllInterfaces(pnpBridge->PnpMgr, &interfaces, &interfaceCount);
 
     LogInfo("Publishing Azure Pnp Interface, count %d", interfaceCount);
-    IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
-        pnpBridge->Configuration.ConnParams->DeviceCapabilityModelUri,
-        interfaces, interfaceCount);
+
+    result = IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
+                                            pnpBridge->Configuration.ConnParams->DeviceCapabilityModelUri,
+                                            interfaces,
+                                            interfaceCount,
+                                            pnpBridge->Configuration.TraceOn,
+                                            pnpBridge->Configuration.ConnParams);
+
+    if (result != PNPBRIDGE_OK) {
+        goto end;
+    }
 
     // Notify interfaces of successful publish
     PnpAdapterManager_InvokeStartInterface(pnpBridge->PnpMgr);
 
+end:
     free(interfaces);
-
-    return 0;
+    return result;
 }
 
 int
@@ -414,7 +423,7 @@ PnpBridge_Main()
         // Prevent main thread from returning by waiting for the
         // exit condition to be set. This condition will be set when
         // the bridge has received a stop signal
-        Lock(pnpBridge->ExitLock);
+        // ExitLock was taken in call to PnpBridge_Initialize so does not need to be reacquired.
         Condition_Wait(pnpBridge->ExitCondition, pnpBridge->ExitLock, 0);
         Unlock(pnpBridge->ExitLock);
     } FINALLY  {
