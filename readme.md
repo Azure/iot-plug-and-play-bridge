@@ -1,7 +1,7 @@
 # Azure IoT Plug and Play bridge
 
 ## Introduction
-Azure IoT Plug and Play bridge is the open source effort from Microsoft that connects the PC sensor and peripheral ecosystem to Azure. It builds on top of [Azure IoT PnP](https://github.com/Azure/Azure-IoT-PnP-Preview/) so that with minimal to no code, developers can easily connect peripherals to Azure, remotely access their data, monitor them, and manage them. This allows developers to perform analytics and gain valuable insights on their IoT devices from either the edge or the cloud. The Azure IoT Plug and Play bridge accomplishes this without requiring peripherals to have direct Azure connectivity, enabling them to use a Windows or Linux host as a gateway to Azure instead. Because of this, it is particularly well suited for connecting cameras and environmental sensors to Azure.
+Azure IoT Plug and Play bridge is the open source effort from Microsoft that connects the PC sensor and peripheral ecosystem to Azure. It builds on top of [Azure IoT Plug and Play](https://azure.microsoft.com/en-us/blog/iot-plug-and-play-is-now-available-in-preview/) so that with minimal to no code, developers can easily connect peripherals to Azure, remotely access their data, monitor them, and manage them. This allows developers to perform analytics and gain valuable insights on their IoT devices from either the edge or the cloud. The Azure IoT Plug and Play bridge accomplishes this without requiring peripherals to have direct Azure connectivity, enabling them to use a Windows or Linux host as a gateway to Azure instead. Because of this, it is particularly well suited for connecting cameras and environmental sensors to Azure.
 
 Azure IoT Plug and Play bridge can be deployed as a standalone executable on any IoT device, PC, industrial PC, server, or gateway running Windows 10 or Linux. It can also be compiled into your application code. A simple configuration file tells the Azure IoT Plug and Play bridge which sensors and peripherals should be exposed up to Azure. Once configured, the Azure IoT Plug and Play bridge uses the Azure IoT PnP SDK to dynamically publish Azure IoT PnP interfaces for the specified sensors and peripherals up to Azure. Developers can then use existing Azure services and solution accelerators to receive data from and send commands to their sensors and peripherals. 
 
@@ -21,13 +21,13 @@ Azure IoT Plug and Play bridge can be deployed as a standalone executable on any
   - Any hardware platform capable of supporting the above OS SKUs and versions.
   - Serial, USB, and Camera peripherals are supported natively. The Azure IoT Plug and Play Bridge can be extended to support any custom peripheral ([see peripherals section below](#peripherals-supported-by-default)) 
 
-- Private Preview of Azure IoT PnP: https://github.com/Azure/Azure-IoT-PnP-Preview/. The included build scripts will automatically clone the required Azure IoT PnP C SDK for you.
+- Public Preview of [Azure IoT SDK for C](https://github.com/Azure/azure-iot-sdk-c/tree/public-preview). The included build scripts will automatically clone the required Azure IoT PnP C SDK for you.
 
-- Private Preview of Azure IoT Central at https://aka.ms/iotc-demo (Optional, a fully-managed IoT SaaS solution with UI that can be used to monitor and manage your device from Azure)
+- Public Preview of [Azure IoT Central](https://docs.microsoft.com/en-us/azure/iot-central/overview-iot-central-pnp) (Optional, a fully-managed IoT SaaS solution with UI that can be used to monitor and manage your device from Azure)
 
 - Optional: [Azure IoT Edge](https://docs.microsoft.com/en-us/azure/iot-edge/) (can be used to help deploy, run, and manage software on the device)
 
-- Optional: Private Preview of Azure IoT Device Agent https://github.com/ms-iot/azure-client-tools-pnp-preview (Pre-built client built on top of the Azure IoT PnP SDK that provides device provisioning and management capabilities out of the box. It also provides lifecycle management for the Azure connection and auto-discovery/loading/unloading of the PnP interfaces implemented by the Device Agent and its extensible plugins)
+- Optional: Public Preview of [Azure IoT Device Agent](https://github.com/ms-iot/azure-client-tools) (Pre-built client built on top of the Azure IoT PnP SDK that provides device provisioning and management capabilities out of the box. It also provides lifecycle management for the Azure connection and auto-discovery/loading/unloading of the PnP interfaces implemented by the Device Agent and its extensible plugins)
 
 ## Azure IoT Plug and Play bridge Architecture
 ![Architecture](./pnpbridge/docs/Pictures/AzurePnPBridge.png)
@@ -46,4 +46,7 @@ Follow [pnpbridge\Readme.md](./pnpbridge/ReadMe.md) to get started on building, 
 
 
 ## Contributing
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit https://cla.microsoft.com. When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA. This project has adopted the Microsoft Open Source Code of Conduct. For more information see the Code of Conduct FAQ or contact opencode@microsoft.com with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+Microsoft collects performance and usage information which may be used to provide and improve Microsoft products and services and enhance your experience.  To learn more, review the [privacy statement](https://go.microsoft.com/fwlink/?LinkId=521839&clcid=0x409).  
+
