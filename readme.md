@@ -27,8 +27,6 @@ Azure IoT Plug and Play bridge can be deployed as a standalone executable on any
 
 - Optional: [Azure IoT Edge](https://docs.microsoft.com/en-us/azure/iot-edge/) (can be used to help deploy, run, and manage software on the device)
 
-- Optional: Public Preview of [Azure IoT Device Agent](https://github.com/ms-iot/azure-client-tools) (Pre-built client built on top of the Azure IoT PnP SDK that provides device provisioning and management capabilities out of the box. It also provides lifecycle management for the Azure connection and auto-discovery/loading/unloading of the PnP interfaces implemented by the Device Agent and its extensible plugins)
-
 ## Azure IoT Plug and Play bridge Architecture
 ![Architecture](./pnpbridge/docs/Pictures/AzurePnPBridge.png)
 
