@@ -7,8 +7,7 @@
 | Windows |  :heavy_check_mark: |
 | Linux | :heavy_check_mark: |
 
-### Development Pre-Requisites
-* In order to build Public Preview Azure IoT Plug and Play bridge, you need to join Microsoft Azure team: https://github.com/Azure
+### Development Pre-Requisites (for Windows)
 * Ensure CMake (https://cmake.org/download/) and Visual Studio 2017 are installed. **CMake should be in the search PATH.**
 * Download Windows 17763 SDK: https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk
 
@@ -99,7 +98,7 @@ To try out Azure IoT Plug and Play bridge, follow the steps bellow:
 
 ### Discovery Adapter
 
-A discovery adapter is a device watcher that is capable of reporting devices back to the Azure IoT Plug and Play Bridge (PnP Bridge) in the form of a json message. These messages are used by the bridge to match a device from the PnP Bridge configuration and call into a PnP adapter to publish a Azure IoT PnP interface.
+A discovery adapter is a device watcher that is capable of reporting devices back to the Azure IoT Plug and Play Bridge (PnP Bridge) in the form of a json message. These messages are used by the bridge to match a device from the Azure IoT Plug and Play bridge configuration and call into a PnP adapter to publish a Azure IoT PnP interface.
 The message format should conform to below template:
 
 ```JSON
