@@ -151,7 +151,7 @@ A PnP Adapter implements the bindings of Azure IoT PnP interface. There are curr
 
 * CoreDeviceHealth: Implements basic device health interface
 * CameraPnP: Implements camera specific health interface
-* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](./../SerialPnP/Readme.md)
+* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](https://github.com/Azure/AzurePnPBridgePreview/blob/master/serialpnp/Readme.md)
 
 ### Configuration file
 
