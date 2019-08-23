@@ -44,8 +44,7 @@ static const int pnpSampleDevice_dpsRegistrationMaxPolls = 60;
 static const char* pnpSample_CustomProvisioningData = "{ \
                                                           \"__iot:interfaces\": \
                                                           { \
-                                                              \"CapabilityModelUri\": \"%s\", \
-                                                              \"ModelRepositoryUri\": \"%s\" \
+                                                              \"CapabilityModelId\": \"%s\" \
                                                           } \
                                                        }";
 #endif // ENABLE_IOT_CENTRAL
@@ -91,8 +90,7 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
     const char* idScope = ConnectionParams->u1.Dps.IdScope;
     const char* deviceId = ConnectionParams->u1.Dps.DeviceId;
     const char* deviceKey = ConnectionParams->AuthParameters.u1.DeviceKey;
-    const char* dcmUri = ConnectionParams->DeviceCapabilityModelUri;
-    const char* ModelUri = ConnectionParams->u1.Dps.ModelRepositoryUri;
+    const char* dcmModelId = ConnectionParams->u1.Dps.DcmModelId;
 
     SECURE_DEVICE_TYPE secureDeviceTypeForProvisioning;
     IOTHUB_SECURITY_TYPE secureDeviceTypeForIotHub;
@@ -112,15 +110,15 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
             LEAVE;
         }
 
-        size_t customProvDataLength = strlen(pnpSample_CustomProvisioningData) + strlen(dcmUri) + strlen(ModelUri) + 1;
+        size_t customProvDataLength = strlen(pnpSample_CustomProvisioningData) + strlen(dcmModelId) + 1;
         customProvisioningData = calloc(1, customProvDataLength * sizeof(char));
         if (NULL == customProvisioningData) {
             LogError("Failed to allocate memory fo the customProvisiongData.");
             LEAVE;
         }
 
-        if (-1 == sprintf_s(customProvisioningData, customProvDataLength, pnpSample_CustomProvisioningData, dcmUri, ModelUri)) {
-            LogError("Failed to create the customProvisiongData. URI's is too long.");
+        if (-1 == sprintf_s(customProvisioningData, customProvDataLength, pnpSample_CustomProvisioningData, dcmModelId)) {
+            LogError("Failed to create the customProvisiongData. DcmModelId is too long.");
         }
         else if (IoTHub_Init() != 0) {
             LogError("IoTHub_Init failed");
@@ -192,6 +190,7 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
                 deviceHandle = NULL;
             }
 
+            // TODO: Fix this. Issue is now resolved
             // Setting OPTION_AUTO_URL_ENCODE_DECODE is required by callers only for private-preview.
             // https://github.com/Azure/azure-iot-sdk-c-pnp/issues/2 tracks making underlying PnP set this automatically.
             else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_AUTO_URL_ENCODE_DECODE, &urlEncodeOn)) != IOTHUB_CLIENT_OK)

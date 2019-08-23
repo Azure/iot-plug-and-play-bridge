@@ -98,9 +98,9 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                     LEAVE;
                 }
 
-                dpsParams->ModelRepositoryUri = json_object_get_string(dpsSettings, PNP_CONFIG_CONNECTION_DPS_MODEL_REPO_URI);
-                if (NULL == dpsParams->ModelRepositoryUri) {
-                    LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DPS_MODEL_REPO_URI);
+                dpsParams->DcmModelId = json_object_get_string(dpsSettings, PNP_CONFIG_CONNECTION_DPS_MODEL_ID);
+                if (NULL == dpsParams->DcmModelId) {
+                    LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DPS_MODEL_ID);
                     result = PNPBRIDGE_INVALID_ARGS;
                     LEAVE;
                 }
