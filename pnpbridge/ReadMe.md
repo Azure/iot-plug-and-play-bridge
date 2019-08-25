@@ -46,43 +46,47 @@ This project used CMAKE for generating project files. Any modifications made to 
 To try out Azure IoT Plug and Play bridge, follow the steps bellow:
 
 * Create an Azure IoT device using Microsoft Azure documentation online and obtain the connections string. If using DPS, the bridge supports symmetric (e.g. Shared Access Signature or SAS) key for securely connecting to the device.
+
+>Note: If using Azure IoT Central to create a device, you must create a custom device template in your application and add an interface that corresponds with your device interface. Refer to [Azure IoT Central documentation on creating a Device Template](https://docs.microsoft.com/en-us/azure/iot-central/howto-set-up-template-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json#create-a-device-template-from-scratch).
+
 * Modify the folowing parameters under **pnp_bridge_parameters** node in the config file (config.json):
 
   Using Connection string (Note: the symmetic_key must match the SAS key in the connection string):
 
   ```JSON
-    {
-      "connection_parameters": {
-        "connection_type" : "connection_string",
-        "connection_string" : "[CONNECTION STRING]",
-        "auth_parameters" : {
-          "auth_type" : "symmetric_key",
-          "symmetric_key" : "[DEVICE KEY]"
-        }
+  {
+     "connection_parameters": {
+      "connection_type" : "connection_string",
+      "connection_string" : "[CONNECTION STRING]",
+      "device_capability_model_uri":"[DEVICE CAPABILITY MODEL ID]",
+      "auth_parameters" : {
+        "auth_type" : "symmetric_key",
+        "symmetric_key" : "[DEVICE KEY from CONNECTION STRING]"
       }
     }
+  }
   ```
   Or using DPS (Please note DPS is not fully supported yet):
 
   ```JSON
   {
-      "connection_parameters": {
-        "connection_type" : "dps",
-        "auth_parameters" : {
-          "auth_type" : "symmetric_key",
-          "symmetric_key" : "[DEVICE KEY]"
-        },
-        "dps_parameters" : {
-          "global_prov_uri" : "[GLOABL PROVISIONING URI]",
-          "id_scope": "[IOT HUB ID SCOPE]",
-          "device_id": "[DEVICE ID]",
-          "device_capability_model_uri": "[DEVICE CAPABILITY MODEL URI]",
-          "model_repository_uri": "[MODEL REPOSITORY URI]"
-        }
+    "connection_parameters": {
+      "connection_type" : "dps",
+      "device_capability_model_uri":"[DEVICE CAPABILITY MODEL ID]",
+      "auth_parameters" : {
+        "auth_type" : "symmetric_key",
+        "symmetric_key" : "[DEVICE KEY]"
+      },
+      "dps_parameters" : {
+        "global_prov_uri" : "[GLOBAL PROVISIONING URI]",
+        "id_scope": "[IOT HUB ID SCOPE]",
+        "device_id": "[DEVICE ID]",
+        "model_repository_uri": "[To fill in]"
       }
     }
+  }
   ```
-  > Note: If using Azure IoT Central, the primary connection fields you will need to change in the default config file are id_scope, device_id, symmetric_key, and device_capability_model_uri. Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "Id" that is listed for your device's Device Capability Model in Azure IoT Central.
+  > Note: If using Azure IoT Central, the primary connection fields you will need to change in the default config file are id_scope, device_id, symmetric_key, and device_capability_model_uri. Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) for how to generate the id_scope, device_id, and symmetric_key for your device. For Azure IoT Central, device_capability_model_uri must match the Device Template ID.
 
 * Start PnpBridge by running it in a command prompt.
 
@@ -272,4 +276,4 @@ Source code for various PnpBridge adapters
 
 ### Support
 
-For any questions raise an issue or contact - [Azure IoT PnP Bridge](mailto:pnpbridge@microsoft.com)
+For any questions raise an issue or contact - [Azure IoT Plug and Play bridge](mailto:pnpbridge@microsoft.com)
