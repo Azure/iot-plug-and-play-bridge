@@ -48,7 +48,7 @@ To try out Azure IoT Plug and Play bridge, follow the steps bellow:
 * Create an Azure IoT device using Microsoft Azure documentation online and obtain the connections string. If using DPS, the bridge supports symmetric (e.g. Shared Access Signature or SAS) key for securely connecting to the device.
 * Modify the folowing parameters under **pnp_bridge_parameters** node in the config file (config.json):
 
-  Using Connection string:
+  Using Connection string (Note: the symmetic_key must match the SAS key in the connection string):
 
   ```JSON
     {
@@ -62,7 +62,7 @@ To try out Azure IoT Plug and Play bridge, follow the steps bellow:
       }
     }
   ```
-  Or using DPS:
+  Or using DPS (Please note DPS is not fully supported yet):
 
   ```JSON
   {
