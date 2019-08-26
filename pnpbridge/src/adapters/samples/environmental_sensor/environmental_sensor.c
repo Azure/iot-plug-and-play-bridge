@@ -17,11 +17,6 @@
 
 #include "azure_c_shared_utility/const_defines.h"
 
-
-// DigitalTwin interface name from service perspective.
-static const char DigitalTwinSampleEnvironmentalSensor_InterfaceId[] = "urn:contoso:com:EnvironmentalSensor:1";
-static const char DigitalTwinSampleEnvironmentalSensor_ComponentName[] = "environmentalSensor";
-
 //  
 //  Telemetry names for this interface.
 //
@@ -533,7 +528,7 @@ DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateI
 
     if ((result = DigitalTwin_InterfaceClient_Create(InterfaceId, ComponentName, DigitalTwinSampleEnvironmentalSensor_InterfaceRegisteredCallback, (void*)&digitaltwinSample_EnvironmentalSensorState, &interfaceHandle)) != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to allocate interface client handle for interfaceId=<%s>, componentName=<%s>, error=<%s>", DigitalTwinSampleEnvironmentalSensor_InterfaceId, DigitalTwinSampleEnvironmentalSensor_ComponentName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to allocate interface client handle for interfaceId=<%s>, componentName=<%s>, error=<%s>", InterfaceId, ComponentName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
         interfaceHandle = NULL;
     }
     else if ((result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(interfaceHandle, DigitalTwinSampleEnvironmentalSensor_ProcessPropertyUpdate)) != DIGITALTWIN_CLIENT_OK)
@@ -550,7 +545,7 @@ DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateI
     }
     else
     {
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Created DIGITALTWIN_INTERFACE_CLIENT_HANDLE.  interfaceId=<%s>, componentName=<%s>, handle=<%p>", DigitalTwinSampleEnvironmentalSensor_InterfaceId, DigitalTwinSampleEnvironmentalSensor_ComponentName, interfaceHandle);
+        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Created DIGITALTWIN_INTERFACE_CLIENT_HANDLE.  interfaceId=<%s>, componentName=<%s>, handle=<%p>", InterfaceId, ComponentName, interfaceHandle);
         digitaltwinSample_EnvironmentalSensorState.interfaceClientHandle = interfaceHandle;
     }
 

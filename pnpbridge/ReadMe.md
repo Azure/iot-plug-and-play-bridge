@@ -56,6 +56,7 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
       "connection_parameters": {
         "connection_type" : "connection_string",
         "connection_string" : "[CONNECTION STRING]",
+        "device_capability_model_uri": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
@@ -69,6 +70,7 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
   {
       "connection_parameters": {
         "connection_type" : "dps",
+        "device_capability_model_uri": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
@@ -76,9 +78,7 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
         "dps_parameters" : {
           "global_prov_uri" : "[GLOABL PROVISIONING URI]",
           "id_scope": "[IOT HUB ID SCOPE]",
-          "device_id": "[DEVICE ID]",
-          "device_capability_model_id": "[DEVICE CAPABILITY MODEL ID]",
-          "model_repository_uri": "[MODEL REPOSITORY URI]"
+          "device_id": "[DEVICE ID]"
         }
       }
     }

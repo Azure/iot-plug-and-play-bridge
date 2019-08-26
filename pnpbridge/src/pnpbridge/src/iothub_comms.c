@@ -173,7 +173,6 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
         {
             // The initial provisioning stage has succeeded.  Now use this material to connect to IoTHub.
             IOTHUB_CLIENT_RESULT iothubClientResult;
-            bool urlEncodeOn = true;
 
             if (iothub_security_init(secureDeviceTypeForIotHub) != 0)
             {
@@ -186,16 +185,6 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
             else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_LOG_TRACE, &TraceOn)) != IOTHUB_CLIENT_OK)
             {
                 LogError("Failed to set option %s, error=%d", OPTION_LOG_TRACE, iothubClientResult);
-                IoTHubDeviceClient_Destroy(deviceHandle);
-                deviceHandle = NULL;
-            }
-
-            // TODO: Fix this. Issue is now resolved
-            // Setting OPTION_AUTO_URL_ENCODE_DECODE is required by callers only for private-preview.
-            // https://github.com/Azure/azure-iot-sdk-c-pnp/issues/2 tracks making underlying PnP set this automatically.
-            else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_AUTO_URL_ENCODE_DECODE, &urlEncodeOn)) != IOTHUB_CLIENT_OK)
-            {
-                LogError("Failed to set option %s, error=%d", OPTION_AUTO_URL_ENCODE_DECODE, iothubClientResult);
                 IoTHubDeviceClient_Destroy(deviceHandle);
                 deviceHandle = NULL;
             }
@@ -253,8 +242,6 @@ IotComms_PnPInterfaceRegisteredCallback(
     Condition_Post(registrationContext->Condition);
     Unlock(registrationContext->Lock);
 }
-
-#define DIGITALTWIN_SAMPLE_DEVICE_CAPABILITY_MODEL_URI "http://azureiot.com/TestDeviceCapabilityModule/1.0.0"
 
 // Invokes PnP_DeviceClient_RegisterInterfacesAsync, which indicates to Azure IoT which PnP interfaces this device supports.
 // The PnP Handle *is not valid* until this operation has completed (as indicated by the callback appPnpInterfacesRegistered being invoked).
@@ -324,7 +311,6 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubDeviceHandle(bool TraceOn, const c
 {
     IOTHUB_DEVICE_HANDLE deviceHandle = NULL;
     IOTHUB_CLIENT_RESULT iothubClientResult;
-    bool urlEncodeOn = true;
 
     // TODO: PnP SDK should auto-set OPTION_AUTO_URL_ENCODE_DECODE for MQTT as its strictly required.  Need way for IoTHub handle to communicate this back.
     if (IoTHub_Init() != 0) {
@@ -338,12 +324,6 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubDeviceHandle(bool TraceOn, const c
         else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_LOG_TRACE, &TraceOn)) != IOTHUB_CLIENT_OK)
         {
             LogError("Failed to set option %s, error=%d\n", OPTION_LOG_TRACE, iothubClientResult);
-            IoTHubDeviceClient_Destroy(deviceHandle);
-            deviceHandle = NULL;
-        }
-        else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_AUTO_URL_ENCODE_DECODE, &urlEncodeOn)) != IOTHUB_CLIENT_OK)
-        {
-            LogError("Failed to set option %s, error=%d\n", OPTION_AUTO_URL_ENCODE_DECODE, iothubClientResult);
             IoTHubDeviceClient_Destroy(deviceHandle);
             deviceHandle = NULL;
         }
@@ -364,15 +344,25 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotDevice(bool TraceOn, PCONNECTION_PARA
         if (ConnectionParams->AuthParameters.AuthType == AUTH_TYPE_SYMMETRIC_KEY) {
             IOTHUB_DEVICE_HANDLE handle = NULL;
             char* connectionString;
-            char* format = "%s;SharedAccessKey=%s";
-            
-            connectionString = (char*) malloc(strlen(ConnectionParams->AuthParameters.u1.DeviceKey) +
-                                              strlen(ConnectionParams->u1.ConnectionString) + strlen(format) + 1);
-            sprintf(connectionString, format, ConnectionParams->u1.ConnectionString, ConnectionParams->AuthParameters.u1.DeviceKey);
-            
+            char* format = NULL;
+
+            if (NULL != strstr(ConnectionParams->u1.ConnectionString, "SharedAccessKey=")) {
+                LogInfo("WARNING: SharedAccessKey is included in connection string. Ignoring "
+                            PNP_CONFIG_CONNECTION_AUTH_TYPE_DEVICE_SYMM_KEY " in config file.");
+                connectionString = (char*) ConnectionParams->u1.ConnectionString;
+            }
+            else {
+                format = "%s;SharedAccessKey=%s";
+                connectionString = (char*) malloc(strlen(ConnectionParams->AuthParameters.u1.DeviceKey) +
+                                                strlen(ConnectionParams->u1.ConnectionString) + strlen(format) + 1);
+                sprintf(connectionString, format, ConnectionParams->u1.ConnectionString, ConnectionParams->AuthParameters.u1.DeviceKey);
+            }
+
             handle = IotComms_InitializeIotHubDeviceHandle(TraceOn, connectionString);
-            
-            free(connectionString);
+
+            if (NULL != format) {
+                free(connectionString);
+            }
 
             return handle;
         }
