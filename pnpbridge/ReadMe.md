@@ -56,6 +56,7 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
       "connection_parameters": {
         "connection_type" : "connection_string",
         "connection_string" : "[CONNECTION STRING]",
+        "device_capability_model_uri": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
@@ -69,6 +70,7 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
   {
       "connection_parameters": {
         "connection_type" : "dps",
+        "device_capability_model_uri": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
@@ -76,14 +78,12 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
         "dps_parameters" : {
           "global_prov_uri" : "[GLOABL PROVISIONING URI]",
           "id_scope": "[IOT HUB ID SCOPE]",
-          "device_id": "[DEVICE ID",
-          "device_capability_model_uri": "[DEVICE CAPABILITY MODEL URI]",
-          "model_repository_uri": "[MODEL REPOSITORY URI]"
+          "device_id": "[DEVICE ID]"
         }
       }
     }
   ```
-  > Note: If using Azure IoT Central, the primary connection fields you will need to change in the default config file are id_scope, device_id, symmetric_key, and device_capability_model_uri. Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "Id" that is listed for your device's Device Capability Model in Azure IoT Central.
+  > Note: If using Azure IoT Central, the primary connection fields you will need to change in the default config file are id_scope, device_id, symmetric_key, and device_capability_model_id. Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "Id" that is listed for your device's Device Capability Model in Azure IoT Central.
 
 * Start PnpBridge by running it in a command prompt.
 

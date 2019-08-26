@@ -5,7 +5,7 @@
     "connection_parameters": {
       "connection_type" : "connection_string",
       "connection_string" : "[To fill in]",
-	  "device_capability_model_uri": "[To fill in]",
+      "device_capability_model_uri": "[To fill in]",
       "auth_parameters" : {
         "auth_type" : "symmetric_key",
         "symmetric_key" : "[To fill in]"
@@ -13,8 +13,7 @@
       "dps_parameters" : {
         "global_prov_uri" : "[To fill in]",
         "id_scope": "[To fill in]",
-        "device_id": "[To fill in]",
-        "model_repository_uri": "[To fill in]"
+        "device_id": "[To fill in]"
       }
     },
     "trace_on": false

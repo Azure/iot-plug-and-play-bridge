@@ -94,7 +94,6 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_CONNECTION_DPS_ID_SCOPE "id_scope" 
 #define PNP_CONFIG_CONNECTION_DPS_DEVICE_ID "device_id"
 #define PNP_CONFIG_CONNECTION_DEVICE_CAPS_MODEL_URI "device_capability_model_uri"
-#define PNP_CONFIG_CONNECTION_DPS_MODEL_REPO_URI "model_repository_uri"
 
 #define PNP_CONFIG_CONNECTION_AUTH_PARAMETERS "auth_parameters"
 #define PNP_CONFIG_CONNECTION_AUTH_TYPE "auth_type"
