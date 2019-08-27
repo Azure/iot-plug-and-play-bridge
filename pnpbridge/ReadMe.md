@@ -1,4 +1,4 @@
-# Building, Deploying and Extending the Azure IoT PnP Bridge
+# Building, Deploying and Extending the Azure IoT Plug and Play bridge
 
 ## Compile the Bridge
 
@@ -7,14 +7,13 @@
 | Windows |  :heavy_check_mark: |
 | Linux | :heavy_check_mark: |
 
-### Development Pre-Requisites
-* In order to build Private Preview Azure PnP Bridge, you need to join Microsoft Azure team: https://github.com/Azure
+### Development Pre-Requisites (for Windows)
 * Ensure CMake (https://cmake.org/download/) and Visual Studio 2017 are installed. **CMake should be in the search PATH.**
 * Download Windows 17763 SDK: https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk
 
-### Build the Azure IoT PnP Bridge
+### Build the Azure IoT Plug and Play bridge
 
-#### Step 1: Get the required dependencies for the Azure PnP Bridge
+#### Step 1: Get the required dependencies for the Azure IoT Plug and Play bridge
 After cloning the Azure PnP Bridge repo to your machine, open the "Developer Command Prompt for VS 2017" and navigate to the directory of the cloned repo:
 ```
 %REPO_DIR%\> cd pnpbridge
@@ -24,7 +23,7 @@ After cloning the Azure PnP Bridge repo to your machine, open the "Developer Com
 
 At this step, if you confirmed you have access to the Azure repo but are not able to successfully clone the required repos, you might be hitting authentication issues. To resolve this, install the [Git Credential Manager for Windows](https://github.com/Microsoft/Git-Credential-Manager-for-Windows/releases)
 
-#### Step 2: Build the Azure PnP Bridge
+#### Step 2: Build the Azure IoT Plug and Play bridge
 
 ```
 %REPO_DIR%\pnpbridge\> cd scripts\windows
@@ -44,24 +43,29 @@ This project used CMAKE for generating project files. Any modifications made to 
 
 ## Quickstart
 
-To try out Azure IoT PnP Bridge, follow the steps bellow:
+To try out Azure IoT Plug and Play bridge, follow the steps bellow:
 
 * Create an Azure IoT device using Microsoft Azure documentation online and obtain the connections string. If using DPS, the bridge supports symmetric (e.g. Shared Access Signature or SAS) key for securely connecting to the device.
+
+>Note: If using Azure IoT Central to create a device, you must create a custom device template in your application and add an interface that corresponds with your device interface. Refer to [Azure IoT Central documentation on connecting a IoT Plug and Play device](https://docs.microsoft.com/en-us/azure/iot-central/quick-create-pnp-device-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json). 
+
 * Modify the folowing parameters under **pnp_bridge_parameters** node in the config file (config.json):
 
-  Using Connection string:
+  Using Connection string (Note: the symmetric_key must match the SAS key in the connection string):
 
   ```JSON
     {
       "connection_parameters": {
         "connection_type" : "connection_string",
         "connection_string" : "[CONNECTION STRING]",
+        "device_capability_model_uri": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
         }
       }
     }
+  }
   ```
   Or using DPS:
 
@@ -69,21 +73,21 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
   {
       "connection_parameters": {
         "connection_type" : "dps",
+        "device_capability_model_uri": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
         },
         "dps_parameters" : {
-          "global_prov_uri" : "[GLOABL PROVISIONING URI]",
+          "global_prov_uri" : "[GLOBAL PROVISIONING URI]",
           "id_scope": "[IOT HUB ID SCOPE]",
-          "device_id": "[DEVICE ID",
-          "device_capability_model_uri": "[DEVICE CAPABILITY MODEL URI]",
-          "model_repository_uri": "[MODEL REPOSITORY URI]"
+          "device_id": "[DEVICE ID]"
         }
       }
     }
+  }
   ```
-  > Note: If using Azure IoT Central, the primary connection fields you will need to change in the default config file are id_scope, device_id, symmetric_key, and device_capability_model_uri. Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "Id" that is listed for your device's Device Capability Model in Azure IoT Central.
+  > Note: If using Azure IoT Central, the primary connection fields you will need to change in the default config file are id_scope, device_id, symmetric_key, and device_capability_model_id. Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "Id" that is listed for your device's Device Capability Model in Azure IoT Central.
 
 * Start PnpBridge by running it in a command prompt.
 
@@ -95,11 +99,11 @@ To try out Azure IoT PnP Bridge, follow the steps bellow:
 
   > Note: If you have either a built-in camera or a USB camera connected to your   PC running the PnpBridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, PnpBridge console output window will show the monitoring stats and the framerate of the camera will be reported through Azure IoT PnP interface to Azure.     
 
-## PnP Bridge Components
+## Azure IoT Plug and Play bridge Components
 
 ### Discovery Adapter
 
-A discovery adapter is a device watcher that is capable of reporting devices back to PnP Bridge in the form of a json message. These messages are used by PnpBridge to match a device from the PnP Bridge configuration and call into a PnP adapter to publish a Azure IoT PnP interface.
+A discovery adapter is a device watcher that is capable of reporting devices back to the Azure IoT Plug and Play Bridge (PnP Bridge) in the form of a json message. These messages are used by the bridge to match a device from the Azure IoT Plug and Play bridge configuration and call into a PnP adapter to publish a Azure IoT PnP interface.
 The message format should conform to below template:
 
 ```JSON
@@ -148,15 +152,15 @@ If there are any initial parameters that needs to be passed as part of the Disco
 
 ### PnP Adapter
 
-A PnP Adapter implements the bindings of Azure IoT PnP interface. There are currently 3 PnP adapters in the PnP Bridge:
+A PnP Adapter implements the bindings of Azure IoT PnP interface. There are currently 3 PnP adapters in the Azure IoT Plug and Play bridge:
 
 * CoreDeviceHealth: Implements basic device health interface
 * CameraPnP: Implements camera specific health interface
-* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](./../SerialPnP/Readme.md)
+* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](../serialpnp/Readme.md)
 
 ### Configuration file
 
-PnpBridge uses a configuration file to get the IoT hub connection settings and to configure devices for which PnP interfaces will be published. In the future this configuration could come from cloud.
+PnpBridge uses a configuration file to get the IoT Hub connection settings and to configure devices for which PnP interfaces will be published. In the future this configuration could come from cloud.
 
 The schema for the conifguration file is located under:
 **src\pnpbridge\src\pnpbridge_config_schema.json**.
@@ -165,7 +169,7 @@ Use this with VS code while authoring a PnpBridge configuration file to get sche
 
 ## Authoring new PnP Bridge Adapters
 
-To extend PnP Bridge in order to support new device discovery and implement new Azure IoT PnP interfaces, follow the steps below. All the API declarations are part of "PnpBridge.h". 
+To extend Azure IoT Plug and Play bridge in order to support new device discovery and implement new Azure IoT PnP interfaces, follow the steps below. All the API declarations are part of "PnpBridge.h". 
 
 * Create a Discovery Adapter
 
@@ -228,7 +232,7 @@ To extend PnP Bridge in order to support new device discovery and implement new 
     }
   ```
 
-* The discovery adapter will be started automatically. To publish an Azure PnP interface add a configuration entry in config.json. In the below example, the PnpAdapter identity used is "my-pnp-adapter".
+* The discovery adapter will be started automatically. To publish an Azure PnP interface add a configuration entry in config.json. In the below example, the PnpAdapter identity used is "my-pnp-adapter". The "component_name" below can be thought of as an identifier for a particular instance of an interface. 
 
   ```JSON
   "devices": [
@@ -240,7 +244,8 @@ To extend PnP Bridge in order to support new device discovery and implement new 
             "my_custom_identity": "my-sample-device"
           }
         },
-        "interface_id": "http://contoso.com/mypnpinterface/1.0.0",
+        "interface_id": "urn:contoso:com:mypnpinterface:1",
+        "component_name":"MyComponent1",
         "pnp_parameters": {
           "identity": "my-pnp-adapter"
         }
@@ -251,7 +256,7 @@ To extend PnP Bridge in order to support new device discovery and implement new 
 Note: PnpBridge adapter callbacks are invoked in a sequential fashion. An adapter shouldn't block a callback since this will prevent PnpBridge from making forward progress.
 
 ## Sample Camera Adapter
-The following [readme](src/adapters/src/camera/readme.md) provides details on a sample camera adapter that can be enabled with this preview.
+The following [readme](./src/adapters/src/Camera/readme.md) provides details on a sample camera adapter that can be enabled with this preview.
 
 ## Folder Structure
 
@@ -273,4 +278,4 @@ Source code for various PnpBridge adapters
 
 ### Support
 
-For any questions raise an issue or contact - [Azure IoT PnP Bridge](mailto:pnpbridge@microsoft.com)
+For any questions raise an issue or contact - [Azure IoT Plug and Play bridge](mailto:pnpbridge@microsoft.com)
