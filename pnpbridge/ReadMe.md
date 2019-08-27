@@ -47,11 +47,11 @@ To try out Azure IoT Plug and Play bridge, follow the steps bellow:
 
 * Create an Azure IoT device using Microsoft Azure documentation online and obtain the connections string. If using DPS, the bridge supports symmetric (e.g. Shared Access Signature or SAS) key for securely connecting to the device.
 
->Note: If using Azure IoT Central to create a device, you must create a custom device template in your application and add an interface that corresponds with your device interface. Refer to [Azure IoT Central documentation on creating a Device Template](https://docs.microsoft.com/en-us/azure/iot-central/howto-set-up-template-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json#create-a-device-template-from-scratch).
+>Note: If using Azure IoT Central to create a device, you must create a custom device template in your application and add an interface that corresponds with your device interface. Refer to [Azure IoT Central documentation on connecting a IoT Plug and Play device](https://docs.microsoft.com/en-us/azure/iot-central/quick-create-pnp-device-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json). 
 
 * Modify the folowing parameters under **pnp_bridge_parameters** node in the config file (config.json):
 
-  Using Connection string (Note: the symmetic_key must match the SAS key in the connection string):
+  Using Connection string (Note: the symmetric_key must match the SAS key in the connection string):
 
   ```JSON
     {
@@ -67,7 +67,7 @@ To try out Azure IoT Plug and Play bridge, follow the steps bellow:
     }
   }
   ```
-  Or using DPS (Please note DPS is not fully supported yet):
+  Or using DPS:
 
   ```JSON
   {
@@ -79,7 +79,7 @@ To try out Azure IoT Plug and Play bridge, follow the steps bellow:
           "symmetric_key" : "[DEVICE KEY]"
         },
         "dps_parameters" : {
-          "global_prov_uri" : "[GLOABL PROVISIONING URI]",
+          "global_prov_uri" : "[GLOBAL PROVISIONING URI]",
           "id_scope": "[IOT HUB ID SCOPE]",
           "device_id": "[DEVICE ID]"
         }
@@ -156,7 +156,7 @@ A PnP Adapter implements the bindings of Azure IoT PnP interface. There are curr
 
 * CoreDeviceHealth: Implements basic device health interface
 * CameraPnP: Implements camera specific health interface
-* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](https://github.com/Azure/AzurePnPBridgePreview/blob/master/serialpnp/Readme.md)
+* SerialPnp: Implements interfaces associated with MCUs or other devices that are [SerialPnP protocol compliant](../serialpnp/Readme.md)
 
 ### Configuration file
 
@@ -232,7 +232,7 @@ To extend Azure IoT Plug and Play bridge in order to support new device discover
     }
   ```
 
-* The discovery adapter will be started automatically. To publish an Azure PnP interface add a configuration entry in config.json. In the below example, the PnpAdapter identity used is "my-pnp-adapter".
+* The discovery adapter will be started automatically. To publish an Azure PnP interface add a configuration entry in config.json. In the below example, the PnpAdapter identity used is "my-pnp-adapter". The "component_name" below can be thought of as an identifier for a particular instance of an interface. 
 
   ```JSON
   "devices": [
@@ -244,7 +244,8 @@ To extend Azure IoT Plug and Play bridge in order to support new device discover
             "my_custom_identity": "my-sample-device"
           }
         },
-        "interface_id": "http://contoso.com/mypnpinterface/1.0.0",
+        "interface_id": "urn:contoso:com:mypnpinterface:1",
+        "component_name":"MyComponent1",
         "pnp_parameters": {
           "identity": "my-pnp-adapter"
         }
@@ -255,7 +256,7 @@ To extend Azure IoT Plug and Play bridge in order to support new device discover
 Note: PnpBridge adapter callbacks are invoked in a sequential fashion. An adapter shouldn't block a callback since this will prevent PnpBridge from making forward progress.
 
 ## Sample Camera Adapter
-The following [readme](src/adapters/src/camera/readme.md) provides details on a sample camera adapter that can be enabled with this preview.
+The following [readme](./src/adapters/src/Camera/readme.md) provides details on a sample camera adapter that can be enabled with this preview.
 
 ## Folder Structure
 
