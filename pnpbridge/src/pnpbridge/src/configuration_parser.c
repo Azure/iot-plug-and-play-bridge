@@ -98,12 +98,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                     LEAVE;
                 }
 
-                dpsParams->ModelRepositoryUri = json_object_get_string(dpsSettings, PNP_CONFIG_CONNECTION_DPS_MODEL_REPO_URI);
-                if (NULL == dpsParams->ModelRepositoryUri) {
-                    LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DPS_MODEL_REPO_URI);
-                    result = PNPBRIDGE_INVALID_ARGS;
-                    LEAVE;
-                }
+                dpsParams->DcmModelId = connParams->DeviceCapabilityModelUri;
             }
         }
 

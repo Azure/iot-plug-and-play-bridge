@@ -30,6 +30,7 @@ PnpBridge_Initialize(
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
     PPNP_BRIDGE pbridge = NULL;
     JSON_Value* config = NULL;
+    bool lockAcquired = false;
 
     TRY {
         g_PnpBridgeState = PNP_BRIDGE_UNINITIALIZED;
@@ -56,11 +57,12 @@ PnpBridge_Initialize(
             LEAVE;
         }
         Lock(pbridge->ExitLock);
+        lockAcquired = true;
 
         // Get the JSON VALUE of configuration file
         result = PnpBridgeConfig_GetJsonValueFromConfigFile("config.json", &config);
         if (PNPBRIDGE_OK != result) {
-            LogError("Failed to retrieve the configuration.");
+            LogError("Failed to retrieve the bridge configuration from config.json file.");
             LEAVE;
         }
 
@@ -90,6 +92,9 @@ PnpBridge_Initialize(
     FINALLY
     {
         if (PNPBRIDGE_OK != result) {
+            if (lockAcquired) {
+                Unlock(pbridge->ExitLock);
+            }
             PnpBridge_Release(pbridge);
             *PnpBridge = NULL;
         }

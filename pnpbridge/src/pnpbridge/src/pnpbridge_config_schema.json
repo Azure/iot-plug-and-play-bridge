@@ -126,19 +126,12 @@
 				},
 				"device_id": { 
 					"type": "string"
-				},
-				"device_capability_model_uri": { 
-					"type": "string"
-				},
-				"model_repository_uri": { 
-					"type": "string"
 				}
 			},
 			"required": [
 				"global_prov_uri",
 				"id_scope",
 				"device_id",
-				"device_capability_model_uri",
 				"model_repository_uri"
 			]
 		},
