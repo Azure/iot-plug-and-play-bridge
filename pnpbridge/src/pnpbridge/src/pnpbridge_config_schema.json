@@ -75,7 +75,7 @@
 						"type": "string"
 					}
 				  },
-				  "required": ["connection_string"]
+				  "required": ["connection_string", "device_capability_model_uri"]
 				},
 				{
 				  "properties": {
@@ -84,7 +84,7 @@
 						"$ref": "#/definitions/dps_parameters_schema"
 					}
 				  },
-				  "required": ["dps_parameters"]
+				  "required": ["dps_parameters", "device_capability_model_uri"]
 				},
 				{
 					"properties": {
@@ -131,8 +131,7 @@
 			"required": [
 				"global_prov_uri",
 				"id_scope",
-				"device_id",
-				"model_repository_uri"
+				"device_id"
 			]
 		},
 		"device_schema" : {
