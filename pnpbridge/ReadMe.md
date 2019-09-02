@@ -120,8 +120,8 @@ For devices that self describe Azure IoT PnP interface(s), the message above sho
 
 There are currently 3 discovery adapters in PnP Bridge:
 
-* WindowPnPDiscovery: Reports a PnP device based on a device class provided as part of PnP Bridge configuration
-* CameraDisovery: Reports a camera on Windows
+* WindowPnPDiscovery: Reports a PnP device based on a device class provided as part of PnP Bridge configuration.
+* CameraDiscovery: Reports a camera on Windows.
 * SerialPnp: Reports a [serialpnp device](./../serialpnp/Readme.md). This allows devices like MCUs to self describe Azure IoT PnP interface.
 
 Here's an example output of json message published by WindowPnPDiscovery adapter:
