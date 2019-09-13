@@ -288,8 +288,8 @@ PnpBridge_ProcessPnpMessage(
             mallocAndStrcpy_s(&PnpMessage_AccessProperties(PnpMessage)->ComponentName, componentName);
         }
 
-        if (PnpAdapterManager_IsInterfaceIdPublished(pnpBridge->PnpMgr, interfaceId, componentName)) {
-            LogError("PnP Interface %s instance %s has already been published. Dropping notification", interfaceId, componentName);
+        if (PnpAdapterManager_IsInterfaceIdPublished(pnpBridge->PnpMgr, interfaceId)) {
+            LogError("PnP Interface has already been published. Dropping the change notification. \n");
             result = PNPBRIDGE_FAILED;
             LEAVE;
         }
