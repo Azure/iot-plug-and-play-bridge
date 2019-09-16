@@ -6,9 +6,11 @@
 
 extern DISCOVERY_ADAPTER SerialPnpDiscovery;
 extern DISCOVERY_ADAPTER ModbusPnpDeviceDiscovery;
+extern DISCOVERY_ADAPTER MqttPnpAdapter;
 
 extern PNP_ADAPTER SerialPnpInterface;
 extern PNP_ADAPTER ModbusPnpInterface;
+extern PNP_ADAPTER MqttPnpInterface;
 
 #ifdef WIN32
 
@@ -19,7 +21,8 @@ PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
     &CameraPnpAdapter,
     &SerialPnpDiscovery,
     &CoreDeviceDiscovery,
-    &ModbusPnpDeviceDiscovery
+    &ModbusPnpDeviceDiscovery,
+    &MqttPnpAdapter
 };
 
 extern PNP_ADAPTER CameraPnpInterface;
@@ -29,7 +32,8 @@ PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
     &CameraPnpInterface,
     &SerialPnpInterface,
     &CoreDeviceHealth,
-    &ModbusPnpInterface
+    &ModbusPnpInterface,
+    &MqttPnpInterface
 };
 
 #else //WIN32
