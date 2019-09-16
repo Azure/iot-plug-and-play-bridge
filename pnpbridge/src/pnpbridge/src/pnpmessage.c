@@ -202,7 +202,7 @@ PnpMessageQueue_Worker(
         // 1. Unload all the pnp adapters
         // 2. Destroy the Digital twin client
         // 3. Recreate Digital twin client
-        // 4. replay all messages
+        // 4. Replay all messages from devices reported by discovery adapters
         // 5. Publish the interface
 
         PnpBridge_ReinitPnpAdapters();

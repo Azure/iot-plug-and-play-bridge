@@ -8,7 +8,7 @@ DISCOVERY_ADAPTER EnvironmentSensorDiscovery = {
     .StopDiscovery = EnvironmentSensor_StopDiscovery
 };
 
-There is only one instance of a discovery adapter create by pnpbridge, which is uniquely identified by .Identity. Here are few of the common properties that apply to the callbacks:
+There is only one instance of a discovery adapter created by the Bridge, which is uniquely identified by .Identity. Here are few of the common properties that apply to the callbacks:
 
 1. The StartDiscovery/StopDiscovery are called sequentially for each adapter i.e If there is adapter A and adapter B, B's StartDiscovery will be called after A's is complete. The order is not guaranteed. 
 2. Failure to initialize any adapter is fatal and will cause pnpbridge start failure.
@@ -33,8 +33,7 @@ When a new device is discovered, the adapter should call DiscoveryAdapter_Report
 
 **Constructing a PNPMESSAGE**
 
-A PNPMESSAGE is a device discovery message that a discovery adapter will report using the DiscoveryAdapter_ReportDevice API. This message is backed by the PNPMEMORY. When the DiscoveryAdapter_ReportDevice returns, the adapter should release reference
-on the PNPMESSAGE.
+A PNPMESSAGE is a device discovery message that a discovery adapter will report to the Bridge using the DiscoveryAdapter_ReportDevice. The discovery adapter should use PnpMessage_CreateMessage to allocate this message followed by PnpMessage_SetMessage to set the message payload. This message is backed by the PNPMEMORY. When the DiscoveryAdapter_ReportDevice returns, the adapter should release reference on the PNPMESSAGE.
 
 **Per-Device DiscoveryAdapter Parameters**
 
@@ -42,7 +41,7 @@ Every device can provide discovery adapter specific parameters. This could be fo
 
 **DiscoveryAdapter Parameters**
 
-There is a per discovery adapter wide parameters that can be specified under root/discovery_adapters/parameters in the json config. The unique identifier is identity and there should be only one instance per adapter identity.
+There are discovery adapter wide parameters that can be specified under root/discovery_adapters/parameters in the json config. The unique identifier is identity and there should be only one instance of this per adapter identity.
 
     {
         "identity": "environment-sensor-sample-discovery-adapter",
