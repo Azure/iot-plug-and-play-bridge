@@ -1,6 +1,7 @@
 # PnpMessage
 
-A pnpmessage is packet sent from a discovery adapter to pnpbridge to notify a device arrival or removal.
+A PNPMESSAGE is a device discovery message that a discovery adapter will report to the Bridge using the DiscoveryAdapter_ReportDevice. 
+The discovery adapter should use PnpMessage_CreateMessage to allocate this message followed by PnpMessage_SetMessage to set the message payload.
 
 Charactersitics of PnpMessage
 

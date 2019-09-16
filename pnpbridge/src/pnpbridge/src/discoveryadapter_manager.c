@@ -60,7 +60,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Create(PDISCOVERY_MANAGER* discoveryMan
 }
 
 PNPBRIDGE_RESULT 
-DiscoveryManager_StarDiscoveryAdapter(
+DiscoveryManager_StartDiscoveryAdapter(
     PDISCOVERY_MANAGER discoveryManager,
     PDISCOVERY_ADAPTER  discoveryInterface,
     SINGLYLINKEDLIST_HANDLE DeviceAdapterParamsList,
@@ -249,7 +249,7 @@ PNPBRIDGE_RESULT DiscoveryAdapterManager_Start(PDISCOVERY_MANAGER DiscoveryManag
             JSON_Object* adapterParams = NULL;
             adapterParams = Configuration_GetDiscoveryParameters(Config->JsonConfig, discoveryInterface->Identity);
 
-            result = DiscoveryManager_StarDiscoveryAdapter(DiscoveryManager, discoveryInterface, 
+            result = DiscoveryManager_StartDiscoveryAdapter(DiscoveryManager, discoveryInterface, 
                             deviceParamsList, deviceParamsCount, adapterParams, i);
             if (PNPBRIDGE_OK != result) {
                 LEAVE;

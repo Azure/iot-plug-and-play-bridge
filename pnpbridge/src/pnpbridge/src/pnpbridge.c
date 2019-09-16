@@ -224,20 +224,20 @@ PnpBridge_ProcessPnpMessage(
 
         jmsg = json_parse_string(msg->Message);
         if (NULL == jmsg) {
-            LogError("PNPMESSAGE payload is not a valid json");
+            LogError("PNPMESSAGE reported by discovery adapter is not valid.");
             result = PNPBRIDGE_INVALID_ARGS;
             LEAVE;
         }
 
         jobj = json_value_get_object(jmsg);
         if (NULL == jobj) {
-            LogError("PNPMESSAGE payload is not a valid json");
+            LogError("PNPMESSAGE payload reported by discovery adapter is not valid.");
             result = PNPBRIDGE_INVALID_ARGS;
             LEAVE;
         }
 
         if (PNPBRIDGE_OK != Configuration_IsDeviceConfigured(pnpBridge->Configuration.JsonConfig, jobj, &jdevice)) {
-            LogInfo("Device is not configured. Dropping the change notification");
+            LogInfo("Dropping the change notification reported by a discovery adapter");
             result = PNPBRIDGE_INVALID_ARGS;
             LEAVE;
         }
@@ -261,7 +261,7 @@ PnpBridge_ProcessPnpMessage(
         if (NULL != selfDescribing && 0 == strcmp(selfDescribing, "true")) {
             interfaceId = msg->InterfaceId;
             if (NULL == interfaceId) {
-                LogError("Interface id is missing for self descrbing device");
+                LogError("Interface id is missing for self describing device");
                 result = PNPBRIDGE_INVALID_ARGS;
                 LEAVE;
             }
@@ -269,14 +269,14 @@ PnpBridge_ProcessPnpMessage(
         else {
             interfaceId = (char*)json_object_get_string(jdevice, PNP_CONFIG_INTERFACE_ID);
             if (NULL == interfaceId) {
-                LogError("Interface Id is missing in config for the device");
+                LogError(PNP_CONFIG_INTERFACE_ID " is missing in config for the device");
                 result = PNPBRIDGE_INVALID_ARGS;
                 LEAVE;
             }
 
             componentName = (char*)json_object_get_string(jdevice, PNP_CONFIG_COMPONENT_NAME);
-            if (NULL == interfaceId) {
-                LogError("Interface Id is missing in config for the device");
+            if (NULL == componentName) {
+                LogError(PNP_CONFIG_COMPONENT_NAME " is missing in config for the device");
                 result = PNPBRIDGE_INVALID_ARGS;
                 LEAVE;
             }
@@ -320,7 +320,7 @@ DiscoveryAdapter_PublishInterfaces() {
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces = NULL;
     PnpAdapterManager_GetAllInterfaces(pnpBridge->PnpMgr, &interfaces, &interfaceCount);
 
-    LogInfo("Publishing Azure Pnp Interface, count %d", interfaceCount);
+    LogInfo("Publishing %d Azure Pnp Interface(s)", interfaceCount);
 
     result = IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
                                             pnpBridge->Configuration.ConnParams->DeviceCapabilityModelUri,
