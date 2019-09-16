@@ -26,20 +26,36 @@ ENVIRONMENTSENSOR_DISCOVERY EnvironmentSensor_Context = { 0 };
 // being called.
 int EnvironmentSensor_DiscoveryWorker(void* context) {
     ENVIRONMENTSENSOR_DISCOVERY* envContext = context;
+    PDEVICE_ADAPTER_PARMAETERS deviceArgs;
+    char* str;
+    JSON_Value* jdeviceArgsValue;
 
-    // Parse the discovery parameters from the pnpbridge config and publish the device discovery notification
-    PDEVICE_ADAPTER_PARMAETERS deviceArgs = PnpMemory_GetBuffer(envContext->DeviceArgs, NULL);
-    char* str = deviceArgs->AdapterParameters[0];
-    JSON_Value* jdeviceArgsValue = json_parse_string(str);
+    if (NULL == envContext->DeviceArgs) {
+        LogInfo("EnvironmentSensor_DiscoveryWorker: No device discovery parameters found in configuration.");
+        return 0;
+    }
 
+    // The discovery adapter will parse the discovery parameters from the Bridge's
+    //  configuration and report discovered devices to the bridge using
+    // DiscoveryAdapter_ReportDevice
+    deviceArgs = PnpMemory_GetBuffer(envContext->DeviceArgs, NULL);
+
+    LogInfo("EnvironmentSensor_DiscoveryWorker: Found configuration parameters for %d devices", deviceArgs->Count);
+
+    // This discovery adapter examines the parameters reported for the first device at AdapterParameters[0]
+    // It obtains the "sensor_id" parameter and reports a fake device to the bridge using
+    // DiscoveryAdapter_ReportDevice
+    str = deviceArgs->AdapterParameters[0];
+
+    jdeviceArgsValue = json_parse_string(str);
     if (NULL == jdeviceArgsValue) {
-        LogError("EnvironmentSensor_DiscoveryWorker: json_parse_string failed");
+        LogError("EnvironmentSensor_DiscoveryWorker: json_parse_string failed. Invalid discovery parameters");
         return -1;
     }
 
     JSON_Object* jDeviceArgObject = json_value_get_object(jdeviceArgsValue);
     if (NULL == jDeviceArgObject) {
-        LogError("EnvironmentSensor_DiscoveryWorker: json_value_get_object failed");
+        LogError("EnvironmentSensor_DiscoveryWorker: json_value_get_object failed.  Invalid discovery parameters");
         return -1;
     }
 
@@ -48,11 +64,11 @@ int EnvironmentSensor_DiscoveryWorker(void* context) {
 
     // Device change format
     const char* deviceChangeMessageformat = "{ \
-                                               \"identity\": \"environment-sensor-sample-discovery-adapter\", \
-                                               \"match_parameters\": { \
-                                                   \"sensor_id\": \"%s\" \
+                                                \"identity\": \"environment-sensor-sample-discovery-adapter\", \
+                                                \"match_parameters\": { \
+                                                \"sensor_id\": \"%s\" \
                                                 } \
-                                             }";
+                                            }";
 
     // Create the device change PnP notification message
     PNPMESSAGE msg = NULL;
@@ -66,6 +82,7 @@ int EnvironmentSensor_DiscoveryWorker(void* context) {
     PnpMessage_SetMessage(msg, deviceChangeBuff);
 
     // Notify the pnpbridge of device discovery
+    LogInfo("EnvironmentSensor_DiscoveryWorker: Reporting sensor ID %s to bridge", sensorId);
     DiscoveryAdapter_ReportDevice(msg);
 
     free(deviceChangeBuff);

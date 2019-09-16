@@ -1280,7 +1280,8 @@ SerialPnp_StartDiscovery(
 {
     if (NULL == deviceArgs)
     {
-        return -1;
+        LogInfo("SerialPnp_StartDiscovery: No device discovery parameters found in configuration.");
+        return 0;
     }
 
     AZURE_UNREFERENCED_PARAMETER(adapterArgs);

@@ -206,8 +206,8 @@ CoreDevice_StartDiscovery(
     UNREFERENCED_PARAMETER(DeviceArgs);
 
     if (NULL == AdapterArgs) {
-        LogError("Missing adapter parameters");
-        return -1;
+        LogError("CoreDevice_StartDiscovery: No adapter parameters specified for device discovery");
+        return 0;
     }
 
     g_CoreDeviceDiscovery_DeviceWatchers = singlylinkedlist_create();

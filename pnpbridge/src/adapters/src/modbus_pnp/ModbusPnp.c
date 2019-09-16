@@ -685,8 +685,10 @@ ModbusPnp_StartDiscovery(
     )
 {
 	if (DeviceArgs == NULL) {
-		return -1;
+		LogInfo("ModbusPnp_StartDiscovery: No device discovery parameters found in configuration.");
+		return 0;
 	}
+	
 	UNREFERENCED_PARAMETER(AdapterArgs);
 
     LogInfo("Starting modbus discovery adapter");
