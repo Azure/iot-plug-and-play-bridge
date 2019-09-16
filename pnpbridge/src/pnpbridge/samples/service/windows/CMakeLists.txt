@@ -87,6 +87,7 @@ set(pnp_bridge_common_libs
     pnpbridge_modbus
     pnpbridge_camera
     pnpbridge_coredevicehealth
+    pnpbridge_mqtt
 )
 endif()
 

@@ -29,7 +29,7 @@ add_definitions("-D_UNICODE")
 
 set(pnpbridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/../../pnpbridge/inc CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
 
-include_directories(../../../../../deps/azure-iot-sdk-c-pnp/umqtt/inc)
+include_directories(../../../../deps/azure-iot-sdk-c-pnp/umqtt/inc)
 
 include_directories(${pnpbridge_INC_FOLDER})
 
