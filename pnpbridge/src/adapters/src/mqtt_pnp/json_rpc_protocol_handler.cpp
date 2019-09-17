@@ -88,7 +88,7 @@ JsonRpcProtocolHandler::OnPnpMethodCall(
     const char* tx_topic = nullptr;
     JSON_Value *commandParams = nullptr;
 
-    printf("Incoming call to %s\n", CommandRequest->requestData);
+    printf("Incoming call to %s with %s\n", CommandRequest->commandName, CommandRequest->requestData);
 
     auto iterator = s_Commands.find(CommandRequest->commandName);
     if (iterator != s_Commands.end()) {
@@ -155,7 +155,7 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
 {
     JsonRpcProtocolHandler *ph = static_cast<JsonRpcProtocolHandler*>(Context);
     const char* tname = nullptr;
-    printf("Notificaiton callback\n");
+
     if (!ph->s_DtInterface) return;
 
     auto iterator = ph->s_Telemetry.find(Method);
@@ -175,7 +175,7 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
 
             LogError("mqtt-pnp: Error sending telemetry %s, result=%d", tname, res);
         } else {
-            LogInfo("mqtt-pnp: Reported telemetry %s", tname);
+            LogInfo("mqtt-pnp: Reported telemetry %s with parameters %s", tname, out);
         }
 
         json_free_serialized_string(out);

@@ -53,14 +53,14 @@ MqttPnp_StartDiscovery(
     printf("MQTTPNP startdiscovery\n");
 
     if (DeviceArgs == nullptr) {
-        LogError("mqtt-pnp requires device arguments to be specified");
+        LogError("mqtt-pnp: requires device arguments to be specified");
         return -1;
     }
 
     PnpMemory_AddReference(DeviceArgs);
     PDEVICE_ADAPTER_PARMAETERS deviceParams = (PDEVICE_ADAPTER_PARMAETERS) PnpMemory_GetBuffer(DeviceArgs, NULL);
 
-    LogInfo("Starting mqtt-pnp plugin with %d configurations", deviceParams->Count);
+    LogInfo("Starting mqtt-pnp: plugin with %d configurations", deviceParams->Count);
 
     // Dynamic discovery is not supported. For each device defined in DeviceArgs,
     // parse and instantiate the relevant classes, then report said device to the bridge.
@@ -78,7 +78,7 @@ MqttPnp_StartDiscovery(
         JSON_Value* params = json_object_get_value(args, "config");
 
         MqttPnpInstance* context = new MqttPnpInstance();
-        LogInfo("mqtt-pnp connecting to server %s:%d", mqtt_server, mqtt_port);
+        LogInfo("mqtt-pnp: connecting to server %s:%d", mqtt_server, mqtt_port);
 
         try {
             context->s_ConnectionManager.Connect(mqtt_server, mqtt_port);
@@ -86,7 +86,7 @@ MqttPnp_StartDiscovery(
             LogError("mqtt-pnp: Error connecting to MQTT server: %s", e.what());
         }
 
-        printf("mqtt-pnp connected to mqtt server\n");
+        printf("mqtt-pnp: connected to mqtt server\n");
 
         if (strcmp(protocol, "json_rpc") == 0) {
             context->s_ProtocolHandler = (new JsonRpcProtocolHandler());
@@ -107,7 +107,7 @@ MqttPnp_StartDiscovery(
         pnpMsgProps = PnpMessage_AccessProperties(payload);
         pnpMsgProps->Context = context;
 
-        LogInfo("mqtt-pnp reporting interface %s", interface);
+        LogInfo("mqtt-pnp: reporting interface %s", interface);
         DiscoveryAdapter_ReportDevice(payload);
         LogInfo("interface reported\n");
 
@@ -129,7 +129,7 @@ MqttPnp_StartDiscovery(
 int
 MqttPnp_StopDiscovery()
 {
-    printf("MQTTPNP stop discovery\n");
+    printf("mqtt-pnp: stop discovery\n");
 
     // for (auto it = g_MqttPnpInstances.begin(); it != g_MqttPnpInstances.end(); it++) {
     //     (*it)->s_ConnectionManager.Disconnect();
@@ -149,7 +149,7 @@ int
 MqttPnp_Initialize(const char* AdapterArgs)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterArgs);
-    printf("MQTTPNP init\n");
+    printf("mqtt-pnp: initializing\n");
     // if (platform_init() != 0) {
     //     LogError("mqtt platform_init failed\r\n");
     //     return -1;
@@ -161,7 +161,7 @@ MqttPnp_Initialize(const char* AdapterArgs)
 int 
 MqttPnp_Shutdown()
 {
-    printf("MQTTPNP shutdonw\n");
+    printf("mqtt-pnp: shutdown\n");
     // platform_deinit();
     return 0;
 }
@@ -171,7 +171,7 @@ MqttPnp_ReleaseInterface(
     _In_ PNPADAPTER_INTERFACE_HANDLE pnpInterface
     )
 {
-    printf("MQTTPNP release interface\n");
+    printf("mqtt-pnp: releasing interface\n");
     MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpAdapterInterface_GetContext(pnpInterface));
 
     context->s_ConnectionManager.Disconnect();
@@ -188,7 +188,6 @@ MqttPnp_Bind(
     _In_ PNPMESSAGE         Message
     )
 {
-    printf("MQTTPNP bind\n");
     int result = 0;
     PNPMESSAGE_PROPERTIES* pnpMsgProps = nullptr;
     MqttPnpInstance* context = nullptr;
@@ -202,7 +201,7 @@ MqttPnp_Bind(
     PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
     PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
 
-    printf("mqtt-pnp publishing interface %s\n", interface);
+    printf("mqtt-pnp: publishing interface %s\n", interface);
 
     // Create Digital Twin Interface
     dtres = DigitalTwin_InterfaceClient_Create(interface,

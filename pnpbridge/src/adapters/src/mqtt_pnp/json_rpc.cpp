@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <map>
 #include <mutex>
+#include <string>
 
 #include "json_rpc.hpp"
 
@@ -129,6 +130,18 @@ JsonRpc::ProcessResponse(
 )
 {
     size_t id = (size_t) json_object_get_number(Packet, "id");
+
+    // If it's zero, it's probably been returned as a string so handle
+    // accordingly.
+    if (id == 0) {
+        const char *ids = json_object_get_string(Packet, "id");
+        if (ids == nullptr) {
+            throw new std::invalid_argument("JSON-RPC response with invalid ID");
+        }
+
+        id = std::stoi(ids, nullptr, 10);
+    }
+
     void* context = nullptr;
     bool success = (json_object_has_value(Packet, "result") != 0);
 
@@ -246,6 +259,10 @@ JsonRpc::RpcCall(
 
     s_OutstandingCallsMutex.lock();
     call_id = s_NextCallId++;
+    // Workaround for RPC servers which force cast call ID to a string.
+    if (call_id == 0) {
+        call_id = s_NextCallId++;
+    }
     s_OutstandingCallsMutex.unlock();
 
     json_object_set_string(packet, "jsonrpc", "2.0");

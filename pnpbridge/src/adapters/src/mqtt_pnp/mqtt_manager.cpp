@@ -25,10 +25,10 @@ MqttConnectionManager::Subscribe(
     subscribe[0].subscribeTopic = Topic;
     subscribe[0].qosReturn = DELIVER_AT_MOST_ONCE;
 
-    printf("MQTT subscribing to topic %s\n", Topic);
+    printf("mqtt-pnp: subscribing to MQTT topic %s\n", Topic);
 
     if (mqtt_client_subscribe(s_MqttClientHandle, GetNextPacketId(), subscribe, 1) != 0) {
-        printf("MQTT subscribe failed\n");
+        printf("mqtt-pnp: MQTT subscribe failed\n");
         Disconnect();
         throw std::invalid_argument("Problem subscribing to MQTT channel");
     }
@@ -191,7 +191,7 @@ MqttConnectionManager::OnRecv(
         handler_for_topic = iterator->second;
     }
 
-    printf("MQTT recv on topic %s, value %s\n", topicName, mqtt_msg->message);
+    printf("mqtt-pnp: MQTT receive - topic %s, payload %.*s\n", topicName, mqtt_msg->length, mqtt_msg->message);
 
     if (handler_for_topic) {
         handler_for_topic->OnReceive(topicName,
@@ -207,19 +207,19 @@ MqttConnectionManager::OnComplete(
     const void*                 /*MessageInfo*/
 )
 {
-    printf("MQTT complete callback\n");
+    // printf("MQTT complete callback\n");
     switch (Result) {
     case MQTT_CLIENT_ON_CONNACK:
-        printf("MQTT CONNACK\n");
+        printf("mqtt-pnp: got MQTT CONNACK\n");
         s_OperationSuccess = true;
         s_ProcessOperation = false;
         break;
     case MQTT_CLIENT_ON_DISCONNECT:
-        printf("MQTT DISCONNECT\n");
+        printf("mqtt-pnp: got MQTT DISCONNECT\n");
         // todo stop read thread here
         break;
     default:
-        printf("OTHER MQTT %d\n", Result);
+        // printf("OTHER MQTT %d\n", Result);
         break;
     }
 }
@@ -230,7 +230,7 @@ MqttConnectionManager::OnError(
     MQTT_CLIENT_EVENT_ERROR     /*Error*/
 )
 {
-    printf("MQTT error callback\n");
+    printf("mqtt-pnp: MQTT error callback\n");
     s_OperationSuccess = false;
     s_ProcessOperation = false;
 }
@@ -238,7 +238,7 @@ MqttConnectionManager::OnError(
 void
 MqttConnectionManager::Disconnect()
 {
-    printf("MQTT DISCONNECT REQUEST\n");
+    printf("mqtt-pnp: disconnect request\n");
     bool workerRunning = s_RunWorker;
     if (s_RunWorker) {
         s_RunWorker = false;
