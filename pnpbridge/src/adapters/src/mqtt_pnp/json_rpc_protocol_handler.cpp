@@ -129,7 +129,7 @@ JsonRpcProtocolHandler::OnPnpMethodCall(
 void
 JsonRpcProtocolHandler::RpcResultCallback(
     void*           /*Context*/,
-    bool            /*Success*/,
+    bool            Success,
     JSON_Value*     Parameters,
     void*           CallContext
 )
@@ -141,6 +141,14 @@ JsonRpcProtocolHandler::RpcResultCallback(
 
     mallocAndStrcpy_s((char**) &ctx->CommandResponse->responseData, response_str);
     ctx->CommandResponse->responseDataLen = strlen(response_str);
+    ctx->CommandResponse->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
+
+    if (Success) {
+        ctx->CommandResponse->status = 200;
+    } else {
+        ctx->CommandResponse->status = 500;
+    }
+
     json_free_serialized_string(response_str);
 
     SetEvent(ctx->Event);
