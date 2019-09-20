@@ -74,6 +74,7 @@ MqttPnp_StartDiscovery(
         const char* mqtt_server = json_object_get_string(args, "mqtt_server");
         int mqtt_port = (int) json_object_get_number(args, "mqtt_port");
         const char* protocol = json_object_get_string(args, "protocol");
+        const char* component = json_object_get_string(args, "component_name");
 
         JSON_Value* params = json_object_get_value(args, "config");
 
@@ -106,6 +107,7 @@ MqttPnp_StartDiscovery(
         PnpMessage_SetMessage(payload, mqttDeviceChangeMessage);
         pnpMsgProps = PnpMessage_AccessProperties(payload);
         pnpMsgProps->Context = context;
+        mallocAndStrcpy_s(&pnpMsgProps->ComponentName, component);
 
         LogInfo("mqtt-pnp: reporting interface %s", interface);
         DiscoveryAdapter_ReportDevice(payload);
@@ -201,11 +203,11 @@ MqttPnp_Bind(
     PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
     PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
 
-    printf("mqtt-pnp: publishing interface %s\n", interface);
+    printf("mqtt-pnp: publishing interface %s, component %s\n", interface, pnpMsgProps->ComponentName);
 
     // Create Digital Twin Interface
     dtres = DigitalTwin_InterfaceClient_Create(interface,
-                                               "mqtt",
+                                               pnpMsgProps->ComponentName,
                                                nullptr,
                                                context, 
                                                &digitalTwinInterface);
