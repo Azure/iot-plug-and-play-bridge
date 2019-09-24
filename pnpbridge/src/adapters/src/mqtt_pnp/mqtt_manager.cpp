@@ -81,7 +81,7 @@ MqttConnectionManager::Connect(
 )
 {
     MQTT_CLIENT_OPTIONS mqtt_options = { 0 };
-    mqtt_options.clientId = "azureiotclient";
+    mqtt_options.clientId = (char*) "azureiotclient";
     mqtt_options.willMessage = NULL;
     mqtt_options.username = NULL;
     mqtt_options.password = NULL;
@@ -191,7 +191,7 @@ MqttConnectionManager::OnRecv(
         handler_for_topic = iterator->second;
     }
 
-    printf("mqtt-pnp: MQTT receive - topic %s, payload %.*s\n", topicName, mqtt_msg->length, mqtt_msg->message);
+    printf("mqtt-pnp: MQTT receive - topic %s, payload %.*s\n", topicName, (int) mqtt_msg->length, mqtt_msg->message);
 
     if (handler_for_topic) {
         handler_for_topic->OnReceive(topicName,

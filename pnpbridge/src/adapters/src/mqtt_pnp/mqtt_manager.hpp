@@ -27,7 +27,7 @@ private:
     XIO_HANDLE              s_XioHandle = nullptr;
     bool                    s_ProcessOperation = false;
     bool                    s_OperationSuccess = false;
-    std::atomic<uint16_t>   s_NextPacketId = 0;
+    std::atomic<uint16_t>   s_NextPacketId{0};
     std::map<std::string, MqttProtocolHandler*> s_Topics;
     std::thread             s_WorkerThread;
     bool                    s_RunWorker = true;

@@ -13,8 +13,6 @@
 #include "azure_c_shared_utility/condition.h"
 #include "azure_c_shared_utility/lock.h"
 
-#include <Windows.h>
-
 #include "mqtt_protocol_handler.hpp"
 #include "mqtt_manager.hpp"
 #include "json_rpc.hpp"
