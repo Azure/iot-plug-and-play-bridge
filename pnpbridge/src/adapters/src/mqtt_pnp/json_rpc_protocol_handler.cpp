@@ -137,7 +137,7 @@ JsonRpcProtocolHandler::OnPnpMethodCall(
     Unlock(call.Lock);
     // WaitForSingleObject(call.Event, INFINITE);
 
-    printf("Response length %d, %s\n", CommandResponse->responseDataLen, CommandResponse->responseData);
+    printf("Response length %d, %s\n", (int) CommandResponse->responseDataLen, CommandResponse->responseData);
     // CloseHandle(call.Event);
     Condition_Deinit(call.Condition);
     Lock_Deinit(call.Lock);
