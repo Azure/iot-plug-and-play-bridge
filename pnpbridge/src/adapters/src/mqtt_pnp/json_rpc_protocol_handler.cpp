@@ -9,6 +9,9 @@
 #include <pnpbridge.h>
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/threadapi.h"
+#include "azure_c_shared_utility/condition.h"
+#include "azure_c_shared_utility/lock.h"
 
 #include <Windows.h>
 
@@ -16,6 +19,15 @@
 #include "mqtt_manager.hpp"
 #include "json_rpc.hpp"
 #include "json_rpc_protocol_handler.hpp"
+
+class JsonRpcCallContext {
+public:
+    // void*                                       Event;
+    COND_HANDLE Condition;
+    LOCK_HANDLE Lock;
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   CommandRequest;
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        CommandResponse;
+};
 
 void
 JsonRpcProtocolHandler::OnReceive(
@@ -112,7 +124,9 @@ JsonRpcProtocolHandler::OnPnpMethodCall(
     // }
 
     // Create event
-    call.Event = CreateEventA(NULL, TRUE, FALSE, NULL);
+    call.Condition = Condition_Init();
+    call.Lock = Lock_Init();
+    // call.Event = CreateEventA(NULL, TRUE, FALSE, NULL);
 
     // Send appropriate command over json rpc, return success
     printf("Publishing command call on %s : %s\n", tx_topic, call_str);
@@ -120,10 +134,15 @@ JsonRpcProtocolHandler::OnPnpMethodCall(
     json_free_serialized_string((char*) call_str);
 
     printf("Waiting for response\n");
-    WaitForSingleObject(call.Event, INFINITE);
+    Lock(call.Lock);
+    Condition_Wait(call.Condition, call.Lock, 0);
+    Unlock(call.Lock);
+    // WaitForSingleObject(call.Event, INFINITE);
 
     printf("Response length %d, %s\n", CommandResponse->responseDataLen, CommandResponse->responseData);
-    CloseHandle(call.Event);
+    // CloseHandle(call.Event);
+    Condition_Deinit(call.Condition);
+    Lock_Deinit(call.Lock);
 }
 
 void
@@ -151,7 +170,11 @@ JsonRpcProtocolHandler::RpcResultCallback(
 
     json_free_serialized_string(response_str);
 
-    SetEvent(ctx->Event);
+    Lock(ctx->Lock);
+    Condition_Post(ctx->Condition);
+    Unlock(ctx->Lock);
+
+    // SetEvent(ctx->Event);
 }
 
 void

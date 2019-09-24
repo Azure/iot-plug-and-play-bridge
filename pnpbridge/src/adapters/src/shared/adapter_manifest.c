@@ -39,12 +39,14 @@ PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
 #else //WIN32
 
 PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
-    &SerialPnpDiscovery
+    &SerialPnpDiscovery,
+    &MqttPnpAdapter
 };
 //&ModbusPnpInterface
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
-    &SerialPnpInterface
+    &SerialPnpInterface,
+    &MqttPnpInterface
 };
 // &ModbusPnpInterface
 #endif

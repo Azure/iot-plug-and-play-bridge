@@ -52,10 +52,3 @@ private:
         JSON_Value*     Parameters
     );
 };
-
-class JsonRpcCallContext {
-public:
-    void*                                       Event;
-    const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   CommandRequest;
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        CommandResponse;
-};
