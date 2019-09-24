@@ -37,7 +37,7 @@ private:
 
     static
     void
-    JsonRpcProtocolHandler::RpcResultCallback(
+    RpcResultCallback(
         void*           Context,
         bool            Success,
         JSON_Value*     Parameters,
