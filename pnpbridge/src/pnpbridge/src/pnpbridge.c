@@ -396,6 +396,12 @@ PnpBridge_Main()
     TRY {
         LogInfo("Starting Azure PnpBridge");
 
+        if (IoTHub_Init() != 0) {
+            LogError("IoTHub_Init failed\n");
+            result = PNPBRIDGE_FAILED;
+            LEAVE;
+        }
+
         result = PnpBridge_Initialize(&pnpBridge);
         if (PNPBRIDGE_OK != result) {
             LogError("PnpBridge_Initialize failed: %d", result);
@@ -454,6 +460,8 @@ PnpBridge_Stop()
         Condition_Post(g_PnpBridge->ExitCondition);
         Unlock(g_PnpBridge->ExitLock);
     }
+
+    IoTHub_Deinit();
 }
 
 // Note: PnpBridge_UploadToBlobAsync method is not synchronized 

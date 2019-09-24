@@ -120,9 +120,6 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
         if (-1 == sprintf_s(customProvisioningData, customProvDataLength, pnpSample_CustomProvisioningData, dcmModelId)) {
             LogError("Failed to create the customProvisiongData. DcmModelId is too long.");
         }
-        else if (IoTHub_Init() != 0) {
-            LogError("IoTHub_Init failed");
-        }
         else if ((AUTH_TYPE_SYMMETRIC_KEY == ConnectionParams->AuthParameters.AuthType)
                 && (prov_dev_set_symmetric_key_info(deviceId, deviceKey) != 0)) {
             LogError("prov_dev_set_symmetric_key_info failed.");
@@ -312,26 +309,21 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubDeviceHandle(bool TraceOn, const c
     IOTHUB_DEVICE_HANDLE deviceHandle = NULL;
     IOTHUB_CLIENT_RESULT iothubClientResult;
 
-    // TODO: PnP SDK should auto-set OPTION_AUTO_URL_ENCODE_DECODE for MQTT as its strictly required.  Need way for IoTHub handle to communicate this back.
-    if (IoTHub_Init() != 0) {
-        LogError("IoTHub_Init failed\n");
-    } else {
-        // Get connection string from config
-        if ((deviceHandle = IoTHubDeviceClient_CreateFromConnectionString(ConnectionString, MQTT_Protocol)) == NULL)
-        {
-            LogError("Failed to create device handle\n");
-        }
-        else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_LOG_TRACE, &TraceOn)) != IOTHUB_CLIENT_OK)
-        {
-            LogError("Failed to set option %s, error=%d\n", OPTION_LOG_TRACE, iothubClientResult);
-            IoTHubDeviceClient_Destroy(deviceHandle);
-            deviceHandle = NULL;
-        }
+    // Get connection string from config
+    if ((deviceHandle = IoTHubDeviceClient_CreateFromConnectionString(ConnectionString, MQTT_Protocol)) == NULL)
+    {
+        LogError("Failed to create device handle\n");
+    }
+    else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_LOG_TRACE, &TraceOn)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("Failed to set option %s, error=%d\n", OPTION_LOG_TRACE, iothubClientResult);
+        IoTHubDeviceClient_Destroy(deviceHandle);
+        deviceHandle = NULL;
+    }
 
-        if (deviceHandle == NULL)
-        {
-            IoTHub_Deinit();
-        }
+    if (deviceHandle == NULL)
+    {
+        IoTHub_Deinit();
     }
 
     return deviceHandle;
