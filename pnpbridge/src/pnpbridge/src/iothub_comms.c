@@ -266,6 +266,7 @@ IotComms_RegisterPnPInterfaces(
     // DigitalTwinClient doesn't support incremental publishing of PnP Interface
     // Inorder to workaround this we will destroy the DigitalTwinClient and recreate it
     IotComms_DigitalTwinClient_Destroy(IotHandle);
+    IoTHub_Deinit();
     result = IotComms_InitializeIotHandle(IotHandle, traceOn, connectionParams);
     if (PNPBRIDGE_OK != result) {
         LogError("IotComms_InitializeIotHandle failed\n");
