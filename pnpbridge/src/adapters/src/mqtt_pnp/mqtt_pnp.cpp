@@ -50,8 +50,6 @@ MqttPnp_StartDiscovery(
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterArgs);
 
-    printf("MQTTPNP startdiscovery\n");
-
     if (DeviceArgs == nullptr) {
         LogError("mqtt-pnp: requires device arguments to be specified");
         return -1;
@@ -111,12 +109,10 @@ MqttPnp_StartDiscovery(
 
         LogInfo("mqtt-pnp: reporting interface %s", interface);
         DiscoveryAdapter_ReportDevice(payload);
-        LogInfo("interface reported\n");
 
         //json_free_serialized_string((char*) interface_params)
         json_value_free(jvalue);
         // json_value_free(params);
-        printf("returning from discovery\n");
 
         g_MqttPnpInstances.push_back(context);
 
@@ -261,7 +257,7 @@ MqttPnp_Bind(
     context->s_ProtocolHandler->AssignDigitalTwin(digitalTwinInterface);
 
 exit:
-    printf("MQTTPNP bound\n");
+    printf("mqtt-pnp: bound interface\n");
     return result;
 }
 

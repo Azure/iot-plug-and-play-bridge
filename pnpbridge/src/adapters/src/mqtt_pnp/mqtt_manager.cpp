@@ -135,8 +135,6 @@ MqttConnectionManager::Connect(
         throw std::runtime_error("Couldn't create xio handle");
     }
 
-    printf("mqtt: created socket\n");
-
     if (mqtt_client_connect(s_MqttClientHandle, s_XioHandle, &mqtt_options) != 0) {
         mqtt_client_deinit(s_MqttClientHandle);
         s_MqttClientHandle = nullptr;
@@ -148,22 +146,16 @@ MqttConnectionManager::Connect(
         throw std::invalid_argument("Could not connect to MQTT");
     }
 
-    printf("mqtt: created socket 2\n");
-
     // Wait for successful connection
     s_ProcessOperation = true;
     while (s_ProcessOperation) {
         mqtt_client_dowork(s_MqttClientHandle);
     }
-
-    printf("mqtt: processed connect\n");
     
     if (!s_OperationSuccess) {
         Disconnect();
         throw std::invalid_argument("Problem getting connect ACK from MQTT");
     }
-
-    printf("mqtt: starting worker\n");
 
     // Start worker thread
     s_RunWorker = true;
