@@ -81,7 +81,7 @@ MqttConnectionManager::Connect(
 )
 {
     MQTT_CLIENT_OPTIONS mqtt_options = { 0 };
-    mqtt_options.clientId = "azureiotclient";
+    mqtt_options.clientId = (char*) "azureiotclient";
     mqtt_options.willMessage = NULL;
     mqtt_options.username = NULL;
     mqtt_options.password = NULL;
@@ -135,8 +135,6 @@ MqttConnectionManager::Connect(
         throw std::runtime_error("Couldn't create xio handle");
     }
 
-    printf("mqtt: created socket\n");
-
     if (mqtt_client_connect(s_MqttClientHandle, s_XioHandle, &mqtt_options) != 0) {
         mqtt_client_deinit(s_MqttClientHandle);
         s_MqttClientHandle = nullptr;
@@ -148,22 +146,16 @@ MqttConnectionManager::Connect(
         throw std::invalid_argument("Could not connect to MQTT");
     }
 
-    printf("mqtt: created socket 2\n");
-
     // Wait for successful connection
     s_ProcessOperation = true;
     while (s_ProcessOperation) {
         mqtt_client_dowork(s_MqttClientHandle);
     }
-
-    printf("mqtt: processed connect\n");
     
     if (!s_OperationSuccess) {
         Disconnect();
         throw std::invalid_argument("Problem getting connect ACK from MQTT");
     }
-
-    printf("mqtt: starting worker\n");
 
     // Start worker thread
     s_RunWorker = true;
@@ -191,7 +183,7 @@ MqttConnectionManager::OnRecv(
         handler_for_topic = iterator->second;
     }
 
-    printf("mqtt-pnp: MQTT receive - topic %s, payload %.*s\n", topicName, mqtt_msg->length, mqtt_msg->message);
+    printf("mqtt-pnp: MQTT receive - topic %s, payload %.*s\n", topicName, (int) mqtt_msg->length, mqtt_msg->message);
 
     if (handler_for_topic) {
         handler_for_topic->OnReceive(topicName,

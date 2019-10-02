@@ -50,8 +50,6 @@ MqttPnp_StartDiscovery(
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterArgs);
 
-    printf("MQTTPNP startdiscovery\n");
-
     if (DeviceArgs == nullptr) {
         LogError("mqtt-pnp: requires device arguments to be specified");
         return -1;
@@ -74,6 +72,7 @@ MqttPnp_StartDiscovery(
         const char* mqtt_server = json_object_get_string(args, "mqtt_server");
         int mqtt_port = (int) json_object_get_number(args, "mqtt_port");
         const char* protocol = json_object_get_string(args, "protocol");
+        const char* component = json_object_get_string(args, "component_name");
 
         JSON_Value* params = json_object_get_value(args, "config");
 
@@ -106,15 +105,14 @@ MqttPnp_StartDiscovery(
         PnpMessage_SetMessage(payload, mqttDeviceChangeMessage);
         pnpMsgProps = PnpMessage_AccessProperties(payload);
         pnpMsgProps->Context = context;
+        mallocAndStrcpy_s(&pnpMsgProps->ComponentName, component);
 
         LogInfo("mqtt-pnp: reporting interface %s", interface);
         DiscoveryAdapter_ReportDevice(payload);
-        LogInfo("interface reported\n");
 
         //json_free_serialized_string((char*) interface_params)
         json_value_free(jvalue);
         // json_value_free(params);
-        printf("returning from discovery\n");
 
         g_MqttPnpInstances.push_back(context);
 
@@ -201,11 +199,11 @@ MqttPnp_Bind(
     PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
     PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
 
-    printf("mqtt-pnp: publishing interface %s\n", interface);
+    printf("mqtt-pnp: publishing interface %s, component %s\n", interface, pnpMsgProps->ComponentName);
 
     // Create Digital Twin Interface
     dtres = DigitalTwin_InterfaceClient_Create(interface,
-                                               "mqtt",
+                                               pnpMsgProps->ComponentName,
                                                nullptr,
                                                context, 
                                                &digitalTwinInterface);
@@ -259,7 +257,7 @@ MqttPnp_Bind(
     context->s_ProtocolHandler->AssignDigitalTwin(digitalTwinInterface);
 
 exit:
-    printf("MQTTPNP bound\n");
+    printf("mqtt-pnp: bound interface\n");
     return result;
 }
 

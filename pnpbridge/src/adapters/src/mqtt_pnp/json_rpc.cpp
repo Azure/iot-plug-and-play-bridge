@@ -3,6 +3,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <cstring>
 
 #include "json_rpc.hpp"
 
@@ -32,7 +33,7 @@ JsonRpc::Process(
 
     // Null-terminate the packet
     pl = new char[PayloadSize + 1];
-    memcpy(pl, Payload, PayloadSize);
+    std::memcpy(pl, Payload, PayloadSize);
     pl[PayloadSize] = 0;
 
     // Parse the JSON
@@ -56,7 +57,7 @@ JsonRpc::Process(
         throw std::invalid_argument("JSON-RPC packet missing jsonrpc version");
     }
 
-    if (strcmp(packstr, "2.0") != 0) {
+    if (std::strcmp(packstr, "2.0") != 0) {
         json_value_free(packet);
         throw new std::invalid_argument("JSON-RPC packet with incorrect jsonrpc version");
     }

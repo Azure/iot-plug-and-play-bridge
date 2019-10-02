@@ -37,7 +37,7 @@ private:
 
     static
     void
-    JsonRpcProtocolHandler::RpcResultCallback(
+    RpcResultCallback(
         void*           Context,
         bool            Success,
         JSON_Value*     Parameters,
@@ -51,11 +51,4 @@ private:
         const char*     Method,
         JSON_Value*     Parameters
     );
-};
-
-class JsonRpcCallContext {
-public:
-    void*                                       Event;
-    const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   CommandRequest;
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        CommandResponse;
 };
