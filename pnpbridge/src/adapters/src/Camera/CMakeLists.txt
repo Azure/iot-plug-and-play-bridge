@@ -16,21 +16,25 @@ set(pnpbridge_adapters_c_files
     CameraIotPnpAPIs.cpp
     CameraCaptureEngineCallbacks.cpp
     CameraCaptureEngine.cpp
+    CameraMediaCapture.cpp
     CameraPnpDiscovery.cpp
     CameraIotPnpDevice.cpp
     JsonWrapper.cpp
     CameraStatConsumer.cpp
+    NetworkCameraIotPnpDevice.cpp
 )
 
 set(pnpbridge_adapters_h_files
     CameraCaptureEngine.h
     CameraCaptureEngineCallbacks.h
+    CameraMediaCapture.h
     CameraIotPnpAPIs.h
     CameraIotPnpDevice.h
     CameraPnpDiscovery.h
     CameraStatConsumer.h
     JsonWrapper.h
     pch.h
+    NetworkCameraIotPnpDevice.h
 )
 
 add_definitions("-D_UNICODE") 
