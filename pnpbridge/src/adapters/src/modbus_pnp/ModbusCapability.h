@@ -5,11 +5,22 @@ extern "C"
 {
 #endif
 
-#include <Windows.h>
-#include <cfgmgr32.h>
-#include <ctype.h>
-#include <digitaltwin_interface_client.h>
+#include <stdint.h>
+#ifdef WIN32
+    #include <Windows.h>
+    #include <cfgmgr32.h>
+#else
+    #include <string.h>
+    typedef unsigned int DWORD;
+    typedef uint8_t BYTE;
+    typedef int HANDLE;
+    typedef short USHORT;
+    typedef uint16_t UINT16;
+    typedef unsigned char byte;
+#endif
 
+#include <digitaltwin_interface_client.h>
+#include "azure_c_shared_utility/lock.h"
 #include "ModbusConnection/ModbusConnectionHelper.h"
 
 typedef enum ModbusAccessType
@@ -62,7 +73,7 @@ typedef struct ModbusCommand {
 typedef struct CapabilityContext {
 	void* capability;
 	HANDLE hDevice;
-	HANDLE hLock;
+	LOCK_HANDLE hLock;
 	MODBUS_CONNECTION_TYPE connectionType;
 }CapabilityContext;
 
@@ -72,7 +83,7 @@ void StopPollingTasks();
 void ModbusPnp_CommandHandler(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext, 
         DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext, void* userContextCallback);
 
-int ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback);
+void ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback);
 
 
 #ifdef __cplusplus

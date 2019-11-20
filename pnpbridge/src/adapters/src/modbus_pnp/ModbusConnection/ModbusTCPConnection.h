@@ -7,11 +7,23 @@ extern "C"
 #include "azure_c_shared_utility/xlogging.h"
 #include "../ModbusCapability.h"
 #include "ModbusConnectionHelper.h"
+#ifndef WIN32
+#include <sys/termios.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#define SOCKET int
+#define SOCKET_ERROR (-1)
+#define INVALID_SOCKET (~0)
+#endif
 
 #define TCP_HEADER_SIZE 7 // TransactionID (2 bytes) + ProtocolID (2 bytes) + Length (2 bytes) + UnitID (1 byte)
 
 int ModbusTcp_GetHeaderSize(void);
-bool ModbusTcp_CloseDevice(SOCKET hDevice, HANDLE lock);
+bool ModbusTcp_CloseDevice(SOCKET hDevice, LOCK_HANDLE lock);
 
 int ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, byte unitId);
 int ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr);

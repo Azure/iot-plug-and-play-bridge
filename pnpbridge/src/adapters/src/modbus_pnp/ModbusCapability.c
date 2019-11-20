@@ -4,10 +4,11 @@
 
 #include "ModbusPnp.h"
 #include "ModbusCapability.h"
-#include "ModbusConnection\ModbusConnection.h"
+#include "ModbusConnection/ModbusConnection.h"
+#include "azure_c_shared_utility/condition.h"
 
 static bool ModbusPnP_ContinueReadTasks = false;
-static CONDITION_VARIABLE StopPolling;
+static COND_HANDLE StopPolling;
 
 #pragma region Commands
 
@@ -92,7 +93,7 @@ ModbusPnp_CommandHandler(
 	if (0 < resultLength) 
 	{
         dtClientCommandResponseContext->responseData = calloc(resultLength + 1, sizeof(char));
-		memcpy_s((void*)dtClientCommandResponseContext->responseData, resultLength, resultedData, resultLength);
+		memcpy((void*)dtClientCommandResponseContext->responseData, resultedData, resultLength);
         dtClientCommandResponseContext->responseDataLen = resultLength;
 	}
 
@@ -128,17 +129,16 @@ const ModbusProperty* ModbusPnp_LookupProperty(SINGLYLINKEDLIST_HANDLE interface
 	return NULL;
 }
 
-int ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback)
+void ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback)
     //PMODBUS_DEVICE_CONTEXT modbusDevice, const char* propertyName, char* data, char** response)
 {
     PMODBUS_DEVICE_CONTEXT modbusDevice = (PMODBUS_DEVICE_CONTEXT)userContextCallback;
 	const ModbusProperty* property = ModbusPnp_LookupProperty(modbusDevice->InterfaceDefinitions, dtClientPropertyUpdate->propertyName, 0);
 
 	if (property == NULL) {
-		return -1;
+		return;
 	}
 
-	int resultLength = -1;
 	byte resultedData[MODBUS_RESPONSE_MAX_LENGTH];
 	memset(resultedData, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
 
@@ -148,15 +148,9 @@ int ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClient
 	capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
 	capContext->hLock= modbusDevice->hConnectionLock;
 
-	resultLength = ModbusPnp_WriteToCapability(capContext, Property, (char*)dtClientPropertyUpdate->propertyDesired, resultedData);
-
-	if (resultLength > 0) {
-		//*response = calloc(resultLength + 1, sizeof(char));		//free in ModbusPnp_PropertyUpdateHandler
-		//memcpy_s(*response, resultLength, resultedData, resultLength);
-	}
+	ModbusPnp_WriteToCapability(capContext, Property, (char*)dtClientPropertyUpdate->propertyDesired, resultedData);
 
 	free(capContext);
-	return resultLength;
 }
 #pragma endregion
 
@@ -189,15 +183,17 @@ int ModbusPnP_ReportReadOnlyProperty(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInte
 	return result;
 }
 
-int ModbusPnp_PollingSingleProperty(CapabilityContext *context)
+int ModbusPnp_PollingSingleProperty(void *param)
 {
+    CapabilityContext* context = param;
 	ModbusProperty* property = context->capability;
 	LogInfo("Start polling task for property \"%s\".", property->Name);
 	byte resultedData[MODBUS_RESPONSE_MAX_LENGTH];
 	memset(resultedData, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
 
-	SRWLOCK lock;
-	AcquireSRWLockShared(&lock);
+	LOCK_HANDLE lock;
+    lock = Lock_Init();
+    Lock(lock);
 	
 	while (ModbusPnP_ContinueReadTasks)
 	{
@@ -206,10 +202,10 @@ int ModbusPnp_PollingSingleProperty(CapabilityContext *context)
 			ModbusPnP_ReportReadOnlyProperty(PnpAdapterInterface_GetPnpInterfaceClient(property->InterfaceClient), (char*)property->Name, (char*)resultedData);
 		}
 
-		SleepConditionVariableSRW(&StopPolling, &lock, property->DefaultFrequency, CONDITION_VARIABLE_LOCKMODE_SHARED);
+        Condition_Wait(StopPolling, lock, property->DefaultFrequency);
 	}
 
-	ReleaseSRWLockShared(&lock);
+    Unlock(lock);
 
 	LogInfo("Stopped polling task for property \"%s\".", property->Name);
 	free(context);
@@ -248,14 +244,16 @@ int ModbusPnp_ReportTelemetry(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, 
 	return result;
 }
 
-int ModbusPnp_PollingSingleTelemetry(CapabilityContext *context)
+int ModbusPnp_PollingSingleTelemetry(void *param)
 {
+    CapabilityContext* context = param;
 	ModbusTelemetry* telemetry = context->capability;
 	LogInfo("Start polling task for telemetry \"%s\".", telemetry->Name);
 	byte resultedData[MODBUS_RESPONSE_MAX_LENGTH];
 
-	SRWLOCK lock;
-	AcquireSRWLockShared(&lock);
+    LOCK_HANDLE lock;
+    lock = Lock_Init();
+    Lock(lock);
 	while (ModbusPnP_ContinueReadTasks)
 	{
 		memset(resultedData, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
@@ -264,9 +262,9 @@ int ModbusPnp_PollingSingleTelemetry(CapabilityContext *context)
 			ModbusPnp_ReportTelemetry(PnpAdapterInterface_GetPnpInterfaceClient(telemetry->InterfaceClient), (char*)telemetry->Name, (char*)resultedData);
 		}
 
-		SleepConditionVariableSRW(&StopPolling, &lock, telemetry->DefaultFrequency, CONDITION_VARIABLE_LOCKMODE_SHARED);
+        Condition_Wait(StopPolling, lock, telemetry->DefaultFrequency);
 	}
-	ReleaseSRWLockShared(&lock);
+    Unlock(lock);
 
 	LogInfo("Stopped polling task for telemetry \"%s\".", telemetry->Name);
 	free(context);
@@ -279,7 +277,7 @@ int ModbusPnp_PollingSingleTelemetry(CapabilityContext *context)
 void StopPollingTasks()
 {
 	ModbusPnP_ContinueReadTasks = false;
-	WakeAllConditionVariable(&StopPolling);;
+    Condition_Post(StopPolling);
 }
 
 int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
@@ -307,7 +305,7 @@ int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
 		}
 	}
 
-	InitializeConditionVariable(&StopPolling);
+	StopPolling = Condition_Init();
 	ModbusPnP_ContinueReadTasks = true;
 
 	for (int i = 0; i < telemetryCount; i++)
@@ -330,7 +328,7 @@ int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
 
 		if (ThreadAPI_Create(&(deviceContext->PollingTasks[i]), ModbusPnp_PollingSingleTelemetry, (void*)pollingPayload) != THREADAPI_OK)
 		{
-			LogError("Failed to create worker thread for telemetry \"%s\", 0x%x", telemetry->Name, GetLastError());
+			LogError("Failed to create worker thread for telemetry \"%s\".", telemetry->Name);
 		}
 	}
 
@@ -354,7 +352,7 @@ int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
 
 		if (ThreadAPI_Create(&(deviceContext->PollingTasks[telemetryCount + i]), ModbusPnp_PollingSingleProperty, (void*)pollingPayload) != THREADAPI_OK)
 		{
-			LogError("Failed to create worker thread for proerty \"%s\", 0x%x", property->Name, GetLastError());
+			LogError("Failed to create worker thread for proerty \"%s\".", property->Name);
 		}
 	}
 

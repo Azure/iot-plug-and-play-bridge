@@ -6,20 +6,58 @@ extern "C"
 #endif
 
 #include <pnpbridge.h>
-
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/lock.h"
-
+#include "azure_c_shared_utility/condition.h"
+#include <ctype.h>
+#ifdef WIN32
 #include <Windows.h>
 #include <cfgmgr32.h>
-#include <ctype.h>
+#define INVALID_FILE INVALID_HANDLE_VALUE
+#else
+typedef unsigned int DWORD;
+typedef uint8_t BYTE;
+typedef int HANDLE;
+typedef int SOCKET;
+typedef short USHORT;
+typedef uint16_t UINT16;
+typedef uint32_t UINT32;
+typedef uint64_t UINT64;
+
+#define INVALID_FILE -1
+#define INVALID_HANDLE_VALUE -1
+#define iscsym(c)   (isalnum(c) || ((c) == '_'))
+#include <errno.h>
+#include <string.h>
+#include <sys/termios.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+#define ONESTOPBIT 0
+#define ONE5STOPBITS 1
+#define TWOSTOPBITS 2
+
+//parity
+#define NOPARITY 0
+#define ODDPARITY 1
+#define EVENPARITY 2
+#define MARKPARITY 3
+#define SPACEPARITY 4
+
+
+#define UNREFERENCED_PARAMETER AZURE_UNREFERENCED_PARAMETER
+#endif
 
 #include "ModbusEnum.h"
 
 	typedef struct _MODBUS_RTU_CONFIG
 	{
-		char* Port;
+        char* Port;
 		DWORD BaudRate;
 		BYTE DataBits;
 		BYTE StopBits;
@@ -56,7 +94,7 @@ extern "C"
 
 	typedef struct _MODBUS_DEVICE_CONTEXT {
 		HANDLE hDevice;
-		HANDLE hConnectionLock;
+		LOCK_HANDLE hConnectionLock;
 		PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
 
 		THREAD_HANDLE ModbusDeviceWorker;

@@ -1,6 +1,9 @@
 
 #include "azure_c_shared_utility/threadapi.h"
 #include "ModbusRtuConnection.h"
+#ifndef WIN32
+#include <unistd.h>
+#endif // WIN32
 
 UINT16 GetCRC(byte *message, size_t length)
 {
@@ -33,18 +36,22 @@ int ModbusRtu_GetHeaderSize(void) {
 	return RTU_HEADER_SIZE;
 }
 
-bool ModbusRtu_CloseDevice(HANDLE hDevice, HANDLE hLock)
+bool ModbusRtu_CloseDevice(HANDLE hDevice, LOCK_HANDLE hLock)
 {
 	bool result = -1;
-	DWORD waitResult = WaitForSingleObject(hLock, INFINITE);
-	if (WAIT_ABANDONED == waitResult)
+
+	if (LOCK_OK != Lock(hLock))
 	{
-		LogError("Device communicate lock is abandoned: %d", GetLastError());
+		LogError("Device communicate lock could not be acquired.");
 		return result;
 	}
-
-	result = CloseHandle(hDevice);
-	ReleaseMutex(hLock);
+#ifdef WIN32
+    result = CloseHandle(hDevice);
+#else
+    result = !(close(hDevice));
+#endif
+	
+    Unlock(hLock);
 	LogInfo("Serial Port Closed.");
 	return result;
 }
@@ -162,38 +169,63 @@ int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, c
 
 int ModbusRtu_SendRequest(HANDLE handler, byte *requestArr, DWORD arrLen)
 {
-	if (NULL == handler || NULL == requestArr)
-	{
-		LogError("Failed to send request: connection handler and/or the request array is NUlL.");
-		return -1;
-	}
+#ifdef WIN32
+    if (NULL == handler || NULL == requestArr)
+    {
+        LogError("Failed to read response: connection handler and/or the request array is null.");
+        return -1;
+    }
+#else
+    if (!handler || NULL == requestArr)
+    {
+        LogError("Failed to read response: connection handler and/or the request array is null.");
+        return -1;
+    }
+#endif
 
 	DWORD totalBytesSent = 0;
 
-	BOOL result = WriteFile((HANDLE)handler,
-		requestArr,
-		arrLen,
-		&totalBytesSent,
-		NULL);
-
-	if (!result) {
-		//error setting serial port state
-		LogError("Failed to send request: %x", GetLastError());
-		return -1;
-	}
+#ifdef WIN32
+    if (!WriteFile((HANDLE)handler,
+        requestArr,
+        arrLen,
+        &totalBytesSent,
+        NULL))
+    {
+        LogError("Failed to send request: %x", GetLastError());
+        return -1;
+    }
+#else
+    totalBytesSent = write(handler, requestArr, arrLen);
+    if (totalBytesSent != arrLen)
+    {
+        LogError("Failed to send request.");
+        return -1;
+    }
+#endif
 
 	return  totalBytesSent;
 }
 
 int ModbusRtu_ReadResponse(HANDLE handler, byte *response, DWORD arrLen)
 {
-	if (NULL == handler || NULL == response)
-	{
-		LogError("Failed to read response: connection handler and/or the request array is NUlL.");
-		return -1;
-	}
+#ifdef WIN32
+    if (NULL == handler || NULL == response)
+    {
+        LogError("Failed to read response: connection handler and/or the response is null.");
+        return -1;
+    }
+#else
+    if (!handler || NULL == response)
+    {
+        LogError("Failed to read response: connection handler and/or the response is null.");
+        return -1;
+    }
+#endif
 
-	BOOL result = false;
+	
+
+	bool result = false;
     DWORD bytesReceived = 0;
 	DWORD totalBytesReceived = 0;
 	int retry = 0;
@@ -201,11 +233,16 @@ int ModbusRtu_ReadResponse(HANDLE handler, byte *response, DWORD arrLen)
 
 	while (totalBytesReceived < RTU_HEADER_SIZE && retry < retryLimit)
 	{
-		result = ReadFile(handler,
-			response + totalBytesReceived,
-			arrLen - totalBytesReceived - 1,
-			&bytesReceived,
-			NULL);
+#ifdef WIN32
+        result = (FALSE != ReadFile(handler,
+            (response + totalBytesReceived),
+            (arrLen - totalBytesReceived - 1),
+            &bytesReceived,
+            NULL));
+#else
+        bytesReceived = read(handler, response, (arrLen - totalBytesReceived - 1));
+        result = (bytesReceived > 0);
+#endif
 
 		if (bytesReceived > 0)
 		{
@@ -232,11 +269,16 @@ int ModbusRtu_ReadResponse(HANDLE handler, byte *response, DWORD arrLen)
 
 		while (totalBytesReceived < expectedResponseLength && retry < retryLimit)
 		{
-			result = ReadFile(handler,
-				response + totalBytesReceived,
-				arrLen - totalBytesReceived - 1,
-				&bytesReceived,
-				NULL);
+#ifdef WIN32
+            result = (FALSE != ReadFile(handler,
+                (response + totalBytesReceived),
+                (arrLen - totalBytesReceived - 1),
+                &bytesReceived,
+                NULL));
+#else
+            bytesReceived = read(handler, response, (arrLen - totalBytesReceived - 1));
+            result = (bytesReceived > 0);
+#endif
 
 			if (bytesReceived > 0)
 			{
@@ -252,7 +294,11 @@ int ModbusRtu_ReadResponse(HANDLE handler, byte *response, DWORD arrLen)
 
 	if (!result)
 	{
-		LogError("Failed to read response: %x", GetLastError());
+#ifdef WIN32
+        LogError("Failed to read response: %x.", GetLastError());
+#else
+        LogError("Failed to read response.");
+#endif
 		return -1;
 	}
 

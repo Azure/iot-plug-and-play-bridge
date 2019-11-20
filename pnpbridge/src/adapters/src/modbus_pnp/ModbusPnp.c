@@ -12,6 +12,12 @@
 #include "ModbusCapability.h"
 #include "ModbusConnection/ModbusConnection.h"
 
+#ifndef WIN32
+    #include <strings.h>
+    #define stringcmp strcasecmp
+#else
+    #define stringcmp stricmp
+#endif
 
 const char* modbusDeviceChangeMessageformat = "{ \
                                                  \"identity\": \"modbus-pnp-discovery\" \
@@ -38,23 +44,23 @@ int ModbusPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list) {
 
 ModbusDataType ToModbusDataTypeEnum(const char* dataType)
 {
-	if (stricmp(dataType, "hexstring") == 0 || stricmp(dataType, "HEXSTRING") == 0) {
+	if (stringcmp(dataType, "hexstring") == 0 || stringcmp(dataType, "HEXSTRING") == 0) {
 		return HEXSTRING;
 	}
-	else if (stricmp(dataType, "string") == 0 || stricmp(dataType, "STRING") == 0) {
+	else if (stringcmp(dataType, "string") == 0 || stringcmp(dataType, "STRING") == 0) {
 		return STRING;
 	}
-	else if (stricmp(dataType, "decimal") == 0 || stricmp(dataType, "DECIMAL") == 0
-		|| stricmp(dataType, "float") == 0 || stricmp(dataType, "FLOAT") == 0
-		|| stricmp(dataType, "double") == 0 || stricmp(dataType, "DOUBLE") == 0
-		|| stricmp(dataType, "int") == 0 || stricmp(dataType, "INT") == 0
-		|| stricmp(dataType, "integer") == 0 || stricmp(dataType, "INTEGER") == 0)
+	else if (stringcmp(dataType, "decimal") == 0 || stringcmp(dataType, "DECIMAL") == 0
+		|| stringcmp(dataType, "float") == 0 || stringcmp(dataType, "FLOAT") == 0
+		|| stringcmp(dataType, "double") == 0 || stringcmp(dataType, "DOUBLE") == 0
+		|| stringcmp(dataType, "int") == 0 || stringcmp(dataType, "INT") == 0
+		|| stringcmp(dataType, "integer") == 0 || stringcmp(dataType, "INTEGER") == 0)
 	{
 		return NUMERIC;
 	}
-	else if (stricmp(dataType, "flag") == 0 || stricmp(dataType, "FLAG") == 0
-		|| stricmp(dataType, "bool") == 0 || stricmp(dataType, "BOOL") == 0
-		|| stricmp(dataType, "boolean") == 0 || stricmp(dataType, "BOOLEAN") == 0)
+	else if (stringcmp(dataType, "flag") == 0 || stringcmp(dataType, "FLAG") == 0
+		|| stringcmp(dataType, "bool") == 0 || stringcmp(dataType, "BOOL") == 0
+		|| stringcmp(dataType, "boolean") == 0 || stringcmp(dataType, "BOOLEAN") == 0)
 	{
 		return FLAG;
 	}
@@ -96,7 +102,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		ModbusTelemetry* telemetry = calloc(1, sizeof(ModbusTelemetry));
 		if (NULL == telemetry)
 		{
-			LogError("Failed to allocation memory for telemetry configuration: \"%s\": 0x%x ", name, GetLastError());
+			LogError("Failed to allocation memory for telemetry configuration: \"%s\". ", name);
 			return -1;
 		}
 
@@ -105,20 +111,20 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		telemetry->StartAddress = json_object_dotget_string(telemetryArgs, "startAddress");
 		if (0 == telemetry->StartAddress)
 		{
-			LogError("\"startAddress\" of telemetry \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"startAddress\" of telemetry \"%s\" is in valid. ", name);
 			return -1;
 		}
 		telemetry->Length = (byte)json_object_dotget_number(telemetryArgs, "length");
 		if (0 == telemetry->Length)
 		{
-			LogError("\"length\" of telemetry \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"length\" of telemetry \"%s\" is in valid. ", name);
 			return -1;
 		}
 
 		const char* dataTypeStr = (const char*)json_object_dotget_string(telemetryArgs, "dataType");
 		if (NULL == dataTypeStr)
 		{
-			LogError("\"dataType\" of telemetry \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"dataType\" of telemetry \"%s\" is in valid. ", name);
 			return -1;
 		}
 		telemetry->DataType = ToModbusDataTypeEnum(dataTypeStr);
@@ -131,20 +137,20 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		telemetry->DefaultFrequency = (int)json_object_dotget_number(telemetryArgs, "defaultFrequency");
 		if (0 == telemetry->DefaultFrequency)
 		{
-			LogError("\"defaultFrequency\" of telemetry \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"defaultFrequency\" of telemetry \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		telemetry->ConversionCoefficient = json_object_dotget_number(telemetryArgs, "conversionCoefficient");
 		if (0 == telemetry->ConversionCoefficient)
 		{
-			LogError("\"conversionCoefficient\" of telemetry \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"conversionCoefficient\" of telemetry \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		if (0 != ModbusPnp_SetReadRequest(deviceConfig, Telemetry, telemetry))
 		{
-			LogError("Failed to create read request for telemetry \"%s\": 0x%x ", name, GetLastError());
+			LogError("Failed to create read request for telemetry \"%s\".", name);
 			return -1;
 		}
 
@@ -166,7 +172,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		ModbusProperty* property = calloc(1, sizeof(ModbusProperty));
 		if (NULL == property)
 		{
-			LogError("Failed to allocation memory for property configuration: \"%s\": 0x%x", name, GetLastError());
+			LogError("Failed to allocation memory for property configuration: \"%s\".", name);
 			return -1;
 		}
 
@@ -175,21 +181,21 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		property->StartAddress = json_object_dotget_string(propertyArgs, "startAddress");
 		if (0 == property->StartAddress)
 		{
-			LogError("\"startAddress\" of property \"%s\" is in valid: 0x%x", name, GetLastError());
+			LogError("\"startAddress\" of property \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		property->Length = (byte)json_object_dotget_number(propertyArgs, "length");
 		if (0 == property->Length)
 		{
-			LogError("\"length\" of property \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"length\" of property \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		const char* dataTypeStr = (const char*)json_object_dotget_string(propertyArgs, "dataType");
 		if (NULL == dataTypeStr)
 		{
-			LogError("\"dataType\" of property \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"dataType\" of property \"%s\" is in valid.", name);
 			return -1;
 		}
 		property->DataType = ToModbusDataTypeEnum(dataTypeStr);
@@ -202,21 +208,21 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		property->DefaultFrequency = (int)json_object_dotget_number(propertyArgs, "defaultFrequency");
 		if (0 == property->DefaultFrequency)
 		{
-			LogError("\"defaultFrequency\" of property \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"defaultFrequency\" of property \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		property->ConversionCoefficient = json_object_dotget_number(propertyArgs, "conversionCoefficient");
 		if (0 == property->ConversionCoefficient)
 		{
-			LogError("\"conversionCoefficient\" of property \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"conversionCoefficient\" of property \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		property->Access = (int)json_object_dotget_number(propertyArgs, "access");
 		if (0 == property->Access)
 		{
-			LogError("\"conversionCoefficient\" of property \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"conversionCoefficient\" of property \"%s\" is in valid.", name);
 			return -1;
 		}
 
@@ -234,7 +240,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 
 		if (0 != ModbusPnp_SetReadRequest(deviceConfig, Property, property))
 		{
-			LogError("Failed to create read request for property \"%s\": 0x%x ", name, GetLastError());
+			LogError("Failed to create read request for property \"%s\".", name);
 			return -1;
 		}
 
@@ -257,7 +263,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 
 		if (NULL == command)
 		{
-			LogError("Failed to allocation memory for command configuration: \"%s\": 0x%x ", name, GetLastError());
+			LogError("Failed to allocation memory for command configuration: \"%s\".", name);
 			return -1;
 		}
 
@@ -266,21 +272,21 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		command->StartAddress = json_object_dotget_string(commandArgs, "startAddress");
 		if (0 == command->StartAddress)
 		{
-			LogError("\"startAddress\" of command \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"startAddress\" of command \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		command->Length = (byte)json_object_dotget_number(commandArgs, "length");
 		if (0 == command->Length)
 		{
-			LogError("\"length\" of command \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"length\" of command \"%s\" is in valid.", name);
 			return -1;
 		}
 
 		const char* dataTypeStr = (const char*)json_object_dotget_string(commandArgs, "dataType");
 		if (NULL == dataTypeStr)
 		{
-			LogError("\"dataType\" of command \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"dataType\" of command \"%s\" is in valid.", name);
 			return -1;
 		}
 		command->DataType = ToModbusDataTypeEnum(dataTypeStr);
@@ -293,7 +299,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 		command->ConversionCoefficient = json_object_dotget_number(commandArgs, "conversionCoefficient");
 		if (0 == command->ConversionCoefficient)
 		{
-			LogError("\"conversionCoefficient\" of command \"%s\" is in valid: 0x%x ", name, GetLastError());
+			LogError("\"conversionCoefficient\" of command \"%s\" is in valid.", name);
 			return -1;
 		}
 
@@ -346,13 +352,13 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
 	//Get serial stopBits
 	const char* stopBitStr = (const char*)json_object_dotget_string(configObj, "stopBits");
 	if (NULL != stopBitStr) {
-		if (stricmp(stopBitStr, "ONE") == 0 || stricmp(stopBitStr, "1") == 0) {
+		if (stringcmp(stopBitStr, "ONE") == 0 || stringcmp(stopBitStr, "1") == 0) {
 			deviceConfig->ConnectionConfig.RtuConfig.StopBits = ONESTOPBIT;
 		}
-		else if (stricmp(stopBitStr, "TWO") == 0 || stricmp(stopBitStr, "2") == 0) {
+		else if (stringcmp(stopBitStr, "TWO") == 0 || stringcmp(stopBitStr, "2") == 0) {
 			deviceConfig->ConnectionConfig.RtuConfig.StopBits = TWOSTOPBITS;
 		}
-		else if (stricmp(stopBitStr, "OnePointFive") == 0 || stricmp(stopBitStr, "3") == 0) {
+		else if (stringcmp(stopBitStr, "OnePointFive") == 0 || stringcmp(stopBitStr, "3") == 0) {
 			deviceConfig->ConnectionConfig.RtuConfig.StopBits = ONE5STOPBITS;
 		}
 		else {
@@ -392,19 +398,19 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
 		return -1;
 	}
 
-	if (stricmp(parityStr, "NONE") == 0) {
+	if (stringcmp(parityStr, "NONE") == 0) {
 		deviceConfig->ConnectionConfig.RtuConfig.Parity = NOPARITY;
 	}
-	else if (stricmp(parityStr, "EVEN") == 0) {
+	else if (stringcmp(parityStr, "EVEN") == 0) {
 		deviceConfig->ConnectionConfig.RtuConfig.Parity = EVENPARITY;
 	}
-	else if (stricmp(parityStr, "ODD") == 0) {
+	else if (stringcmp(parityStr, "ODD") == 0) {
 		deviceConfig->ConnectionConfig.RtuConfig.Parity = ODDPARITY;
 	}
-	else if (stricmp(parityStr, "MARK") == 0) {
+	else if (stringcmp(parityStr, "MARK") == 0) {
 		deviceConfig->ConnectionConfig.RtuConfig.Parity = MARKPARITY;
 	}
-	else if (stricmp(parityStr, "SPACE") == 0) {
+	else if (stringcmp(parityStr, "SPACE") == 0) {
 		deviceConfig->ConnectionConfig.RtuConfig.Parity = SPACEPARITY;
 	}
 	else {
@@ -449,49 +455,50 @@ int ModbusDeviceCount = 0;
 
 int ModbusPnp_FindSerialDevices()
 {
-	CONFIGRET cmResult = CR_SUCCESS;
-	char* deviceInterfaceList;
-	ULONG bufferSize = 0;
+	//CONFIGRET cmResult = CR_SUCCESS;
+	//char* deviceInterfaceList;
+	//ULONG bufferSize = 0;
 
-	ModbusDeviceList = singlylinkedlist_create();
+	//ModbusDeviceList = singlylinkedlist_create();
 
-	cmResult = CM_Get_Device_Interface_List_Size(
-		&bufferSize,
-		(LPGUID)&GUID_DEVINTERFACE_COMPORT,
-		NULL,
-		CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
-	if (CR_SUCCESS != cmResult) {
-		return -1;
-	}
+	//cmResult = CM_Get_Device_Interface_List_Size(
+	//	&bufferSize,
+	//	(LPGUID)&GUID_DEVINTERFACE_COMPORT,
+	//	NULL,
+	//	CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+	//if (CR_SUCCESS != cmResult) {
+	//	return -1;
+	//}
 
-	deviceInterfaceList = malloc(bufferSize * sizeof(char));
+	//deviceInterfaceList = malloc(bufferSize * sizeof(char));
 
-	cmResult = CM_Get_Device_Interface_ListA(
-		(LPGUID)&GUID_DEVINTERFACE_COMPORT,
-		NULL,
-		deviceInterfaceList,
-		bufferSize,
-		CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
-	if (CR_SUCCESS != cmResult) {
-		return -1;
-	}
+	//cmResult = CM_Get_Device_Interface_ListA(
+	//	(LPGUID)&GUID_DEVINTERFACE_COMPORT,
+	//	NULL,
+	//	deviceInterfaceList,
+	//	bufferSize,
+	//	CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+	//if (CR_SUCCESS != cmResult) {
+	//	return -1;
+	//}
 
-	for (PCHAR currentDeviceInterface = deviceInterfaceList;
-		*currentDeviceInterface != '\0';
-		currentDeviceInterface += strlen(currentDeviceInterface) + 1)
-	{
-		PSERIAL_DEVICE serialDevs = malloc(sizeof(SERIAL_DEVICE));
-		serialDevs->InterfaceName = malloc((strlen(currentDeviceInterface) + 1) * sizeof(char));
-		strcpy_s(serialDevs->InterfaceName, strlen(currentDeviceInterface) + 1, currentDeviceInterface);
-		singlylinkedlist_add(ModbusDeviceList, serialDevs);
-		ModbusDeviceCount++;
-	}
+	//for (PCHAR currentDeviceInterface = deviceInterfaceList;
+	//	*currentDeviceInterface != '\0';
+	//	currentDeviceInterface += strlen(currentDeviceInterface) + 1)
+	//{
+	//	PSERIAL_DEVICE serialDevs = malloc(sizeof(SERIAL_DEVICE));
+	//	serialDevs->InterfaceName = malloc((strlen(currentDeviceInterface) + 1) * sizeof(char));
+	//	strcpy_s(serialDevs->InterfaceName, strlen(currentDeviceInterface) + 1, currentDeviceInterface);
+	//	singlylinkedlist_add(ModbusDeviceList, serialDevs);
+	//	ModbusDeviceCount++;
+	//}
 
 	return 0;
 }
 
 int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
 
+#ifdef WIN32
 	*serialHandle = CreateFileA(rtuConfig->Port,
 		GENERIC_READ | GENERIC_WRITE,
 		0, // must be opened with exclusive-access
@@ -499,17 +506,17 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL,
 		0);
+#else
+    *serialHandle = open(rtuConfig->Port, O_RDWR | O_NOCTTY);
+#endif
 
 	if (*serialHandle == INVALID_HANDLE_VALUE) {
-		// Handle the error
-		int error = GetLastError();
-		LogError("Failed to open com port %s, %x", rtuConfig->Port, error);
-		if (error == ERROR_FILE_NOT_FOUND) {
-			return -1;
-		}
-		return -1;
-	}
+        // Handle the error
+        LogError("Failed to open com port %s", rtuConfig->Port);
+        return -1;
+    }
 
+#ifdef WIN32
 	//  Initialize the DCB structure.
 	DCB dcbSerialParams;
 	SecureZeroMemory(&dcbSerialParams, sizeof(DCB));
@@ -542,25 +549,64 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
 		printf("Set timeout failed on com port %s, %x", rtuConfig->Port, error);
 		return -1;
 	}
+#else
+    struct termios settings;
+    tcgetattr(*serialHandle, &settings);
+    cfsetospeed(&settings, rtuConfig->BaudRate);
+    if (rtuConfig->Parity == NOPARITY)
+    {
+        settings.c_cflag &= ~PARENB;
+    }
+    else
+    {
+        settings.c_cflag |= PARENB;
+    }
+    
+    if (rtuConfig->Parity == ODDPARITY)
+    {
+        settings.c_cflag |= PARODD;
+    }
+    else if (rtuConfig->Parity == EVENPARITY)
+    {
+        settings.c_cflag &= ~PARODD;
+    }
+
+    if (rtuConfig->StopBits == ONESTOPBIT)
+    {
+        settings.c_cflag &= ~CSTOPB;
+    }
+    else if (rtuConfig->StopBits == TWOSTOPBITS)
+    {
+        settings.c_cflag |= CSTOPB;
+    }
+
+    tcsetattr(*serialHandle, TCSANOW, &settings);
+    tcflush(*serialHandle, TCOFLUSH);
+#endif
 	return 0;
 }
 
 int ModbusPnp_OpenSocket(MODBUS_TCP_CONFIG* tcpConfig, SOCKET *socketHandle)
 {
+    int result = 0;
+#ifdef WIN32
 	WSADATA wsaData = { 0 };
-	int result = 0;
-	
 	// Initialize Winsock
 	result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0) {
 		LogError("WSAStartup failed: %d\n", result);
 		return -1;
 	}
+#endif
 
 	// Create socket
 	*socketHandle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (*socketHandle == INVALID_SOCKET) {
+#ifdef WIN32
 		LogError("Failed to create socket with error = %d.", WSAGetLastError());
+#else
+        LogError("Failed to create socket.");
+#endif
 		goto ExitOnError;
 	}
 
@@ -570,19 +616,35 @@ int ModbusPnp_OpenSocket(MODBUS_TCP_CONFIG* tcpConfig, SOCKET *socketHandle)
 	deviceAddress.sin_addr.s_addr = inet_addr(tcpConfig->Host);
 	deviceAddress.sin_port = htons(tcpConfig->Port);
 
-	result = connect(*socketHandle, (SOCKADDR *)& deviceAddress, sizeof(deviceAddress));
+	result = connect(*socketHandle, (struct sockaddr *)& deviceAddress, sizeof(deviceAddress));
 	if (result == SOCKET_ERROR) {
-		LogError("Failed to connect with socker \"%s:%d\" with error: %ld.", tcpConfig->Host, tcpConfig->Port, WSAGetLastError());
-		result = closesocket(*socketHandle);
-		if (result == SOCKET_ERROR)
-			LogError("Failed to close socket with error: %ld.", WSAGetLastError());
+#ifdef WIN32
+		LogError("Failed to connect with socket \"%s:%d\" with error: %ld.", tcpConfig->Host, tcpConfig->Port, WSAGetLastError());
+#else
+        LogError("Failed to connect with socket \"%s:%d\".", tcpConfig->Host, tcpConfig->Port);
+#endif
+
+#ifdef WIN32
+        if (SOCKET_ERROR == closesocket(*socketHandle))
+        {
+            LogError("Failed to close socket with error: %ld.", WSAGetLastError());
+        }
+#else
+        if (!(close(*socketHandle)))
+        {
+            LogError("Failed to close socket");
+        }
+
+#endif
 		goto ExitOnError;
 	}
 	LogInfo("Connected to device at \"%s:%d\".", tcpConfig->Host, tcpConfig->Port);
 	return 0;
 
 ExitOnError:
+#ifdef WIN32
 	WSACleanup();
+#endif
 	return -1;
 }
 
@@ -653,10 +715,10 @@ int ModbusPnp_OpenDevice(ModbusDeviceConfig* deviceConfig, JSON_Object* interfac
 	deviceContext->ModbusDeviceChangeCallback = DiscoveryAdapter_ReportDevice;
 	deviceContext->DeviceConfig = deviceConfig;
 	deviceContext->InterfaceDefinitions = singlylinkedlist_create();
-	deviceContext->hConnectionLock = CreateMutex(NULL, false, NULL);
+    deviceContext->hConnectionLock = Lock_Init();
 	if (NULL == deviceContext->hConnectionLock)
 	{
-		LogError("Failed to create mutex lock for device connection with error: %d.", GetLastError());
+		LogError("Failed to create a valid lock handle for device connection.");
 		goto cleanup;
 	}
 
@@ -822,12 +884,13 @@ int ModbusPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
 
 	ModbusPnP_CleanupPollingTasks(deviceContext);
 
-	if (NULL != deviceContext->hDevice) {
+    if (INVALID_FILE != deviceContext->hDevice) {
+
 		ModbusPnp_CloseDevice(deviceContext->DeviceConfig->ConnectionType, deviceContext->hDevice, deviceContext->hConnectionLock);
 	}
 
 	if (NULL != deviceContext->hConnectionLock) {
-		CloseHandle(deviceContext->hConnectionLock);
+        Lock_Deinit(deviceContext->hConnectionLock);
 	}
 
 	if (deviceContext->InterfaceDefinitions) {
@@ -911,7 +974,6 @@ ModbusPnp_CreatePnpInterface(
 
 			if (readWritePropertyCount > 0)
 			{
-
 				propertyNames = calloc(1, sizeof(char*)*readWritePropertyCount);
 				if (NULL == propertyNames) {
 					result = -1;

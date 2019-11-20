@@ -4,9 +4,6 @@ extern "C"
 {
 #endif
 
-#include <Windows.h>
-#include <cfgmgr32.h>
-
 #include <digitaltwin_interface_client.h>
 #include "../ModbusEnum.h"
 
@@ -16,23 +13,23 @@ extern "C"
 	// Modbus Operation
 	typedef struct _MODBUS_TCP_MBAP_HEADER
 	{
-		BYTE transacID_Hi;  // Hight byte of Transaction ID: used for transaction pairing.
-		BYTE TransacID_Lo;  // Low byte of Transaction ID
-		BYTE ProtocolID_Hi; // Hight byte of Protocol ID: 0 for Modbus
-		BYTE ProtocolID_Lo; // Low byte of Protocol ID: 0 for Modbus
-		BYTE Length_Hi;     // Hight byte of Length of following field: Unit ID + PDU (Data field)
-		BYTE Length_Lo;     // Low byte of lendth Length.
-		BYTE UnitID;        // Unit ID: used for intra-system routing purpose.
+		uint8_t transacID_Hi;  // Hight uint8_t of Transaction ID: used for transaction pairing.
+		uint8_t TransacID_Lo;  // Low uint8_t of Transaction ID
+		uint8_t ProtocolID_Hi; // Hight uint8_t of Protocol ID: 0 for Modbus
+		uint8_t ProtocolID_Lo; // Low uint8_t of Protocol ID: 0 for Modbus
+		uint8_t Length_Hi;     // Hight uint8_t of Length of following field: Unit ID + PDU (Data field)
+		uint8_t Length_Lo;     // Low uint8_t of lendth Length.
+		uint8_t UnitID;        // Unit ID: used for intra-system routing purpose.
 	} MODBUS_TCP_MBAP_HEADER;
 
 	// Read request
 	typedef struct _MODBUS_READ_PAYLOAD
 	{
-		UINT8  FunctionCode;  // Function Code
-		UINT8  StartAddr_Hi;  // High byte for starting address
-		UINT8  StartAddr_Lo;  // Low byte for starting address
-		UINT8  ReadLen_Hi;    // High byte of Number of registers to read
-		UINT8  ReadLen_Lo;	  // Low byte of Number of registers to read
+		uint8_t  FunctionCode;  // Function Code
+		uint8_t  StartAddr_Hi;  // High uint8_t for starting address
+		uint8_t  StartAddr_Lo;  // Low uint8_t for starting address
+		uint8_t  ReadLen_Hi;    // High uint8_t of Number of registers to read
+		uint8_t  ReadLen_Lo;	  // Low uint8_t of Number of registers to read
 	} MODBUS_READ_REG_PAYLOAD;
 
 	typedef struct _MODBUS_TCP_READ_REG_REQUEST
@@ -43,15 +40,15 @@ extern "C"
 
 	typedef struct _MODBUS_RTU_READ_REQUEST
 	{
-		UINT8 UnitID;                      // Unit ID: slave address for the Modbus device.
+		uint8_t UnitID;                      // Unit ID: slave address for the Modbus device.
 		MODBUS_READ_REG_PAYLOAD Payload;   // Request payload
-		UINT16 CRC;		     			   // CRC
+		uint16_t CRC;		     			   // CRC
 	}  MODBUS_RTU_READ_REQUEST;
 
 	typedef union _MODBUS_READ_REQUEST
 	{
-		byte TcpArr[sizeof(MODBUS_TCP_READ_REG_REQUEST)];
-		byte RtuArr[sizeof(MODBUS_RTU_READ_REQUEST)];
+		uint8_t TcpArr[sizeof(MODBUS_TCP_READ_REG_REQUEST)];
+		uint8_t RtuArr[sizeof(MODBUS_RTU_READ_REQUEST)];
 		MODBUS_TCP_READ_REG_REQUEST TcpRequest;
 		MODBUS_RTU_READ_REQUEST RtuRequest;
 	}MODBUS_READ_REQUEST;
@@ -60,11 +57,11 @@ extern "C"
 
 	typedef struct _MODBUS_WRITE_1_REG_PAYLOAD
 	{
-		UINT8  FunctionCode;  // Function Code
-		UINT8  RegAddr_Hi;    // High byte for starting address
-		UINT8  RegAddr_Lo;	  // Low byte for starting address
-		UINT8  Value_Hi;      // High byte of Number of registers to read
-		UINT8  Value_Lo;	  // Low byte of Number of registers to read
+		uint8_t  FunctionCode;  // Function Code
+		uint8_t  RegAddr_Hi;    // High uint8_t for starting address
+		uint8_t  RegAddr_Lo;	  // Low uint8_t for starting address
+		uint8_t  Value_Hi;      // High uint8_t of Number of registers to read
+		uint8_t  Value_Lo;	  // Low uint8_t of Number of registers to read
 	} MODBUS_WRITE_1_REG_PAYLOAD;
 
 	typedef struct _MODBUS_TCP_WRITE_1_REG_REQUEST
@@ -75,22 +72,22 @@ extern "C"
 
 	typedef struct _MODBUS_RTU_WRITE_1_REG_REQUEST
 	{
-		UINT8 UnitID;                       // Unit ID: slave address for the Modbus device.
+		uint8_t UnitID;                       // Unit ID: slave address for the Modbus device.
 		MODBUS_WRITE_1_REG_PAYLOAD Payload; // Request payload
-		UINT16 CRC;					        // CRC
+		uint16_t CRC;					        // CRC
 	}  MODBUS_RTU_WRITE_1_REG_REQUEST;
 
 	typedef union _MODBUS_WRITE_1_REG_REQUEST
 	{
-		byte TcpArr[sizeof(MODBUS_TCP_WRITE_1_REG_REQUEST)];
-		byte RtuArr[sizeof(MODBUS_RTU_WRITE_1_REG_REQUEST)];
+		uint8_t TcpArr[sizeof(MODBUS_TCP_WRITE_1_REG_REQUEST)];
+		uint8_t RtuArr[sizeof(MODBUS_RTU_WRITE_1_REG_REQUEST)];
 		MODBUS_TCP_WRITE_1_REG_REQUEST TcpRequest;
 		MODBUS_RTU_WRITE_1_REG_REQUEST RtuRequest;
 	}MODBUS_WRITE_1_REG_REQUEST;
 
 #pragma region functions
-	bool ModbusConnectionHelper_GetFunctionCode(const char* startAddress, bool isRead, byte* functionCode, UINT16* modbusAddress);
-	bool ModbusConnectionHelper_ConvertValueStrToUInt16(ModbusDataType dataType, FunctionCodeType functionCodeType, char* valueStr, UINT16* value);
+	bool ModbusConnectionHelper_GetFunctionCode(const char* startAddress, bool isRead, uint8_t* functionCode, uint16_t* modbusAddress);
+	bool ModbusConnectionHelper_ConvertValueStrToUInt16(ModbusDataType dataType, FunctionCodeType functionCodeType, char* valueStr, uint16_t* value);
 #pragma endregion
 
 #ifdef __cplusplus

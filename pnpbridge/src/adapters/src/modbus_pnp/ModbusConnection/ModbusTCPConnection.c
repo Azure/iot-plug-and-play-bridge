@@ -4,18 +4,22 @@
 #define SOCKET_TIMEOUT_SEC	5
 #define SOCKET_TIMEOUT_USEC	0
 
+#ifdef WIN32
 struct timeval socket_timeout;
+#else
+#define INFINITE 0xFFFFFFFF
+#endif // WIN32
+
 
 int ModbusTcp_GetHeaderSize(void) {
 	return TCP_HEADER_SIZE;
 }
 
-bool ModbusTcp_CloseDevice(SOCKET socket, HANDLE hLock)
-{
-	DWORD waitResult = WaitForSingleObject(hLock, INFINITE);
-	if (WAIT_ABANDONED == waitResult)
+bool ModbusTcp_CloseDevice(SOCKET socket, LOCK_HANDLE hLock)
+{   
+	if (LOCK_OK == Lock(hLock))
 	{
-		LogError("Device communicate lock is abandoned: %d", GetLastError());
+		LogError("Device communicate lock could not be acquired.");
 		return false;
 	}
 	shutdown(socket, 1);
@@ -26,10 +30,13 @@ bool ModbusTcp_CloseDevice(SOCKET socket, HANDLE hLock)
 	{
 		byteRcvd = recv(socket, (char*)buffer, MODBUS_RESPONSE_MAX_LENGTH, 0);
 	}
-
-	closesocket(socket);
+#ifdef WIN32
+    closesocket(socket);
 	WSACleanup();
-	ReleaseMutex(hLock);
+#else
+    close(socket);
+#endif
+    Unlock(hLock);
 
 	LogInfo("Socket Closed.");
 	return true;
@@ -166,10 +173,10 @@ int ModbusTcp_SendRequest(SOCKET socket, byte *requestArr, DWORD arrLen)
 {
 	if (INVALID_SOCKET == socket  || 0 == socket || NULL == requestArr)
 	{
-		LogError("Failed to send request: connection handler and/or the request array is NUlL.");
+		LogError("Failed to send request: connection handler and/or the request array is null.");
 		return -1;
 	}
-
+#ifdef WIN32
 	fd_set fds;
 
 	FD_ZERO(&fds);
@@ -189,12 +196,16 @@ int ModbusTcp_SendRequest(SOCKET socket, byte *requestArr, DWORD arrLen)
 		LogError("Failed to get socket readiness with error: %ld.", WSAGetLastError());
 		return -1;
 	}
-
+#endif
 	int totalBytesSent = send(socket, (const char*)requestArr, arrLen, 0);
 
 	if (SOCKET_ERROR == totalBytesSent) {
 		//error setting serial port state
-		LogError("Failed to send request through coket with error: %ld.", WSAGetLastError());
+#ifdef WIN32
+        LogError("Failed to send request through socket with error: %ld.", WSAGetLastError());
+#else
+        LogError("Failed to send request through socket.");
+#endif
 	}
 
 	return totalBytesSent;
@@ -204,13 +215,13 @@ int ModbusTcp_ReadResponse(SOCKET socket, byte *response, DWORD arrLen)
 {
 	if (INVALID_SOCKET == socket || 0 == socket || NULL == response)
 	{
-		LogError("Failed to read response: connection handler and/or the request array is NUlL.");
+		LogError("Failed to read response: connection handler and/or the request array is null.");
 		return -1;
 	}
 
 	int bytesReceived = 0;
 	int totalBytesReceived = 0;
-	
+#ifdef WIN32
 	fd_set fds;
 	FD_ZERO(&fds);
 	FD_SET(socket, &fds);
@@ -227,7 +238,7 @@ int ModbusTcp_ReadResponse(SOCKET socket, byte *response, DWORD arrLen)
 		LogError("Failed to get socket readiness with error: %ld.", WSAGetLastError());
 		return -1;
 	}
-
+#endif
 	bytesReceived = recv(socket, (char*)(response + totalBytesReceived), arrLen - totalBytesReceived, 0);
 
 	if (bytesReceived > 0)
@@ -236,7 +247,11 @@ int ModbusTcp_ReadResponse(SOCKET socket, byte *response, DWORD arrLen)
 	}
 	else if (SOCKET_ERROR == bytesReceived)
 	{
+#ifdef WIN32
 		LogError("Failed to read from socket with error: %ld.", WSAGetLastError());
+#else
+        LogError("Failed to read from socket.");
+#endif
 		return -1;
 	}
 

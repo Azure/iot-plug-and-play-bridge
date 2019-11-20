@@ -13,9 +13,9 @@ endif()
 compileAsC99()
 
 add_subdirectory(serial_pnp)
+add_subdirectory(modbus_pnp)
 
 IF(WIN32)
-add_subdirectory(modbus_pnp)
 add_subdirectory(core_device_health)
 add_subdirectory(camera)
 ENDIF(WIN32)

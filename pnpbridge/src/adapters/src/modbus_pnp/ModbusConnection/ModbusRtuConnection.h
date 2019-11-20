@@ -12,7 +12,7 @@ extern "C"
 #define RTU_HEADER_SIZE 1
 
 int ModbusRtu_GetHeaderSize(void);
-bool ModbusRtu_CloseDevice(HANDLE hDevice, HANDLE lock);
+bool ModbusRtu_CloseDevice(HANDLE hDevice, LOCK_HANDLE lock);
 
 int ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, byte unitId);
 int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr);

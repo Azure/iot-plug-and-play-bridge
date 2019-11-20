@@ -260,7 +260,7 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
 	}
 	return resultLength;
 }
-bool ModbusPnp_CloseDevice(MODBUS_CONNECTION_TYPE connectionType, HANDLE *hDevice, HANDLE hLock)
+bool ModbusPnp_CloseDevice(MODBUS_CONNECTION_TYPE connectionType, HANDLE hDevice, LOCK_HANDLE hLock)
 {
 	bool result = false;
 	switch (connectionType)
@@ -312,7 +312,7 @@ int ModbusPnp_SetWriteRequest(MODBUS_CONNECTION_TYPE connectionType, CapabilityT
 	return result;
 }
 
-int ModbusPnp_ReadResponse(MODBUS_CONNECTION_TYPE connectionType, void *handler, byte *responseArr, DWORD arrLen)
+int ModbusPnp_ReadResponse(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler, byte *responseArr, DWORD arrLen)
 {
 	int result = -1;
 	switch (connectionType)
@@ -329,7 +329,7 @@ int ModbusPnp_ReadResponse(MODBUS_CONNECTION_TYPE connectionType, void *handler,
 	return result;
 }
 
-int ModbusPnp_SendRequest(MODBUS_CONNECTION_TYPE connectionType, void *handler, byte *requestArr, DWORD arrLen)
+int ModbusPnp_SendRequest(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler, byte *requestArr, DWORD arrLen)
 {
 	int result = -1;
 	switch (connectionType)
@@ -405,17 +405,16 @@ int ModbusPnp_ReadCapability(CapabilityContext* capabilityContext, CapabilityTyp
 		goto exit;
 	}
 
-	DWORD waitResult = WaitForSingleObject(capabilityContext->hLock, INFINITE);
-	if (WAIT_ABANDONED == waitResult)
+	if (LOCK_OK != Lock(capabilityContext->hLock))
 	{
-		LogError("Device communicate lock is abandoned: %d", GetLastError());
+		LogError("Device communicate lock is abandoned.");
 		resultLength = -1;
 		goto exit;
 	}
 
 	if (requestArrSize != ModbusPnp_SendRequest(capabilityContext->connectionType, capabilityContext->hDevice, requestArr, requestArrSize))
 	{
-		LogError("Failed to send read request for capability \"%s\": %x", capabilityName, GetLastError());
+		LogError("Failed to send read request for capability \"%s\".", capabilityName);
 		resultLength = -1;
 		goto exit;
 	}
@@ -423,7 +422,7 @@ int ModbusPnp_ReadCapability(CapabilityContext* capabilityContext, CapabilityTyp
 	responseLength = ModbusPnp_ReadResponse(capabilityContext->connectionType, capabilityContext->hDevice, response, MODBUS_RESPONSE_MAX_LENGTH);
 	if (responseLength < 0)
 	{
-		LogError("Failed to get read response for capability \"%s\": %x", capabilityName, GetLastError());
+		LogError("Failed to get read response for capability \"%s\".", capabilityName);
 		resultLength = -1;
 		goto exit;
 	}
@@ -434,21 +433,21 @@ int ModbusPnp_ReadCapability(CapabilityContext* capabilityContext, CapabilityTyp
 
 		if (resultLength < 0)
 		{
-			LogError("Failed to parse response for reading capability \"%s\": %x", capabilityName, GetLastError());
+			LogError("Failed to parse response for reading capability \"%s\".", capabilityName);
 			resultLength = -1;
 			goto exit;
 		}
 	}
 	else
 	{
-		LogError("Invalid response for reading capability \"%s\": %x", capabilityName, GetLastError());
+		LogError("Invalid response for reading capability \"%s\".", capabilityName);
 		resultLength = -1;
 		goto exit;
 
 	}
 
 exit:
-	ReleaseMutex(capabilityContext->hLock);
+	Unlock(capabilityContext->hLock);
 	return resultLength;
 }
 
@@ -471,7 +470,7 @@ int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, Capability
 			capabilityName = command->Name;
 			if (0 != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Command, command, requestStr))
 			{
-				LogError("Failed to create write request for command \"%s\": 0x%x ", capabilityName, GetLastError());
+				LogError("Failed to create write request for command \"%s\".", capabilityName);
 				return -1;
 			}
 
@@ -496,7 +495,7 @@ int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, Capability
 			capabilityName = property->Name;
 			if (0 != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Property, property, requestStr))
 			{
-				LogError("Failed to create write request for writable property \"%s\": 0x%x ", capabilityName, GetLastError());
+				LogError("Failed to create write request for writable property \"%s\".", capabilityName);
 				return -1;
 			}
 
@@ -521,17 +520,17 @@ int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, Capability
 			goto exit;
 	}
 
-	DWORD waitResult = WaitForSingleObject(capabilityContext->hLock, INFINITE);
-	if (WAIT_ABANDONED == waitResult)
+	//DWORD waitResult = WaitForSingleObject(capabilityContext->hLock, INFINITE);
+	if (LOCK_OK != Lock(capabilityContext->hLock))
 	{
-		LogError("Device communicate lock is abandoned: %d", GetLastError());
+		LogError("Device communicate lock is abandoned.");
 		resultLength = -1;
 		goto exit;
 	}
 
 	if (requestArrSize != ModbusPnp_SendRequest(capabilityContext->connectionType, capabilityContext->hDevice, requestArr, requestArrSize))
 	{
-		LogError("Failed to send write request for capability \"%s\": %x", capabilityName, GetLastError());
+		LogError("Failed to send write request for capability \"%s\".", capabilityName);
 		resultLength = -1;
 		goto exit;
 	}
@@ -539,7 +538,7 @@ int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, Capability
 	responseLength = ModbusPnp_ReadResponse(capabilityContext->connectionType, capabilityContext->hDevice, response, MODBUS_RESPONSE_MAX_LENGTH);
 	if (responseLength < 0)
 	{
-		LogError("Failed to get write response for capability \"%s\": %x", capabilityName, GetLastError());
+		LogError("Failed to get write response for capability \"%s\".", capabilityName);
 		resultLength = -1;
 		goto exit;
 	}
@@ -549,19 +548,19 @@ int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, Capability
 		resultLength = ProcessModbusResponse(capabilityContext->connectionType, capabilityType, capabilityContext->capability, response, responseLength, resultedData);
 		if (resultLength < 0)
 		{
-			LogError("Failed to parse response for command \"%s\": %x", capabilityName, GetLastError());
+			LogError("Failed to parse response for command \"%s\".", capabilityName);
 			resultLength = -1;
 			goto exit;
 		}
 	}
 	else
 	{
-		LogError("Invalid response for command \"%s\": %x", capabilityName, GetLastError());
+		LogError("Invalid response for command \"%s\".", capabilityName);
 		resultLength = -1;
 		goto exit;
 	}
 
 exit:
-	ReleaseMutex(capabilityContext->hLock);
+	Unlock(capabilityContext->hLock);
 	return resultLength;
 }

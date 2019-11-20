@@ -1,9 +1,10 @@
 #include "ModbusConnectionHelper.h"
+#include <stdlib.h>
 
-bool ModbusConnectionHelper_GetFunctionCode(const char* startAddress, bool isRead, byte* functionCode, UINT16* modbusAddress)
+bool ModbusConnectionHelper_GetFunctionCode(const char* startAddress, bool isRead, uint8_t* functionCode, uint16_t* modbusAddress)
 {
 	char entityChar = startAddress[0];
-	byte entityType = (byte)atoi(&entityChar);
+	uint8_t entityType = (uint8_t)atoi(&entityChar);
 	switch (entityType)
 	{
 	case CoilStatus:
@@ -32,12 +33,12 @@ bool ModbusConnectionHelper_GetFunctionCode(const char* startAddress, bool isRea
 
 	char subAddress[5] = "";
 	strncpy_s(subAddress, 5, &(startAddress[1]), 4);
-	*modbusAddress = (UINT16)(atoi(subAddress) - 1);
+	*modbusAddress = (uint16_t)(atoi(subAddress) - 1);
 
 	return true;
 }
 
-bool ModbusConnectionHelper_ConvertValueStrToUInt16(ModbusDataType dataType, FunctionCodeType functionCodeType, char* valueStr, UINT16* value)
+bool ModbusConnectionHelper_ConvertValueStrToUInt16(ModbusDataType dataType, FunctionCodeType functionCodeType, char* valueStr, uint16_t* value)
 {
 	switch (dataType)
 	{
@@ -57,7 +58,7 @@ bool ModbusConnectionHelper_ConvertValueStrToUInt16(ModbusDataType dataType, Fun
 			}
 			return true;
 		case NUMERIC:
-			*value = (UINT16)atoi(valueStr);
+			*value = (uint16_t)atoi(valueStr);
 			return true;
 		case STRING:
 		default:
