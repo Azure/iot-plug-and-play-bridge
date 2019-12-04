@@ -76,6 +76,7 @@ set(pnp_bridge_common_libs
     utpm
     pnpbridge_adapters
     pnpbridge_serial
+    pnpbridge_modbus
     digitaltwin_client
     pnpbridge
 )
@@ -84,7 +85,6 @@ set(pnp_bridge_common_libs
 if(WIN32)
 set(pnp_bridge_common_libs
     ${pnp_bridge_common_libs}
-    pnpbridge_modbus
     pnpbridge_camera
     pnpbridge_coredevicehealth
 )

@@ -9,16 +9,15 @@ extern "C"
 #include "../ModbusCapability.h"
 #include "ModbusConnectionHelper.h"
 #include "ModbusRtuConnection.h"
-#include "ModbusTcpConnection.h"
+#include "ModbusTCPConnection.h"
 
 
 // ModbusConnection "Public" methods
 
-bool ModbusPnp_CloseDevice(MODBUS_CONNECTION_TYPE connectionType, HANDLE *hDevice, HANDLE lock);
-
+bool ModbusPnp_CloseDevice(MODBUS_CONNECTION_TYPE connectionType, HANDLE hDevice, LOCK_HANDLE lock);
 int ModbusPnp_SetReadRequest(ModbusDeviceConfig* deviceConfig, CapabilityType capabilityType, void* capability);
-int ModbusPnp_ReadCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, byte* resultedData);
-int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, char* requestStr, byte* resultedData);
+int ModbusPnp_ReadCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, uint8_t* resultedData);
+int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, char* requestStr, uint8_t* resultedData);
 
 #ifdef __cplusplus
 }
