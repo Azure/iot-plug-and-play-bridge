@@ -12,20 +12,24 @@ extern PNP_ADAPTER ModbusPnpInterface;
 
 #ifdef WIN32
 
+extern DISCOVERY_ADAPTER BluetoothSensorPnpAdapter;
 extern DISCOVERY_ADAPTER CameraPnpAdapter;
 extern DISCOVERY_ADAPTER CoreDeviceDiscovery;
 
 PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
+    &BluetoothSensorPnpAdapter,
     &CameraPnpAdapter,
     &SerialPnpDiscovery,
     &CoreDeviceDiscovery,
     &ModbusPnpDeviceDiscovery
 };
 
+extern PNP_ADAPTER BluetoothSensorPnpInterface;
 extern PNP_ADAPTER CameraPnpInterface;
 extern PNP_ADAPTER CoreDeviceHealth;
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
+    &BluetoothSensorPnpInterface,
     &CameraPnpInterface,
     &SerialPnpInterface,
     &CoreDeviceHealth,

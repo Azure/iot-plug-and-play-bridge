@@ -56,7 +56,7 @@ endif()
 
 set(pnp_bridge_common_libs
     aziotsharedutil
-    iothub_client 
+    iothub_client
     iothub_client_http_transport
     iothub_client_amqp_transport
     iothub_client_amqp_ws_transport
@@ -81,6 +81,7 @@ if(WIN32)
 set(pnp_bridge_common_libs
     ${pnp_bridge_common_libs}
     pnpbridge_camera
+    pnpbridge_bluetoothsensor
     pnpbridge_coredevicehealth
 )
 endif()
