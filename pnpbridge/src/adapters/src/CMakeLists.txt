@@ -13,6 +13,7 @@ endif()
 compileAsC99()
 
 add_subdirectory(serial_pnp)
+add_subdirectory(mqtt_pnp)
 add_subdirectory(modbus_pnp)
 
 IF(WIN32)

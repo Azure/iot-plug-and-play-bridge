@@ -29,6 +29,11 @@ int BluetoothSensorPnpStartDiscovery(
     PNPMEMORY deviceArgs,
     PNPMEMORY adapterArgs) noexcept
 {
+    if (deviceArgs == nullptr) {
+        LogInfo("No bluetooth sensor device arguments found.");
+        return 0;
+    }
+
     LogInfo("Starting discovery adapter.");
 
     LogInfo("Starting to payload descriptor.");
