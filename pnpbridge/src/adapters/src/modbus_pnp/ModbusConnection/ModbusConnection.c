@@ -468,7 +468,7 @@ int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, Capability
         {
             ModbusCommand* command = (ModbusCommand*)(capabilityContext->capability);
             capabilityName = command->Name;
-            if (0 != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Command, command, requestStr))
+            if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Command, command, requestStr))
             {
                 LogError("Failed to create write request for command \"%s\".", capabilityName);
                 return -1;
@@ -493,7 +493,7 @@ int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, Capability
         {
             ModbusProperty* property = (ModbusProperty*)(capabilityContext->capability);
             capabilityName = property->Name;
-            if (0 != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Property, property, requestStr))
+            if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Property, property, requestStr))
             {
                 LogError("Failed to create write request for writable property \"%s\".", capabilityName);
                 return -1;

@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #include "pch.h"
-#include <fstream>
 #include "NetworkCameraIotPnpDevice.h"
+#include "util.h"
+#include <fstream>
 #include <pnpbridge_common.h>
 #include <pnpbridge.h>
 
@@ -45,7 +46,7 @@ catch (std::exception e)
 HRESULT NetworkCameraIotPnpDevice::GetURIOp(std::string& strResponse) try
 {
     HRESULT hr = S_OK;
-    std::string loc(m_URI.begin(), m_URI.end());
+    std::string loc = wstr2str(m_URI);
     strResponse = "\"" + loc + "\"";
     return hr;
 }

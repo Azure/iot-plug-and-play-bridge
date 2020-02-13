@@ -153,7 +153,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
             return -1;
         }
 
-        if (0 != ModbusPnp_SetReadRequest(deviceConfig, Telemetry, telemetry))
+        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetReadRequest(deviceConfig, Telemetry, telemetry))
         {
             LogError("Failed to create read request for telemetry \"%s\".", name);
             return -1;
@@ -243,7 +243,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
                 break;
         }
 
-        if (0 != ModbusPnp_SetReadRequest(deviceConfig, Property, property))
+        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetReadRequest(deviceConfig, Property, property))
         {
             LogError("Failed to create read request for property \"%s\".", name);
             return -1;
@@ -327,7 +327,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
 
     singlylinkedlist_add(interfaceDefinitions, interfaceConfig);
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* configObj)
@@ -424,7 +424,7 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
     }
 
     deviceConfig->ConnectionType = RTU;
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnP_ParseTcpSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* configObj)
@@ -445,7 +445,7 @@ int ModbusPnP_ParseTcpSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
 
     deviceConfig->ConnectionType = TCP;
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 #pragma endregion
 
@@ -545,7 +545,7 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
     tcsetattr(*serialHandle, TCSANOW, &settings);
     tcflush(*serialHandle, TCOFLUSH);
 #endif
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnp_OpenSocket(MODBUS_TCP_CONFIG* tcpConfig, SOCKET *socketHandle)
@@ -601,7 +601,7 @@ int ModbusPnp_OpenSocket(MODBUS_TCP_CONFIG* tcpConfig, SOCKET *socketHandle)
         goto ExitOnError;
     }
     LogInfo("Connected to device at \"%s:%d\".", tcpConfig->Host, tcpConfig->Port);
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 
 ExitOnError:
 #ifdef WIN32
@@ -641,10 +641,7 @@ int ModbusPnp_OpenDeviceWorker(void* context)
         PnpMemory_ReleaseReference(payload);
     }
 
-    //Start polling all telemetry
-    ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
-
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnp_OpenDevice(ModbusDeviceConfig* deviceConfig, JSON_Object* interfaceConfig) {
@@ -658,7 +655,7 @@ int ModbusPnp_OpenDevice(ModbusDeviceConfig* deviceConfig, JSON_Object* interfac
 
     if (deviceConfig->ConnectionType == RTU)
     {
-        if (0 != ModbusPnp_OpenSerial(&(deviceConfig->ConnectionConfig.RtuConfig), &(deviceContext->hDevice)))
+        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_OpenSerial(&(deviceConfig->ConnectionConfig.RtuConfig), &(deviceContext->hDevice)))
         {
             LogError("Failed to open serial connection to \"%s\".", deviceConfig->ConnectionConfig.RtuConfig.Port);
             goto cleanup;
@@ -667,7 +664,7 @@ int ModbusPnp_OpenDevice(ModbusDeviceConfig* deviceConfig, JSON_Object* interfac
     else if (deviceConfig->ConnectionType == TCP)
     {
         //TOOD
-        if (0 != ModbusPnp_OpenSocket(&(deviceConfig->ConnectionConfig.TcpConfig), (SOCKET*)&(deviceContext->hDevice)))
+        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_OpenSocket(&(deviceConfig->ConnectionConfig.TcpConfig), (SOCKET*)&(deviceContext->hDevice)))
         {
             LogError("Failed to open socket connection to \"%s:%d\".", deviceConfig->ConnectionConfig.TcpConfig.Host, deviceConfig->ConnectionConfig.TcpConfig.Port);
             goto cleanup;
@@ -689,7 +686,7 @@ int ModbusPnp_OpenDevice(ModbusDeviceConfig* deviceConfig, JSON_Object* interfac
         goto cleanup;
     }
 
-    if (ModbusPnp_ParseInterfaceConfig(deviceContext, interfaceConfig) != 0) {
+    if (ModbusPnp_ParseInterfaceConfig(deviceContext, interfaceConfig) != DIGITALTWIN_CLIENT_OK) {
         LogError("Failed to parse Modbus interface configuration.");
         goto cleanup;
     }
@@ -698,7 +695,7 @@ int ModbusPnp_OpenDevice(ModbusDeviceConfig* deviceConfig, JSON_Object* interfac
         LogError("ThreadAPI_Create failed");
         goto cleanup;
     }
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 
 cleanup:
     free(deviceContext);
@@ -715,7 +712,7 @@ ModbusPnp_StartDiscovery(
 {
     if (DeviceArgs == NULL) {
         LogInfo("ModbusPnp_StartDiscovery: No device discovery parameters found in configuration.");
-        return 0;
+        return DIGITALTWIN_CLIENT_OK;
     }
     
     UNREFERENCED_PARAMETER(AdapterArgs);
@@ -741,13 +738,13 @@ ModbusPnp_StartDiscovery(
     deviceConfig->UnitId = (uint8_t)json_object_dotget_number(deviceConfigObj, "unitId");
 
     JSON_Object* rtuArgs = json_object_dotget_object(deviceConfigObj, "rtu");
-    if (NULL != rtuArgs && ModbusPnp_ParseRtuSettings(deviceConfig, rtuArgs) != 0) {
+    if (NULL != rtuArgs && ModbusPnp_ParseRtuSettings(deviceConfig, rtuArgs) != DIGITALTWIN_CLIENT_OK) {
         LogError("Failed to parse RTU connection settings.");
         return -1;
     }
 
     JSON_Object* tcpArgs = json_object_dotget_object(deviceConfigObj, "tcp");
-    if (NULL != tcpArgs && ModbusPnP_ParseTcpSettings(deviceConfig, tcpArgs) != 0) {
+    if (NULL != tcpArgs && ModbusPnP_ParseTcpSettings(deviceConfig, tcpArgs) != DIGITALTWIN_CLIENT_OK) {
         LogError("Failed to parse TCP connection settings.");
         return -1;
     }
@@ -762,11 +759,11 @@ ModbusPnp_StartDiscovery(
     LogInfo("Opening device %s", deviceConfig->ConnectionConfig.RtuConfig.Port);
     ModbusPnp_OpenDevice(deviceConfig, interfaceConfigObj);
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnp_StopDiscovery() {
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 #pragma endregion
@@ -843,15 +840,21 @@ ModbusPnp_StartPnpInterface(
     _In_ PNPADAPTER_INTERFACE_HANDLE PnpInterface
     )
 {
-    AZURE_UNREFERENCED_PARAMETER(PnpInterface);
-    return 0;
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpAdapterInterface_GetContext(PnpInterface);
+    if (deviceContext == NULL)
+    {
+        LogError("Device context is null");
+        return -1;
+    }
+    // Start polling all telemetry
+    return ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
 }
 
 int ModbusPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
     PMODBUS_DEVICE_CONTEXT deviceContext = PnpAdapterInterface_GetContext(pnpInterface);
 
     if (NULL == deviceContext) {
-        return 0;
+        return DIGITALTWIN_CLIENT_OK;
     }
 
     ModbusPnP_CleanupPollingTasks(deviceContext);
@@ -879,11 +882,20 @@ int ModbusPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
         singlylinkedlist_destroy(deviceContext->InterfaceDefinitions);
     }
 
-    free(deviceContext->DeviceConfig);
-    free(deviceContext->InterfaceDefinitions);
-    free(deviceContext);
-
-    return 0;
+    if (deviceContext->DeviceConfig)
+    {
+        free(deviceContext->DeviceConfig);
+    }
+    if (deviceContext->InterfaceDefinitions)
+    {
+        free(deviceContext->InterfaceDefinitions);
+    }
+    if (deviceContext)
+    {
+        free(deviceContext);
+    }
+    
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int 
@@ -1036,10 +1048,10 @@ ModbusPnp_CreatePnpInterface(
         if (DIGITALTWIN_CLIENT_OK != dtRes) {
             result = -1;
             goto exit;
-        }
+        }        
 
         if (propertyCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, ModbusPnp_PropertyHandler);
+            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, ModbusPnp_PropertyHandler, (void*)deviceContext);
             if (DIGITALTWIN_CLIENT_OK != dtRes) {
                 result = -1;
                 goto exit;
@@ -1047,7 +1059,7 @@ ModbusPnp_CreatePnpInterface(
         }
 
         if (commandCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, ModbusPnp_CommandHandler);
+            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, ModbusPnp_CommandHandler, (void*)deviceContext);
             if (DIGITALTWIN_CLIENT_OK != dtRes) {
                 result = -1;
                 goto exit;
@@ -1167,6 +1179,8 @@ ModbusPnp_CreatePnpInterface(
             }
         }
 
+        PnpAdapterInterface_SetContext(pnpAdapterInterface, deviceContext);
+
         interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
     }
 exit:
@@ -1180,17 +1194,17 @@ exit:
         */
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnp_Initialize(const char* adapterArgs) {
     UNREFERENCED_PARAMETER(adapterArgs);
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int 
 ModbusPnp_Shutdown() {
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 #pragma endregion

@@ -251,7 +251,7 @@ CoreDevice_StartDiscovery(
         singlylinkedlist_add(g_CoreDeviceDiscovery_DeviceWatchers, notifyHandle);
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int 
@@ -265,7 +265,7 @@ CoreDevice_StopDiscovery()
     }
 
     singlylinkedlist_destroy(g_CoreDeviceDiscovery_DeviceWatchers);
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 DISCOVERY_ADAPTER CoreDeviceDiscovery = {

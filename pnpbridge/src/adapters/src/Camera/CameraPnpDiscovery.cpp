@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #include "pch.h"
 #include "CameraPnpDiscovery.h"
+#include "util.h"
 
 // Cameras under Windows can be registered in multiple categories.
 // These three interface categories are generally treated as "webcam".
@@ -103,7 +104,7 @@ HRESULT CameraPnpDiscovery::InitializePnpDiscovery(
             for (int j = 0; j < (int)json_array_get_count(jCameraIds); ++j) 
             {
                 const char* cameraId = json_array_get_string(jCameraIds, j);
-                std::string cameraId2 = std::string((*iter)->m_cameraId.begin(), (*iter)->m_cameraId.end());
+                std::string cameraId2 = wstr2str((*iter)->m_cameraId);
                 if (strcmp(cameraId2.c_str(), cameraId) == 0)
                 {
                     std::unique_ptr<JsonWrapper>    pjson = std::make_unique<JsonWrapper>();
@@ -198,7 +199,7 @@ HRESULT CameraPnpDiscovery::GetUniqueIdByCameraId(_In_ std::string& cameraId, _O
     uniqueId = L"";
     for (auto iter = m_cameraUniqueIds.begin(); iter != m_cameraUniqueIds.end(); iter++)
     {
-        std::string cameraIdStr((*iter)->m_cameraId.begin(), (*iter)->m_cameraId.end());
+        std::string cameraIdStr = wstr2str((*iter)->m_cameraId);
         if (cameraIdStr == cameraId.c_str())
         {
             uniqueId = (*iter)->m_UniqueId;

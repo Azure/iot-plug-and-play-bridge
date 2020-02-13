@@ -52,7 +52,7 @@ MqttPnp_StartDiscovery(
 
     if (DeviceArgs == nullptr) {
         LogInfo("mqtt-pnp: no device arguments found");
-        return 0;
+        return DIGITALTWIN_CLIENT_OK;
     }
 
     PnpMemory_AddReference(DeviceArgs);
@@ -121,7 +121,7 @@ MqttPnp_StartDiscovery(
 
     // PnpMemory_ReleaseReference(AdapterArgs);
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
@@ -140,7 +140,7 @@ MqttPnp_StopDiscovery()
 
     // printf("MQTTPNP stopped discovery\n");
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
@@ -153,7 +153,7 @@ MqttPnp_Initialize(const char* AdapterArgs)
     //     return -1;
     // }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int 
@@ -161,7 +161,7 @@ MqttPnp_Shutdown()
 {
     printf("mqtt-pnp: shutdown\n");
     // platform_deinit();
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
@@ -177,7 +177,7 @@ MqttPnp_ReleaseInterface(
 
     delete context;
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
@@ -220,7 +220,8 @@ MqttPnp_Bind(
         )
         {
             return;
-        }
+        },
+        (void*)context
     );
 
     DigitalTwin_InterfaceClient_SetCommandsCallback(digitalTwinInterface,
@@ -231,7 +232,8 @@ MqttPnp_Bind(
         )
         {
             static_cast<MqttPnpInstance*>(userContextCallback)->s_ProtocolHandler->OnPnpMethodCall(dtClientCommandContext, dtClientCommandResponseContext);
-        }
+        },
+        (void*)context
     );
 
     // Create PnpBridge-PnpAdapter Interface
@@ -241,7 +243,7 @@ MqttPnp_Bind(
         PNPADAPTER_INTERFACE_HANDLE /*PnpInterface*/
     )
     {
-        return 0;
+        return 1; // Success
     };
 
     interfaceParams.ReleaseInterface = MqttPnp_ReleaseInterface;

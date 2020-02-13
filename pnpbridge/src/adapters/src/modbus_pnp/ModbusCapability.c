@@ -167,8 +167,11 @@ void ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClien
     capContext->hDevice = modbusDevice->hDevice;
     capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
     capContext->hLock= modbusDevice->hConnectionLock;
-
-    ModbusPnp_WriteToCapability(capContext, Property, (char*)dtClientPropertyUpdate->propertyDesired, resultedData);
+    
+    if ((char*)dtClientPropertyUpdate->propertyDesired)
+    {
+        ModbusPnp_WriteToCapability(capContext, Property, (char*)dtClientPropertyUpdate->propertyDesired, resultedData);
+    }
 
     free(capContext);
 }
@@ -183,24 +186,19 @@ void ModbusPnP_ReportPropertyUpdatedCallback(DIGITALTWIN_CLIENT_RESULT pnpReport
 
 int ModbusPnP_ReportReadOnlyProperty(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* propertyName, char* data)
 {
-    int result;
-    DIGITALTWIN_CLIENT_RESULT pnpClientResult;
+    DIGITALTWIN_CLIENT_RESULT pnpClientResult = DIGITALTWIN_CLIENT_OK;
 
     if (pnpInterface == NULL) {
-        return 0;
+        return pnpClientResult;
     }
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(pnpInterface, (const char*) propertyName, (const char*)data, NULL, ModbusPnP_ReportPropertyUpdatedCallback, (void*)propertyName)) != DIGITALTWIN_CLIENT_OK)
+    if ((pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(pnpInterface, propertyName, (unsigned char*)data, strlen(data), NULL, ModbusPnP_ReportPropertyUpdatedCallback, (void*)propertyName)) != DIGITALTWIN_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_ReportReadOnlyPropertyStatusAsync failed, result=%d\n", pnpClientResult);
-        result = -1;// __FAILURE__;
-    }
-    else
-    {
-        result = 0;
+        return -1;
     }
 
-    return result;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnp_PollingSingleProperty(void *param)
@@ -230,7 +228,7 @@ int ModbusPnp_PollingSingleProperty(void *param)
     LogInfo("Stopped polling task for property \"%s\".", property->Name);
     free(context);
     ThreadAPI_Exit(THREADAPI_OK);
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 #pragma endregion
@@ -244,24 +242,22 @@ void ModbusPnp_ReportTelemetryCallback(DIGITALTWIN_CLIENT_RESULT pnpSendEventSta
 
 int ModbusPnp_ReportTelemetry(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data)
 {
-    int result;
     DIGITALTWIN_CLIENT_RESULT pnpClientResult;
 
     if (pnpInterface == NULL) {
-        return 0;
+        return DIGITALTWIN_CLIENT_OK;
     }
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, eventName, (const char*)data, ModbusPnp_ReportTelemetryCallback, NULL)) != DIGITALTWIN_CLIENT_OK)
+    char telemetryMessageData[512] = {0};
+    sprintf(telemetryMessageData, "{\"%s\":%s}", eventName, data);
+
+    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), ModbusPnp_ReportTelemetryCallback, (void*)eventName)) != DIGITALTWIN_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_SendTelemetryAsync failed, result=%d\n", pnpClientResult);
-        result = -1;// __FAILURE__;
-    }
-    else
-    {
-        result = 0;
+        return -1; // __FAILURE__;
     }
 
-    return result;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusPnp_PollingSingleTelemetry(void *param)
@@ -290,7 +286,7 @@ int ModbusPnp_PollingSingleTelemetry(void *param)
     LogInfo("Stopped polling task for telemetry \"%s\".", telemetry->Name);
     free(context);
     ThreadAPI_Exit(THREADAPI_OK);
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 #pragma endregion
@@ -302,7 +298,6 @@ void StopPollingTasks()
     {
         LogError("Condition variable could not be signalled.");
     }
-    Condition_Deinit(StopPolling);
 }
 
 int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
@@ -399,5 +394,5 @@ int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
         }
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }

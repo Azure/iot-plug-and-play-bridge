@@ -3,21 +3,21 @@
 
 #include "pnpbridge_common.h"
 
-char *getcwd(char *buf, size_t size);
+char* getcwd(char* buf, size_t size);
 
 PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* ConnectionParams)
 {
     PCONNECTION_PARAMETERS connParams = NULL;
-    PNPBRIDGE_RESULT result = false;
+    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
-    TRY {
-        connParams = (PCONNECTION_PARAMETERS) calloc(1, sizeof(CONNECTION_PARAMETERS));
+    TRY{
+        connParams = (PCONNECTION_PARAMETERS)calloc(1, sizeof(CONNECTION_PARAMETERS));
         if (NULL == connParams) {
             LogError("Failed to allocate CONNECTION_PARAMETERS");
             result = PNPBRIDGE_INSUFFICIENT_MEMORY;
             LEAVE;
         }
-        
+
         // Evaluate the connection_type
         {
             const char* connectionTypeStr = json_object_get_string(ConnectionParams, PNP_CONFIG_CONNECTION_TYPE);
@@ -52,7 +52,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
             result = PNPBRIDGE_INVALID_ARGS;
             LEAVE;
         }
-        
+
         // Get connection string parameters
         {
             if (CONNECTION_TYPE_CONNECTION_STRING == connParams->ConnectionType) {
@@ -90,7 +90,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                     result = PNPBRIDGE_INVALID_ARGS;
                     LEAVE;
                 }
-                 
+
                 dpsParams->DeviceId = json_object_get_string(dpsSettings, PNP_CONFIG_CONNECTION_DPS_DEVICE_ID);
                 if (NULL == dpsParams->DeviceId) {
                     LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DPS_DEVICE_ID);
@@ -145,7 +145,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                 }
             }
         }
-    } FINALLY {
+    } FINALLY{
         if (PNPBRIDGE_OK != result) {
             free(connParams);
             connParams = NULL;
@@ -155,8 +155,8 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
     return connParams;
 }
 
-PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char *filename, JSON_Value** config) 
-{    
+PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* filename, JSON_Value** config)
+{
     if (NULL == filename) {
         LogError("filename is NULL");
         return PNPBRIDGE_INVALID_ARGS;
@@ -169,7 +169,7 @@ PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char *filename
 
     // Check if file exists
     {
-        FILE *file;
+        FILE* file;
         file = fopen(filename, "r");
         if (NULL != file) {
             fclose(file);
@@ -201,7 +201,7 @@ PNPBRIDGE_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* JsonConfig, P
     PCONNECTION_PARAMETERS connParams = NULL;
 
     // Check for mandatory parameters
-    TRY {
+    TRY{
         if (NULL == JsonConfig) {
             LogError("JsonConfig is NULL");
             result = PNPBRIDGE_INVALID_ARGS;
@@ -250,7 +250,7 @@ PNPBRIDGE_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* JsonConfig, P
         {
             JSON_Array* devices = Configuration_GetConfiguredDevices(JsonConfig);
             for (int i = 0; i < (int)json_array_get_count(devices); i++) {
-                JSON_Object *device = json_array_get_object(devices, i);
+                JSON_Object* device = json_array_get_object(devices, i);
 
                 // InterfaceId or SelfDescribing
                 //
@@ -311,18 +311,18 @@ PNPBRIDGE_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* JsonConfig, P
             }
         }
 
-        JSON_Array *devices = Configuration_GetConfiguredDevices(JsonConfig);
+        JSON_Array* devices = Configuration_GetConfiguredDevices(JsonConfig);
         if (NULL == devices) {
             LogError("No configured devices in the pnpbridge config");
             result = PNPBRIDGE_INVALID_ARGS;
             LEAVE;
         }
-        
+
         // Assign output values
         BridgeConfig->JsonConfig = JsonConfig;
         BridgeConfig->ConnParams = connParams;
 
-    } FINALLY {
+    } FINALLY{
         if (!PNPBRIDGE_SUCCESS(result)) {
             if (connParams) {
                 free(connParams);
@@ -333,7 +333,7 @@ PNPBRIDGE_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* JsonConfig, P
     return result;
 }
 
-PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *configString, JSON_Value** config)
+PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromString(const char* configString, JSON_Value** config)
 {
     if (NULL == configString || NULL == config) {
         LogError("PnpBridgeConfig_GetJsonValueFromString: Invalid parameters");
@@ -351,13 +351,13 @@ PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *configString
 
 JSON_Array* Configuration_GetConfiguredDevices(JSON_Value* config) {
     JSON_Object* jsonObject = json_value_get_object(config);
-    JSON_Array *devices = json_object_dotget_array(jsonObject, PNP_CONFIG_DEVICES);
+    JSON_Array* devices = json_object_dotget_array(jsonObject, PNP_CONFIG_DEVICES);
 
     return devices;
 }
 
 JSON_Object* Configuration_GetPnpParametersForDevice(JSON_Object* device) {
-    
+
     if (device == NULL) {
         return NULL;
     }
@@ -377,11 +377,11 @@ JSON_Object* Configuration_GetMatchParametersForDevice(JSON_Object* device)
     return matchParams;
 }
 
-JSON_Object* 
+JSON_Object*
 Configuration_GetDiscoveryParametersForDevice(
     _In_ JSON_Object* device
-    )
-{    
+)
+{
     if (device == NULL) {
         return NULL;
     }
@@ -392,7 +392,7 @@ Configuration_GetDiscoveryParametersForDevice(
 
 JSON_Object* Configuration_GetAdapterParameters(JSON_Value* config, const char* identity, const char* adapterType) {
     JSON_Object* jsonObject = json_value_get_object(config);
-    JSON_Object *adapter = json_object_dotget_object(jsonObject, adapterType);
+    JSON_Object* adapter = json_object_dotget_object(jsonObject, adapterType);
     if (NULL == adapter) {
         return NULL;
     }
@@ -403,7 +403,7 @@ JSON_Object* Configuration_GetAdapterParameters(JSON_Value* config, const char* 
     }
 
     for (int j = 0; j < (int)json_array_get_count(params); j++) {
-        JSON_Object *param = json_array_get_object(params, j);
+        JSON_Object* param = json_array_get_object(params, j);
         const char* id = json_object_dotget_string(param, PNP_CONFIG_IDENTITY);
         if (NULL != id) {
             if (strcmp(id, identity) == 0) {
@@ -424,14 +424,14 @@ JSON_Object* Configuration_GetDiscoveryParameters(JSON_Value* config, const char
 }
 
 PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Object* message, JSON_Object** device) {
-    JSON_Array *devices = Configuration_GetConfiguredDevices(config);
+    JSON_Array* devices = Configuration_GetConfiguredDevices(config);
     JSON_Object* discMatchParams;
     char* pnpAdapterIdentity = NULL;
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
     *device = NULL;
 
-    TRY {
+    TRY{
         discMatchParams = json_object_get_object(message, PNP_CONFIG_MATCH_PARAMETERS);
         for (int i = 0; i < (int)json_array_get_count(devices); i++) {
             bool foundMatch = false;
@@ -442,7 +442,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
             }
 
             JSON_Object* matchCriteria = json_object_dotget_object(dev, PNP_CONFIG_MATCH_FILTERS);
-          
+
             const char* matchType = json_object_get_string(matchCriteria, PNP_CONFIG_MATCH_TYPE);
             const char* currPnpAdapterId = json_object_get_string(pnpParams, PNP_CONFIG_IDENTITY);
             bool exactMatch = strcmp(matchType, PNP_CONFIG_MATCH_TYPE_EXACT) == 0;
@@ -495,7 +495,7 @@ PNPBRIDGE_RESULT Configuration_IsDeviceConfigured(JSON_Value* config, JSON_Objec
             }
         }
     }
-    FINALLY
+        FINALLY
     {
         if (NULL == *device) {
             result = PNPBRIDGE_INVALID_ARGS;

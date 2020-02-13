@@ -70,8 +70,11 @@ CoreDevice_SendConnectionEventAsync(
     sprintf_s(msg, CONN_EVENT_SIZE, CONN_FORMAT, EventName, EventData);
 
     dtResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(
-                        DigitalTwinInterface, EventName, (const char*)msg,
-                        CoreDevice_EventCallbackSent, NULL);
+                    DigitalTwinInterface, 
+                    (unsigned char*) msg,
+                    strlen(msg),
+                    CoreDevice_EventCallbackSent,
+                    (void*)EventName);
     if (DIGITALTWIN_CLIENT_OK != dtResult) {
         LogError("CoreDevice_SendEventAsync failed, result=%d\n", dtResult);
         result = -1;
@@ -112,7 +115,7 @@ CoreDevice_ReleaseInterface(
     device = (PCORE_DEVICE_TAG) PnpAdapterInterface_GetContext(PnpInterface);
     CoreDevice_ReleaseInterfaceImp(device);
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
@@ -125,7 +128,7 @@ CoreDevice_StartInterface(
     device = (PCORE_DEVICE_TAG) PnpAdapterInterface_GetContext(pnpInterface);
     CoreDevice_SendConnectionEventAsync(device->DigitalTwinInterface, "DeviceStatus", "Connected");
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int 
@@ -155,7 +158,7 @@ CoreDevice_CreatePnpInterface(
     }
 
     dtres = DigitalTwin_InterfaceClient_Create(interfaceId, props->ComponentName,
-                NULL, NULL, &pnpInterfaceClient);
+                NULL, device, &pnpInterfaceClient);
     if (DIGITALTWIN_CLIENT_OK != dtres) {
         result = -1;
         goto exit;
@@ -213,9 +216,10 @@ exit:
         if (NULL != device) {
             CoreDevice_ReleaseInterfaceImp(device);
         }
+        return result;
     }
 
-    return result;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int 
@@ -224,12 +228,12 @@ CoreDevice_Initialize(
     )
 {
     UNREFERENCED_PARAMETER(AdapterArgs);
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int 
 CoreDevice_Shutdown() {
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 PNP_ADAPTER CoreDeviceHealth = {

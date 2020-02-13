@@ -30,8 +30,7 @@ int BluetoothSensorPnpStartDiscovery(
     PNPMEMORY adapterArgs) noexcept
 {
     if (deviceArgs == nullptr) {
-        LogInfo("No bluetooth sensor device arguments found.");
-        return 0;
+        LogInfo("Bluetooth sensor device arguments not necessary, continue discovery.");
     }
 
     LogInfo("Starting discovery adapter.");
@@ -76,7 +75,7 @@ int BluetoothSensorPnpStartDiscovery(
     }
 
     LogInfo("Successfully started discovery adapter.");
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int BluetoothSensorPnpStopDiscovery() noexcept
@@ -85,19 +84,19 @@ int BluetoothSensorPnpStopDiscovery() noexcept
 
     g_discoveryAdapter.reset();
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int BluetoothSensorPnpInterfaceInitialize(const char* /* adapterArgs */) noexcept
 {
     // no-op
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int BluetoothSensorPnpInterfaceShutdown() noexcept
 {
     // no-op
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int BluetoothSensorPnpInterfaceBind(
@@ -117,7 +116,7 @@ int BluetoothSensorPnpInterfaceBind(
     uint64_t bluetoothAddress = newDevice->GetBluetoothAddress();
     g_discoveryAdapter->AddSensorDevice(bluetoothAddress, std::move(newDevice));
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 catch (std::exception& e)
 {

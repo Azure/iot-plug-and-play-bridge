@@ -178,7 +178,7 @@ int CameraPnpStartDiscovery(
 
     RETURN_IF_FAILED (p->InitializePnpDiscovery(DiscoveryAdapter_ReportDevice, deviceArgs, adapterArgs));
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int CameraPnpStopDiscovery()
@@ -192,20 +192,20 @@ int CameraPnpStopDiscovery()
         p = nullptr;
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 // Interface bind functions.
 int CameraPnpInterfaceInitialize(_In_ const char* adapterArgs)
 {
     UNREFERENCED_PARAMETER(adapterArgs);
-    return S_OK;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
 CameraPnpInterfaceShutdown()
 {
-    return S_OK;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int CameraPnpInterfaceBind(
@@ -263,7 +263,7 @@ int CameraPnpInterfaceBind(
                 nullptr, pIotPnp.get(), &pnpInterfaceClient);
     RETURN_HR_IF(E_UNEXPECTED, DIGITALTWIN_CLIENT_OK != dtRes);
 
-    dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, CameraPnpCallback_ProcessCommandUpdate);
+    dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, CameraPnpCallback_ProcessCommandUpdate, (void*)pIotPnp.get());
     RETURN_HR_IF(E_UNEXPECTED, DIGITALTWIN_CLIENT_OK != dtRes);
 
     // Create PnpAdapter Interface
@@ -283,7 +283,7 @@ int CameraPnpInterfaceBind(
     // Our interface context now owns the object.
     pIotPnp.release();
 
-    return S_OK;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
@@ -308,7 +308,7 @@ CameraPnpInterfaceRelease(
 
     PnpAdapterInterface_Destroy(Interface);
 
-    return S_OK;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int
@@ -318,6 +318,6 @@ CamerePnpStartPnpInterface(
 {
     AZURE_UNREFERENCED_PARAMETER(PnpInterface);
     
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 

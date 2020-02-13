@@ -195,10 +195,18 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
     if (tname) {
         // Publish telemetry
         char *out = json_serialize_to_string(Parameters);
-        DIGITALTWIN_CLIENT_RESULT res;
+        DIGITALTWIN_CLIENT_RESULT res = DIGITALTWIN_CLIENT_OK;
+        const char* telemetryMessageFormat = "{\"%s\":%s}";
+        size_t telemetryMessageLen = (strlen(tname) + strlen(out) + strlen(telemetryMessageFormat) + 1);
+        char  * telemetryMessage = (char*) malloc(sizeof(char) * telemetryMessageLen);
+        if (telemetryMessage)
+        {
+            sprintf(telemetryMessage, telemetryMessageFormat, tname, out);
+        }
+
         if ((res = DigitalTwin_InterfaceClient_SendTelemetryAsync(ph->s_DtInterface,
-                                                                  tname,
-                                                                  out,
+                                                                  reinterpret_cast<const unsigned char*> (telemetryMessage),
+                                                                  telemetryMessageLen,
                                                                   nullptr,
                                                                   nullptr)) != DIGITALTWIN_CLIENT_OK) {
 
@@ -208,6 +216,10 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
         }
 
         json_free_serialized_string(out);
+        if (telemetryMessage)
+        {
+            free(telemetryMessage);
+        }
     } else {
         LogInfo("mqtt-pnp: Unknown RPC notification '%s' on topic", Method);
     }

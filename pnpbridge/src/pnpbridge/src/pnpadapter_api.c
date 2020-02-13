@@ -5,17 +5,17 @@
 #include "pnpadapter_api.h"
 #include "pnpadapter_manager.h"
 
-int 
+int
 PnpAdapterInterface_Create(
     PPNPADPATER_INTERFACE_PARAMS params,
     PPNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface
-    )
+)
 {
-    int result = 0;
+    int result = PNPBRIDGE_OK;
     PPNPADAPTER_INTERFACE_TAG interface = NULL;
     PPNP_ADAPTER_CONTEXT_TAG adapterContext = params->PnpAdapterContext;
 
-    TRY 
+    TRY
     {
         // validate params
         if (NULL == params || NULL == params->ReleaseInterface || NULL == params->DigitalTwinInterface) {
@@ -23,61 +23,61 @@ PnpAdapterInterface_Create(
             LEAVE;
         }
 
-        // Create a pnp adapter interface
-        interface = calloc(1, sizeof(PNPADAPTER_INTERFACE_TAG));
-        if (NULL == interface) {
-            result = -1;
-            LEAVE;
-        }
-
-        interface->pnpInterfaceClient = params->DigitalTwinInterface;
-        interface->interfaceId = malloc(strlen(params->InterfaceId) + 1);
-        if (NULL == interface->interfaceId) {
-            result = -1;
-            LEAVE;
-        }
-
-        // Make a copy of interface id
-        strcpy_s(interface->interfaceId, strlen(params->InterfaceId)+1, params->InterfaceId);
-
-        // Validate init paramaters
-        if (NULL == params->StartInterface) {
-            LogError("startInterface callback is missing for %s", params->InterfaceId);
-            result = -1;
-            LEAVE;
-        }
-
-        // Copy the params
-        memcpy(&interface->params, params, sizeof(interface->params));
-
-        // Copy adapter context
-        interface->adapterContext = calloc(1, sizeof(PPNP_ADAPTER_CONTEXT_TAG));
-        if (NULL == interface->adapterContext) {
-            result = -1;
-            LEAVE;
-        }
-        memcpy(interface->adapterContext, adapterContext, sizeof(interface->adapterContext));
-
-        // Add this interface to the list of interfaces under the adapter context
-        PnpAdapterManager_AddInterface(adapterContext->adapter, interface);
-
-        *pnpAdapterInterface = interface;
+    // Create a pnp adapter interface
+    interface = calloc(1, sizeof(PNPADAPTER_INTERFACE_TAG));
+    if (NULL == interface) {
+        result = -1;
+        LEAVE;
     }
-    FINALLY 
+
+    interface->pnpInterfaceClient = params->DigitalTwinInterface;
+    interface->interfaceId = malloc(strlen(params->InterfaceId) + 1);
+    if (NULL == interface->interfaceId) {
+        result = -1;
+        LEAVE;
+    }
+
+    // Make a copy of interface id
+    strcpy_s(interface->interfaceId, strlen(params->InterfaceId) + 1, params->InterfaceId);
+
+    // Validate init paramaters
+    if (NULL == params->StartInterface) {
+        LogError("startInterface callback is missing for %s", params->InterfaceId);
+        result = -1;
+        LEAVE;
+    }
+
+    // Copy the params
+    memcpy(&interface->params, params, sizeof(interface->params));
+
+    // Copy adapter context
+    interface->adapterContext = calloc(1, sizeof(PPNP_ADAPTER_CONTEXT_TAG));
+    if (NULL == interface->adapterContext) {
+        result = -1;
+        LEAVE;
+    }
+    memcpy(interface->adapterContext, adapterContext, sizeof(interface->adapterContext));
+
+    // Add this interface to the list of interfaces under the adapter context
+    PnpAdapterManager_AddInterface(adapterContext->adapter, interface);
+
+    *pnpAdapterInterface = interface;
+    }
+        FINALLY
     {
         if (result < 0) {
-           /* PnpAdapterManager_RemoveInterface(adapterContext->adapter, pnpAdapterInterface);*/
-            PnpAdapterInterface_Destroy(interface);
-        }
+            /* PnpAdapterManager_RemoveInterface(adapterContext->adapter, pnpAdapterInterface);*/
+             PnpAdapterInterface_Destroy(interface);
+         }
     }
 
     return result;
 }
 
-void 
+void
 PnpAdapterInterface_Destroy(
     PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface
-    )
+)
 {
     if (NULL == pnpAdapterInterface) {
         return;
@@ -126,10 +126,10 @@ void* PnpAdapterInterface_GetContext(PNPADAPTER_INTERFACE_HANDLE pnpAdapterInter
     return adapterInterface->context;
 }
 
-DIGITALTWIN_DEVICE_CLIENT_HANDLE 
+DIGITALTWIN_DEVICE_CLIENT_HANDLE
 IotHandle_GetPnpDeviceClient(
     MX_IOT_HANDLE IotHandle
-    ) 
+)
 {
     MX_IOT_HANDLE_TAG* iotHandle = (MX_IOT_HANDLE_TAG*)IotHandle;
 

@@ -96,7 +96,7 @@ int ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, ui
             return -1;
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr)
@@ -166,7 +166,7 @@ int ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, c
             return -1;
         }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusTcp_SendRequest(SOCKET socket, uint8_t *requestArr, uint32_t arrLen)
@@ -206,6 +206,7 @@ int ModbusTcp_SendRequest(SOCKET socket, uint8_t *requestArr, uint32_t arrLen)
 #else
         LogError("Failed to send request through socket.");
 #endif
+        return -1;
     }
 
     return totalBytesSent;

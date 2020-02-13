@@ -22,6 +22,7 @@ set(pnpbridge_adapters_c_files
     JsonWrapper.cpp
     CameraStatConsumer.cpp
     NetworkCameraIotPnpDevice.cpp
+    util.cpp
 )
 
 set(pnpbridge_adapters_h_files
@@ -33,7 +34,8 @@ set(pnpbridge_adapters_h_files
     CameraPnpDiscovery.h
     CameraStatConsumer.h
     JsonWrapper.h
-    pch.h
+    pch.h    
+    util.h
     NetworkCameraIotPnpDevice.h
 )
 

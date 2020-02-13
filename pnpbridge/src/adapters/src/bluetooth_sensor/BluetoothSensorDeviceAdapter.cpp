@@ -69,7 +69,8 @@ void BluetoothSensorDeviceAdapter::Initialize(
 
     dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(
         pnpInterfaceClient,
-        BluetoothSensorPnpCallback_ProcessCommandUpdate);
+        BluetoothSensorPnpCallback_ProcessCommandUpdate,
+        (void*)this);
     if (dtRes != DIGITALTWIN_CLIENT_OK)
     {
         throw DigitalTwinException("Failed to set digital twin commands callback", dtRes);
@@ -84,7 +85,7 @@ void BluetoothSensorDeviceAdapter::Initialize(
 
     PNPADAPTER_INTERFACE_HANDLE adapterInterface;
     int pnpRes = PnpAdapterInterface_Create(&interfaceParams, &adapterInterface);
-    if (pnpRes)
+    if (pnpRes != DIGITALTWIN_CLIENT_OK)
     {
         throw AzurePnpException("Failed to create PnP adapter interface", pnpRes);
     }
@@ -93,7 +94,7 @@ void BluetoothSensorDeviceAdapter::Initialize(
 
     auto bluetoothAddressMemory = std::make_unique<uint64_t>(GetBluetoothAddress());
     pnpRes = PnpAdapterInterface_SetContext(adapterInterface, bluetoothAddressMemory.release());
-    if (pnpRes)
+    if (pnpRes != DIGITALTWIN_CLIENT_OK)
     {
         throw AzurePnpException("Failed to set PnP adapter context", pnpRes);
     }
@@ -122,7 +123,7 @@ int BluetoothSensorDeviceAdapter::OnBluetoothSensorInterfaceStart(
     PNPADAPTER_INTERFACE_HANDLE /* pnpInterface */)
 {
     // no-op
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int BluetoothSensorDeviceAdapter::OnBluetoothSensorInterfaceRelease(
@@ -144,7 +145,7 @@ int BluetoothSensorDeviceAdapter::OnBluetoothSensorInterfaceRelease(
         discoveryAdapter->RemoveSensorDevice(*bluetoothAddressPtr);
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 void BluetoothSensorDeviceAdapter::OnDigitalTwinInterfaceClientCreate(
@@ -156,16 +157,16 @@ void BluetoothSensorDeviceAdapter::OnDigitalTwinInterfaceClientCreate(
         // Once the interface is registered, send our reported properties to the service.
         // It *IS* safe to invoke most DigitalTwin API calls from a callback thread like this, though it
         // is NOT safe to create/destroy/register interfaces now.
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Interface successfully registered.");
+        LogInfo("Bluetooth Sensor Interface: Interface successfully registered.");
     }
     else if (interfaceStatus == DIGITALTWIN_CLIENT_ERROR_INTERFACE_UNREGISTERING)
     {
         // Once an interface is marked as unregistered, it cannot be used for any DigitalTwin SDK calls.
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Interface received unregistering callback.");
+        LogInfo("Bluetooth Sensor Interface: Interface received unregistering callback.");
     }
     else
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Interface received failed, status=<%s>.",
+        LogError("Bluetooth Sensor Interface: Interface received failed, status=<%s>.",
             MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, interfaceStatus));
     }
 }
@@ -174,21 +175,23 @@ void BluetoothSensorDeviceAdapter::OnDigitalTwinInterfaceSendTelemetry(
     DIGITALTWIN_CLIENT_RESULT pnpTelemetryStatus,
     void* userContextCallback)
 {
-    LogInfo("pnpstatus=%d,context=0x%p", pnpTelemetryStatus, userContextCallback);
+    LogInfo("pnpstatus=%d, context=0x%p", pnpTelemetryStatus, userContextCallback);
 }
 
 void BluetoothSensorDeviceAdapter::ReportTelemetry(
     const std::string& telemetryName,
     const std::string& message)
 {
-    LogInfo("Reporting telemetry: [%s][%s]", telemetryName.c_str(), message.c_str());
+    char telemetryMessage[512] = { 0 };
+    sprintf(telemetryMessage, "{\"%s\":%s}", telemetryName.c_str(), message.c_str());
+    LogInfo("Reporting telemetry: [%s]", telemetryMessage);
 
     std::vector<char> telemetryNameBuffer(telemetryName.c_str(), telemetryName.c_str() + telemetryName.size() + 1);
     DIGITALTWIN_CLIENT_RESULT result = DigitalTwin_InterfaceClient_SendTelemetryAsync(m_pnpClientInterface,
-        telemetryName.c_str(),
-        static_cast<const char*>(message.c_str()),
-        OnDigitalTwinInterfaceSendTelemetry,
-        static_cast<void*>(telemetryNameBuffer.data()));
+                                                                                        (unsigned char*)(telemetryMessage),
+                                                                                        strlen(telemetryMessage),
+                                                                                        OnDigitalTwinInterfaceSendTelemetry,
+                                                                                        static_cast<void*>(telemetryNameBuffer.data()));
     if (result != DIGITALTWIN_CLIENT_OK)
     {
         LogError("Reporting telemetry=<%s> failed, error=<%s>", telemetryName.c_str(), MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));

@@ -38,7 +38,7 @@ int ModbusRtu_GetHeaderSize(void) {
 
 bool ModbusRtu_CloseDevice(HANDLE hDevice, LOCK_HANDLE hLock)
 {
-    bool result = -1;
+    bool result = false;
 
     if (LOCK_OK != Lock(hLock))
     {
@@ -46,7 +46,7 @@ bool ModbusRtu_CloseDevice(HANDLE hDevice, LOCK_HANDLE hLock)
         return result;
     }
 #ifdef WIN32
-    result = CloseHandle(hDevice);
+    result = (0 != CloseHandle(hDevice)); // CloseHandle returns nonzero value on success
 #else
     result = !(close(hDevice));
 #endif
@@ -102,7 +102,7 @@ int ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, ui
             return -1;
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr)
@@ -164,7 +164,7 @@ int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, c
             return -1;
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int ModbusRtu_SendRequest(HANDLE handler, uint8_t *requestArr, uint32_t arrLen)

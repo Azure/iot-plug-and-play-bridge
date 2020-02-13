@@ -25,7 +25,7 @@ IotComms_DigitalTwinClient_Destroy(
 PNPBRIDGE_RESULT
 IotComms_DigitalTwinClient_Initalize(
     MX_IOT_HANDLE_TAG* IotHandle
-    );
+);
 
 // State of DPS registration process.  We cannot proceed with DPS until we get into the state APP_DPS_REGISTRATION_SUCCEEDED.
 typedef enum APP_DPS_REGISTRATION_STATUS_TAG
@@ -95,7 +95,7 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
     SECURE_DEVICE_TYPE secureDeviceTypeForProvisioning;
     IOTHUB_SECURITY_TYPE secureDeviceTypeForIotHub;
 
-    TRY {
+    TRY{
 
         if (AUTH_TYPE_SYMMETRIC_KEY == ConnectionParams->AuthParameters.AuthType) {
             secureDeviceTypeForProvisioning = SECURE_DEVICE_TYPE_SYMMETRIC_KEY;
@@ -193,7 +193,7 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
             }
         }
 
-    } FINALLY {
+    } FINALLY{
 
         if (NULL != customProvisioningData) {
             free(customProvisioningData);
@@ -224,14 +224,14 @@ typedef struct PNP_REGISTRATION_CONTEXT {
     COND_HANDLE Condition;
     LOCK_HANDLE Lock;
     APP_PNP_REGISTRATION_STATUS RegistrationStatus;
-} PNP_REGISTRATION_CONTEXT, *PPNP_REGISTRATION_CONTEXT;
+} PNP_REGISTRATION_CONTEXT, * PPNP_REGISTRATION_CONTEXT;
 
 // appPnpInterfacesRegistered is invoked when the interfaces have been registered or failed.
-void 
+void
 IotComms_PnPInterfaceRegisteredCallback(
     DIGITALTWIN_CLIENT_RESULT pnpInterfaceStatus,
-    void *userContextCallback
-    )
+    void* userContextCallback
+)
 {
     PPNP_REGISTRATION_CONTEXT registrationContext = (PPNP_REGISTRATION_CONTEXT)userContextCallback;
     registrationContext->RegistrationStatus = (pnpInterfaceStatus == DIGITALTWIN_CLIENT_OK) ? APP_PNP_REGISTRATION_SUCCEEDED : APP_PNP_REGISTRATION_FAILED;
@@ -243,7 +243,7 @@ IotComms_PnPInterfaceRegisteredCallback(
 // Invokes PnP_DeviceClient_RegisterInterfacesAsync, which indicates to Azure IoT which PnP interfaces this device supports.
 // The PnP Handle *is not valid* until this operation has completed (as indicated by the callback appPnpInterfacesRegistered being invoked).
 // In this sample, we block indefinitely but production code should include a timeout.
-int 
+int
 IotComms_RegisterPnPInterfaces(
     MX_IOT_HANDLE_TAG* IotHandle,
     const char* ModelRepoId,
@@ -251,7 +251,7 @@ IotComms_RegisterPnPInterfaces(
     int InterfaceCount,
     bool traceOn,
     PCONNECTION_PARAMETERS connectionParams
-    )
+)
 {
     PNPBRIDGE_RESULT result;
     DIGITALTWIN_CLIENT_RESULT pnpResult;
@@ -272,8 +272,8 @@ IotComms_RegisterPnPInterfaces(
 
     if (!IotHandle->IsModule) {
         pnpResult = DigitalTwin_DeviceClient_RegisterInterfacesAsync(
-                        IotHandle->u1.IotDevice.PnpDeviceClientHandle, ModelRepoId, Interfaces,
-                        InterfaceCount, IotComms_PnPInterfaceRegisteredCallback, &callbackContext);
+            IotHandle->u1.IotDevice.PnpDeviceClientHandle, ModelRepoId, Interfaces,
+            InterfaceCount, IotComms_PnPInterfaceRegisteredCallback, &callbackContext);
     }
     else {
         LogError("Module support is not present in public preview");
@@ -294,7 +294,7 @@ IotComms_RegisterPnPInterfaces(
         result = -1;
     }
     else {
-        result = 0;
+        result = PNPBRIDGE_OK;
     }
 
 end:
@@ -340,13 +340,13 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotDevice(bool TraceOn, PCONNECTION_PARA
 
             if (NULL != strstr(ConnectionParams->u1.ConnectionString, "SharedAccessKey=")) {
                 LogInfo("WARNING: SharedAccessKey is included in connection string. Ignoring "
-                            PNP_CONFIG_CONNECTION_AUTH_TYPE_DEVICE_SYMM_KEY " in config file.");
-                connectionString = (char*) ConnectionParams->u1.ConnectionString;
+                    PNP_CONFIG_CONNECTION_AUTH_TYPE_DEVICE_SYMM_KEY " in config file.");
+                connectionString = (char*)ConnectionParams->u1.ConnectionString;
             }
             else {
                 format = "%s;SharedAccessKey=%s";
-                connectionString = (char*) malloc(strlen(ConnectionParams->AuthParameters.u1.DeviceKey) +
-                                                strlen(ConnectionParams->u1.ConnectionString) + strlen(format) + 1);
+                connectionString = (char*)malloc(strlen(ConnectionParams->AuthParameters.u1.DeviceKey) +
+                    strlen(ConnectionParams->u1.ConnectionString) + strlen(format) + 1);
                 sprintf(connectionString, format, ConnectionParams->u1.ConnectionString, ConnectionParams->AuthParameters.u1.DeviceKey);
             }
 
@@ -377,30 +377,30 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotDevice(bool TraceOn, PCONNECTION_PARA
     return NULL;
 }
 
-PNPBRIDGE_RESULT 
+PNPBRIDGE_RESULT
 IotComms_InitializeIotDeviceHandle(
-    MX_IOT_HANDLE_TAG* IotHandle, 
-    bool TraceOn, 
+    MX_IOT_HANDLE_TAG* IotHandle,
+    bool TraceOn,
     PCONNECTION_PARAMETERS ConnectionParams
-    ) 
+)
 {
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
-    TRY {
+    TRY{
         // Mark this as device handle
         IotHandle->IsModule = false;
-       
-        // Connect to Iot Hub Device
-        IotHandle->u1.IotDevice.deviceHandle = IotComms_InitializeIotDevice(TraceOn, ConnectionParams);
-        if (NULL == IotHandle->u1.IotDevice.deviceHandle) {
-            LogError("IotComms_InitializeIotDevice failed\n");
-            result = PNPBRIDGE_FAILED;
-            LEAVE;
-        }
 
-        // We have completed initializing the pnp client
-        IotHandle->DeviceClientInitialized = true;
-    } FINALLY {
+    // Connect to Iot Hub Device
+    IotHandle->u1.IotDevice.deviceHandle = IotComms_InitializeIotDevice(TraceOn, ConnectionParams);
+    if (NULL == IotHandle->u1.IotDevice.deviceHandle) {
+        LogError("IotComms_InitializeIotDevice failed\n");
+        result = PNPBRIDGE_FAILED;
+        LEAVE;
+    }
+
+    // We have completed initializing the pnp client
+    IotHandle->DeviceClientInitialized = true;
+    } FINALLY{
 
     }
 
@@ -410,7 +410,7 @@ IotComms_InitializeIotDeviceHandle(
 PNPBRIDGE_RESULT
 IotComms_DigitalTwinClient_Initalize(
     MX_IOT_HANDLE_TAG* IotHandle
-    )
+)
 {
     PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
 
@@ -435,7 +435,7 @@ IotComms_DigitalTwinClient_Initalize(
 void
 IotComms_DigitalTwinClient_Destroy(
     MX_IOT_HANDLE_TAG* IotHandle
-    )
+)
 {
     if (NULL != IotHandle->u1.IotDevice.PnpDeviceClientHandle) {
         if (!IotHandle->IsModule) {
