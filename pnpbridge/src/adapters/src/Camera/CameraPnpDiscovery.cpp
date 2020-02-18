@@ -1,7 +1,8 @@
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #include "pch.h"
 #include "CameraPnpDiscovery.h"
+#include "util.h"
 
 // Cameras under Windows can be registered in multiple categories.
 // These three interface categories are generally treated as "webcam".
@@ -16,26 +17,22 @@ static GUID s_CameraInterfaceCategories[] = {
     KSCATEGORY_SENSOR_CAMERA
 };
 
-CameraPnpDiscovery::CameraPnpDiscovery(
-    )
-:   m_fShutdown(false)
-,   m_pfnCallback(nullptr)
+CameraPnpDiscovery::CameraPnpDiscovery()
+    : m_fShutdown(false)
+    , m_pfnCallback(nullptr)
 {
 
 }
 
-CameraPnpDiscovery::~CameraPnpDiscovery(
-    )
+CameraPnpDiscovery::~CameraPnpDiscovery()
 {
     Shutdown();
 }
 
-HRESULT 
-CameraPnpDiscovery::InitializePnpDiscovery(
+HRESULT CameraPnpDiscovery::InitializePnpDiscovery(
     _In_ PNPBRIDGE_NOTIFY_CHANGE pfnCallback,
     _In_ PNPMEMORY deviceArgs,
-    _In_ PNPMEMORY adapterArgs
-    )
+    _In_ PNPMEMORY adapterArgs) try
 {
     bool fInvokeCallback = false;
 
@@ -46,7 +43,6 @@ CameraPnpDiscovery::InitializePnpDiscovery(
 
         // For now, we don't use these parameters.
         UNREFERENCED_PARAMETER (deviceArgs);
-        UNREFERENCED_PARAMETER (adapterArgs);
 
         RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS), m_vecWatcherHandles.size() != 0);
 
@@ -80,40 +76,76 @@ CameraPnpDiscovery::InitializePnpDiscovery(
 
     if (fInvokeCallback && pfnCallback != nullptr)
     {
-        std::unique_ptr<JsonWrapper>    pjson = std::make_unique<JsonWrapper>();
-        std::unique_ptr<JsonWrapper>    pmatchjson = std::make_unique<JsonWrapper>();
-        PNPMESSAGE payload = NULL;
-        PNPMESSAGE_PROPERTIES* props = NULL;
+        // Create and send a Pnp Message for each device on our system that is in the config. 
+        if (NULL == adapterArgs)
+        {
+            LogInfo("Warning: config missing parameters for camera discovery adapter.");
+            return S_OK;
+        }
 
-        RETURN_IF_FAILED (pjson->Initialize());
-        RETURN_IF_FAILED (pjson->AddFormatString("identity", "camera-health-monitor"));
-        RETURN_IF_FAILED (pmatchjson->Initialize());
-        RETURN_IF_FAILED (pmatchjson->AddFormatString("hardware_id", "UVC_Webcam_00"));
-        RETURN_IF_FAILED (pjson->AddObject("match_parameters", pmatchjson->GetMessageW()));
+        char* discovery_adapter_str = (char*)PnpMemory_GetBuffer(adapterArgs, NULL);
+        JSON_Value* jAdapterArgsValue = json_parse_string(discovery_adapter_str);
+        if (NULL == jAdapterArgsValue)
+        {
+            LogInfo("Warning: config missing parameters for camera discovery adapter.");
+            return S_OK;
+        }
 
-        PnpMessage_CreateMessage(&payload);
-        PnpMessage_SetMessage(payload, pjson->GetMessageW());
-        props = PnpMessage_AccessProperties(payload);
+        JSON_Object* jAdapterArgObject = json_value_get_object(jAdapterArgsValue);
+        JSON_Array* jCameraIds = json_object_dotget_array(jAdapterArgObject, "camera_ids");
+        if (NULL == jCameraIds)
+        {
+            LogInfo("Warning: config missing camera_ids for camera discovery adapter.");
+            return S_OK;
+        }
 
-        props->Context = this;
-        props->ChangeType = PNPMESSAGE_CHANGE_ARRIVAL;
+        for (CameraUniqueIdPtrList::iterator iter = m_cameraUniqueIds.begin(); iter != m_cameraUniqueIds.end(); iter++)
+        {
+            for (int j = 0; j < (int)json_array_get_count(jCameraIds); ++j) 
+            {
+                const char* cameraId = json_array_get_string(jCameraIds, j);
+                std::string cameraId2 = wstr2str((*iter)->m_cameraId);
+                if (strcmp(cameraId2.c_str(), cameraId) == 0)
+                {
+                    std::unique_ptr<JsonWrapper>    pjson = std::make_unique<JsonWrapper>();
+                    std::unique_ptr<JsonWrapper>    pmatchjson = std::make_unique<JsonWrapper>();
+                    PNPMESSAGE payload = NULL;
+                    PNPMESSAGE_PROPERTIES* props = NULL;
 
+                    RETURN_IF_FAILED(pjson->Initialize());
+                    RETURN_IF_FAILED(pjson->AddFormatString("identity", "camera-pnp-adapter"));
+                    RETURN_IF_FAILED(pmatchjson->Initialize());
+                    //RETURN_IF_FAILED (pmatchjson->AddFormatString("camera_id", "UVC_Webcam_00"));
+                    RETURN_IF_FAILED(pmatchjson->AddFormatString("camera_id", cameraId));
+                    RETURN_IF_FAILED(pjson->AddObject("match_parameters", pmatchjson->GetMessageW()));
 
-        // We didn't have a camera, and we just got one (or more).
-        pfnCallback(payload);
+                    PnpMessage_CreateMessage(&payload);
+                    PnpMessage_SetMessage(payload, pjson->GetMessageW());
+                    props = PnpMessage_AccessProperties(payload);
 
-        // $$LEAKLEAK!!!
-        pmatchjson->Detach();
-        pjson->Detach();
-        PnpMemory_ReleaseReference(payload);
+                    props->Context = this;
+                    props->ChangeType = PNPMESSAGE_CHANGE_ARRIVAL;
+
+                    pfnCallback(payload);
+
+                    // $$LEAKLEAK!!!
+                    pmatchjson->Detach();
+                    pjson->Detach();
+                    PnpMemory_ReleaseReference(payload);
+                }
+            }
+        }
     }
 
     return S_OK;
 }
+catch (std::exception e)
+{
+    LogInfo("Exception occurred in camera discovery adapter's StartDiscovery. Continuing without starting up the adapter (%s)", e.what());
+    return S_OK;
+}
 
-void
-CameraPnpDiscovery::Shutdown(
-    )
+void CameraPnpDiscovery::Shutdown() try
 {
     std::vector<HCMNOTIFICATION> vecWatcherHandles;
 
@@ -134,12 +166,14 @@ CameraPnpDiscovery::Shutdown(
     {
         (void) CM_Unregister_Notification((*itr));
     }
+} 
+catch (std::exception e)
+{
+    LogInfo("Exception occurred while shutting down the camera discovery adapter (%s)", e.what());
+    return;
 }
 
-HRESULT 
-CameraPnpDiscovery::GetFirstCamera(
-    _Out_ std::wstring& cameraName
-    )
+HRESULT CameraPnpDiscovery::GetFirstCamera(_Out_ std::wstring& cameraName) try
 {
     AutoLock lock(&m_lock);
 
@@ -150,12 +184,47 @@ CameraPnpDiscovery::GetFirstCamera(
 
     return S_OK;
 }
+catch (std::exception e)
+{
+    LogInfo("Exception occurred getting camera ID (%s)", e.what());
+    return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+}
+
+HRESULT CameraPnpDiscovery::GetUniqueIdByCameraId(_In_ std::string& cameraId, _Out_ std::wstring& uniqueId) try
+{
+    AutoLock lock(&m_lock);
+    RETURN_IF_FAILED(CheckShutdown());
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), m_cameraUniqueIds.size() == 0);
+
+    uniqueId = L"";
+    for (auto iter = m_cameraUniqueIds.begin(); iter != m_cameraUniqueIds.end(); iter++)
+    {
+        std::string cameraIdStr = wstr2str((*iter)->m_cameraId);
+        if (cameraIdStr == cameraId.c_str())
+        {
+            uniqueId = (*iter)->m_UniqueId;
+        }
+    }
+    
+    // no camera in our list matches the input camera Id
+    if (uniqueId == L"")
+    {
+        return E_FAIL;
+    }
+    else 
+    {
+        return S_OK;
+    }
+}
+catch (std::exception e)
+{
+    LogInfo("Exception occurred getting camera ID (%s)", e.what());
+    return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+}
+
 
 /// Protected methods...
-HRESULT
-CameraPnpDiscovery::EnumerateCameras(
-    _In_ REFGUID guidCategory
-    )
+HRESULT CameraPnpDiscovery::EnumerateCameras(_In_ REFGUID guidCategory) try
 {
     CONFIGRET                   cr = CR_SUCCESS;
     std::unique_ptr<WCHAR[]>    pwzInterfaceList;
@@ -200,7 +269,8 @@ CameraPnpDiscovery::EnumerateCameras(
         CameraUniqueIdPtr uniqueId;
 
         uniqueId = std::make_unique<CameraUniqueId>();
-        RETURN_IF_FAILED (CameraPnpDiscovery::MakeUniqueId(pwz, uniqueId->m_UniqueId, uniqueId->m_HWId));
+        std::wstring deviceName(pwz);
+        RETURN_IF_FAILED (CameraPnpDiscovery::MakeUniqueId(deviceName, uniqueId->m_UniqueId, uniqueId->m_cameraId));
 
         // Filter out duplicates.
         for (CameraUniqueIdPtrList::iterator itr = m_cameraUniqueIds.begin(); itr != m_cameraUniqueIds.end(); itr++)
@@ -231,14 +301,17 @@ CameraPnpDiscovery::EnumerateCameras(
     }
 
     return S_OK;
+} 
+catch (std::exception e)
+{
+    LogInfo("Exception occurred enumerating cameras on device (%s)", e.what());
+    return E_UNEXPECTED;
 }
 
-HRESULT 
-CameraPnpDiscovery::OnWatcherNotification(
+HRESULT CameraPnpDiscovery::OnWatcherNotification(
     _In_ CM_NOTIFY_ACTION action,
     _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
-    _In_ DWORD eventDataSize
-    )
+    _In_ DWORD eventDataSize) try
 {
     CameraUniqueIdPtrList           cameraUniqueIds;
     PNPBRIDGE_NOTIFY_CHANGE  pfn = nullptr;
@@ -332,15 +405,18 @@ CameraPnpDiscovery::OnWatcherNotification(
 
     return S_OK;
 }
+catch (std::exception e)
+{
+    LogInfo("Exception occurred processing camera event (%s)", e.what());
+    return E_UNEXPECTED;
+}
 
-HRESULT
-CameraPnpDiscovery::GetDeviceProperty(
+HRESULT CameraPnpDiscovery::GetDeviceProperty(
     _In_z_ LPCWSTR deviceName,
     _In_ const DEVPROPKEY* pKey,
     _Out_writes_bytes_to_(cbBuffer,*pcbData) PBYTE pbBuffer,
     _In_ ULONG cbBuffer,
-    _Out_ ULONG* pcbData
-    )
+    _Out_ ULONG* pcbData)
 {
     CONFIGRET       cr = CR_SUCCESS;
     wchar_t         wz[MAX_DEVICE_ID_LEN] = { 0 };
@@ -384,14 +460,12 @@ CameraPnpDiscovery::GetDeviceProperty(
     return S_OK;
 }
 
-HRESULT
-CameraPnpDiscovery::GetDeviceInterfaceProperty(
+HRESULT CameraPnpDiscovery::GetDeviceInterfaceProperty(
     _In_z_ LPCWSTR deviceName,
     _In_ const DEVPROPKEY* pKey,
     _Out_writes_bytes_to_(cbBuffer,*pcbData) PBYTE pbBuffer,
     _In_ ULONG cbBuffer,
-    _Out_ ULONG* pcbData
-    )
+    _Out_ ULONG* pcbData)
 {
     CONFIGRET       cr = CR_SUCCESS;
     DEVPROPTYPE     propType = 0;
@@ -423,10 +497,7 @@ CameraPnpDiscovery::GetDeviceInterfaceProperty(
     return S_OK;
 }
 
-bool
-CameraPnpDiscovery::IsDeviceInterfaceEnabled(
-    _In_z_ LPCWSTR deviceName
-    )
+bool CameraPnpDiscovery::IsDeviceInterfaceEnabled(_In_z_ LPCWSTR deviceName)
 {
     CONFIGRET       cr = CR_SUCCESS;
     DEVPROPTYPE     propType = 0;
@@ -445,22 +516,23 @@ CameraPnpDiscovery::IsDeviceInterfaceEnabled(
     return (fdpEnabled == DEVPROP_TRUE);
 }
 
-HRESULT 
-CameraPnpDiscovery::MakeUniqueId(
-    _In_z_ LPCWSTR deviceName, 
+HRESULT CameraPnpDiscovery::MakeUniqueId(
+    _In_    std::wstring& deviceName, 
     _Inout_ std::wstring& uniqueId, 
-    _Inout_ std::wstring& hwId
-    )
+    _Inout_ std::wstring& cameraId) try 
 {
     bool fFound = false;
-    std::unique_ptr<BYTE[]> pbHWId;
+    std::unique_ptr<BYTE[]> pbCameraId;
     ULONG cb = 0;
 
-    RETURN_HR_IF_NULL (E_INVALIDARG, deviceName);
+    if (deviceName == L"")
+    {
+        return E_INVALIDARG;
+    }
 
     // Reset the ID.
     uniqueId.clear();
-    hwId.clear();
+    cameraId.clear();
 
     for (int i = 0; i < _countof(s_CameraInterfaceCategories); i++)
     {
@@ -469,7 +541,7 @@ CameraPnpDiscovery::MakeUniqueId(
         ULONG       cch = 0;
 
         cch = ARRAYSIZE(wzAlias);
-        cr = CM_Get_Device_Interface_Alias(deviceName,
+        cr = CM_Get_Device_Interface_Alias(deviceName.c_str(),
                                            &s_CameraInterfaceCategories[i],
                                            wzAlias,
                                            &cch,
@@ -485,33 +557,51 @@ CameraPnpDiscovery::MakeUniqueId(
     // If we haven't found it, then this isn't a camera, so
     // leave.
     RETURN_HR_IF (E_INVALIDARG, uniqueId.empty());
-    RETURN_IF_FAILED (CameraPnpDiscovery::GetDeviceProperty(uniqueId.c_str(),
-                                                            &DEVPKEY_Device_HardwareIds,
-                                                            nullptr,
-                                                            0,
-                                                            &cb));
-    pbHWId = std::make_unique<BYTE[]>(cb);
-    RETURN_IF_FAILED (CameraPnpDiscovery::GetDeviceProperty(uniqueId.c_str(),
-                                                            &DEVPKEY_Device_HardwareIds,
-                                                            pbHWId.get(),
-                                                            cb,
-                                                            &cb));
+
+    // If it's not a IP camera, get the hardware ID via the propkey and use it as the camera ID.
+    // If it is a IP camera, use the UUID as the camera ID.
+    // TODO: maybe just use uniqueID throughout, but these are pretty long and not as accessible
+    if (wcsstr(deviceName.c_str(), L"NetworkCamera") != NULL)
+    {
+        const wchar_t* pUUIDptr = wcsstr(deviceName.c_str(), L"uuid:");
+        pbCameraId = std::make_unique<BYTE[]>(42 * sizeof(wchar_t)); // 42 = length of the string "uuid:<guid>"
+        pbCameraId[41] = '\0';
+        wcsncpy_s((wchar_t*)pbCameraId.get(), 42, pUUIDptr, 41);
+    }
+    else
+    {
+
+        RETURN_IF_FAILED(CameraPnpDiscovery::GetDeviceProperty(uniqueId.c_str(),
+            &DEVPKEY_Device_HardwareIds,
+            nullptr,
+            0,
+            &cb));
+        pbCameraId = std::make_unique<BYTE[]>(cb);
+        RETURN_IF_FAILED(CameraPnpDiscovery::GetDeviceProperty(uniqueId.c_str(),
+            &DEVPKEY_Device_HardwareIds,
+            pbCameraId.get(),
+            cb,
+            &cb));
+    }
     // HWID has the "most unique" ID as the first of the null terminated
     // multi-string.  So we can just take that and assign it to our
     // HWID.
-    hwId = (LPCWSTR)pbHWId.get();
+    cameraId = (LPCWSTR)pbCameraId.get();
 
     return S_OK;
 }
+catch (std::exception e)
+{
+    LogInfo("Exception (%s)", e.what());
+    return E_UNEXPECTED;
+}
 
-DWORD 
-CameraPnpDiscovery::PcmNotifyCallback(
+DWORD CameraPnpDiscovery::PcmNotifyCallback(
     _In_ HCMNOTIFICATION hNotify,
     _In_opt_ PVOID Context,
     _In_ CM_NOTIFY_ACTION Action,
     _In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
-    _In_ DWORD EventDataSize
-    )
+    _In_ DWORD EventDataSize)
 {
     AZURE_UNREFERENCED_PARAMETER(hNotify);
 

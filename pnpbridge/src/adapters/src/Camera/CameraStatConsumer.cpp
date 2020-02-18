@@ -1,5 +1,5 @@
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #include "pch.h"
 #include "CameraStatConsumer.h"
 
@@ -171,6 +171,7 @@ CameraStatConsumer::PostStats(
     return S_OK;
 }
 
+// Deprecated, camera functions not through CameraStatConsumer anymore
 HRESULT 
 CameraStatConsumer::TakePhoto(
     )
@@ -331,8 +332,8 @@ CameraStatConsumer::AddStat(
     {
         std::wstring uniqueId;
         std::wstring hwId;
-
-        RETURN_IF_FAILED (CameraPnpDiscovery::MakeUniqueId(DeviceSymbolicName, uniqueId, hwId));
+        std::wstring deviceName(DeviceSymbolicName);
+        RETURN_IF_FAILED (CameraPnpDiscovery::MakeUniqueId(deviceName, uniqueId, hwId));
 
         if (_wcsicmp(m_SymbolicLinkName.c_str(), uniqueId.c_str()) != 0)
         {

@@ -6,43 +6,54 @@
 
 extern DISCOVERY_ADAPTER SerialPnpDiscovery;
 extern DISCOVERY_ADAPTER ModbusPnpDeviceDiscovery;
+extern DISCOVERY_ADAPTER MqttPnpAdapter;
 
 extern PNP_ADAPTER SerialPnpInterface;
 extern PNP_ADAPTER ModbusPnpInterface;
+extern PNP_ADAPTER MqttPnpInterface;
 
 #ifdef WIN32
 
+extern DISCOVERY_ADAPTER BluetoothSensorPnpAdapter;
 extern DISCOVERY_ADAPTER CameraPnpAdapter;
 extern DISCOVERY_ADAPTER CoreDeviceDiscovery;
 
 PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
+    &BluetoothSensorPnpAdapter,
     &CameraPnpAdapter,
     &SerialPnpDiscovery,
     &CoreDeviceDiscovery,
-    &ModbusPnpDeviceDiscovery
+    &ModbusPnpDeviceDiscovery,
+    &MqttPnpAdapter
 };
 
+extern PNP_ADAPTER BluetoothSensorPnpInterface;
 extern PNP_ADAPTER CameraPnpInterface;
 extern PNP_ADAPTER CoreDeviceHealth;
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
+    &BluetoothSensorPnpInterface,
     &CameraPnpInterface,
     &SerialPnpInterface,
     &CoreDeviceHealth,
-    &ModbusPnpInterface
+    &ModbusPnpInterface,
+    &MqttPnpInterface
 };
 
 #else //WIN32
 
 PDISCOVERY_ADAPTER DISCOVERY_ADAPTER_MANIFEST[] = {
-    &SerialPnpDiscovery
+    &SerialPnpDiscovery,
+    &MqttPnpAdapter,
+    &ModbusPnpDeviceDiscovery
 };
-//&ModbusPnpInterface
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
-    &SerialPnpInterface
+    &SerialPnpInterface,
+    &MqttPnpInterface,
+    &ModbusPnpInterface
 };
-// &ModbusPnpInterface
+
 #endif
 
 const int DiscoveryAdapterCount = sizeof(DISCOVERY_ADAPTER_MANIFEST) / sizeof(PDISCOVERY_ADAPTER);

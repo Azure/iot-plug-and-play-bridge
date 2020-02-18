@@ -1,4 +1,8 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #include "pch.h"
+#include "util.h"
+#include <fstream>
 #include "CameraIotPnpDevice.h"
 #include <pnpbridge_common.h>
 #include <pnpbridge.h>
@@ -6,12 +10,20 @@
 #define ONE_SECOND_IN_100HNS        10000000    // 10,000,000 100hns in 1 second.
 #define ONE_MILLISECOND_IN_100HNS   10000       // 10,000 100hns in 1 millisecond.
 
-CameraIotPnpDevice::CameraIotPnpDevice()
-:   m_PnpClientInterface(nullptr)
-,   m_hWorkerThread(nullptr)
-,   m_hShutdownEvent(nullptr)
-{
+using namespace ABI::Windows::Foundation;
+using namespace ABI::Windows::Storage;
+using namespace ABI::Windows::Storage::FileProperties;
 
+CameraIotPnpDevice::CameraIotPnpDevice(std::wstring& deviceName)
+    : m_PnpClientInterface(nullptr)
+    , m_hWorkerThread(nullptr)
+    , m_hShutdownEvent(nullptr)
+    , m_deviceName(deviceName)
+{
+    // Alternatively, declare and initialize a CameraMediaCaptureFrameRreader 
+    // instance to enable FrameReader scenarios
+    m_spCameraMediaCapture = std::make_unique<CameraMediaCapture>();
+    m_spCameraMediaCapture->InitMediaCapture(m_deviceName);
 }
 
 CameraIotPnpDevice::~CameraIotPnpDevice()
@@ -23,27 +35,27 @@ CameraIotPnpDevice::~CameraIotPnpDevice()
     Shutdown();
 }
 
-HRESULT
-CameraIotPnpDevice::Initialize(
-    _In_ DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface,
-    _In_opt_z_ LPCWSTR deviceName
-    )
+HRESULT CameraIotPnpDevice::Initialize(_In_ DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface) try
 {
+
     // Can't initialize twice...
     RETURN_HR_IF_NULL (E_INVALIDARG, hPnpClientInterface);
     RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_ALREADY_INITIALIZED), m_cameraStats.get() != nullptr);
 
     m_cameraStats = std::make_unique<CameraStatConsumer>();
-    RETURN_IF_FAILED (m_cameraStats->Initialize(nullptr, GUID_NULL, deviceName));
+    RETURN_IF_FAILED (m_cameraStats->Initialize(nullptr, GUID_NULL, m_deviceName.c_str()));
     RETURN_IF_FAILED (m_cameraStats->AddProvider(g_FrameServerEventProvider));
     m_PnpClientInterface = hPnpClientInterface;
 
     return S_OK;
 }
+catch (std::exception e)
+{
+    LogInfo("Exception occurred initializing Camera (%s)", e.what());
+    return E_UNEXPECTED;
+}
 
-HRESULT
-CameraIotPnpDevice::StartTelemetryWorker(
-    )
+HRESULT CameraIotPnpDevice::StartTelemetryWorker()
 {
     AutoLock lock(&m_lock);
 
@@ -57,9 +69,7 @@ CameraIotPnpDevice::StartTelemetryWorker(
     return S_OK;
 }
 
-HRESULT
-CameraIotPnpDevice::StopTelemetryWorker(
-    )
+HRESULT CameraIotPnpDevice::StopTelemetryWorker()
 {
     AutoLock lock(&m_lock);
     DWORD    dwWait = 0;
@@ -93,9 +103,7 @@ CameraIotPnpDevice::StopTelemetryWorker(
     return S_OK;
 }
 
-void
-CameraIotPnpDevice::Shutdown(
-    )
+void CameraIotPnpDevice::Shutdown()
 {
     (VOID) StopTelemetryWorker();
 
@@ -105,8 +113,7 @@ CameraIotPnpDevice::Shutdown(
     }
 }
 
-HRESULT             
-CameraIotPnpDevice::ReportProperty(
+HRESULT CameraIotPnpDevice::ReportProperty(
     _In_ bool readOnly,
     _In_ const char* propertyName,
     _In_ unsigned const char* propertyData,
@@ -122,11 +129,12 @@ CameraIotPnpDevice::ReportProperty(
     RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), m_PnpClientInterface);
 
     result = DigitalTwin_InterfaceClient_ReportPropertyAsync(m_PnpClientInterface,
-                                                                   propertyName,
-                                                                   (const char*)propertyData, 
-                                                                   nullptr,
-                                                                   CameraIotPnpDevice_PropertyCallback, 
-                                                                   (void*)propertyName);
+                                                                propertyName,
+                                                                propertyData,
+                                                                strlen((char*)propertyData),
+                                                                nullptr,
+                                                                CameraIotPnpDevice_PropertyCallback,
+                                                                (void*)propertyName);
     if (result != DIGITALTWIN_CLIENT_OK)
     {
         LogError("DEVICE_INFO: Reporting property=<%s> failed, error=<%s>", propertyName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
@@ -139,8 +147,7 @@ CameraIotPnpDevice::ReportProperty(
     return HResultFromPnpClient(result);
 }
 
-HRESULT
-CameraIotPnpDevice::ReportTelemetry(
+HRESULT CameraIotPnpDevice::ReportTelemetry(
     _In_z_ const char* telemetryName,
     _In_reads_bytes_(messageDataLen) const unsigned char* messageData,
     _In_ size_t messageDataLen)
@@ -153,11 +160,14 @@ CameraIotPnpDevice::ReportTelemetry(
 
     AZURE_UNREFERENCED_PARAMETER(messageDataLen);
 
+    char telemetryMessage[512] = { 0 };
+    sprintf(telemetryMessage, "{\"%s\":%s}", telemetryName, messageData);
+
     result = DigitalTwin_InterfaceClient_SendTelemetryAsync(m_PnpClientInterface,
-                                                    telemetryName,
-                                                    (const char*)messageData,
-                                                    CameraIotPnpDevice_TelemetryCallback,
-                                                    (void*)telemetryName);
+                                                            (unsigned char*) telemetryMessage,
+                                                            strlen(telemetryMessage),
+                                                            CameraIotPnpDevice_TelemetryCallback,
+                                                            (void*)telemetryName);
     if (result != DIGITALTWIN_CLIENT_OK)
     {
         LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%s>", telemetryName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
@@ -170,9 +180,35 @@ CameraIotPnpDevice::ReportTelemetry(
     return HResultFromPnpClient(result);
 }
 
-HRESULT
-CameraIotPnpDevice::LoopTelemetry(
-    _In_ DWORD dwMilliseconds)
+HRESULT CameraIotPnpDevice::ReportTelemetry(_In_ std::string& telemetryName, _In_ std::string& message)
+{
+    AutoLock lock(&m_lock);
+
+    DIGITALTWIN_CLIENT_RESULT result;
+
+    RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), m_PnpClientInterface);
+
+    char telemetryMessage[512] = { 0 };
+    sprintf(telemetryMessage, "{\"%s\":%s}", telemetryName.c_str(), message.c_str());
+
+    result = DigitalTwin_InterfaceClient_SendTelemetryAsync(m_PnpClientInterface,
+                                                            (unsigned char*)telemetryMessage,
+                                                            strlen(telemetryMessage),
+                                                            CameraIotPnpDevice_TelemetryCallback,
+                                                            (void*)telemetryName.c_str());
+    if (result != DIGITALTWIN_CLIENT_OK)
+    {
+        LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%s>", telemetryName.c_str(), MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+    }
+    else
+    {
+        LogInfo("DEVICE_INFO: Queued async report telemetry for %s", telemetryName.c_str());
+    }
+
+    return HResultFromPnpClient(result);
+}
+
+HRESULT CameraIotPnpDevice::LoopTelemetry(_In_ DWORD dwMilliseconds)
 {
     bool                fShutdown = false;
 
@@ -220,7 +256,9 @@ CameraIotPnpDevice::LoopTelemetry(
             RETURN_IF_FAILED (E_UNEXPECTED);
         }
 
-        if (!fShutdown && ((stats_pre.m_dropped + stats_pre.m_output) > 0))
+        if (!fShutdown && ((stats_pre.m_dropped + stats_pre.m_output) > 0)
+            // don't log if pre and post stats are the same (stream has stopped and stats are unchanged)
+            && !(stats_pre.m_dropped == stats_post.m_dropped && stats_pre.m_output == stats_post.m_output))
         {
             LONGLONG                        llDelta = (llEnd - llStart);
             LONGLONG                        llTotalFrames = 0;
@@ -267,7 +305,7 @@ CameraIotPnpDevice::LoopTelemetry(
             RETURN_IF_FAILED (pjson->AddValueAsString("dropped", stats_post.m_dropped));
             RETURN_IF_FAILED (pjson->AddValueAsString("expected_framerate", dblExpectedFps));
             RETURN_IF_FAILED (pjson->AddValueAsString("actual_framerate", dblActualFps));
-            RETURN_IF_FAILED (ReportTelemetry("camera_health", (const unsigned char *)pjson->GetMessage(), pjson->GetSize()));
+            RETURN_IF_FAILED (ReportTelemetry("CameraStats", (const unsigned char *)pjson->GetMessage(), pjson->GetSize()));
         }
     } while (!fShutdown);
 
@@ -276,69 +314,150 @@ CameraIotPnpDevice::LoopTelemetry(
     return S_OK;
 }
 
-HRESULT             
-CameraIotPnpDevice::TakePhotoOp(
-    _Out_ std::string& strResponse
-    )
+HRESULT GetFileame(IStorageFile* pStorageFile, std::string& filename) try
 {
-    ULONG                   cbJpeg = 0;
-    ULONG                   cbWritten = 0;
-    std::unique_ptr<BYTE[]> pbJpeg;
-    FILETIME                ft = { };
-    SYSTEMTIME              st = { };
-    char                    szFile[MAX_PATH] = { };
-    int                     pnpResult = PNPBRIDGE_OK;
+    HRESULT hr = S_OK;
+    ComPtr<IStorageItem> spFile;
+    HSTRING name;
+    RETURN_IF_FAILED(pStorageFile->QueryInterface(IID_PPV_ARGS(&spFile)));
+    RETURN_IF_FAILED(spFile->get_Name(&name));
+    std::wstring ws(WindowsGetStringRawBuffer(name, nullptr));
+    std::string fileStr = wstr2str(ws);
+    filename = fileStr;
+    return hr;
+}
+catch (std::exception e)
+{
+    LogInfo("Exception occurred in Camera Iot Device (%s)", e.what());
+    return E_UNEXPECTED;
+}
 
-    RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_NOT_READY), m_cameraStats.get());
+// TODO: Can just upload from memory or stream?
+HRESULT CameraIotPnpDevice::UploadStorageFileToBlob(IStorageFile* pStorageFile) try
+{
+    HRESULT hr = S_OK;
+    ComPtr<IStorageItem> spFile;
+    ComPtr<IBasicProperties> spIBasicProperties;
+    ComPtr<IAsyncOperation<BasicProperties*>> spPropsOp;
+    HSTRING name;
+    HSTRING path;
+    UINT64 ui64InputSize;
+    int pnpResult = PNPBRIDGE_OK;
 
-    RETURN_IF_FAILED (m_cameraStats->TakePhoto());
-    RETURN_IF_FAILED (m_cameraStats->GetJpegFrameSize(&cbJpeg));
-    
-    pbJpeg = std::make_unique<BYTE[]>(cbJpeg);
-    RETURN_IF_FAILED (m_cameraStats->GetJpegFrame(pbJpeg.get(), cbJpeg, &cbWritten));
+    RETURN_IF_FAILED(pStorageFile->QueryInterface(IID_PPV_ARGS(&spFile)));
 
-    GetSystemTimePreciseAsFileTime(&ft);
-    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), !FileTimeToSystemTime(&ft, &st));
-    RETURN_IF_FAILED (StringCchPrintfA(szFile, ARRAYSIZE(szFile), "photo_%04d-%02d-%02d-%02d-%02d-%02d.%03d.jpg", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds));
+    RETURN_IF_FAILED(spFile->get_Name(&name));
 
+    std::wstring ws(WindowsGetStringRawBuffer(name, nullptr));
+    std::string fileStr = wstr2str(ws);
 
-    // Write the photo to the local temp folder.  This will keep overwriting
-    // the old photo so we will only keep the most current photo in our
-    // temp folder--this is to avoid filling up our file system with
-    // old photos.
-    WritePhotoToTemp(pbJpeg.get(), cbJpeg);
+    RETURN_IF_FAILED(spFile->get_Path(&path));
+    std::wstring wpath(WindowsGetStringRawBuffer(path, nullptr));
+    std::string fullPathStr = wstr2str(wpath);
 
+    RETURN_IF_FAILED(spFile->GetBasicPropertiesAsync(&spPropsOp));
+    hr = AwaitTypedResult(spPropsOp, BasicProperties*, spIBasicProperties);
+    RETURN_IF_FAILED(hr);
+    RETURN_IF_FAILED(spIBasicProperties->get_Size(&ui64InputSize));
 
+    char* buffer = (char*)malloc((size_t)ui64InputSize);
+    std::ifstream fin(fullPathStr, std::ios::in | std::ios::binary);
+    fin.read(buffer, ui64InputSize);
+    size_t actRead = (size_t)fin.gcount();
 
-    pnpResult = PnpBridge_UploadToBlobAsync(szFile,
-                                            pbJpeg.get(),
-                                            cbJpeg,
-                                            CameraIotPnpDevice_BlobUploadCallback,
-                                            (void*)this);
-    switch(pnpResult)
+    pnpResult = PnpBridge_UploadToBlobAsync(fileStr.c_str(),
+        (unsigned char*)buffer,
+        actRead,
+        CameraIotPnpDevice_BlobUploadCallback,
+        (void*)this);
+
+    LogInfo("Uploading %s to blob storage, res=%d %s", fileStr.c_str(), pnpResult, pnpResult == PNPBRIDGE_OK ? "(Success)" : "");
+    switch (pnpResult)
     {
     case PNPBRIDGE_OK:
         break;
     case PNPBRIDGE_INSUFFICIENT_MEMORY:
-        RETURN_IF_FAILED (E_OUTOFMEMORY);
+        RETURN_IF_FAILED(E_OUTOFMEMORY);
     case PNPBRIDGE_INVALID_ARGS:
-        RETURN_IF_FAILED (E_INVALIDARG);
+        RETURN_IF_FAILED(E_INVALIDARG);
         break;
     case PNPBRIDGE_CONFIG_READ_FAILED:
-        RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_BAD_CONFIGURATION));
+        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_BAD_CONFIGURATION));
         break;
     case PNPBRIDGE_DUPLICATE_ENTRY:
-        RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_DUP_NAME));
+        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_DUP_NAME));
     case PNPBRIDGE_FAILED:
     default:
-        RETURN_IF_FAILED (E_UNEXPECTED);
+        RETURN_IF_FAILED(E_UNEXPECTED);
         break;
     }
+    fin.close();
+    free(buffer);
 
-    // Send back the file name here...
-    strResponse = "{ photo : " + std::string(szFile) + " }";
+    return hr;
+}
+catch (std::exception e)
+{
+    LogInfo("Exception occurred uploading to blob storage (%s)", e.what());
+    return E_UNEXPECTED;
+}
+
+HRESULT             
+CameraIotPnpDevice::TakePhotoOp(_Out_ std::string& strResponse) try
+{
+    ComPtr<IStorageFile> spStorageFile;
+    
+    //RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_NOT_READY), m_cameraStats.get());
+    
+    RETURN_IF_FAILED(m_spCameraMediaCapture->TakePhoto(&spStorageFile));
+    RETURN_IF_FAILED(UploadStorageFileToBlob(spStorageFile.Get()));
+
+    std::string filename;
+    GetFileame(spStorageFile.Get(), filename);
+    strResponse = "\"" + filename + "\"";
+    
+    return S_OK;
+}
+catch (std::exception e)
+{
+    LogInfo("Exception occurred in take photo operation (%s)", e.what());
+    return E_UNEXPECTED;
+}
+
+HRESULT CameraIotPnpDevice::TakeVideoOp(_In_ DWORD dwMilliseconds, _Out_ std::string& strResponse) try
+{
+    ComPtr<IStorageFile> spStorageFile;
+
+    RETURN_IF_FAILED(m_spCameraMediaCapture->TakeVideo(dwMilliseconds, &spStorageFile));
+    RETURN_IF_FAILED(UploadStorageFileToBlob(spStorageFile.Get()));
+    
+    std::string filename;
+    GetFileame(spStorageFile.Get(), filename);
+    strResponse = "\"" + filename + "\"";
 
     return S_OK;
+}
+catch (std::exception e)
+{
+    LogInfo("Exception occurred in take video operation (%s)", e.what());
+    return E_UNEXPECTED;
+}
+
+HRESULT CameraIotPnpDevice::StartDetection()
+{
+    //RETURN_IF_FAILED(m_spCameraMediaCaptureFR->StartFrameReader());
+    return S_OK;
+}
+
+HRESULT CameraIotPnpDevice::GetURIOp(std::string& strResponse) try
+{
+    strResponse = "\"This operation is not supported for this device\"";
+    return S_OK;
+}
+catch (std::exception e)
+{
+    LogInfo("Exception occurred in get URI operation (%s)", e.what());
+    return E_UNEXPECTED;
 }
 
 void __cdecl
@@ -354,7 +473,9 @@ CameraIotPnpDevice::CameraIotPnpDevice_TelemetryCallback(
     _In_ DIGITALTWIN_CLIENT_RESULT pnpTelemetryStatus,
     _In_opt_ void* userContextCallback)
 {
-    LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpTelemetryStatus, userContextCallback);
+    UNREFERENCED_PARAMETER(pnpTelemetryStatus);
+    UNREFERENCED_PARAMETER(userContextCallback);
+    //LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpTelemetryStatus, userContextCallback);
 }
 
 void __cdecl
@@ -363,14 +484,12 @@ CameraIotPnpDevice::CameraIotPnpDevice_BlobUploadCallback(
     void* userContextCallback
     )
 {    
-    LogInfo("%s:%d upload_result=%d,context=0x%p", __FUNCTION__, __LINE__, result, userContextCallback);
+    UNREFERENCED_PARAMETER(result);
+    UNREFERENCED_PARAMETER(userContextCallback);
+    //LogInfo("%s:%d upload_result=%d,context=0x%p", __FUNCTION__, __LINE__, result, userContextCallback);
 }
 
-DWORD 
-WINAPI 
-CameraIotPnpDevice::TelemetryWorkerThreadProc(
-    _In_opt_ PVOID pv
-    )
+DWORD WINAPI CameraIotPnpDevice::TelemetryWorkerThreadProc(_In_opt_ PVOID pv)
 {
     CameraIotPnpDevice* p = (CameraIotPnpDevice*)pv;
 
@@ -382,31 +501,3 @@ CameraIotPnpDevice::TelemetryWorkerThreadProc(
     return 0;
 }
 
-HRESULT
-CameraIotPnpDevice::WritePhotoToTemp(
-    _In_reads_bytes_(cbJpeg) PBYTE pbJpeg, 
-    _In_ ULONG cbJpeg
-    )
-{
-    HANDLE  hFile = INVALID_HANDLE_VALUE;
-    char    szTemp[MAX_PATH + 1] = { };
-    BOOL    fResult = FALSE;
-    ULONG   cbWritten = 0;
-
-    RETURN_HR_IF_NULL (E_INVALIDARG, pbJpeg);
-    RETURN_HR_IF (E_INVALIDARG, cbJpeg == 0);
-
-    // Use the ANSI version instead of the wide-char.
-    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), 0 == GetTempPathA(ARRAYSIZE(szTemp), szTemp));
-    RETURN_IF_FAILED (StringCchCatA(szTemp, ARRAYSIZE(szTemp), "current_photo.jpg"));
-
-    LogInfo ("Writing photo to temp folder (%s)", szTemp);
-
-    hFile = CreateFileA(szTemp, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), hFile == INVALID_HANDLE_VALUE);
-    fResult = WriteFile(hFile, pbJpeg, cbJpeg, &cbWritten, nullptr);
-    (void) CloseHandle(hFile);
-    RETURN_HR_IF (HRESULT_FROM_WIN32(GetLastError()), !fResult);
-
-    return S_OK;
-}

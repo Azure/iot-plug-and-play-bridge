@@ -21,15 +21,15 @@ typedef struct _ENVIRONMENT_SENSOR {
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle;
     THREAD_HANDLE WorkerHandle;
     volatile bool ShuttingDown;
-} ENVIRONMENT_SENSOR, *PENVIRONMENT_SENSOR;
+} ENVIRONMENT_SENSOR, * PENVIRONMENT_SENSOR;
 
 int EnvironmentSensor_TelemetryWorker(void* context) {
-    PENVIRONMENT_SENSOR device = (PENVIRONMENT_SENSOR) context;
+    PENVIRONMENT_SENSOR device = (PENVIRONMENT_SENSOR)context;
 
     // Report telemetry every 5 minutes till we are asked to stop
     while (true) {
         if (device->ShuttingDown) {
-            return 0;
+            return DIGITALTWIN_CLIENT_OK;
         }
 
         DigitalTwinSampleEnvironmentalSensor_SendTelemetryMessagesAsync(device->pnpinterfaceHandle);
@@ -38,7 +38,7 @@ int EnvironmentSensor_TelemetryWorker(void* context) {
         ThreadAPI_Sleep(5000);
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int EnvironmentSensor_StartInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
@@ -50,7 +50,8 @@ int EnvironmentSensor_StartInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
         return -1;
     }
 
-    return 0;
+
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int EnvironmentSensor_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
@@ -62,14 +63,14 @@ int EnvironmentSensor_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface)
         free(device);
     }
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
-int 
+int
 EnvironmentSensor_CreatePnpInterface(
     PNPADAPTER_CONTEXT AdapterHandle,
     PNPMESSAGE Message
-    )
+)
 {
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     PENVIRONMENT_SENSOR device = NULL;
@@ -125,11 +126,11 @@ end:
 
 int EnvironmentSensor_Initialize(const char* adapterArgs) {
     AZURE_UNREFERENCED_PARAMETER(adapterArgs);
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 int EnvironmentSensor_Shutdown() {
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 PNP_ADAPTER EnvironmentSensorInterface = {

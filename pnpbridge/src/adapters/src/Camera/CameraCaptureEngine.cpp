@@ -1,10 +1,9 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #include "pch.h"
 
 #define SHAREDCAMERA_DEFAULT_OPERATION_TIMEOUT_INMS  20000
 
-
-///////////////////////////////////////////////////////////////////////////////////////////// 
-/// 
 CameraCaptureEngine::CameraCaptureEngine()
 {
 }

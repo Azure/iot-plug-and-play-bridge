@@ -32,7 +32,7 @@ int EnvironmentSensor_DiscoveryWorker(void* context) {
 
     if (NULL == envContext->DeviceArgs) {
         LogInfo("EnvironmentSensor_DiscoveryWorker: No device discovery parameters found in configuration.");
-        return 0;
+        return DIGITALTWIN_CLIENT_OK;
     }
 
     // The discovery adapter will parse the discovery parameters from the Bridge's
@@ -74,9 +74,9 @@ int EnvironmentSensor_DiscoveryWorker(void* context) {
     PNPMESSAGE msg = NULL;
 
     PnpMessage_CreateMessage(&msg);
-    
+
     size_t length = strlen(deviceChangeMessageformat) + strlen(sensorId) + 1;
-    char *deviceChangeBuff = (char*) malloc(length * sizeof(char));
+    char* deviceChangeBuff = (char*)malloc(length * sizeof(char));
 
     sprintf_s(deviceChangeBuff, length * sizeof(char), deviceChangeMessageformat, sensorId);
     PnpMessage_SetMessage(msg, deviceChangeBuff);
@@ -90,7 +90,7 @@ int EnvironmentSensor_DiscoveryWorker(void* context) {
     // Drop reference on the PNPMESSAGE
     PnpMemory_ReleaseReference(msg);
 
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 // .StartDiscovery callback. This is the first method called by the PnpBridge for a discovery adapter.
@@ -102,8 +102,8 @@ int EnvironmentSensor_DiscoveryWorker(void* context) {
 // On returning failure, the .StopDiscovery won't be invoked
 // 
 int EnvironmentSensor_StartDiscovery(PNPMEMORY deviceArgs, PNPMEMORY adapterArgs) {
-    int error = 0;
-    
+    int error = DIGITALTWIN_CLIENT_OK;
+
     // Add reference to deviceArgs and adapterArgs
     EnvironmentSensor_Context.DeviceArgs = deviceArgs;
     EnvironmentSensor_Context.AdapterArgs = adapterArgs;
@@ -126,7 +126,7 @@ int EnvironmentSensor_StartDiscovery(PNPMEMORY deviceArgs, PNPMEMORY adapterArgs
     }
 
 exit:
-    if (error != 0) {
+    if (error != DIGITALTWIN_CLIENT_OK) {
         // Release deviceArgs reference on failure 
         if (deviceArgs) {
             PnpMemory_ReleaseReference(deviceArgs);
@@ -147,7 +147,7 @@ exit:
 // .StopDiscovery callback. Cleanup any discovery related resources
 // created as part of .StartDiscovery method
 int EnvironmentSensor_StopDiscovery() {
-    return 0;
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 // PnpBridge discovery adapter callbacks. This needs to be added to the global 
@@ -161,5 +161,5 @@ DISCOVERY_ADAPTER EnvironmentSensorDiscovery = {
 
 int main()
 {
-   PnpBridge_Main();
+    PnpBridge_Main();
 }

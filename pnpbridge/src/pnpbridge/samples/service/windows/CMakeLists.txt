@@ -60,7 +60,7 @@ include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/pal/windows)
 
 set(pnp_bridge_common_libs
     aziotsharedutil
-    iothub_client 
+    iothub_client
     iothub_client_http_transport
     iothub_client_amqp_transport
     iothub_client_amqp_ws_transport
@@ -76,6 +76,7 @@ set(pnp_bridge_common_libs
     utpm
     pnpbridge_adapters
     pnpbridge_serial
+    pnpbridge_modbus
     digitaltwin_client
     pnpbridge
 )
@@ -84,9 +85,10 @@ set(pnp_bridge_common_libs
 if(WIN32)
 set(pnp_bridge_common_libs
     ${pnp_bridge_common_libs}
-    pnpbridge_modbus
     pnpbridge_camera
+    pnpbridge_bluetoothsensor
     pnpbridge_coredevicehealth
+    pnpbridge_mqtt
 )
 endif()
 
