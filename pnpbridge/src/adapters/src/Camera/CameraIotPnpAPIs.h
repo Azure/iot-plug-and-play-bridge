@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #pragma once
 
 #ifdef __cplusplus
@@ -55,6 +57,31 @@ CameraPnpCallback_TakePhoto(
     DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, 
     void* userContextCallback
     );
+
+void
+CameraPnpCallback_TakeVideo(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
+    void* userContextCallback
+);
+
+/*
+TODO: reenable after I figure out how to configure cmake to add the package dependencies
+void
+CameraPnpCallback_StartDetection(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
+    void* userContextCallback
+);
+*/
+
+void
+CameraPnpCallback_GetURI(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
+    void* userContextCallback
+);
+
 
 #ifdef __cplusplus
 }

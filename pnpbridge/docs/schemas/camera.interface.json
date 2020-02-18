@@ -1,0 +1,44 @@
+{
+  "@id": "urn:microsoft:AMSDemoCameraInterface:1",
+  "@type": "Interface",
+  "displayName": "demo camera interface",
+  "description": "Provides functionality for an IP camera",
+  "contents": [
+    {
+      "@type": "Telemetry",
+      "name": "CameraStats",
+      "description": "Basic camera stats while streaming (number of frames arrived/dropped, fps)",
+      "displayName": "CameraStats",
+      "schema": "string"
+    },
+    {
+      "@type": "Command",
+      "name": "TakePhoto",
+      "description": "A command that is used to instruct the camera to take a photo",
+      "commandType": "asynchronous",
+      "displayName": "TakePhoto"
+    },
+    {
+      "@type": "Command",
+      "name": "TakeVideo",
+      "description": "A command that is used to instruct the camera to record a video",
+      "commandType": "asynchronous",
+      "displayName": "TakeVideo"
+    },
+    {
+      "@type": "Command",
+      "name": "GetURI",
+      "description": "A command that is used to retrieve the URI of the camera",
+      "commandType": "synchronous",
+      "response": {
+        "displayName": "URI",
+        "name": "URI",
+        "schema": "string"
+      },
+      "displayName": "GetURI"
+    }
+  ],
+  "@context": [
+    "http://azureiot.com/v1/contexts/IoTModel.json"
+  ]
+}

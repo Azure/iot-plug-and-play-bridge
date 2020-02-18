@@ -112,7 +112,7 @@ add_subdirectory(samples)
 
 if(WIN32)
 # Ole32 (COM) is used by camera health monitoring adapter
-target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs} cfgmgr32 mfplat mfsensorgroup Ole32)
+target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs} cfgmgr32 mfplat mfsensorgroup Ole32 runtimeobject)
 else()
 target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})
 endif()

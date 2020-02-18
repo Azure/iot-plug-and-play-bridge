@@ -22,6 +22,7 @@ checkExists() {
         exit 1
     fi
 }
+
 # ----------------------------------------------------------------------------- 
 # -- Check for environment pre-requisites. This script requires -- that 
 # the following programs work: -- curl build-essential(g++,gcc,make) 
@@ -66,6 +67,7 @@ SET(CMAKE_C_COMPILER ${RPI_ROOT}/../bin/arm-linux-gnueabihf-gcc)
 
 # this is the file system root of the target
 SET(CMAKE_FIND_ROOT_PATH ${RPI_ROOT})
+SET(CMAKE_SYSROOT ${RPI_ROOT})
 
 # search for programs in the build host directories
 SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
