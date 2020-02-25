@@ -31,6 +31,7 @@ int BluetoothSensorPnpStartDiscovery(
 {
     if (deviceArgs == nullptr) {
         LogInfo("Bluetooth sensor device arguments not necessary, continue discovery.");
+        return DIGITALTWIN_CLIENT_OK;
     }
 
     LogInfo("Starting discovery adapter.");
