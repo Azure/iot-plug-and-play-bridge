@@ -78,3 +78,6 @@ phases:
   - script: |
      sudo ./pnpbridge/jenkins/raspberrypi_c.sh
     displayName: 'build'
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'cleanup'
+    condition: always()
