@@ -18,7 +18,15 @@ typedef struct _CORE_DEVICE_TAG {
     
     // Device symbolic link
     char* SymbolicLink;
+
+    // Device active
+    bool DeviceActive;
 } CORE_DEVICE_TAG, *PCORE_DEVICE_TAG;
+
+typedef struct _CORE_DEVICE_ADAPTER_CONTEXT {
+    SINGLYLINKEDLIST_HANDLE SupportedInterfaces;
+    SINGLYLINKEDLIST_HANDLE DeviceWatchers;
+} CORE_DEVICE_ADAPTER_CONTEXT, *PCORE_DEVICE_ADAPTER_CONTEXT;
 
 int
 CoreDevice_SendConnectionEventAsync(

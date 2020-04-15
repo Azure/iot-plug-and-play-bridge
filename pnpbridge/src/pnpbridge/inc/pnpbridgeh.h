@@ -17,13 +17,7 @@ typedef enum PNP_BRIDGE_STATE {
 typedef struct _PNP_BRIDGE {
     MX_IOT_HANDLE_TAG IotHandle;
 
-    // Manages loading all discovery plugins and their lifetime
-    PDISCOVERY_MANAGER DiscoveryMgr;
-
-    // Manages loading all pnp adapter plugins and their lifetime
     PPNP_ADAPTER_MANAGER PnpMgr;
-
-    PMESSAGE_QUEUE MessageQueue;
 
     PNPBRIDGE_CONFIGURATION Configuration;
 

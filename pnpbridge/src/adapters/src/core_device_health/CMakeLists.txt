@@ -14,7 +14,6 @@ compileAsC99()
 
 set(pnpbridge_adapters_c_files
     core_device_health.c
-    core_device_discovery.c
 )
 
 set(pnpbridge_adapters_h_files

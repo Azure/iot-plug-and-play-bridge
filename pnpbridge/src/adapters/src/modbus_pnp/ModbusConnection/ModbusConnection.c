@@ -1,21 +1,28 @@
 ﻿
 #include "ModbusConnection.h"
 
-int ModbusPnp_GetHeaderSize(MODBUS_CONNECTION_TYPE connectionType)
+int ModbusPnp_GetHeaderSize(
+    MODBUS_CONNECTION_TYPE connectionType)
 {
+    int headerSize = 0;
     switch (connectionType)
     {
     case TCP:
-        return ModbusTcp_GetHeaderSize();;
+        headerSize = ModbusTcp_GetHeaderSize();
+        break;
     case RTU:
-        return ModbusRtu_GetHeaderSize();
+        headerSize = ModbusRtu_GetHeaderSize();
+        break;
     default:
         break;
     }
-    return 0;
+    return headerSize;
 }
 
-bool ValidateModbusResponse(MODBUS_CONNECTION_TYPE connectionType, uint8_t* response, uint8_t* request)
+bool ValidateModbusResponse(
+    MODBUS_CONNECTION_TYPE connectionType,
+    uint8_t* response,
+    uint8_t* request)
 {
     if (NULL == response)
     {
@@ -40,7 +47,13 @@ bool ValidateModbusResponse(MODBUS_CONNECTION_TYPE connectionType, uint8_t* resp
     }
 }
 
-int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType capabilityType, void* capability, uint8_t* response, size_t responseLength, uint8_t* result)
+int ProcessModbusResponse(
+    MODBUS_CONNECTION_TYPE connectionType,
+    CapabilityType capabilityType,
+    void* capability,
+    uint8_t* response,
+    size_t responseLength,
+    uint8_t* result)
 {
     int stepSize = 0;
     int dataOffset = ModbusPnp_GetHeaderSize(connectionType);
@@ -260,7 +273,10 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
     }
     return resultLength;
 }
-bool ModbusPnp_CloseDevice(MODBUS_CONNECTION_TYPE connectionType, HANDLE hDevice, LOCK_HANDLE hLock)
+bool ModbusPnp_CloseDevice(
+    MODBUS_CONNECTION_TYPE connectionType,
+    HANDLE hDevice,
+    LOCK_HANDLE hLock)
 {
     bool result = false;
     switch (connectionType)
@@ -277,9 +293,12 @@ bool ModbusPnp_CloseDevice(MODBUS_CONNECTION_TYPE connectionType, HANDLE hDevice
     return result;
 }
 
-int ModbusPnp_SetReadRequest(ModbusDeviceConfig* deviceConfig, CapabilityType capabilityType, void* capability)
+DIGITALTWIN_CLIENT_RESULT ModbusPnp_SetReadRequest(
+    ModbusDeviceConfig* deviceConfig,
+    CapabilityType capabilityType,
+    void* capability)
 {
-    int result = -1;
+    int result = DIGITALTWIN_CLIENT_ERROR;
     switch (deviceConfig->ConnectionType)
     {
         case TCP:
@@ -294,9 +313,13 @@ int ModbusPnp_SetReadRequest(ModbusDeviceConfig* deviceConfig, CapabilityType ca
     return result;
 }
 
-int ModbusPnp_SetWriteRequest(MODBUS_CONNECTION_TYPE connectionType, CapabilityType capabilityType, void* capability, char* valueStr)
+DIGITALTWIN_CLIENT_RESULT ModbusPnp_SetWriteRequest(
+    MODBUS_CONNECTION_TYPE connectionType,
+    CapabilityType capabilityType,
+    void* capability,
+    char* valueStr)
 {
-    int result = -1;
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR;
     switch (connectionType)
     {
         case TCP:
@@ -312,7 +335,11 @@ int ModbusPnp_SetWriteRequest(MODBUS_CONNECTION_TYPE connectionType, CapabilityT
     return result;
 }
 
-int ModbusPnp_ReadResponse(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler, uint8_t *responseArr, uint32_t arrLen)
+int ModbusPnp_ReadResponse(
+    MODBUS_CONNECTION_TYPE connectionType,
+    HANDLE handler,
+    uint8_t *responseArr,
+    uint32_t arrLen)
 {
     int result = -1;
     switch (connectionType)
@@ -329,7 +356,11 @@ int ModbusPnp_ReadResponse(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler
     return result;
 }
 
-int ModbusPnp_SendRequest(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler, uint8_t *requestArr, uint32_t arrLen)
+int ModbusPnp_SendRequest(
+    MODBUS_CONNECTION_TYPE connectionType,
+    HANDLE handler,
+    uint8_t *requestArr,
+    uint32_t arrLen)
 {
     int result = -1;
     switch (connectionType)
@@ -346,7 +377,10 @@ int ModbusPnp_SendRequest(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler,
     return result;
 }
 
-int ModbusPnp_ReadCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, uint8_t* resultedData)
+int ModbusPnp_ReadCapability(
+    CapabilityContext* capabilityContext,
+    CapabilityType capabilityType,
+    uint8_t* resultedData)
 {
     uint8_t response[MODBUS_RESPONSE_MAX_LENGTH];
     memset(response, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
@@ -451,7 +485,11 @@ exit:
     return resultLength;
 }
 
-int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, char* requestStr, uint8_t* resultedData)
+int ModbusPnp_WriteToCapability(
+    CapabilityContext* capabilityContext,
+    CapabilityType capabilityType,
+    char* requestStr,
+    uint8_t* resultedData)
 {
     uint8_t response[MODBUS_RESPONSE_MAX_LENGTH];
     memset(response, 0x00, MODBUS_RESPONSE_MAX_LENGTH);

@@ -5,7 +5,9 @@
 #include <unistd.h>
 #endif // WIN32
 
-uint16_t GetCRC(uint8_t *message, size_t length)
+uint16_t GetCRC(
+    uint8_t *message,
+    size_t length)
 {
     if (NULL == message)
     {
@@ -32,11 +34,14 @@ uint16_t GetCRC(uint8_t *message, size_t length)
     return crcFull;
 }
 
-int ModbusRtu_GetHeaderSize(void) {
+int ModbusRtu_GetHeaderSize(void)
+{
     return RTU_HEADER_SIZE;
 }
 
-bool ModbusRtu_CloseDevice(HANDLE hDevice, LOCK_HANDLE hLock)
+bool ModbusRtu_CloseDevice(
+    HANDLE hDevice,
+    LOCK_HANDLE hLock)
 {
     bool result = false;
 
@@ -56,7 +61,10 @@ bool ModbusRtu_CloseDevice(HANDLE hDevice, LOCK_HANDLE hLock)
     return result;
 }
 
-int ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, uint8_t unitId)
+DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetReadRequest(
+    CapabilityType capabilityType,
+    void* capability,
+    uint8_t unitId)
 {
     uint16_t modbusAddress = 0;
     switch (capabilityType)
@@ -68,7 +76,7 @@ int ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, ui
             if (!ModbusConnectionHelper_GetFunctionCode(telemetry->StartAddress, true, &(telemetry->ReadRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for telemetry \"%s\".", telemetry->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             telemetry->ReadRequest.RtuRequest.UnitID = unitId;
@@ -86,7 +94,7 @@ int ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, ui
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, true, &(property->ReadRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             property->ReadRequest.RtuRequest.UnitID = unitId;
@@ -99,13 +107,16 @@ int ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, ui
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
     }
 
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr)
+DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetWriteRequest(
+    CapabilityType capabilityType,
+    void* capability,
+    char* valueStr)
 {
     uint16_t binaryData = 0;
     uint16_t modbusAddress = 0;
@@ -120,13 +131,13 @@ int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, c
             if (!ModbusConnectionHelper_GetFunctionCode(command->StartAddress, false, &(command->WriteRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for command \"%s\".", command->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(command->DataType, command->WriteRequest.RtuRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, command->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             command->WriteRequest.RtuRequest.Payload.RegAddr_Hi = (modbusAddress >> 8) & 0xff;
@@ -143,13 +154,13 @@ int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, c
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, false, &(property->WriteRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(property->DataType, property->WriteRequest.RtuRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, property->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             property->WriteRequest.RtuRequest.Payload.RegAddr_Hi = (modbusAddress >> 8) & 0xff;
@@ -161,13 +172,16 @@ int ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, c
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
     }
 
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int ModbusRtu_SendRequest(HANDLE handler, uint8_t *requestArr, uint32_t arrLen)
+int ModbusRtu_SendRequest(
+    HANDLE handler,
+    uint8_t *requestArr,
+    uint32_t arrLen)
 {
 #ifdef WIN32
     if (NULL == handler || NULL == requestArr)
@@ -209,7 +223,10 @@ int ModbusRtu_SendRequest(HANDLE handler, uint8_t *requestArr, uint32_t arrLen)
     return  totalBytesSent;
 }
 
-int ModbusRtu_ReadResponse(HANDLE handler, uint8_t *response, uint32_t arrLen)
+int ModbusRtu_ReadResponse(
+    HANDLE handler,
+    uint8_t *response,
+    uint32_t arrLen)
 {
 #ifdef WIN32
     if (NULL == handler || NULL == response)

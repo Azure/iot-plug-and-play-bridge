@@ -4,8 +4,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern DISCOVERY_ADAPTER    MqttPnpAdapter;
 extern PNP_ADAPTER          MqttPnpInterface;
 
 #ifdef __cplusplus
@@ -16,3 +14,10 @@ class MqttPnp {
 
 
 };
+
+// MQTT Adapter Config
+#define PNP_CONFIG_ADAPTER_MQTT_IDENTITY "mqtt_identity"
+#define PNP_CONFIG_ADAPTER_MQTT_PROTOCOL "mqtt_protocol"
+#define PNP_CONFIG_ADAPTER_MQTT_SERVER "mqtt_server"
+#define PNP_CONFIG_ADAPTER_MQTT_PORT "mqtt_port"
+#define PNP_CONFIG_ADAPTER_MQTT_SUPPORTED_CONFIG "json_rpc_1"

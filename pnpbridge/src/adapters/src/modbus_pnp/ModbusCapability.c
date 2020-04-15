@@ -18,7 +18,10 @@ static COND_HANDLE StopPolling;
 
 #pragma region Commands
 
-static void ModbusPnp_SetCommandResponse(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, const char* responseData, int status)
+static void ModbusPnp_SetCommandResponse(
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
+    const char* responseData,
+    int status)
 {
     if (NULL == responseData)
     {
@@ -29,8 +32,8 @@ static void ModbusPnp_SetCommandResponse(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pn
     memset(pnpClientCommandResponseContext, 0, sizeof(*pnpClientCommandResponseContext));
     pnpClientCommandResponseContext->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
 
-    // Allocate a copy of the response data to return to the invoker.  The PnP layer that invoked PnPSampleEnvironmentalSensor_Blink
-    // takes responsibility for freeing this data.
+    // Allocate a copy of the response data to return to the invoker. The Pnp layer that invoked
+    // PnPSampleEnvironmentalSensor_Blink takes responsibility for freeing this data.
     if ((pnpClientCommandResponseContext->responseData = malloc(responseLen + 1)) == NULL)
     {
         LogError("ModbusPnp: Unable to allocate response data");
@@ -45,16 +48,11 @@ static void ModbusPnp_SetCommandResponse(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pn
     }
 }
 
-const ModbusCommand* ModbusPnp_LookupCommand(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, const char* commandName, int InterfaceId)
+const ModbusCommand* ModbusPnp_LookupCommand(
+    PModbusInterfaceConfig interfaceDefinitions,
+    const char* commandName)
 {
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(interfaceDefinitions);
-    const  ModbusInterfaceConfig* interfaceDef;
-
-    for (int i = 0; i < InterfaceId - 1; i++)
-    {
-        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
-    }
-    interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
+    const  ModbusInterfaceConfig* interfaceDef = (PModbusInterfaceConfig)(interfaceDefinitions);
 
     SINGLYLINKEDLIST_HANDLE commandList= interfaceDef->Commands;
     LIST_ITEM_HANDLE commandItemHandle = singlylinkedlist_get_head_item(commandList);
@@ -77,11 +75,11 @@ ModbusPnp_CommandHandler(
     )
 {
     PMODBUS_DEVICE_CONTEXT modbusDevice = (PMODBUS_DEVICE_CONTEXT) userContextCallback;
-    const ModbusCommand* command = ModbusPnp_LookupCommand(modbusDevice->InterfaceDefinitions, dtClientCommandContext->commandName, 0);
+    const ModbusCommand* command = ModbusPnp_LookupCommand(modbusDevice->InterfaceConfig, dtClientCommandContext->commandName);
 
     if (command == NULL)
     {
-        return; // -1;
+        return;
     }
 
     uint8_t resultedData[MODBUS_RESPONSE_MAX_LENGTH];
@@ -97,6 +95,7 @@ ModbusPnp_CommandHandler(
     capContext->hDevice = modbusDevice->hDevice;
     capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
     capContext->hLock = modbusDevice->hConnectionLock;
+    capContext->InterfaceClient = modbusDevice->pnpinterfaceHandle;
 
     int resultLength = ModbusPnp_WriteToCapability(capContext, Command, (char*)dtClientCommandContext->requestData, resultedData);
 
@@ -120,17 +119,11 @@ ModbusPnp_CommandHandler(
 
 #pragma region ReadWriteProperty
 
-const ModbusProperty* ModbusPnp_LookupProperty(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, const char* propertyName, int InterfaceId)
+const ModbusProperty* ModbusPnp_LookupProperty(
+    PModbusInterfaceConfig interfaceDefinitions,
+    const char* propertyName)
 {
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(interfaceDefinitions);
-    const ModbusInterfaceConfig* interfaceDef;
-
-    for (int i = 0; i < InterfaceId - 1; i++)
-    {
-        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
-    }
-    interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
-
+    const ModbusInterfaceConfig* interfaceDef = (PModbusInterfaceConfig)(interfaceDefinitions);
     SINGLYLINKEDLIST_HANDLE propertyList = interfaceDef->Properties;
     LIST_ITEM_HANDLE propertyItemHandle = singlylinkedlist_get_head_item(propertyList);
     const ModbusProperty* property;
@@ -145,10 +138,12 @@ const ModbusProperty* ModbusPnp_LookupProperty(SINGLYLINKEDLIST_HANDLE interface
     return NULL;
 }
 
-void ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback)
+void ModbusPnp_PropertyHandler(
+    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+    void* userContextCallback)
 {
     PMODBUS_DEVICE_CONTEXT modbusDevice = (PMODBUS_DEVICE_CONTEXT)userContextCallback;
-    const ModbusProperty* property = ModbusPnp_LookupProperty(modbusDevice->InterfaceDefinitions, dtClientPropertyUpdate->propertyName, 0);
+    const ModbusProperty* property = ModbusPnp_LookupProperty(modbusDevice->InterfaceConfig, dtClientPropertyUpdate->propertyName);
 
     if (property == NULL) {
         return;
@@ -167,6 +162,7 @@ void ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClien
     capContext->hDevice = modbusDevice->hDevice;
     capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
     capContext->hLock= modbusDevice->hConnectionLock;
+    capContext->InterfaceClient = modbusDevice->pnpinterfaceHandle;
     
     if ((char*)dtClientPropertyUpdate->propertyDesired)
     {
@@ -179,12 +175,17 @@ void ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClien
 
 #pragma region ReadOnlyProperty
 
-void ModbusPnP_ReportPropertyUpdatedCallback(DIGITALTWIN_CLIENT_RESULT pnpReportedStatus, void* userContextCallback)
+void ModbusPnp_ReportPropertyUpdatedCallback(
+    DIGITALTWIN_CLIENT_RESULT pnpReportedStatus,
+    void* userContextCallback)
 {
-    LogInfo("ModbusPnP_ReportPropertyUpdatedCallback called, result=%d, userContextCallback=%p", pnpReportedStatus, userContextCallback);
+    LogInfo("ModbusPnp_ReportPropertyUpdatedCallback called, result=%d, userContextCallback=%p", pnpReportedStatus, userContextCallback);
 }
 
-int ModbusPnP_ReportReadOnlyProperty(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* propertyName, char* data)
+int ModbusPnp_ReportReadOnlyProperty(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface,
+    char* propertyName,
+    char* data)
 {
     DIGITALTWIN_CLIENT_RESULT pnpClientResult = DIGITALTWIN_CLIENT_OK;
 
@@ -192,16 +193,16 @@ int ModbusPnP_ReportReadOnlyProperty(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInte
         return pnpClientResult;
     }
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(pnpInterface, propertyName, (unsigned char*)data, strlen(data), NULL, ModbusPnP_ReportPropertyUpdatedCallback, (void*)propertyName)) != DIGITALTWIN_CLIENT_OK)
+    if ((pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(pnpInterface, propertyName, (unsigned char*)data, strlen(data), NULL, ModbusPnp_ReportPropertyUpdatedCallback, (void*)propertyName)) != DIGITALTWIN_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_ReportReadOnlyPropertyStatusAsync failed, result=%d\n", pnpClientResult);
-        return -1;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return pnpClientResult;
 }
 
-int ModbusPnp_PollingSingleProperty(void *param)
+int ModbusPnp_PollingSingleProperty(
+    void *param)
 {
     CapabilityContext* context = param;
     ModbusProperty* property = context->capability;
@@ -217,7 +218,7 @@ int ModbusPnp_PollingSingleProperty(void *param)
     {
         int resultLen = ModbusPnp_ReadCapability(context, Property, resultedData);
         if (resultLen > 0) {
-            ModbusPnP_ReportReadOnlyProperty(PnpAdapterInterface_GetPnpInterfaceClient(property->InterfaceClient), (char*)property->Name, (char*)resultedData);
+            ModbusPnp_ReportReadOnlyProperty(context->InterfaceClient, (char*)property->Name, (char*)resultedData);
         }
 
         Condition_Wait(StopPolling, lock, property->DefaultFrequency);
@@ -235,17 +236,22 @@ int ModbusPnp_PollingSingleProperty(void *param)
 
 #pragma region SendTelemetry
 
-void ModbusPnp_ReportTelemetryCallback(DIGITALTWIN_CLIENT_RESULT pnpSendEventStatus, void* userContextCallback)
+void ModbusPnp_ReportTelemetryCallback(
+    DIGITALTWIN_CLIENT_RESULT pnpSendEventStatus,
+    void* userContextCallback)
 {
     LogInfo("ModbusPnp_ReportTelemetryCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
 }
 
-int ModbusPnp_ReportTelemetry(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data)
+int ModbusPnp_ReportTelemetry(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface,
+    char* eventName,
+    char* data)
 {
-    DIGITALTWIN_CLIENT_RESULT pnpClientResult;
+    DIGITALTWIN_CLIENT_RESULT pnpClientResult = DIGITALTWIN_CLIENT_OK;
 
     if (pnpInterface == NULL) {
-        return DIGITALTWIN_CLIENT_OK;
+        return pnpClientResult;
     }
 
     char telemetryMessageData[512] = {0};
@@ -254,13 +260,13 @@ int ModbusPnp_ReportTelemetry(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, 
     if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), ModbusPnp_ReportTelemetryCallback, (void*)eventName)) != DIGITALTWIN_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_SendTelemetryAsync failed, result=%d\n", pnpClientResult);
-        return -1; // __FAILURE__;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return pnpClientResult;
 }
 
-int ModbusPnp_PollingSingleTelemetry(void *param)
+int ModbusPnp_PollingSingleTelemetry(
+    void *param)
 {
     CapabilityContext* context = param;
     ModbusTelemetry* telemetry = context->capability;
@@ -275,7 +281,7 @@ int ModbusPnp_PollingSingleTelemetry(void *param)
         memset(resultedData, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
         int resultLen = ModbusPnp_ReadCapability(context, Telemetry, resultedData);
         if (resultLen > 0) {
-            ModbusPnp_ReportTelemetry(PnpAdapterInterface_GetPnpInterfaceClient(telemetry->InterfaceClient), (char*)telemetry->Name, (char*)resultedData);
+            ModbusPnp_ReportTelemetry(context->InterfaceClient, (char*)telemetry->Name, (char*)resultedData);
         }
 
         Condition_Wait(StopPolling, lock, telemetry->DefaultFrequency);
@@ -300,12 +306,11 @@ void StopPollingTasks()
     }
 }
 
-int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
+DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
+    void* context)
 {
     PMODBUS_DEVICE_CONTEXT deviceContext = (PMODBUS_DEVICE_CONTEXT)context;
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    const ModbusInterfaceConfig* interfaceConfig = singlylinkedlist_item_get_value(interfaceDefHandle);
-
+    const ModbusInterfaceConfig* interfaceConfig = deviceContext->InterfaceConfig;
     SINGLYLINKEDLIST_HANDLE telemetryList = interfaceConfig->Events;
     int telemetryCount = ModbusPnp_GetListCount(interfaceConfig->Events);
     LIST_ITEM_HANDLE telemetryItemHandle = NULL;
@@ -319,9 +324,9 @@ int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
     deviceContext->PollingTasks = NULL;
     if (telemetryCount > 0 || propertyCount > 0)
     {
-        deviceContext->PollingTasks = calloc(telemetryCount + propertyCount, sizeof(THREAD_HANDLE));
+        deviceContext->PollingTasks = calloc((telemetryCount + propertyCount), sizeof(THREAD_HANDLE));
         if (NULL == deviceContext->PollingTasks) {
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
         }
     }
 
@@ -350,6 +355,7 @@ int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
         pollingPayload->capability = (void*)telemetry;
         pollingPayload->hLock = deviceContext->hConnectionLock;
         pollingPayload->connectionType = deviceContext->DeviceConfig->ConnectionType;
+        pollingPayload->InterfaceClient = deviceContext->pnpinterfaceHandle;
 
         if (ThreadAPI_Create(&(deviceContext->PollingTasks[i]), ModbusPnp_PollingSingleTelemetry, (void*)pollingPayload) != THREADAPI_OK)
         {
@@ -383,6 +389,7 @@ int ModbusPnp_StartPollingAllTelemetryProperty(void* context)
         pollingPayload->capability = (void*)property;
         pollingPayload->hLock = deviceContext->hConnectionLock;
         pollingPayload->connectionType = deviceContext->DeviceConfig->ConnectionType;
+        pollingPayload->InterfaceClient = deviceContext->pnpinterfaceHandle;
 
         if (ThreadAPI_Create(&(deviceContext->PollingTasks[telemetryCount + i]), ModbusPnp_PollingSingleProperty, (void*)pollingPayload) != THREADAPI_OK)
         {

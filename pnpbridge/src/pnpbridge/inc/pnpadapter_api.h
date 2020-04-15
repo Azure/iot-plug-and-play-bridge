@@ -6,203 +6,211 @@
 
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
+#include "parson.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-// Pnp adapter interface handle
-typedef void* PNPADAPTER_INTERFACE_HANDLE;
-typedef PNPADAPTER_INTERFACE_HANDLE* PPNPADAPTER_INTERFACE_HANDLE;
-typedef void* PNPADAPTER_CONTEXT;
+    // Pnp interface handle
+    typedef void* PNPBRIDGE_INTERFACE_HANDLE;
+    typedef PNPBRIDGE_INTERFACE_HANDLE* PPNPBRIDGE_INTERFACE_HANDLE;
 
-/**
-* @brief    PNPADAPTER_PNP_INTERFACE_INITIALIZE callback uses to initialize a pnp adapter.
-*
+    // Pnp adapter handle
+    typedef void* PNPBRIDGE_ADAPTER_HANDLE;
+    typedef PNPBRIDGE_ADAPTER_HANDLE* PPNPBRIDGE_ADAPTER_HANDLE;
 
-* @param    adapterArgs           Json object containing pnp adapter parameters specified in config.
-*
-* @returns  integer greater than zero on success and other values on failure.
-*/
-typedef int(*PNPADAPTER_PNP_INTERFACE_INITIALIZE) (const char* adapterArgs);
-
-
-/**
-* @brief    PNPADAPTER_PNP_INTERFACE_SHUTDOWN callback to uninitialize the pnp adapter.
-*
-
-*
-* @returns  integer greater than zero on success and other values on failure.
-*/
-typedef int(*PNPADAPTER_PNP_INTERFACE_SHUTDOWN)();
-
-/**
-* @brief    PNPADAPTER_BIND_PNP_INTERFACE callback is called to create a new azure pnp interface client.
-*
-
-* @param    pnpInterface               Handle to pnp adapter interface
-*
-* @param    pnpDeviceClientHandle      Handle to pnp device client
-*
-* @param    payload                    Payload containing device info that was discovered
-*
-* @returns  integer greater than zero on success and other values on failure.
-*/
-//typedef int(*PNPADAPTER_BIND_PNP_INTERFACE)(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNP_DEVICE_CLIENT_HANDLE pnpDeviceClientHandle, PPNPBRIDGE_DEVICE_CHANGE_PAYLOAD payload);
-
-typedef int(*PNPADAPTER_BIND_PNP_INTERFACE)(PNPADAPTER_CONTEXT AdapterHandle,
-                                            PNPMESSAGE PnpMessage);
-
-/**
-* @brief    PNPADAPTER_RELEASE_PNP_INTERFACE uninitializes the pnp interface.
-*
-* @remarks  For private preview, azure pnp adapter should call PnP_InterfaceClient_Destroy
-
-* @param    pnpInterface    Handle to pnp adapter interface
-*
-* @returns  integer greater than zero on success and other values on failure.
-*/
-typedef int(*PNPADAPTER_INTERFACE_RELEASE)(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
+    /*
+    * @brief    Create is the adapter callback which allocates and initializes the adapter 
+    *           context on the adapter handle. The adapter may call PnpAdapterHandleSetContext 
+    *           after successfully creating and setting up the adapter context. The adapter must
+    *           free up context if a failure occurs. Destroy will not be called if Create fails.
+    *           Adapters are not statically created and initialized, instead this API will only
+    *           be invoked for adapters with device in the config which requires the corresponding 
+    *           adapter to function correctly. Therefore, a failed return value from this call
+    *           will be fatal and prevent further execution of the pnp bridge.
+    *
+    * @param    AdapterGlobalConfig         Global parameters for a pnp adapter specified in 
+                                            config (pnp_bridge_adapter_global_configs). This is a JSON
+    *                                       object structure that can be parsed using json_object_ and 
+                                            json_value APIs. This can be empty if the adapter does not
+                                            require additional config parameters
+    *
+    * @param    AdapterHandle               Handle to the pnp adapter
+    *
+    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    */
+    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_ADAPTER_CREATE) (const JSON_Object* AdapterGlobalConfig, 
+        PNPBRIDGE_ADAPTER_HANDLE AdapterHandle);
 
 
-typedef int(*PNPADAPTER_DEVICE_ARRIVED)(PNPADAPTER_INTERFACE_HANDLE pnpInterface, PNPMESSAGE payload);
-
-typedef int(*PNPADAPTER_INTERFACE_START)(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
-
-/**
-   PnpAdapterInterface Methods
-**/
-
-// Pnp adapter interface creation parameters
-typedef struct _PNPADPATER_INTERFACE_PARAMS {
-    // Used for publish_always interface setting where an interface is publised
-    // even if a device is not present and the device will be bound
-    // to an interface in future when it arrives.
-    PNPADAPTER_DEVICE_ARRIVED DeviceArrived;
-
-    // Invoked when the bridge has successfuly published this interface
-    PNPADAPTER_INTERFACE_START StartInterface;
-
-    // Invoked when the PnpBridge is tearing down and cleaning up all published interfaces
-	PNPADAPTER_INTERFACE_RELEASE ReleaseInterface;
-
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinInterface;
-
-    PNPADAPTER_CONTEXT PnpAdapterContext;
-
-    char* InterfaceId;
-} PNPADPATER_INTERFACE_PARAMS, *PPNPADPATER_INTERFACE_PARAMS;
+    /*
+    * @brief    PNPBRIDGE_ADAPTER_DESTOY is the callback to deallocate and deinitialize the pnp adapter context 
+                that it set up during adapter Create (PNPBRIDGE_ADAPTER_CREATE). PNPBRIDGE_ADAPTER_DESTOY
+                will be called on every adapter that was successfully created by a call to PNPBRIDGE_ADAPTER_CREATE.
+                It is not called when an adapter fails PNPBRIDGE_ADAPTER_CREATE.
+    *
+    *
+    * @param    AdapterHandle              Handle to the pnp adapter
+    *
+    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    */
+    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_ADAPTER_DESTOY)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle);
 
 
-#if defined (_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable: 4505)
-#endif
+    /*
+    * @brief    PNPBRIDGE_INTERFACE_CREATE callback is called to create a new azure pnp interface client
+    *           and bind all the interface callback functions with the digital twin client. The pnp adapter
+    *           should call DigitalTwin_InterfaceClient_Create to create the interface client and bind the
+    *           DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback and
+    *           DigitalTwin_InterfaceClient_SetCommandsCallback. The adapter must be ready to receive 
+    *           commands or property updates once it returns from this callback. The adapter should
+    *           wait until PNPBRIDGE_INTERFACE_START callback to start reporting telemetry. This call is
+    *           made once for each component in the configuration file.
+    *
+    *
+    * @param    InterfaceId               Interface Id of the interface from the config file
+    *
+    * @param    ComponentName             Component name of the interface from the config file
+    *
+    * @param    AdapterHandle             Pnp adapter handle that is associated with the interface.
+    *                                     Adapter can call PnpAdapterHandleGetContext to get the adapter
+                                          context which it may have set previously
+    *
+    *
+    * @param    AdapterInterfaceConfig    Adapter config that is interface specific (pnp_bridge_adapter_config)
+                                          from the config file
+    *
+    * @param    PnpInterfaceClient        DIGITALTWIN_INTERFACE_CLIENT_HANDLE populated from Pnp SDK's 
+                                          DigitalTwin_InterfaceClient_Create
+    *
+    * @param    PnpInterfaceHandle        Handle to Pnp interface
+    *
+    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure. If this call fails the bridge
+    *           will consider it fatal and fail to start. If this call succeeds it is expected that 
+    *           PnpInterfaceClient is set to a valid DIGITALTWIN_INTERFACE_CLIENT_HANDLE.
+    */
 
-static
-void 
-PNPADPATER_INTERFACE_PARAMS_INIT(
-    PPNPADPATER_INTERFACE_PARAMS Params,
-    PNPADAPTER_CONTEXT AdapterContext,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinInterface
-    ) 
-{
-    memset(Params, 0, sizeof(PNPADPATER_INTERFACE_PARAMS));
-    Params->DigitalTwinInterface = DigitalTwinInterface;
-    Params->PnpAdapterContext = AdapterContext;
-}
+    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_CREATE)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
+        const char* InterfaceId, const char* ComponentName, const JSON_Object* AdapterInterfaceConfig,
+        PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle, DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient);
 
-#if defined (_MSC_VER)
-#pragma warning(pop)
-#endif
+    /*
+    * @brief    PNPBRIDGE_INTERFACE_START starts the pnp interface after it has been registered with Azure Pnp.
+    *           The pnp adapter should ensure that the interface starts reporting telmetry after this call is 
+    *           made and not before it. This call is made once for each component in the configuration file.
+    *
+    * @param    PnpInterfaceHandle    Handle to Pnp interface
+    *
+    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    */
 
-/**
-* @brief    PnpAdapter_CreatePnpInterface creates a PnP Bridge adapter interface
+    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_START)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
+        PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
 
-* @param    pnpAdapterInterface          Handle to pnp adapter interface
-*
-* @returns  Result indicating status of pnp adapter interface creation
-*/
-MOCKABLE_FUNCTION(,
-int,
-PnpAdapterInterface_Create,
-    PPNPADPATER_INTERFACE_PARAMS, params,
-    PPNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
+    /*
+    * @brief    PNPBRIDGE_INTERFACE_STOP cleans up all telemetry resouces
+    *           that is associated with this interface. The interface should stop reporting telemetry but
+    *           the pnp adpater should be able to handle property update and command callbacks after this
+    *           call returns. This call is made once for each component in the configuration file.
+    *
+    * @param    PnpInterfaceHandle    Handle to Pnp interface
+    *
+    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    */
+    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_STOP)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
+
+    /*
+    * @brief    PNPBRIDGE_INTERFACE_DESTROY cleans up the pnp interface context and calls 
+    *           DigitalTwin_InterfaceClient_Destroy on the interface. This call is made once for each 
+    *           component in the configuration file.
+    *
+    *
+    * @param    PnpInterfaceHandle    Handle to Pnp interface
+    *
+    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    */
+    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_DESTROY)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
+
+    /*
+        PnpAdapter and Interface Methods
+    */
+
+    /**
+    * @brief    PnpAdapterHandleSetContext sets adapter context on an adapter handle. If a context was already set 
+    *           from a previous call to PnpAdapterHandleSetContext, the context set from the latest call will be retained
+
+    * @param    AdapterHandle          Handle to pnp adapter
+    *
+    * @param    AdapterContext         Context to pnp adapter
+    *
+    * @returns  void  PnpAdapterHandleSetContext will always overwrite the adapter context successfully
+    */
+    MOCKABLE_FUNCTION(,
+        void,
+        PnpAdapterHandleSetContext,
+        PNPBRIDGE_ADAPTER_HANDLE, AdapterHandle,
+        void*, AdapterContext
     );
 
-/**
-* @brief    PnpAdapter_DestroyPnpInterface destroys a PnP Bridge adapter interface
+    /**
+    * @brief    PnpAdapterHandleGetContext gets adapter context from an adapter handle
 
-* @param    pnpAdapterInterface          Handle to pnp adapter interface
-*
-*/
-MOCKABLE_FUNCTION(,
-void,
-PnpAdapterInterface_Destroy,
-    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
+    * @param    AdapterHandle          Handle to pnp adapter
+    *
+    * @returns  void *                 Adapter context
+    */
+    MOCKABLE_FUNCTION(,
+        void*,
+        PnpAdapterHandleGetContext,
+        PNPBRIDGE_ADAPTER_HANDLE, AdapterHandle
     );
 
-/**
-* @brief    PnpAdapter_GetPnpInterfaceClient gets the Azure iot pnp interface client handle
+    /**
+    * @brief    PnpInterfaceHandleSetContext sets context on an interface handle
 
-* @param    pnpInterface          Handle to pnp adapter interface
-*
-* @returns  Handle to Azure Pnp Interface client
-*/
-MOCKABLE_FUNCTION(,
-DIGITALTWIN_INTERFACE_CLIENT_HANDLE,
-PnpAdapterInterface_GetPnpInterfaceClient,
-    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
+    * @param    InterfaceHandle          Handle to pnp adapter
+    *
+    * @param    InterfaceContext         Interface context to set
+    *
+    * @returns  void  PnpInterfaceHandleSetContext will always overwrite the interface context
+    */
+    MOCKABLE_FUNCTION(,
+        void,
+        PnpInterfaceHandleSetContext,
+        PNPBRIDGE_INTERFACE_HANDLE, InterfaceHandle,
+        void*, InterfaceContext
     );
 
-/**
-* @brief    PnpAdapter_SetContext sets a context for pnp adapter interface handle
+    /**
+    * @brief    PnpInterfaceHandleGetContext gets adapter context from an adapter handle
 
-* @param    pnpInterface          Handle to pnp adapter interface
-*
-* @param    Context               Pointer to a context
-*
-* @returns  integer greater than zero on success and other values on failure.
-*/
-MOCKABLE_FUNCTION(,
-int,
-PnpAdapterInterface_SetContext,
-    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface,
-    void*, context
+    * @param    AdapterHandle          Handle to pnp interface
+    *
+    * @returns  void *                 Interface context
+    */
+    MOCKABLE_FUNCTION(,
+        void*,
+        PnpInterfaceHandleGetContext,
+        PNPBRIDGE_INTERFACE_HANDLE, InterfaceHandle
     );
 
-/**
-* @brief    PnpAdapter_GetContext gets context set by pnp adapter.
-*
-* @remarks  PnpAdapter_GetContext is used to get the context set using PnpAdapter_SetContext
 
-* @param    pnpInterface         Handle to pnp adapter interface
-*
-* @returns  void* context
-*/
-MOCKABLE_FUNCTION(,
-void*,
-PnpAdapterInterface_GetContext,
-    PNPADAPTER_INTERFACE_HANDLE, pnpAdapterInterface
-    );
+    /*
+        PnpAdapter Binding info
+    */
+    typedef struct _PNP_ADAPTER {
+        // Identity of the pnp adapter that is retrieved from the config
+        const char* identity;
 
-/*
-	PnpAdapter Binding info
-*/
-typedef struct _PNP_ADAPTER {
-    // Identity of the Pnp Adapter that will be used in the config 
-    // of a device under PnpParameters
-    const char* identity;
-
-    PNPADAPTER_PNP_INTERFACE_INITIALIZE initialize;
-
-	PNPADAPTER_BIND_PNP_INTERFACE createPnpInterface;
-
-	//PNPADAPTER_RELEASE_PNP_INTERFACE releaseInterface;
-
-	PNPADAPTER_PNP_INTERFACE_SHUTDOWN shutdown;
-} PNP_ADAPTER, *PPNP_ADAPTER;
+        PNPBRIDGE_ADAPTER_CREATE createAdapter;
+        PNPBRIDGE_INTERFACE_CREATE createPnpInterface;
+        PNPBRIDGE_INTERFACE_START startPnpInterface;
+        PNPBRIDGE_INTERFACE_STOP stopPnpInterface;
+        PNPBRIDGE_INTERFACE_DESTROY destroyPnpInterface;
+        PNPBRIDGE_ADAPTER_DESTOY destroyAdapter;
+    } PNP_ADAPTER, * PPNP_ADAPTER;
 
 #ifdef __cplusplus
 }

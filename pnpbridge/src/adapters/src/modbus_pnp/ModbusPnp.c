@@ -7,7 +7,6 @@
 #include "azure_c_shared_utility/singlylinkedlist.h"
 
 #include "parson.h"
-
 #include "ModbusPnp.h"
 #include "ModbusCapability.h"
 #include "ModbusConnection/ModbusConnection.h"
@@ -19,14 +18,9 @@
     #define strcmpcasei stricmp
 #endif
 
-const char* modbusDeviceChangeMessageformat = "{ \
-                                                 \"identity\": \"modbus-pnp-discovery\" \
-                                               }";
-
-#pragma region PnpDiscovery
-#pragma endregion
-
-int ModbusPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list) {
+int ModbusPnp_GetListCount(
+    SINGLYLINKEDLIST_HANDLE list) 
+{
     if (NULL == list) {
         return 0;
     }
@@ -42,7 +36,8 @@ int ModbusPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list) {
 
 #pragma region Parser
 
-ModbusDataType ToModbusDataTypeEnum(const char* dataType)
+ModbusDataType ToModbusDataTypeEnum(
+    const char* dataType)
 {
     if (strcmpcasei(dataType, "hexstring") == 0) {
         return HEXSTRING;
@@ -67,32 +62,21 @@ ModbusDataType ToModbusDataTypeEnum(const char* dataType)
     return INVALID;
 }
 
-int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Object* configObj)
+DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
+    ModbusInterfaceConfig* ModbusInterfaceConfig,
+    JSON_Object* ConfigObj)
 {
-    ModbusDeviceConfig* deviceConfig = deviceContext->DeviceConfig;
-    SINGLYLINKEDLIST_HANDLE interfaceDefinitions = deviceContext->InterfaceDefinitions;
-    const char* interfaceId = NULL;
-
-    //Get interface ID
-    interfaceId = (const char*)json_object_dotget_string(configObj, "interfaceId");
-    if (NULL == interfaceId) {
-        LogError("interfaceId parameter is missing in configuration");
-        return -1;
-    }
-
-    // inline interface
-    ModbusInterfaceConfig* interfaceConfig = calloc(1, sizeof(ModbusInterfaceConfig));
-    if (!interfaceConfig)
+    if (NULL == ModbusInterfaceConfig)
     {
-        LogError("Could not allocate memory for interface configuration.");
-        return -1;
+        LogError("Cannot populate interface config for modbus adapter.");
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
-    interfaceConfig->Events = singlylinkedlist_create();
-    interfaceConfig->Properties = singlylinkedlist_create();
-    interfaceConfig->Commands = singlylinkedlist_create();
-    interfaceConfig->Id = interfaceId;
 
-    JSON_Object* telemetryList = json_object_dotget_object(configObj, "telemetry");
+    ModbusInterfaceConfig->Events = singlylinkedlist_create();
+    ModbusInterfaceConfig->Properties = singlylinkedlist_create();
+    ModbusInterfaceConfig->Commands = singlylinkedlist_create();
+
+    JSON_Object* telemetryList = json_object_dotget_object(ConfigObj, "telemetry");
     for (size_t i = 0; i < json_object_get_count(telemetryList); i++)
     {
         const char* name = json_object_get_name(telemetryList, i);
@@ -101,14 +85,14 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
         if (NULL == telemetryArgs)
         {
             LogError("ERROR: Telemetry \"%s\" definition is empty.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         ModbusTelemetry* telemetry = calloc(1, sizeof(ModbusTelemetry));
         if (NULL == telemetry)
         {
             LogError("Failed to allocation memory for telemetry configuration: \"%s\". ", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
         }
 
         telemetry->Name = name;
@@ -117,52 +101,46 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
         if (0 == telemetry->StartAddress)
         {
             LogError("\"startAddress\" of telemetry \"%s\" is in valid. ", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
         telemetry->Length = (uint8_t)json_object_dotget_number(telemetryArgs, "length");
         if (0 == telemetry->Length)
         {
             LogError("\"length\" of telemetry \"%s\" is in valid. ", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         const char* dataTypeStr = (const char*)json_object_dotget_string(telemetryArgs, "dataType");
         if (NULL == dataTypeStr)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid. ", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
         telemetry->DataType = ToModbusDataTypeEnum(dataTypeStr);
         if (telemetry->DataType == INVALID)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         telemetry->DefaultFrequency = (int)json_object_dotget_number(telemetryArgs, "defaultFrequency");
         if (0 == telemetry->DefaultFrequency)
         {
             LogError("\"defaultFrequency\" of telemetry \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         telemetry->ConversionCoefficient = json_object_dotget_number(telemetryArgs, "conversionCoefficient");
         if (0 == telemetry->ConversionCoefficient)
         {
             LogError("\"conversionCoefficient\" of telemetry \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
-        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetReadRequest(deviceConfig, Telemetry, telemetry))
-        {
-            LogError("Failed to create read request for telemetry \"%s\".", name);
-            return -1;
-        }
-
-        singlylinkedlist_add(interfaceConfig->Events, telemetry);
+        singlylinkedlist_add(ModbusInterfaceConfig->Events, telemetry);
     }
 
-    JSON_Object* propertyList = json_object_dotget_object(configObj, "properties");
+    JSON_Object* propertyList = json_object_dotget_object(ConfigObj, "properties");
     for (size_t i = 0; i < json_object_get_count(propertyList); i++)
     {
         const char* name = json_object_get_name(propertyList, i);
@@ -171,14 +149,14 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
         if (NULL == propertyArgs)
         {
             LogError("ERROR: Property \"%s\" definition is empty.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         ModbusProperty* property = calloc(1, sizeof(ModbusProperty));
         if (NULL == property)
         {
             LogError("Failed to allocation memory for property configuration: \"%s\".", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
         }
 
         property->Name = name;
@@ -187,72 +165,54 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
         if (0 == property->StartAddress)
         {
             LogError("\"startAddress\" of property \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         property->Length = (uint8_t)json_object_dotget_number(propertyArgs, "length");
         if (0 == property->Length)
         {
             LogError("\"length\" of property \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         const char* dataTypeStr = (const char*)json_object_dotget_string(propertyArgs, "dataType");
         if (NULL == dataTypeStr)
         {
             LogError("\"dataType\" of property \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
         property->DataType = ToModbusDataTypeEnum(dataTypeStr);
         if (property->DataType == INVALID)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         property->DefaultFrequency = (int)json_object_dotget_number(propertyArgs, "defaultFrequency");
         if (0 == property->DefaultFrequency)
         {
             LogError("\"defaultFrequency\" of property \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         property->ConversionCoefficient = json_object_dotget_number(propertyArgs, "conversionCoefficient");
         if (0 == property->ConversionCoefficient)
         {
             LogError("\"conversionCoefficient\" of property \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         property->Access = (int)json_object_dotget_number(propertyArgs, "access");
         if (0 == property->Access)
         {
             LogError("\"conversionCoefficient\" of property \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
-        switch (deviceConfig->ConnectionType)
-        {
-            case TCP:
-                property->WriteRequest.TcpRequest.MBAP.UnitID = deviceContext->DeviceConfig->UnitId;
-                break;
-            case RTU:
-                property->WriteRequest.RtuRequest.UnitID = deviceContext->DeviceConfig->UnitId;
-                break;
-            default:
-                break;
-        }
-
-        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetReadRequest(deviceConfig, Property, property))
-        {
-            LogError("Failed to create read request for property \"%s\".", name);
-            return -1;
-        }
-
-        singlylinkedlist_add(interfaceConfig->Properties, property);
+        singlylinkedlist_add(ModbusInterfaceConfig->Properties, property);
     }
 
-    JSON_Object* commandList = json_object_dotget_object(configObj, "commands");
+    JSON_Object* commandList = json_object_dotget_object(ConfigObj, "commands");
     for (size_t i = 0; i < json_object_get_count(commandList); i++)
     {
         const char* name = json_object_get_name(commandList, i);
@@ -261,7 +221,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
         if (NULL == commandArgs)
         {
             LogError("ERROR: Command \"%s\" definition is empty.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         ModbusCommand* command = calloc(1, sizeof(ModbusCommand));
@@ -269,7 +229,7 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
         if (NULL == command)
         {
             LogError("Failed to allocation memory for command configuration: \"%s\".", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
         }
 
         command->Name = name;
@@ -278,72 +238,58 @@ int ModbusPnp_ParseInterfaceConfig(MODBUS_DEVICE_CONTEXT *deviceContext, JSON_Ob
         if (0 == command->StartAddress)
         {
             LogError("\"startAddress\" of command \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         command->Length = (uint8_t)json_object_dotget_number(commandArgs, "length");
         if (0 == command->Length)
         {
             LogError("\"length\" of command \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         const char* dataTypeStr = (const char*)json_object_dotget_string(commandArgs, "dataType");
         if (NULL == dataTypeStr)
         {
             LogError("\"dataType\" of command \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
         command->DataType = ToModbusDataTypeEnum(dataTypeStr);
         if (command->DataType == INVALID)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         command->ConversionCoefficient = json_object_dotget_number(commandArgs, "conversionCoefficient");
         if (0 == command->ConversionCoefficient)
         {
             LogError("\"conversionCoefficient\" of command \"%s\" is in valid.", name);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
-        switch (deviceConfig->ConnectionType)
-        {
-            case TCP:
-                command->WriteRequest.TcpRequest.MBAP.UnitID = deviceContext->DeviceConfig->UnitId;
-                break;
-            case RTU:
-                command->WriteRequest.RtuRequest.UnitID = deviceContext->DeviceConfig->UnitId;
-                break;
-            default:
-                break;
-
-        }
-
-        singlylinkedlist_add(interfaceConfig->Commands, command);
+        singlylinkedlist_add(ModbusInterfaceConfig->Commands, command);
     }
-
-
-    singlylinkedlist_add(interfaceDefinitions, interfaceConfig);
 
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* configObj)
+int ModbusPnp_ParseRtuSettings(
+    ModbusDeviceConfig* deviceConfig,
+    JSON_Object* configObj)
 {
     //Get serial port name
     deviceConfig->ConnectionConfig.RtuConfig.Port = (char*)json_object_dotget_string(configObj, "port");
     if (NULL == deviceConfig->ConnectionConfig.RtuConfig.Port) {
         LogError("ComPort parameter is missing in RTU configuration");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
     //Get serial baudRate
     const char* baudRateStr = (const char*)json_object_dotget_string(configObj, "baudRate");
     if (NULL == baudRateStr) {
         LogError("BaudRate parameter is missing in RTU configuration");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
     deviceConfig->ConnectionConfig.RtuConfig.BaudRate = atoi(baudRateStr);
 
@@ -351,7 +297,7 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
     deviceConfig->ConnectionConfig.RtuConfig.DataBits = (uint8_t)json_object_dotget_number(configObj, "dataBits");
     if (7 != deviceConfig->ConnectionConfig.RtuConfig.DataBits && 8 != deviceConfig->ConnectionConfig.RtuConfig.DataBits) {
         LogError("data Bits parameter is missing or invalid in RTU configuration.  Valid Input: {7, 8}");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
     //Get serial stopBits
@@ -368,7 +314,7 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
         }
         else {
             LogError("Invalide Stop Bit parameter in RTU configuration. Valid Input: {\"ONE\", \"TWO\", \"OnePointFive\"}");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
     }
     else {
@@ -376,7 +322,7 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
         uint8_t stopBitInput = (uint8_t)json_object_dotget_number(configObj, "stopBits");
         if (0 == stopBitInput) {
             LogError("Stop Bit parameter is missing in RTU configuration.");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
         }
 
         switch (stopBitInput) {
@@ -391,7 +337,7 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
             break;
         default:
             LogError("Invalide Stop Bit parameter in RTU configuration. Valid Input: {\"ONE\", \"TWO\", \"OnePointFive\", 1, 2, 3}");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
             break;
         }
     }
@@ -427,20 +373,22 @@ int ModbusPnp_ParseRtuSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int ModbusPnP_ParseTcpSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* configObj)
+int ModbusPnP_ParseTcpSettings(
+    ModbusDeviceConfig* deviceConfig,
+    JSON_Object* configObj)
 {
     //Get serial port name
     deviceConfig->ConnectionConfig.TcpConfig.Host = (char*)json_object_dotget_string(configObj, "host");
     if (NULL == deviceConfig->ConnectionConfig.TcpConfig.Host) {
         LogError("\"Host\" parameter is missing in TCP configuration");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
     //Get serial dataBits
     deviceConfig->ConnectionConfig.TcpConfig.Port = (uint16_t)json_object_dotget_number(configObj, "port");
     if (0 == deviceConfig->ConnectionConfig.TcpConfig.Port) {
         LogError("\"Port\" is invalide in TCP configuration: Cannot be 0.");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
     deviceConfig->ConnectionType = TCP;
@@ -451,14 +399,13 @@ int ModbusPnP_ParseTcpSettings(ModbusDeviceConfig* deviceConfig, JSON_Object* co
 
 #pragma region SerialConnection
 
-typedef struct _SERIAL_DEVICE {
-    char* InterfaceName;
-} SERIAL_DEVICE, *PSERIAL_DEVICE;
-
 SINGLYLINKEDLIST_HANDLE ModbusDeviceList = NULL;
 int ModbusDeviceCount = 0;
 
-int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
+int ModbusPnp_OpenSerial(
+    MODBUS_RTU_CONFIG* rtuConfig,
+    HANDLE *serialHandle)
+{
 
 #ifdef WIN32
     *serialHandle = CreateFileA(rtuConfig->Port,
@@ -475,7 +422,7 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
     if (*serialHandle == INVALID_HANDLE_VALUE) {
         // Handle the error
         LogError("Failed to open com port %s", rtuConfig->Port);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
 #ifdef WIN32
@@ -485,7 +432,7 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
     dcbSerialParams.DCBlength = sizeof(DCB);
     if (!GetCommState(*serialHandle, &dcbSerialParams)) {
         LogError("Failed to open com port %s, %x", rtuConfig->Port, GetLastError());
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
     dcbSerialParams.BaudRate = rtuConfig->BaudRate;
     dcbSerialParams.ByteSize = rtuConfig->DataBits;
@@ -494,7 +441,7 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
     if (!SetCommState(*serialHandle, &dcbSerialParams)) {
         //error setting serial port state
         LogError("Failed to open com port %s, %x", rtuConfig->Port, GetLastError());
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
     LogInfo("Opened com port %s", rtuConfig->Port);
@@ -509,7 +456,7 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
     {
         int error = GetLastError();
         printf("Set timeout failed on com port %s, %x", rtuConfig->Port, error);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 #else
     struct termios settings;
@@ -548,7 +495,9 @@ int ModbusPnp_OpenSerial(MODBUS_RTU_CONFIG* rtuConfig, HANDLE *serialHandle) {
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int ModbusPnp_OpenSocket(MODBUS_TCP_CONFIG* tcpConfig, SOCKET *socketHandle)
+int ModbusPnp_OpenSocket(
+    MODBUS_TCP_CONFIG* tcpConfig,
+    SOCKET *socketHandle)
 {
     int result = 0;
 #ifdef WIN32
@@ -557,7 +506,7 @@ int ModbusPnp_OpenSocket(MODBUS_TCP_CONFIG* tcpConfig, SOCKET *socketHandle)
     result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != 0) {
         LogError("WSAStartup failed: %d\n", result);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 #endif
 
@@ -607,170 +556,16 @@ ExitOnError:
 #ifdef WIN32
     WSACleanup();
 #endif
-    return -1;
-}
-
-#pragma endregion
-
-int ModbusPnp_OpenDeviceWorker(void* context)
-{
-    PMODBUS_DEVICE_CONTEXT deviceContext = context;
-
-    JSON_Value* json = json_parse_string(modbusDeviceChangeMessageformat);
-    JSON_Object* jsonObject = json_value_get_object(json);
-
-    LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (interfaceItem != NULL) {
-        const ModbusInterfaceConfig* def = (const ModbusInterfaceConfig*)singlylinkedlist_item_get_value(interfaceItem);
-        PNPMESSAGE payload = NULL;
-        PNPMESSAGE_PROPERTIES* pnpMsgProps = NULL;
-
-        PnpMessage_CreateMessage(&payload);
-
-        PnpMessage_SetMessage(payload, json_serialize_to_string(json_object_get_wrapping_value(jsonObject)));
-        PnpMessage_SetInterfaceId(payload, def->Id);
-
-        pnpMsgProps = PnpMessage_AccessProperties(payload);
-        pnpMsgProps->Context = deviceContext;
-        
-        // Notify the pnpbridge of device discovery
-        deviceContext->ModbusDeviceChangeCallback(payload);
-        interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
-
-        // Drop reference on the PNPMESSAGE
-        PnpMemory_ReleaseReference(payload);
-    }
-
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int ModbusPnp_OpenDevice(ModbusDeviceConfig* deviceConfig, JSON_Object* interfaceConfig) {
-
-    PMODBUS_DEVICE_CONTEXT deviceContext = calloc(1, sizeof(MODBUS_DEVICE_CONTEXT));
-    if (!deviceContext)
-    {
-        LogError("Could not allocate memory for device context.");
-        return -1;
-    }
-
-    if (deviceConfig->ConnectionType == RTU)
-    {
-        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_OpenSerial(&(deviceConfig->ConnectionConfig.RtuConfig), &(deviceContext->hDevice)))
-        {
-            LogError("Failed to open serial connection to \"%s\".", deviceConfig->ConnectionConfig.RtuConfig.Port);
-            goto cleanup;
-        }
-    }
-    else if (deviceConfig->ConnectionType == TCP)
-    {
-        //TOOD
-        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_OpenSocket(&(deviceConfig->ConnectionConfig.TcpConfig), (SOCKET*)&(deviceContext->hDevice)))
-        {
-            LogError("Failed to open socket connection to \"%s:%d\".", deviceConfig->ConnectionConfig.TcpConfig.Host, deviceConfig->ConnectionConfig.TcpConfig.Port);
-            goto cleanup;
-        }
-    }
-    else
-    {
-        goto cleanup;
-    }
-
-    deviceContext->pnpAdapterInterface = NULL;
-    deviceContext->ModbusDeviceChangeCallback = DiscoveryAdapter_ReportDevice;
-    deviceContext->DeviceConfig = deviceConfig;
-    deviceContext->InterfaceDefinitions = singlylinkedlist_create();
-    deviceContext->hConnectionLock = Lock_Init();
-    if (NULL == deviceContext->hConnectionLock)
-    {
-        LogError("Failed to create a valid lock handle for device connection.");
-        goto cleanup;
-    }
-
-    if (ModbusPnp_ParseInterfaceConfig(deviceContext, interfaceConfig) != DIGITALTWIN_CLIENT_OK) {
-        LogError("Failed to parse Modbus interface configuration.");
-        goto cleanup;
-    }
-
-    if (ThreadAPI_Create(&deviceContext->ModbusDeviceWorker, ModbusPnp_OpenDeviceWorker, deviceContext) != THREADAPI_OK) {
-        LogError("ThreadAPI_Create failed");
-        goto cleanup;
-    }
-    return DIGITALTWIN_CLIENT_OK;
-
-cleanup:
-    free(deviceContext);
-    return -1;
-}
-
-#pragma region PnpDiscovery
-
-int 
-ModbusPnp_StartDiscovery(
-    _In_ PNPMEMORY DeviceArgs,
-    _In_ PNPMEMORY AdapterArgs
-    )
-{
-    if (DeviceArgs == NULL) {
-        LogInfo("ModbusPnp_StartDiscovery: No device discovery parameters found in configuration.");
-        return DIGITALTWIN_CLIENT_OK;
-    }
-    
-    UNREFERENCED_PARAMETER(AdapterArgs);
-
-    LogInfo("Starting modbus discovery adapter");
-
-    // Parse Modbus DeviceConfig
-    ModbusDeviceConfig* deviceConfig = calloc(1, sizeof(ModbusDeviceConfig));
-    if (!deviceConfig)
-    {
-        LogError("Could not allocate memory for device config.");
-        return -1;
-    }
-    deviceConfig->ConnectionType = UNKOWN;
-
-    PDEVICE_ADAPTER_PARMAETERS deviceParams = (PDEVICE_ADAPTER_PARMAETERS) PnpMemory_GetBuffer(DeviceArgs, NULL);
-
-    JSON_Value* jvalue = json_parse_string(deviceParams->AdapterParameters[0]);
-    JSON_Object* args = json_value_get_object(jvalue);
-    JSON_Object* deviceConfigObj = json_object_dotget_object(args, "deviceConfig");
-
-    //uint8_t unitId = (uint8_t)json_object_dotget_number(deviceConfigObj, "unitId");
-    deviceConfig->UnitId = (uint8_t)json_object_dotget_number(deviceConfigObj, "unitId");
-
-    JSON_Object* rtuArgs = json_object_dotget_object(deviceConfigObj, "rtu");
-    if (NULL != rtuArgs && ModbusPnp_ParseRtuSettings(deviceConfig, rtuArgs) != DIGITALTWIN_CLIENT_OK) {
-        LogError("Failed to parse RTU connection settings.");
-        return -1;
-    }
-
-    JSON_Object* tcpArgs = json_object_dotget_object(deviceConfigObj, "tcp");
-    if (NULL != tcpArgs && ModbusPnP_ParseTcpSettings(deviceConfig, tcpArgs) != DIGITALTWIN_CLIENT_OK) {
-        LogError("Failed to parse TCP connection settings.");
-        return -1;
-    }
-
-    if (UNKOWN == deviceConfig->ConnectionType)	{
-        LogError("Missing Modbus connection settings.");
-        return -1;
-    }
-
-    JSON_Object* interfaceConfigObj = json_object_dotget_object(args, "interfaceConfig");
-
-    LogInfo("Opening device %s", deviceConfig->ConnectionConfig.RtuConfig.Port);
-    ModbusPnp_OpenDevice(deviceConfig, interfaceConfigObj);
-
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int ModbusPnp_StopDiscovery() {
-    return DIGITALTWIN_CLIENT_OK;
+    return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
 }
 
 #pragma endregion
 
 
 #pragma region PnpInterface
-void ModbusPnp_FreeTelemetryList(SINGLYLINKEDLIST_HANDLE telemetryList) {
+void ModbusPnp_FreeTelemetryList(
+    SINGLYLINKEDLIST_HANDLE telemetryList)
+{
     if (NULL == telemetryList) {
         return;
     }
@@ -783,7 +578,9 @@ void ModbusPnp_FreeTelemetryList(SINGLYLINKEDLIST_HANDLE telemetryList) {
     }
 }
 
-void ModbusPnp_FreeCommandList(SINGLYLINKEDLIST_HANDLE commandList) {
+void ModbusPnp_FreeCommandList(
+    SINGLYLINKEDLIST_HANDLE commandList)
+{
     if (NULL == commandList) {
         return;
     }
@@ -796,7 +593,9 @@ void ModbusPnp_FreeCommandList(SINGLYLINKEDLIST_HANDLE commandList) {
     }
 }
 
-void ModbusPnp_FreePropertyList(SINGLYLINKEDLIST_HANDLE propertyList) {
+void ModbusPnp_FreePropertyList(
+    SINGLYLINKEDLIST_HANDLE propertyList)
+{
     if (NULL == propertyList) {
         return;
     }
@@ -809,14 +608,13 @@ void ModbusPnp_FreePropertyList(SINGLYLINKEDLIST_HANDLE propertyList) {
     }
 }
 
-void ModbusPnP_CleanupPollingTasks(PMODBUS_DEVICE_CONTEXT deviceContext)
+void Modbus_CleanupPollingTasks(
+    PMODBUS_DEVICE_CONTEXT deviceContext)
 {
     if (NULL != deviceContext->PollingTasks)
     {
         StopPollingTasks();
-
-        LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-        const ModbusInterfaceConfig* interfaceConfig = singlylinkedlist_item_get_value(interfaceDefHandle);
+        const ModbusInterfaceConfig* interfaceConfig = (PModbusInterfaceConfig)(deviceContext->InterfaceConfig);
         int telemetryCount = ModbusPnp_GetListCount(interfaceConfig->Events);
         int propertyCount = ModbusPnp_GetListCount(interfaceConfig->Properties);
         int threadCount = telemetryCount + propertyCount;
@@ -835,112 +633,413 @@ void ModbusPnP_CleanupPollingTasks(PMODBUS_DEVICE_CONTEXT deviceContext)
     }
 }
 
-int
-ModbusPnp_StartPnpInterface(
-    _In_ PNPADAPTER_INTERFACE_HANDLE PnpInterface
-    )
+DIGITALTWIN_CLIENT_RESULT
+Modbus_StartPnpInterface(
+    _In_ PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    _In_ PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpAdapterInterface_GetContext(PnpInterface);
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
     if (deviceContext == NULL)
     {
-        LogError("Device context is null");
-        return -1;
+        LogError("Modbus_StartPnpInterface: Device context is null, cannot start interface.");
+        return DIGITALTWIN_CLIENT_ERROR;
     }
     // Start polling all telemetry
     return ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
 }
 
-int ModbusPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpAdapterInterface_GetContext(pnpInterface);
-
-    if (NULL == deviceContext) {
-        return DIGITALTWIN_CLIENT_OK;
+DIGITALTWIN_CLIENT_RESULT Modbus_DestroyPnpAdapter(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    PMODBUS_ADAPTER_CONTEXT adapterContext = PnpAdapterHandleGetContext(AdapterHandle);
+    if (adapterContext == NULL)
+    {
+        return result;
     }
 
-    ModbusPnP_CleanupPollingTasks(deviceContext);
-
-    if (INVALID_FILE != deviceContext->hDevice) {
-
-        ModbusPnp_CloseDevice(deviceContext->DeviceConfig->ConnectionType, deviceContext->hDevice, deviceContext->hConnectionLock);
-    }
-
-    if (NULL != deviceContext->hConnectionLock) {
-        Lock_Deinit(deviceContext->hConnectionLock);
-    }
-
-    if (deviceContext->InterfaceDefinitions) {
-        LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-        while (interfaceItem != NULL) {
-            ModbusInterfaceConfig* def = (ModbusInterfaceConfig*)singlylinkedlist_item_get_value(interfaceItem);
+    if (adapterContext->InterfaceDefinitions)
+    {
+        LIST_ITEM_HANDLE interfaceDef = singlylinkedlist_get_head_item(adapterContext->InterfaceDefinitions);
+        while (interfaceDef != NULL) {
+            ModbusInterfaceConfig* def = (ModbusInterfaceConfig*)singlylinkedlist_item_get_value(interfaceDef);
             ModbusPnp_FreeTelemetryList(def->Events);
             ModbusPnp_FreeCommandList(def->Commands);
             ModbusPnp_FreePropertyList(def->Properties);
 
             free(def);
-            interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
+            interfaceDef = singlylinkedlist_get_next_item(interfaceDef);
         }
-        singlylinkedlist_destroy(deviceContext->InterfaceDefinitions);
+        singlylinkedlist_destroy(adapterContext->InterfaceDefinitions);
     }
+    free(adapterContext);
+    return result;
+}
+
+DIGITALTWIN_CLIENT_RESULT Modbus_CreatePnpAdapter(
+    const JSON_Object* AdapterGlobalConfig,
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    PMODBUS_ADAPTER_CONTEXT adapterContext = calloc(1, sizeof(MODBUS_ADAPTER_CONTEXT));
+    if (!adapterContext)
+    {
+        LogError("Could not allocate memory for adapter context.");
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        goto exit;
+    }
+
+    adapterContext->InterfaceDefinitions = singlylinkedlist_create();
+
+    if (AdapterGlobalConfig == NULL)
+    {
+        LogError("Modbus adapter requires associated global parameters in config");
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
+
+    // Build list of interface configs supported by the adapter
+    for (int i = 0; i < (int)json_object_get_count(AdapterGlobalConfig); i++) {
+        const char* modbusConfigIdentity = json_object_get_name(AdapterGlobalConfig, i);
+        ModbusInterfaceConfig* interfaceConfig = calloc(1, sizeof(ModbusInterfaceConfig));
+        if (!interfaceConfig)
+        {
+            LogError("Could not allocate memory for interface configuration.");
+            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            goto exit;
+        }
+
+        if (0 != mallocAndStrcpy_s((char**)(&interfaceConfig->Id), modbusConfigIdentity))
+        {
+            LogError("Could not allocate memory for interface configuration's identity");
+            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            free(interfaceConfig);
+            goto exit;
+        }
+
+        JSON_Object* interfaceConfigJson = json_object_get_object(AdapterGlobalConfig, modbusConfigIdentity);
+
+        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_ParseInterfaceConfig(interfaceConfig, interfaceConfigJson))
+        {
+            LogError("Could not parse interface config definition for %s", (char*)interfaceConfig->Id);
+            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            goto exit;
+        }
+
+        singlylinkedlist_add(adapterContext->InterfaceDefinitions, interfaceConfig);
+
+    }
+
+    PnpAdapterHandleSetContext(AdapterHandle, (void*)adapterContext);
+
+exit:
+    if (result != DIGITALTWIN_CLIENT_OK)
+    {
+        result = Modbus_DestroyPnpAdapter(AdapterHandle);
+    }
+    return result;
+}
+
+DIGITALTWIN_CLIENT_RESULT Modbus_RetrieveMatchingInterfaceConfig(
+    const char* ModbusId,
+    SINGLYLINKEDLIST_HANDLE InterfaceDefinitions,
+    PMODBUS_DEVICE_CONTEXT DeviceContext)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    if (ModbusId == NULL || InterfaceDefinitions == NULL || DeviceContext == NULL)
+    {
+        LogError("Modbus_RetrieveMatchingInterfaceConfig: Invalid arguments.");
+        return result;
+    }
+
+    LIST_ITEM_HANDLE interfaceDefinition = singlylinkedlist_get_head_item(InterfaceDefinitions);
+
+    while (NULL != interfaceDefinition) {
+
+        PModbusInterfaceConfig interfaceConfig = (PModbusInterfaceConfig)singlylinkedlist_item_get_value(interfaceDefinition);
+        if (strcmp(interfaceConfig->Id, ModbusId) == 0)
+        {
+            DeviceContext->InterfaceConfig = interfaceConfig;
+            result = DIGITALTWIN_CLIENT_OK;
+        }
+        interfaceDefinition = singlylinkedlist_get_next_item(interfaceDefinition);
+    }
+
+    return result;
+}
+
+DIGITALTWIN_CLIENT_RESULT Modbus_ParseDeviceConfig(
+    const JSON_Object* AdapterInterfaceConfig,
+    PModbusDeviceConfig DeviceConfig)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    if (AdapterInterfaceConfig == NULL || DeviceConfig == NULL)
+    {
+        LogError("Modbus_ParseDeviceConfig: Invalid arguments.");
+        return result;
+    }
+
+    DeviceConfig->UnitId = (uint8_t)json_object_get_number(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_UNITID);
+    JSON_Object* rtuArgs = json_object_get_object(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_RTU);
+    if (NULL != rtuArgs && ModbusPnp_ParseRtuSettings(DeviceConfig, rtuArgs) != DIGITALTWIN_CLIENT_OK) {
+        LogError("Failed to parse RTU connection settings.");
+        result =  DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        goto exit;
+    }
+
+    JSON_Object* tcpArgs = json_object_get_object(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_TCP);
+    if (NULL != tcpArgs && ModbusPnP_ParseTcpSettings(DeviceConfig, tcpArgs) != DIGITALTWIN_CLIENT_OK) {
+        LogError("Failed to parse RTU connection settings.");
+        result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        goto exit;
+    }
+
+    if (UNKOWN == DeviceConfig->ConnectionType) {
+        LogError("Missing Modbus connection settings.");
+        result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        goto exit;
+    }
+exit:
+    return result;
+}
+
+DIGITALTWIN_CLIENT_RESULT Modbus_DestroyPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+
+    if (NULL == deviceContext) {
+        return DIGITALTWIN_CLIENT_OK;
+    }
+
+    // Call DigitalTwin_InterfaceClient_Destroy.
+    // This will block if there are any active callbacks in this interface, and then
+    // mark the underlying handle such that no future callbacks shall come to it
+
+    DigitalTwin_InterfaceClient_Destroy(deviceContext->pnpinterfaceHandle);
 
     if (deviceContext->DeviceConfig)
     {
         free(deviceContext->DeviceConfig);
     }
-    if (deviceContext->InterfaceDefinitions)
-    {
-        free(deviceContext->InterfaceDefinitions);
-    }
     if (deviceContext)
     {
         free(deviceContext);
     }
-    
+
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int 
-ModbusPnp_CreatePnpInterface(
-    _In_ PNPADAPTER_CONTEXT AdapterHandle,
-    _In_ PNPMESSAGE Message
-    )
+DIGITALTWIN_CLIENT_RESULT
+Modbus_CreatePnpInterface(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    const char* InterfaceId,
+    const char* ComponentName,
+    const JSON_Object* AdapterInterfaceConfig,
+    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
-    PNPMESSAGE_PROPERTIES* pnpMsgProps = NULL;
-    PMODBUS_DEVICE_CONTEXT deviceContext = NULL;
-    const char* interfaceId = NULL;
-    int result = 0;
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
+    PMODBUS_DEVICE_CONTEXT deviceContext = calloc(1, sizeof(MODBUS_DEVICE_CONTEXT));
+    if (!deviceContext)
+    {
+        LogError("Could not allocate memory for device context.");
+        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+    }
 
-    pnpMsgProps = PnpMessage_AccessProperties(Message);
-    deviceContext = (PMODBUS_DEVICE_CONTEXT)pnpMsgProps->Context;
-    interfaceId = PnpMessage_GetInterfaceId(Message);
+    // Populate interface config from adapter's supported interface definitions
 
-    // Create an Azure Pnp interface for each interface in the SerialPnp descriptor
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (interfaceDefHandle != NULL) {
-        PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface = NULL;
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
-        char** propertyNames = NULL;
-        int propertyCount = 0;
-        DIGITALTWIN_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
-        char** commandNames = NULL;
-        int commandCount = 0;
-        DIGITALTWIN_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
-        const ModbusInterfaceConfig* interfaceConfig = singlylinkedlist_item_get_value(interfaceDefHandle);
-        DIGITALTWIN_CLIENT_RESULT dtRes;
+    PMODBUS_ADAPTER_CONTEXT adapterContext = PnpAdapterHandleGetContext(AdapterHandle);
+    const char* modbusIdentity = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MODBUS_IDENTITY);
+    result = Modbus_RetrieveMatchingInterfaceConfig(modbusIdentity, adapterContext->InterfaceDefinitions, deviceContext);
+    if (DIGITALTWIN_CLIENT_OK != result)
+    {
+        LogError("Could not find matching modbus interface configuration for this interface");
+        goto exit;
+    }
 
-        // Construct property table
+    // Initialize interface's connection lock
+
+    deviceContext->hConnectionLock = Lock_Init();
+    if (NULL == deviceContext->hConnectionLock)
+    {
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        LogError("Failed to create a valid lock handle for device connection.");
+        goto exit;
+    }
+
+    // Parse interface specific device config
+    ModbusDeviceConfig* deviceConfig = calloc(1, sizeof(ModbusDeviceConfig));
+    if (!deviceConfig)
+    {
+        LogError("Could not allocate memory for device config.");
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        goto exit;
+    }
+    deviceConfig->ConnectionType = UNKOWN;
+    result = Modbus_ParseDeviceConfig(AdapterInterfaceConfig, deviceConfig);
+    if (result != DIGITALTWIN_CLIENT_OK)
+    {
+        LogError("Could not parse device configuration for this modbus interface.");
+        goto exit;
+    }
+
+    // Open the device
+    if (deviceConfig->ConnectionType == RTU)
+    {
+        result = ModbusPnp_OpenSerial(&(deviceConfig->ConnectionConfig.RtuConfig), 
+                    &(deviceContext->hDevice));
+        if (DIGITALTWIN_CLIENT_OK != result)
         {
-            SINGLYLINKEDLIST_HANDLE propertyList = interfaceConfig->Properties;
-            propertyCount = ModbusPnp_GetListCount(interfaceConfig->Properties);
+            LogError("Failed to open serial connection to \"%s\".", 
+                        deviceConfig->ConnectionConfig.RtuConfig.Port);
+            goto exit;
+        }
+    }
+    else if (deviceConfig->ConnectionType == TCP)
+    {
+        result = ModbusPnp_OpenSocket(&(deviceConfig->ConnectionConfig.TcpConfig), 
+                    (SOCKET*)&(deviceContext->hDevice));
+        if (DIGITALTWIN_CLIENT_OK != result)
+        {
+            LogError("Failed to open socket connection to \"%s:%d\".", 
+                deviceConfig->ConnectionConfig.TcpConfig.Host, 
+                deviceConfig->ConnectionConfig.TcpConfig.Port);
+            goto exit;
+        }
+    }
+    else
+    {
+        goto exit;
+    }
 
-            int readWritePropertyCount = 0;
-            LIST_ITEM_HANDLE propertyItemHandle = NULL;
-            SINGLYLINKEDLIST_HANDLE readWritePropertyList = singlylinkedlist_create();
+    deviceContext->DeviceConfig = deviceConfig;
 
-            for (int i = 0; i < propertyCount ; i++) 
+    // Set read requests for telemetry
+    if (NULL != deviceContext->InterfaceConfig->Events)
+    {
+        LIST_ITEM_HANDLE telemetryHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceConfig->Events);
+
+        while (NULL != telemetryHandle) {
+            PModbusTelemetry telemetry = (PModbusTelemetry)singlylinkedlist_item_get_value(telemetryHandle);
+            result = ModbusPnp_SetReadRequest(deviceConfig, Telemetry, telemetry);
+            if (DIGITALTWIN_CLIENT_OK != result)
+            {
+                LogError("Failed to create read request for telemetry \"%s\".", telemetry->Name);
+                return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            }
+            telemetryHandle = singlylinkedlist_get_next_item(telemetryHandle);
+        }
+    }
+
+    // Set read requests for property
+    if (NULL != deviceContext->InterfaceConfig->Properties)
+    {
+        LIST_ITEM_HANDLE propertyhandle = singlylinkedlist_get_head_item(deviceContext->InterfaceConfig->Properties);
+
+        while (NULL != propertyhandle) {
+            PModbusProperty property = (PModbusProperty)singlylinkedlist_item_get_value(propertyhandle);
+            switch (deviceConfig->ConnectionType)
+            {
+                case TCP:
+                    property->WriteRequest.TcpRequest.MBAP.UnitID = deviceContext->DeviceConfig->UnitId;
+                    break;
+                case RTU:
+                    property->WriteRequest.RtuRequest.UnitID = deviceContext->DeviceConfig->UnitId;
+                    break;
+                default:
+                    break;
+            }
+
+            result = ModbusPnp_SetReadRequest(deviceConfig, Property, property);
+            if (DIGITALTWIN_CLIENT_OK != result)
+            {
+                LogError("Failed to create read request for telemetry \"%s\".", property->Name);
+                return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            }
+            propertyhandle = singlylinkedlist_get_next_item(propertyhandle);
+        }
+    }
+
+    // Set read requests for commands
+    if (NULL != deviceContext->InterfaceConfig->Commands)
+    {
+        LIST_ITEM_HANDLE commandHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceConfig->Commands);
+
+        while (NULL != commandHandle) {
+            PModbusCommand command = (PModbusCommand)singlylinkedlist_item_get_value(commandHandle);
+            switch (deviceConfig->ConnectionType)
+            {
+                case TCP:
+                    command->WriteRequest.TcpRequest.MBAP.UnitID = deviceContext->DeviceConfig->UnitId;
+                    break;
+                case RTU:
+                    command->WriteRequest.RtuRequest.UnitID = deviceContext->DeviceConfig->UnitId;
+                    break;
+                default:
+                    break;
+            }
+            commandHandle = singlylinkedlist_get_next_item(commandHandle);
+        }
+    }
+
+    int propertyCount = 0;
+    int commandCount = 0;
+
+    // Construct a property table
+    if (NULL != deviceContext->InterfaceConfig->Properties)
+    {
+        DIGITALTWIN_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
+        char** propertyNames = NULL;
+        SINGLYLINKEDLIST_HANDLE propertyList = deviceContext->InterfaceConfig->Properties;
+        propertyCount = ModbusPnp_GetListCount(deviceContext->InterfaceConfig->Properties);
+
+        int readWritePropertyCount = 0;
+        LIST_ITEM_HANDLE propertyItemHandle = NULL;
+        SINGLYLINKEDLIST_HANDLE readWritePropertyList = singlylinkedlist_create();
+
+        for (int i = 0; i < propertyCount; i++)
+        {
+            if (NULL == propertyItemHandle)
+            {
+                propertyItemHandle = singlylinkedlist_get_head_item(propertyList);
+            }
+            else
+            {
+                propertyItemHandle = singlylinkedlist_get_next_item(propertyItemHandle);
+            }
+
+            const ModbusProperty* property = singlylinkedlist_item_get_value(propertyItemHandle);
+
+            if (READ_WRITE == property->Access)
+            {
+                readWritePropertyCount++;
+                singlylinkedlist_add(readWritePropertyList, property);
+            }
+        }
+
+        if (readWritePropertyCount > 0)
+        {
+            propertyNames = calloc(1, sizeof(char*) * readWritePropertyCount);
+            if (NULL == propertyNames) {
+                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                goto exit;
+            }
+
+            propertyUpdateTable = calloc(1, sizeof(DIGITALTWIN_PROPERTY_UPDATE_CALLBACK*) * readWritePropertyCount);
+            if (NULL == propertyUpdateTable) {
+                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                goto exit;
+            }
+
+            propertyItemHandle = NULL;
+            for (int i = 0; i < readWritePropertyCount; i++)
             {
                 if (NULL == propertyItemHandle)
                 {
-                    propertyItemHandle = singlylinkedlist_get_head_item(propertyList);
+                    propertyItemHandle = singlylinkedlist_get_head_item(readWritePropertyList);
                 }
                 else
                 {
@@ -949,275 +1048,130 @@ ModbusPnp_CreatePnpInterface(
 
                 const ModbusProperty* property = singlylinkedlist_item_get_value(propertyItemHandle);
 
-                if (READ_WRITE == property->Access)
-                {
-                    readWritePropertyCount++;
-                    singlylinkedlist_add(readWritePropertyList, property);
-                }
-            }
-
-            if (readWritePropertyCount > 0)
-            {
-                propertyNames = calloc(1, sizeof(char*)*readWritePropertyCount);
-                if (NULL == propertyNames) {
-                    result = -1;
-                    goto exit;
-                }
-
-                propertyUpdateTable = calloc(1, sizeof(DIGITALTWIN_PROPERTY_UPDATE_CALLBACK*)*readWritePropertyCount);
-                if (NULL == propertyUpdateTable) {
-                    result = -1;
-                    goto exit;
-                }
-
-                propertyItemHandle = NULL;
-                for (int i = 0; i < readWritePropertyCount; i++)
-                {
-                    if (NULL == propertyItemHandle)
-                    {
-                        propertyItemHandle = singlylinkedlist_get_head_item(readWritePropertyList);
-                    }
-                    else
-                    {
-                        propertyItemHandle = singlylinkedlist_get_next_item(propertyItemHandle);
-                    }
-
-                    const ModbusProperty* property = singlylinkedlist_item_get_value(propertyItemHandle);
-
-                    propertyNames[i] = (char*) property->Name;
-                    propertyUpdateTable[i] = ModbusPnp_PropertyHandler;
-                }
-
-            /*	modbusPropertyTable.numCallbacks = readWritePropertyCount;
-                modbusPropertyTable.propertyNames = propertyNames;
-                modbusPropertyTable.callbacks = propertyUpdateTable;
-                modbusPropertyTable.version = 1;*/
+                propertyNames[i] = (char*)property->Name;
+                propertyUpdateTable[i] = ModbusPnp_PropertyHandler;
             }
         }
+    }
 
-        // Construct command table
+    // Construct command table
+    if (NULL != deviceContext->InterfaceConfig->Commands)
+    {
+        char** commandNames = NULL;
+        DIGITALTWIN_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
+        SINGLYLINKEDLIST_HANDLE commandList = deviceContext->InterfaceConfig->Commands;
+        commandCount = ModbusPnp_GetListCount(commandList);
+
+        if (commandCount > 0)
         {
-            SINGLYLINKEDLIST_HANDLE commandList = interfaceConfig->Commands;
-            commandCount = ModbusPnp_GetListCount(commandList);
+            commandNames = calloc(1, sizeof(char*) * commandCount);
+            if (NULL == commandNames) {
+                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                goto exit;
+            }
 
-            if (commandCount > 0)
+            commandUpdateTable = calloc(1, sizeof(DIGITALTWIN_COMMAND_EXECUTE_CALLBACK*) * commandCount);
+            if (NULL == commandUpdateTable) {
+                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                goto exit;
+            }
+
+            LIST_ITEM_HANDLE commandItemHandle = NULL;
+            for (int i = 0; i < commandCount; i++)
             {
-                commandNames = calloc(1, sizeof(char*)*commandCount);
-                if (NULL == commandNames) {
-                    result = -1;
-                    goto exit;
-                }
-
-                commandUpdateTable = calloc(1, sizeof(DIGITALTWIN_COMMAND_EXECUTE_CALLBACK*)*commandCount);
-                if (NULL == commandUpdateTable) {
-                    result = -1;
-                    goto exit;
-                }
-
-                LIST_ITEM_HANDLE commandItemHandle = NULL;
-                for (int i = 0; i < commandCount; i++)
+                if (NULL == commandItemHandle)
                 {
-                    if (NULL == commandItemHandle)
-                    {
-                        commandItemHandle = singlylinkedlist_get_head_item(commandList);
-                    }
-                    else
-                    {
-                        commandItemHandle = singlylinkedlist_get_next_item(commandItemHandle);
-                    }
-
-                    if (NULL != commandItemHandle) {
-                        const ModbusCommand* command = singlylinkedlist_item_get_value(commandItemHandle);
-                        commandNames[i] = (char*) command->Name;
-                        commandUpdateTable[i] = ModbusPnp_CommandHandler;
-                    }
+                    commandItemHandle = singlylinkedlist_get_head_item(commandList);
+                }
+                else
+                {
+                    commandItemHandle = singlylinkedlist_get_next_item(commandItemHandle);
                 }
 
-                /*modbusCommandTable.numCommandCallbacks = commandCount;
-                modbusCommandTable.commandNames = commandNames;
-                modbusCommandTable.commandCallbacks = commandUpdateTable;
-                modbusCommandTable.version = 1;*/
+                if (NULL != commandItemHandle) {
+                    const ModbusCommand* command = singlylinkedlist_item_get_value(commandItemHandle);
+                    commandNames[i] = (char*)command->Name;
+                    commandUpdateTable[i] = ModbusPnp_CommandHandler;
+                }
             }
         }
+    }
+   
+    // Call DigitalTwinClient Create and assign pnpInterfaceClient to deviceContext's pnpInterfaceClient
+    result = DigitalTwin_InterfaceClient_Create(InterfaceId, ComponentName, NULL, deviceContext, 
+                                                    &pnpInterfaceClient);
+    if (DIGITALTWIN_CLIENT_OK != result) {
+        LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
 
-        dtRes = DigitalTwin_InterfaceClient_Create(interfaceId,
-                    "modbus",
-                    NULL,
-                    deviceContext, 
-                    &pnpInterfaceClient);
-        if (DIGITALTWIN_CLIENT_OK != dtRes) {
-            result = -1;
+    if (propertyCount > 0) {
+        result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, 
+                                                                            ModbusPnp_PropertyHandler, 
+                                                                            (void*) deviceContext);
+        if (DIGITALTWIN_CLIENT_OK != result) {
+            LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
+            result = DIGITALTWIN_CLIENT_ERROR;
             goto exit;
-        }        
-
-        if (propertyCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, ModbusPnp_PropertyHandler, (void*)deviceContext);
-            if (DIGITALTWIN_CLIENT_OK != dtRes) {
-                result = -1;
-                goto exit;
-            }
         }
-
-        if (commandCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, ModbusPnp_CommandHandler, (void*)deviceContext);
-            if (DIGITALTWIN_CLIENT_OK != dtRes) {
-                result = -1;
-                goto exit;
-            }
-        }
-
-        // Create PnpAdapter Interface
-        {
-            PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
-            PNPADPATER_INTERFACE_PARAMS_INIT(&interfaceParams, AdapterHandle, pnpInterfaceClient);
-            interfaceParams.InterfaceId = (char*)interfaceId;
-            interfaceParams.ReleaseInterface = ModbusPnp_ReleasePnpInterface;
-            interfaceParams.StartInterface = ModbusPnp_StartPnpInterface;
-
-            result = PnpAdapterInterface_Create(&interfaceParams, &pnpAdapterInterface);
-            if (result < 0) {
-                goto exit;
-            }
-        }
-
-        if (NULL != propertyUpdateTable) {
-            free(propertyUpdateTable);
-        }
-        if (NULL != propertyNames) {
-            free(propertyNames);
-        }
-
-        if (NULL != commandUpdateTable) {
-            free(commandUpdateTable);
-        }
-        if (NULL != commandNames) {
-            free(commandNames);
-        }
-
-        // Save the PnpAdapterInterface in device context
-        deviceContext->pnpAdapterInterface = pnpAdapterInterface;
-
-
-        // Update telemetry's interface client handle
-        {
-            SINGLYLINKEDLIST_HANDLE telemetryList = interfaceConfig->Events;
-            int telemetryCount = ModbusPnp_GetListCount(telemetryList);
-
-            if (telemetryCount > 0)
-            {
-                LIST_ITEM_HANDLE telemetryItemHandle = NULL;
-                for (int i = 0; i < telemetryCount; i++)
-                {
-                    if (NULL == telemetryItemHandle)
-                    {
-                        telemetryItemHandle = singlylinkedlist_get_head_item(telemetryList);
-                    }
-                    else
-                    {
-                        telemetryItemHandle = singlylinkedlist_get_next_item(telemetryItemHandle);
-                    }
-
-                    if (NULL != telemetryItemHandle) {
-                        ModbusTelemetry* telemetry = (ModbusTelemetry*) singlylinkedlist_item_get_value(telemetryItemHandle);
-                        telemetry->InterfaceClient = pnpAdapterInterface;
-                    }
-                }
-            }
-        }
-
-        // Update property's interface client handle
-        {
-            SINGLYLINKEDLIST_HANDLE propertyList = interfaceConfig->Properties;
-            //int propertyCount = ModbusPnp_GetListCount(propertyList);
-
-            if (propertyCount > 0)
-            {
-                LIST_ITEM_HANDLE propertyItemHandle = NULL;
-                for (int i = 0; i < propertyCount; i++)
-                {
-                    if (NULL == propertyItemHandle)
-                    {
-                        propertyItemHandle = singlylinkedlist_get_head_item(propertyList);
-                    }
-                    else
-                    {
-                        propertyItemHandle = singlylinkedlist_get_next_item(propertyItemHandle);
-                    }
-
-                    if (NULL != propertyItemHandle) {
-                        ModbusProperty* property = (ModbusProperty*) singlylinkedlist_item_get_value(propertyItemHandle);
-                        property->InterfaceClient = pnpAdapterInterface;
-                    }
-                }
-            }
-        }
-
-        // Update command's interface client handle
-        {
-            SINGLYLINKEDLIST_HANDLE commandList = interfaceConfig->Commands;
-            commandCount = ModbusPnp_GetListCount(commandList);
-
-            if (commandCount > 0)
-            {
-                LIST_ITEM_HANDLE commandItemHandle = NULL;
-                for (int i = 0; i < commandCount; i++)
-                {
-                    if (NULL == commandItemHandle)
-                    {
-                        commandItemHandle = singlylinkedlist_get_head_item(commandList);
-                    }
-                    else
-                    {
-                        commandItemHandle = singlylinkedlist_get_next_item(commandItemHandle);
-                    }
-
-                    if (NULL != commandItemHandle) {
-                        ModbusCommand* command = (ModbusCommand*) singlylinkedlist_item_get_value(commandItemHandle);
-                        command->InterfaceClient = pnpAdapterInterface;
-                    }
-                }
-            }
-        }
-
-        PnpAdapterInterface_SetContext(pnpAdapterInterface, deviceContext);
-
-        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
     }
+
+    if (commandCount > 0) {
+        result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, 
+                                                                    ModbusPnp_CommandHandler, (void*)deviceContext);
+        if (DIGITALTWIN_CLIENT_OK != result) {
+            LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_SetCommandsCallback failed.");
+            result = DIGITALTWIN_CLIENT_ERROR;
+            goto exit;
+        }
+    }
+
+    *PnpInterfaceClient = pnpInterfaceClient;
+    deviceContext->pnpinterfaceHandle = pnpInterfaceClient;
+
+    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
+
 exit:
-
-    // Cleanup incase of failure
-    if (result < 0) {
-        //Destroy PnpInterfaceClient
-        /*if (NULL != pnpInterfaceClient) {
-            PnP_InterfaceClient_Destroy(pnpInterfaceClient);
-        }
-        */
+    if (result != DIGITALTWIN_CLIENT_OK)
+    {
+        Modbus_DestroyPnpInterface(BridgeInterfaceHandle);
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return result;
 }
 
-int ModbusPnp_Initialize(const char* adapterArgs) {
-    UNREFERENCED_PARAMETER(adapterArgs);
-    return DIGITALTWIN_CLIENT_OK;
-}
+DIGITALTWIN_CLIENT_RESULT Modbus_StopPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    if (NULL == deviceContext) {
+        return DIGITALTWIN_CLIENT_OK;
+    }
 
-int 
-ModbusPnp_Shutdown() {
+    Modbus_CleanupPollingTasks(deviceContext);
+
+    if (INVALID_FILE != deviceContext->hDevice) {
+
+        ModbusPnp_CloseDevice(deviceContext->DeviceConfig->ConnectionType, deviceContext->hDevice, 
+            deviceContext->hConnectionLock);
+    }
+
+    if (NULL != deviceContext->hConnectionLock) {
+        Lock_Deinit(deviceContext->hConnectionLock);
+    }
+
     return DIGITALTWIN_CLIENT_OK;
 }
 
 #pragma endregion
 
-DISCOVERY_ADAPTER ModbusPnpDeviceDiscovery = {
-    .Identity = "modbus-pnp-discovery",
-    .StartDiscovery = ModbusPnp_StartDiscovery,
-    .StopDiscovery = ModbusPnp_StopDiscovery
-};
-
 PNP_ADAPTER ModbusPnpInterface = {
     .identity = "modbus-pnp-interface",
-    .initialize = ModbusPnp_Initialize,
-    .shutdown = ModbusPnp_Shutdown,
-    .createPnpInterface = ModbusPnp_CreatePnpInterface
+    .createAdapter = Modbus_CreatePnpAdapter,
+    .createPnpInterface = Modbus_CreatePnpInterface,
+    .startPnpInterface = Modbus_StartPnpInterface,
+    .stopPnpInterface = Modbus_StopPnpInterface,
+    .destroyPnpInterface = Modbus_DestroyPnpInterface,
+    .destroyAdapter = Modbus_DestroyPnpAdapter
 };

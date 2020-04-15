@@ -75,20 +75,18 @@ set(pnp_bridge_common_libs
     prov_mqtt_transport
     utpm
     pnpbridge_adapters
-    pnpbridge_serial
-    pnpbridge_modbus
     digitaltwin_client
     pnpbridge
+    pnpbridge_modbus
+    pnpbridge_serial
 )
 
 
 if(WIN32)
 set(pnp_bridge_common_libs
     ${pnp_bridge_common_libs}
-    pnpbridge_camera
-    pnpbridge_bluetoothsensor
-    pnpbridge_coredevicehealth
     pnpbridge_mqtt
+    pnpbridge_coredevicehealth
 )
 endif()
 

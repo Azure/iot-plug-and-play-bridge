@@ -30,190 +30,125 @@
 #include "json_rpc.hpp"
 #include "json_rpc_protocol_handler.hpp"
 
-const char* mqttDeviceChangeMessage = "{ \
-                                       \"identity\": \"mqtt-pnp-discovery\" \
-                                       }";
-
 class MqttPnpInstance {
 public:
     MqttConnectionManager   s_ConnectionManager;
     MqttProtocolHandler*    s_ProtocolHandler;
 };
 
-std::list<MqttPnpInstance*> g_MqttPnpInstances;
+class MqttPnpAdapter {
+public:
+    std::map<std::string, JSON_Value*>    s_AdapterConfigs;
+};
 
-int
-MqttPnp_StartDiscovery(
-    _In_ PNPMEMORY DeviceArgs,
-    _In_ PNPMEMORY AdapterArgs
-    )
+DIGITALTWIN_CLIENT_RESULT MqttPnp_DestroyPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
-    AZURE_UNREFERENCED_PARAMETER(AdapterArgs);
-
-    if (DeviceArgs == nullptr) {
-        LogInfo("mqtt-pnp: no device arguments found");
+    printf("mqtt-pnp: destroying interface component\n");
+    MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpInterfaceHandleGetContext(PnpInterfaceHandle));
+    if (NULL == context)
+    {
         return DIGITALTWIN_CLIENT_OK;
     }
 
-    PnpMemory_AddReference(DeviceArgs);
-    PDEVICE_ADAPTER_PARMAETERS deviceParams = (PDEVICE_ADAPTER_PARMAETERS) PnpMemory_GetBuffer(DeviceArgs, NULL);
-
-    LogInfo("Starting mqtt-pnp: plugin with %d configurations", deviceParams->Count);
-
-    // Dynamic discovery is not supported. For each device defined in DeviceArgs,
-    // parse and instantiate the relevant classes, then report said device to the bridge.
-    for (int i = 0; i < deviceParams->Count; i++) {
-        JSON_Value* jvalue = json_parse_string(deviceParams->AdapterParameters[0]);
-        JSON_Object* args = json_value_get_object(jvalue);
-
-        // For each device we parse the interface and config space,
-        // and report them in a PnPMessage.
-        const char* interface = json_object_get_string(args, "interface");
-        const char* mqtt_server = json_object_get_string(args, "mqtt_server");
-        int mqtt_port = (int) json_object_get_number(args, "mqtt_port");
-        const char* protocol = json_object_get_string(args, "protocol");
-        const char* component = json_object_get_string(args, "component_name");
-
-        JSON_Value* params = json_object_get_value(args, "config");
-
-        MqttPnpInstance* context = new MqttPnpInstance();
-        LogInfo("mqtt-pnp: connecting to server %s:%d", mqtt_server, mqtt_port);
-
-        try {
-            context->s_ConnectionManager.Connect(mqtt_server, mqtt_port);
-        } catch (const std::exception e) {
-            LogError("mqtt-pnp: Error connecting to MQTT server: %s", e.what());
-        }
-
-        printf("mqtt-pnp: connected to mqtt server\n");
-
-        if (strcmp(protocol, "json_rpc") == 0) {
-            context->s_ProtocolHandler = (new JsonRpcProtocolHandler());
-        } else {
-            throw std::invalid_argument("Unsupported MQTT Protocol");
-        }
-
-        context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, params);
-
-        PNPMESSAGE payload = nullptr;
-        PNPMESSAGE_PROPERTIES* pnpMsgProps = nullptr;
-        PnpMessage_CreateMessage(&payload);
-
-        //const char* interface_params = json_serialize_to_string(params);
-        //PnpMessage_SetMessage(interface_params);
-        PnpMessage_SetInterfaceId(payload, interface);
-        PnpMessage_SetMessage(payload, mqttDeviceChangeMessage);
-        pnpMsgProps = PnpMessage_AccessProperties(payload);
-        pnpMsgProps->Context = context;
-        mallocAndStrcpy_s(&pnpMsgProps->ComponentName, component);
-
-        LogInfo("mqtt-pnp: reporting interface %s", interface);
-        DiscoveryAdapter_ReportDevice(payload);
-
-        //json_free_serialized_string((char*) interface_params)
-        json_value_free(jvalue);
-        // json_value_free(params);
-
-        g_MqttPnpInstances.push_back(context);
-
-        PnpMemory_ReleaseReference(payload);
-    }
-
-    // PnpMemory_ReleaseReference(AdapterArgs);
-
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int
-MqttPnp_StopDiscovery()
-{
-    printf("mqtt-pnp: stop discovery\n");
-
-    // for (auto it = g_MqttPnpInstances.begin(); it != g_MqttPnpInstances.end(); it++) {
-    //     (*it)->s_ConnectionManager.Disconnect();
-    //     delete (*it)->s_ProtocolHandler;
-    //     (*it)->s_ProtocolHandler = nullptr;
-    //     delete *it;
-    // }
-
-    // g_MqttPnpInstances = std::list<MqttPnpInstance*>();
-
-    // printf("MQTTPNP stopped discovery\n");
-
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int
-MqttPnp_Initialize(const char* AdapterArgs)
-{
-    AZURE_UNREFERENCED_PARAMETER(AdapterArgs);
-    // printf("mqtt-pnp: initializing\n");
-    // if (platform_init() != 0) {
-    //     LogError("mqtt platform_init failed\r\n");
-    //     return -1;
-    // }
-
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int 
-MqttPnp_Shutdown()
-{
-    printf("mqtt-pnp: shutdown\n");
-    // platform_deinit();
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int
-MqttPnp_ReleaseInterface(
-    _In_ PNPADAPTER_INTERFACE_HANDLE pnpInterface
-    )
-{
-    printf("mqtt-pnp: releasing interface\n");
-    MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpAdapterInterface_GetContext(pnpInterface));
-
+    DigitalTwin_InterfaceClient_Destroy((context->s_ProtocolHandler)->GetDigitalTwin());
     context->s_ConnectionManager.Disconnect();
-    delete context->s_ProtocolHandler;
-
     delete context;
 
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int
-MqttPnp_Bind(
-    _In_ PNPADAPTER_CONTEXT AdapterHandle,
-    _In_ PNPMESSAGE         Message
-    )
+DIGITALTWIN_CLIENT_RESULT MqttPnp_DestroyPnpAdapter(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle
+)
 {
-    int result = 0;
-    PNPMESSAGE_PROPERTIES* pnpMsgProps = nullptr;
-    MqttPnpInstance* context = nullptr;
-    DIGITALTWIN_CLIENT_RESULT dtres;
+    MqttPnpAdapter* adapterContext = reinterpret_cast<MqttPnpAdapter*>(PnpAdapterHandleGetContext(AdapterHandle));
+    if (adapterContext == NULL)
+    {
+        return DIGITALTWIN_CLIENT_OK;
+    }
 
-    pnpMsgProps = PnpMessage_AccessProperties(Message);
-    context = static_cast<MqttPnpInstance*>(pnpMsgProps->Context);
-    const char* interface = PnpMessage_GetInterfaceId(Message);
+    adapterContext->s_AdapterConfigs.clear();
 
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE digitalTwinInterface;
-    PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
-    PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
+    delete adapterContext;
+    return DIGITALTWIN_CLIENT_OK;
+}
 
-    printf("mqtt-pnp: publishing interface %s, component %s\n", interface, pnpMsgProps->ComponentName);
+DIGITALTWIN_CLIENT_RESULT
+MqttPnp_CreatePnpInterface(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    const char* InterfaceId,
+    const char* ComponentName,
+    const JSON_Object* AdapterInterfaceConfig,
+    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
+    JSON_Value* adapterConfig = NULL;
+    std::map<std::string, JSON_Value*>::iterator mapItem;
 
-    // Create Digital Twin Interface
-    dtres = DigitalTwin_InterfaceClient_Create(interface,
-                                               pnpMsgProps->ComponentName,
+    if (NULL!= AdapterInterfaceConfig)
+    {
+        LogError("Each component requiring the Mqtt adapter needs to specify local adapter args (pnp_bridge_adapter_config)");
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    }
+    const char* mqtt_server = json_object_get_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_SERVER);
+    int mqtt_port = (int) json_object_get_number(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_PORT);
+    const char* protocol = json_object_get_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_PROTOCOL);
+    const char* mqttConfigId = json_object_get_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_SUPPORTED_CONFIG);
+
+    MqttPnpAdapter* adapterContext = reinterpret_cast<MqttPnpAdapter*>(PnpAdapterHandleGetContext(AdapterHandle));
+    if (adapterContext == NULL)
+    {
+        return DIGITALTWIN_CLIENT_OK;
+    }
+
+    MqttPnpInstance* context = new MqttPnpInstance();
+    LogInfo("mqtt-pnp: connecting to server %s:%d", mqtt_server, mqtt_port);
+
+    try {
+        context->s_ConnectionManager.Connect(mqtt_server, mqtt_port);
+    } catch (const std::exception e) {
+        LogError("mqtt-pnp: Error connecting to MQTT server: %s", e.what());
+    }
+
+    printf("mqtt-pnp: connected to mqtt server\n");
+
+    if (strcmp(protocol, "json_rpc") == 0)
+    {
+        context->s_ProtocolHandler = (new JsonRpcProtocolHandler());
+    }
+    else
+    {
+        throw std::invalid_argument("Unsupported MQTT Protocol");
+    }
+
+    mapItem = adapterContext->s_AdapterConfigs.find(std::string(mqttConfigId));
+    if (mapItem != adapterContext->s_AdapterConfigs.end())
+    {
+        adapterConfig =  mapItem->second;
+    }
+    else
+    {
+        throw std::invalid_argument("Mqtt adapter doesn't have a supported config");
+    }
+
+    context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, adapterConfig);
+
+    result = DigitalTwin_InterfaceClient_Create(InterfaceId,
+                                               ComponentName,
                                                nullptr,
                                                context, 
-                                               &digitalTwinInterface);
-    if (DIGITALTWIN_CLIENT_OK != dtres) {
-        LogError("mqtt-pnp: Error registering pnp interface %s", interface);
-        result = -1;
+                                               &pnpInterfaceClient);
+    if (DIGITALTWIN_CLIENT_OK != result)
+    {
+        LogError("mqtt-pnp: Error registering pnp interface %s", InterfaceId);
+        result = DIGITALTWIN_CLIENT_ERROR;
         goto exit;
     }
 
-    DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(digitalTwinInterface,
+    result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient,
         [](
             const DIGITALTWIN_CLIENT_PROPERTY_UPDATE*   /*dtClientPropertyUpdate*/,
             void*                                       /*userContextCallback*/
@@ -224,7 +159,14 @@ MqttPnp_Bind(
         (void*)context
     );
 
-    DigitalTwin_InterfaceClient_SetCommandsCallback(digitalTwinInterface,
+    if (DIGITALTWIN_CLIENT_OK != result)
+    {
+        LogError("mqtt-pnp: Error binding property update callback for %s", InterfaceId);
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
+
+    result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient,
         [](
             const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   dtClientCommandContext,
             DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        dtClientCommandResponseContext,
@@ -236,42 +178,83 @@ MqttPnp_Bind(
         (void*)context
     );
 
-    // Create PnpBridge-PnpAdapter Interface
-    PNPADPATER_INTERFACE_PARAMS_INIT(&interfaceParams, AdapterHandle, digitalTwinInterface);
-
-    interfaceParams.StartInterface = [](
-        PNPADAPTER_INTERFACE_HANDLE /*PnpInterface*/
-    )
+    if (DIGITALTWIN_CLIENT_OK != result)
     {
-        return 1; // Success
-    };
+        LogError("mqtt-pnp: Error binding commands callback for %s", InterfaceId);
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
 
-    interfaceParams.ReleaseInterface = MqttPnp_ReleaseInterface;
-
-    interfaceParams.InterfaceId = (char*) interface;
-
-    result = PnpAdapterInterface_Create(&interfaceParams, &pnpAdapterInterface);
-    // if (result < 0) {
-    //     goto exit;
-    // }
-
-    PnpAdapterInterface_SetContext(pnpAdapterInterface, context);
-    context->s_ProtocolHandler->AssignDigitalTwin(digitalTwinInterface);
+    *PnpInterfaceClient = pnpInterfaceClient;
+    context->s_ProtocolHandler->AssignDigitalTwin(pnpInterfaceClient);
+    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, context);
 
 exit:
-    printf("mqtt-pnp: bound interface\n");
+    if (result != DIGITALTWIN_CLIENT_OK)
+    {
+        MqttPnp_DestroyPnpInterface(BridgeInterfaceHandle);
+    }
+    else
+    {
+        printf("mqtt-pnp: digital twin interface created and bound\n");
+    }
+
     return result;
 }
 
-DISCOVERY_ADAPTER MqttPnpAdapter = {
-    "mqtt-pnp-discovery",
-    MqttPnp_StartDiscovery,
-    MqttPnp_StopDiscovery
-};
+DIGITALTWIN_CLIENT_RESULT MqttPnp_CreatePnpAdapter(
+    const JSON_Object* AdapterGlobalConfig,
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    MqttPnpAdapter* adapterContext = new MqttPnpAdapter();
+    if (AdapterGlobalConfig == NULL)
+    {
+        LogError("Mqtt adapter requires associated global parameters in config");
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
+
+    // Build map of interface configs supported by the adapter
+    for (int i = 0; i < (int)json_object_get_count(AdapterGlobalConfig); i++)
+    {
+        const char* mqttConfigIdentity = json_object_get_name(AdapterGlobalConfig, i);
+        JSON_Value* config = json_object_get_value(AdapterGlobalConfig, mqttConfigIdentity);
+        adapterContext->s_AdapterConfigs.insert(std::pair<std::string, JSON_Value*>(std::string(mqttConfigIdentity), config));
+    }
+
+    PnpAdapterHandleSetContext(AdapterHandle, (void*)adapterContext);
+exit:
+    if (result != DIGITALTWIN_CLIENT_OK)
+    {
+        result = MqttPnp_DestroyPnpAdapter(AdapterHandle);
+    }
+    return result;
+}
+
+DIGITALTWIN_CLIENT_RESULT
+MqttPnp_StartPnpInterface(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+    AZURE_UNREFERENCED_PARAMETER(PnpInterfaceHandle);
+    return DIGITALTWIN_CLIENT_OK;
+}
+
+DIGITALTWIN_CLIENT_RESULT MqttPnp_StopPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    AZURE_UNREFERENCED_PARAMETER(PnpInterfaceHandle);
+    return DIGITALTWIN_CLIENT_OK;
+}
 
 PNP_ADAPTER MqttPnpInterface = {
     "mqtt-pnp-interface",
-    MqttPnp_Initialize,
-    MqttPnp_Bind,
-    MqttPnp_Shutdown
+    MqttPnp_CreatePnpAdapter,
+    MqttPnp_CreatePnpInterface,
+    MqttPnp_StartPnpInterface,
+    MqttPnp_StopPnpInterface,
+    MqttPnp_DestroyPnpInterface,
+    MqttPnp_DestroyPnpAdapter
 };

@@ -232,3 +232,9 @@ JsonRpcProtocolHandler::AssignDigitalTwin(
 {
     s_DtInterface = DtHandle;
 }
+
+DIGITALTWIN_INTERFACE_CLIENT_HANDLE
+    JsonRpcProtocolHandler::GetDigitalTwin()
+{
+    return s_DtInterface;
+}

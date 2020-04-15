@@ -11,13 +11,16 @@ struct timeval socket_timeout;
 #endif // WIN32
 
 
-int ModbusTcp_GetHeaderSize(void) {
+int ModbusTcp_GetHeaderSize(void)
+{
     return TCP_HEADER_SIZE;
 }
 
-bool ModbusTcp_CloseDevice(SOCKET socket, LOCK_HANDLE hLock)
+bool ModbusTcp_CloseDevice(
+    SOCKET socket,
+    LOCK_HANDLE hLock)
 {   
-    if (LOCK_OK == Lock(hLock))
+    if (LOCK_OK != Lock(hLock))
     {
         LogError("Device communicate lock could not be acquired.");
         return false;
@@ -42,7 +45,10 @@ bool ModbusTcp_CloseDevice(SOCKET socket, LOCK_HANDLE hLock)
     return true;
 }
 
-int ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, uint8_t unitId)
+DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetReadRequest(
+    CapabilityType capabilityType,
+    void* capability,
+    uint8_t unitId)
 {
     switch (capabilityType)
     {
@@ -54,7 +60,7 @@ int ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, ui
             if (!ModbusConnectionHelper_GetFunctionCode(telemetry->StartAddress, true, &(telemetry->ReadRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for telemetry \"%s\".", telemetry->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             telemetry->ReadRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -76,7 +82,7 @@ int ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, ui
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, true, &(property->ReadRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             property->ReadRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -93,13 +99,16 @@ int ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, ui
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
     }
 
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr)
+DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetWriteRequest(
+    CapabilityType capabilityType,
+    void* capability,
+    char* valueStr)
 {
     uint16_t binaryData = 0;
 
@@ -113,13 +122,13 @@ int ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, c
             if (!ModbusConnectionHelper_GetFunctionCode(command->StartAddress, false, &(command->WriteRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for command \"%s\".", command->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(command->DataType, command->WriteRequest.TcpRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, command->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             command->WriteRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -141,13 +150,13 @@ int ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, c
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, false, &(property->WriteRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(property->DataType, property->WriteRequest.TcpRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, property->Name);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
 
             property->WriteRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -163,15 +172,18 @@ int ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, c
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
         }
 
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int ModbusTcp_SendRequest(SOCKET socket, uint8_t *requestArr, uint32_t arrLen)
+int ModbusTcp_SendRequest(
+    SOCKET socket,
+    uint8_t *requestArr,
+    uint32_t arrLen)
 {
-    if (INVALID_SOCKET == socket  || 0 == socket || NULL == requestArr)
+    if (INVALID_SOCKET == socket || 0 == socket || NULL == requestArr)
     {
         LogError("Failed to send request: connection handler and/or the request array is null.");
         return -1;
@@ -212,7 +224,10 @@ int ModbusTcp_SendRequest(SOCKET socket, uint8_t *requestArr, uint32_t arrLen)
     return totalBytesSent;
 }
 
-int ModbusTcp_ReadResponse(SOCKET socket, uint8_t *response, uint32_t arrLen)
+int ModbusTcp_ReadResponse(
+    SOCKET socket,
+    uint8_t *response,
+    uint32_t arrLen)
 {
     if (INVALID_SOCKET == socket || 0 == socket || NULL == response)
     {

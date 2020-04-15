@@ -15,29 +15,22 @@ compileAsC99()
 # Core PnpBridge C Files
 set(pnp_bridge_c_core_files
     ./src/configuration_parser.c
-    ./src/discoveryadapter_manager.c
     ./src/iothub_comms.c
     ./src/pnpadapter_manager.c
     ./src/pnpbridge.c
     ./src/utility.c
     ./src/pnpadapter_api.c
-    ./src/pnpbridge_memory.c
-    ./src/pnpmessage.c
 )
 
 # Core PnpBridge headers
 set(pnp_bridge_h_core_files
     ./inc/configuration_parser.h
-    ./inc/discoveryadapter_api.h
-    ./inc/discoveryadapter_manager.h
     ./inc/iothub_comms.h
     ./inc/pnpadapter_api.h
     ./inc/pnpadapter_manager.h
     ./inc/pnpbridge.h
     ./inc/pnpbridge_common.h
     ./inc/pnpbridgeh.h
-    ./inc/pnpbridge_memory.h
-    ./inc/pnpmessage_api.h
 )
 
 # set(install_staticlibs

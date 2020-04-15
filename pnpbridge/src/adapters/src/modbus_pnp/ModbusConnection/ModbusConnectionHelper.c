@@ -1,7 +1,11 @@
 #include "ModbusConnectionHelper.h"
 #include <stdlib.h>
 
-bool ModbusConnectionHelper_GetFunctionCode(const char* startAddress, bool isRead, uint8_t* functionCode, uint16_t* modbusAddress)
+bool ModbusConnectionHelper_GetFunctionCode(
+    const char* startAddress,
+    bool isRead,
+    uint8_t* functionCode,
+    uint16_t* modbusAddress)
 {
     char entityChar = startAddress[0];
     uint8_t entityType = (uint8_t)atoi(&entityChar);
@@ -38,7 +42,11 @@ bool ModbusConnectionHelper_GetFunctionCode(const char* startAddress, bool isRea
     return true;
 }
 
-bool ModbusConnectionHelper_ConvertValueStrToUInt16(ModbusDataType dataType, FunctionCodeType functionCodeType, char* valueStr, uint16_t* value)
+bool ModbusConnectionHelper_ConvertValueStrToUInt16(
+    ModbusDataType dataType,
+    FunctionCodeType functionCodeType,
+    char* valueStr,
+    uint16_t* value)
 {
     switch (dataType)
     {

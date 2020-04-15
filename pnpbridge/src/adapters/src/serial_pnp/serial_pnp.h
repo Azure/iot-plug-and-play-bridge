@@ -109,7 +109,7 @@ extern "C"
 
     typedef struct _SERIAL_DEVICE_CONTEXT {
         HANDLE hSerial;
-        PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
+        DIGITALTWIN_INTERFACE_CLIENT_HANDLE PnpInterfaceHandle;
 
         byte RxBuffer[MAX_BUFFER_SIZE]; // temporary buffer that gets filled by the reading thread. TODO: maximum buffer size
         byte* pbMainBuffer;             // pointer used to pass buffers back to the main thread
@@ -128,22 +128,24 @@ extern "C"
         SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
     } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
 
-    int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
+    DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
 
-    int SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
+    DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
 
     void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length);
 
-    int SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
+    DIGITALTWIN_CLIENT_RESULT SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
 
-    int SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length);
+    DIGITALTWIN_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length);
 
     byte* SerialPnp_StringSchemaToBinary(Schema Schema, byte* data, int* length);
 
-    int SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
+    DIGITALTWIN_CLIENT_RESULT SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
 
-    int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface);
-
+    // Serial Pnp Adapter Config
+    #define PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT "com_port"
+    #define PNP_CONFIG_ADAPTER_SERIALPNP_USEDEFAULT "use_com_device_interface"
+    #define PNP_CONFIG_ADAPTER_SERIALPNP_BAUDRATE "baud_rate"
 
 #ifdef __cplusplus
 }

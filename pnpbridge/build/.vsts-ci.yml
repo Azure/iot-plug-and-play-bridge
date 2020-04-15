@@ -71,7 +71,7 @@ phases:
       call .\pnpbridge\scripts\windows\build.cmd --platform arm64
 - phase: raspberrypi
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c-buster:brown"
   queue: Hosted Ubuntu 1604
   displayName: raspberrypi
   steps:

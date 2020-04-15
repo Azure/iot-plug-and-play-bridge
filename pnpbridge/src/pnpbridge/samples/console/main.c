@@ -25,7 +25,7 @@ void CtrlHandler(int s) {
 }
 #endif
 
-int main()
+int main(int argc, char *argv[])
 {
     LogInfo("\n -- Press Ctrl+C to stop PnpBridge\n");
 
@@ -40,7 +40,19 @@ int main()
     sigaction(SIGINT, &sigIntHandler, NULL);
 #endif
 
-    PnpBridge_Main();
+    char* ConfigurationFilePath = NULL;
+    if (argc > 1)
+    {
+        LogInfo("Using configuration from specified file path: %s", argv[1]);
+        mallocAndStrcpy_s(&ConfigurationFilePath, argv[1]);
+    }
+    else
+    {
+        LogInfo("Using default configuration location");
+        mallocAndStrcpy_s(&ConfigurationFilePath, (const char*) "config.json");
+    }
+
+    PnpBridge_Main((const char*)ConfigurationFilePath);
 
     return 0;
 }

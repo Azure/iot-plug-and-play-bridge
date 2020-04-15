@@ -39,7 +39,8 @@ typedef uint16_t UINT16;
 
 #include "serial_pnp.h"
 
-int SerialPnp_UartReceiver(void* context)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_UartReceiver(
+    void* context)
 {
     int result = 0;
     PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)context;
@@ -59,7 +60,10 @@ int SerialPnp_UartReceiver(void* context)
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(
+    PSERIAL_DEVICE_CONTEXT serialDevice,
+    byte* OutPacket,
+    int Length)
 {
     DWORD write_size = 0;
     int error = 0;
@@ -79,7 +83,7 @@ int SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int
     if (!SerialPnp_TxPacket)
     {
         LogError("Error out of memory");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
     }
     txLength = 1;
     SerialPnp_TxPacket[0] = 0x5A; // Start of frame
@@ -106,7 +110,7 @@ int SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int
         {
             // Write returned actual error and not just pending
             LogError("write failed: %d", error);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
         }
         else
         {
@@ -114,7 +118,7 @@ int SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int
             {
                 error = GetLastError();
                 LogError("write failed: %d", error);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
         }
     }
@@ -125,17 +129,20 @@ int SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int
         error = -1;
     }
 #endif
-    // there might not be an explicit error from the above, but check that all the bytes got transmitted 
+
     if (write_size != txLength)
     {
         LogError("Timeout while writing");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_TIMEOUT;
     }
     free(SerialPnp_TxPacket);
     return DIGITALTWIN_CLIENT_OK;
-        }
+}
 
-const EventDefinition* SerialPnp_LookupEvent(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, char* EventName, int InterfaceId)
+const EventDefinition* SerialPnp_LookupEvent(
+    SINGLYLINKEDLIST_HANDLE interfaceDefinitions,
+    char* EventName,
+    int InterfaceId)
 {
     const InterfaceDefinition* interfaceDef;
     LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(interfaceDefinitions);
@@ -166,7 +173,10 @@ const EventDefinition* SerialPnp_LookupEvent(SINGLYLINKEDLIST_HANDLE interfaceDe
     return NULL;
 }
 
-byte* SerialPnp_StringSchemaToBinary(Schema schema, byte* buffer, int* length)
+byte* SerialPnp_StringSchemaToBinary(
+    Schema schema,
+    byte* buffer,
+    int* length)
 {
     byte* bd = NULL;
     char* data = (char*)buffer;
@@ -227,7 +237,10 @@ byte* SerialPnp_StringSchemaToBinary(Schema schema, byte* buffer, int* length)
     return bd;
 }
 
-char* SerialPnp_BinarySchemaToString(Schema schema, byte* Data, byte length)
+char* SerialPnp_BinarySchemaToString(
+    Schema schema,
+    byte* Data,
+    byte length)
 {
     const int MAXRXSTRLEN = 12; // longest case INT_MIN = -2147483648 (11 characters + 1)
     char* rxstrdata = malloc(MAXRXSTRLEN);
@@ -259,7 +272,10 @@ char* SerialPnp_BinarySchemaToString(Schema schema, byte* Data, byte length)
     return rxstrdata;
 }
 
-void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length)
+void SerialPnp_UnsolicitedPacket(
+    PSERIAL_DEVICE_CONTEXT device,
+    byte* packet,
+    DWORD length)
 {
     // Got an event
     if (SERIALPNP_PACKET_TYPE_EVENT_NOTIFICATION == packet[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
@@ -305,7 +321,7 @@ void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DW
         }
         LogInfo("%s: %s", ev->defintion.Name, rxstrdata);
 
-        SerialPnp_SendEventAsync(PnpAdapterInterface_GetPnpInterfaceClient(device->pnpAdapterInterface), ev->defintion.Name, rxstrdata);
+        SerialPnp_SendEventAsync(device->PnpInterfaceHandle, ev->defintion.Name, rxstrdata);
 
         free(event_name);
         free(rxData);
@@ -317,7 +333,10 @@ void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DW
     }
 }
 
-const PropertyDefinition* SerialPnp_LookupProperty(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, const char* propertyName, int InterfaceId)
+const PropertyDefinition* SerialPnp_LookupProperty(
+    SINGLYLINKEDLIST_HANDLE interfaceDefinitions,
+    const char* propertyName,
+    int InterfaceId)
 {
     LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(interfaceDefinitions);
     const InterfaceDefinition* interfaceDef;
@@ -352,7 +371,10 @@ const PropertyDefinition* SerialPnp_LookupProperty(SINGLYLINKEDLIST_HANDLE inter
     return NULL;
 }
 
-const CommandDefinition* SerialPnp_LookupCommand(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, const char* commandName, int InterfaceId)
+const CommandDefinition* SerialPnp_LookupCommand(
+    SINGLYLINKEDLIST_HANDLE interfaceDefinitions,
+    const char* commandName,
+    int InterfaceId)
 {
     LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(interfaceDefinitions);
     const InterfaceDefinition* interfaceDef;
@@ -383,14 +405,17 @@ const CommandDefinition* SerialPnp_LookupCommand(SINGLYLINKEDLIST_HANDLE interfa
     return NULL;
 }
 
-int SerialPnp_PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* property, char* data)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_PropertyHandler(
+    PSERIAL_DEVICE_CONTEXT serialDevice,
+    const char* property,
+    char* data)
 {
     const PropertyDefinition* prop = SerialPnp_LookupProperty(serialDevice->InterfaceDefinitions, property, 0);
     byte* input = (byte*)data;
 
     if (NULL == prop)
     {
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     // otherwise serialize data
@@ -398,7 +423,7 @@ int SerialPnp_PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* p
     byte* inputPayload = SerialPnp_StringSchemaToBinary(prop->DataSchema, input, &dataLength);
     if (!inputPayload)
     {
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     int nameLength = (int)strlen(property);
@@ -408,7 +433,7 @@ int SerialPnp_PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* p
     {
         LogError("Error out of memory");
         free(inputPayload);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
     }
 
     txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = (byte)(txlength & 0xFF);
@@ -431,7 +456,11 @@ int SerialPnp_PropertyHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* p
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* command, char* data, char** response)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
+    PSERIAL_DEVICE_CONTEXT serialDevice,
+    const char* command,
+    char* data,
+    char** response)
 {
     Lock(serialDevice->CommandLock);
 
@@ -441,7 +470,7 @@ int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* co
     if (NULL == cmd)
     {
         Unlock(serialDevice->CommandLock);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     // otherwise serialize data
@@ -450,7 +479,7 @@ int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* co
     if (!inputPayload)
     {
         Unlock(serialDevice->CommandLock);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     int nameLength = (int)strlen(command);
@@ -461,7 +490,7 @@ int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* co
         LogError("Error out of memory");
         free(inputPayload);
         Unlock(serialDevice->CommandLock);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
     }
 
     txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = (byte)(txlength & 0xFF);
@@ -482,7 +511,7 @@ int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* co
         free(inputPayload);
         free(txPacket);
         Unlock(serialDevice->CommandLock);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     Lock(serialDevice->CommandResponseWaitLock);
@@ -493,7 +522,7 @@ int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* co
         free(txPacket);
         Unlock(serialDevice->CommandLock);
         Unlock(serialDevice->CommandResponseWaitLock);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
     Unlock(serialDevice->CommandResponseWaitLock);
 
@@ -508,7 +537,7 @@ int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* co
     if (!stval)
     {
         Unlock(serialDevice->CommandLock);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     *response = stval;
@@ -516,7 +545,10 @@ int SerialPnp_CommandHandler(PSERIAL_DEVICE_CONTEXT serialDevice, const char* co
     return DIGITALTWIN_CLIENT_OK;
 }
 
-void SerialPnp_ParseDescriptor(SINGLYLINKEDLIST_HANDLE interfaceDefinitions, byte* descriptor, DWORD length)
+void SerialPnp_ParseDescriptor(
+    SINGLYLINKEDLIST_HANDLE interfaceDefinitions,
+    byte* descriptor,
+    DWORD length)
 {
     int c = 4;
 
@@ -756,7 +788,7 @@ SINGLYLINKEDLIST_HANDLE SerialDeviceList = NULL;
 int SerialDeviceCount = 0;
 
 #ifdef WIN32
-int SerialPnp_FindSerialDevices()
+DIGITALTWIN_CLIENT_RESULT SerialPnp_FindSerialDevices()
 {
     CONFIGRET cmResult = CR_SUCCESS;
     char* deviceInterfaceList;
@@ -771,14 +803,14 @@ int SerialPnp_FindSerialDevices()
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (CR_SUCCESS != cmResult)
     {
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     deviceInterfaceList = malloc(bufferSize * sizeof(char));
     if (!deviceInterfaceList)
     {
         LogError("Error out of memory");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
     }
 
     cmResult = CM_Get_Device_Interface_ListA(
@@ -789,7 +821,7 @@ int SerialPnp_FindSerialDevices()
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (CR_SUCCESS != cmResult)
     {
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     for (PCHAR currentDeviceInterface = deviceInterfaceList;
@@ -801,7 +833,7 @@ int SerialPnp_FindSerialDevices()
         {
             LogError("Error out of memory");
             free(deviceInterfaceList);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
         }
         serialDevs->InterfaceName = malloc((strlen(currentDeviceInterface) + 1) * sizeof(char));
         if (!serialDevs->InterfaceName)
@@ -809,7 +841,7 @@ int SerialPnp_FindSerialDevices()
             LogError("Error out of memory");
             free(deviceInterfaceList);
             free(serialDevs);
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
         }
         strcpy_s(serialDevs->InterfaceName, strlen(currentDeviceInterface) + 1, currentDeviceInterface);
         singlylinkedlist_add(SerialDeviceList, serialDevs);
@@ -820,11 +852,8 @@ int SerialPnp_FindSerialDevices()
 }
 #endif
 
-const char* serialDeviceChangeMessageformat = "{ \
-                                                 \"identity\": \"serial-pnp-discovery\" \
-                                               }";
-
-int SerialPnp_OpenDeviceWorker(void* context)
+int SerialPnp_ParseInterfaceConfig(
+    void* context)
 {
     byte* desc;
     DWORD length;
@@ -836,7 +865,7 @@ int SerialPnp_OpenDeviceWorker(void* context)
         if (0 == --retries)
         {
             LogError("Error exceeded max number of reset request retries. ");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
         }
         ThreadAPI_Sleep(5000);
     }
@@ -847,46 +876,20 @@ int SerialPnp_OpenDeviceWorker(void* context)
         if (0 == --retries)
         {
             LogError("Error exceeded max number of descriptor request retries. ");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
         }
         ThreadAPI_Sleep(5000);
     }
 
     SerialPnp_ParseDescriptor(deviceContext->InterfaceDefinitions, desc, length);
-
-    JSON_Value* json = json_parse_string(serialDeviceChangeMessageformat);
-    JSON_Object* jsonObject = json_value_get_object(json);
-
-    LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (NULL != interfaceItem)
-    {
-        const InterfaceDefinition* def = (const InterfaceDefinition*)singlylinkedlist_item_get_value(interfaceItem);
-        //json_object_set_string(jsonObject, "InterfaceId", def->Id);
-
-        PNPMESSAGE payload = NULL;
-        PNPMESSAGE_PROPERTIES* props = NULL;
-
-        PnpMessage_CreateMessage(&payload);
-
-        PnpMessage_SetMessage(payload, json_serialize_to_string(json_object_get_wrapping_value(jsonObject)));
-        PnpMessage_SetInterfaceId(payload, def->Id);
-        
-        props = PnpMessage_AccessProperties(payload);
-        props->Context = deviceContext; 
-
-        // Notify the pnpbridge of device discovery
-        DiscoveryAdapter_ReportDevice(payload);
-        interfaceItem = singlylinkedlist_get_next_item(interfaceItem);
-
-        // Drop reference on the PNPMESSAGE
-        PnpMemory_ReleaseReference(payload);
-    }
-
     return DIGITALTWIN_CLIENT_OK;
 }
 
 #ifndef WIN32
-int set_interface_attribs(int fd, int speed, int parity)
+int set_interface_attribs(
+    int fd,
+    int speed,
+    int parity)
 {
     struct termios tty;
     memset(&tty, 0, sizeof tty);
@@ -927,7 +930,9 @@ int set_interface_attribs(int fd, int speed, int parity)
 }
 
 void
-set_blocking(int fd, int should_block)
+set_blocking(
+    int fd,
+    int should_block)
 {
     struct termios tty;
     memset(&tty, 0, sizeof tty);
@@ -945,8 +950,12 @@ set_blocking(int fd, int should_block)
 }
 #endif 
 
-int SerialPnp_OpenDevice(const char* port, DWORD baudRate)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_OpenDevice(
+    const char* port,
+    DWORD baudRate,
+    PSERIAL_DEVICE_CONTEXT deviceContext)
 {
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
 #ifdef WIN32
     HANDLE hSerial = CreateFileA(port,
         GENERIC_READ | GENERIC_WRITE,
@@ -963,10 +972,11 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate)
         LogError("Failed to open com port %s, %x", port, error);
         if (error == ERROR_FILE_NOT_FOUND)
         {
-            return -1;
+            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            goto exit;
         }
-
-        return -1;
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
     }
 
     DCB dcbSerialParams = { 0 };
@@ -1005,40 +1015,8 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate)
     }
 
     set_interface_attribs(fd, B115200, 0);  // set speed to 115,200 bps, 8n1 (no parity)
-    //set_blocking(fd, 1);  // set no blocking
+
 #endif
-
-    PSERIAL_DEVICE_CONTEXT deviceContext = malloc(sizeof(SERIAL_DEVICE_CONTEXT));
-    if (!deviceContext)
-    {
-        LogError("Error out of memory");
-        return -1;
-    }
-    memset(deviceContext, 0, sizeof(SERIAL_DEVICE_CONTEXT));
-    deviceContext->RxBufferIndex = 0;
-    deviceContext->RxEscaped = false;
-
-    deviceContext->CommandLock = Lock_Init();
-    deviceContext->CommandResponseWaitLock = Lock_Init();
-    deviceContext->CommandResponseWaitCondition = Condition_Init();
-    if (NULL == deviceContext->CommandLock ||
-        NULL == deviceContext->CommandResponseWaitLock ||
-        NULL == deviceContext->CommandResponseWaitCondition)
-    {
-        if (NULL != deviceContext->CommandLock)
-        {
-            Lock_Deinit(deviceContext->CommandLock);
-        }
-        if (NULL != deviceContext->CommandResponseWaitLock)
-        {
-            Lock_Deinit(deviceContext->CommandResponseWaitLock);
-        }
-        if (NULL != deviceContext->CommandResponseWaitCondition)
-        {
-            Lock_Deinit(deviceContext->CommandResponseWaitCondition);
-        }
-        return -1;
-    }
 
 #ifdef WIN32
     deviceContext->hSerial = hSerial;
@@ -1055,26 +1033,22 @@ int SerialPnp_OpenDevice(const char* port, DWORD baudRate)
         {
             CloseHandle(deviceContext->osReader.hEvent);
         }
-        return -1;
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
     }
 #else 
     deviceContext->hSerial = fd;
 #endif
-    deviceContext->pnpAdapterInterface = NULL;
-    deviceContext->InterfaceDefinitions = singlylinkedlist_create();
 
-    // TODO error handling
-    // https://docs.microsoft.com/en-us/previous-versions/ff802693(v=msdn.10)
-
-    if (THREADAPI_OK != ThreadAPI_Create(&deviceContext->SerialDeviceWorker, SerialPnp_OpenDeviceWorker, deviceContext))
-    {
-        LogError("ThreadAPI_Create failed");
-    }
-
-    return DIGITALTWIN_CLIENT_OK;
+exit:
+    return result;
 }
 
-int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(
+    PSERIAL_DEVICE_CONTEXT serialDevice,
+    byte** receivedPacket,
+    DWORD* length,
+    char packetType)
 {
     byte inb = 0;
     DWORD dwRead = 0;
@@ -1091,7 +1065,7 @@ int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacke
             {
                 // Read returned actual error and not just pending
                 LogError("read failed: %d", error);
-                return -1;
+                return DIGITALTWIN_CLIENT_ERROR;
             }
             else
             {
@@ -1099,7 +1073,7 @@ int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacke
                 {
                     error = GetLastError();
                     LogError("read failed: %d", error);
-                    return -1;
+                    return DIGITALTWIN_CLIENT_ERROR;
                 }
             }
 
@@ -1142,7 +1116,7 @@ int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacke
         if (serialDevice->RxBufferIndex >= MAX_BUFFER_SIZE)
         {
             LogError("Filled Rx buffer. Protocol is bad.");
-            return -1;
+            return DIGITALTWIN_CLIENT_ERROR;
         }
 
         // Minimum packet length is 4, so once we are >= 4 begin checking
@@ -1157,7 +1131,7 @@ int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacke
                 if (NULL == *receivedPacket)
                 {
                     LogError("Error out of memory");
-                    return -1;
+                    return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
                 }
                 *length = serialDevice->RxBufferIndex;
                 memcpy(*receivedPacket, serialDevice->RxBuffer, serialDevice->RxBufferIndex);
@@ -1183,9 +1157,10 @@ int SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacke
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_ResetDevice(
+    PSERIAL_DEVICE_CONTEXT serialDevice)
 {
-    int error = 0;
+    DIGITALTWIN_CLIENT_RESULT error = DIGITALTWIN_CLIENT_OK;
     // Prepare packet
     byte resetPacket[3] = { 0 }; // packet header
     byte* responsePacket = NULL;
@@ -1197,7 +1172,8 @@ int SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice)
     if (DIGITALTWIN_CLIENT_OK != SerialPnp_TxPacket(serialDevice, resetPacket, 4))
     {
         LogError("Error sending request packet");
-        return -1;
+        error =  DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
     }
     LogInfo("Sent reset request");
 
@@ -1205,30 +1181,40 @@ int SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice)
     if (DIGITALTWIN_CLIENT_OK != SerialPnp_RxPacket(serialDevice, &responsePacket, &length, 0x02))
     {
         LogError("Error receiving response packet");
-        return -1;
+        error = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
     }
 
     if (NULL == responsePacket)
     {
         LogError("received NULL for response packet");
-        error = -1;
+        error = DIGITALTWIN_CLIENT_ERROR;
     }
 
     if (SERIALPNP_PACKET_TYPE_RESET_RESPONSE != responsePacket[2])
     {
         LogError("Bad reset response");
-        error = -1;
+        error = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
     }
 
-    if (0 == error)
+    if (DIGITALTWIN_CLIENT_OK == error)
     {
         LogInfo("Receieved reset response");
     }
-    free(responsePacket);
-    return DIGITALTWIN_CLIENT_OK;
+
+exit:
+    if (responsePacket)
+    {
+        free(responsePacket);
+    }
+    return error;
 }
 
-int SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(
+    PSERIAL_DEVICE_CONTEXT serialDevice,
+    byte** desc,
+    DWORD* length)
 {
     // Prepare packet
     byte txPacket[3] = { 0 }; // packet header
@@ -1240,7 +1226,7 @@ int SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte*
     if (DIGITALTWIN_CLIENT_OK != SerialPnp_TxPacket(serialDevice, txPacket, 4))
     {
         LogError("Error sending request packet");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
     LogInfo("Sent descriptor request");
 
@@ -1248,7 +1234,7 @@ int SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte*
     {
         LogError("Error receiving response packet");
         free(*desc);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     if (NULL == *desc)
@@ -1256,104 +1242,31 @@ int SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte*
         LogError("received NULL for response packet");
         free(*desc);
 
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     if (SERIALPNP_PACKET_TYPE_DESCRIPTOR_RESPONSE != (*desc)[2])
     {
         LogError("Bad descriptor response");
         free(*desc);
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
 
     LogInfo("Receieved descriptor response, of length %d", *length);
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int 
-SerialPnp_StartDiscovery(
-    _In_ PNPMEMORY deviceArgs,
-    _In_ PNPMEMORY adapterArgs
-    ) 
-{
-    if (NULL == deviceArgs)
-    {
-        LogInfo("SerialPnp_StartDiscovery: No device discovery parameters found in configuration.");
-        return DIGITALTWIN_CLIENT_OK;
-    }
-
-    AZURE_UNREFERENCED_PARAMETER(adapterArgs);
-
-    const char* port = NULL;
-    const char* useComDevInterfaceStr;
-    const char* baudRateParam;
-    bool useComDeviceInterface = false;
-    JSON_Value* jvalue = json_parse_string(((PDEVICE_ADAPTER_PARMAETERS)(((PPNPBRIDGE_MEMORY_TAG)deviceArgs)->memory))->AdapterParameters[0]);
-    JSON_Object* args = json_value_get_object(jvalue);
-
-    useComDevInterfaceStr = (const char*)json_object_dotget_string(args, "use_com_device_interface");
-    if ((NULL != useComDevInterfaceStr) && (0 == strcmp(useComDevInterfaceStr, "true")))
-    {
-        useComDeviceInterface = true;
-    }
-
-    if (!useComDeviceInterface)
-    {
-        port = (const char*)json_object_dotget_string(args, "com_port");
-        if (NULL == port)
-        {
-            LogError("ComPort parameter is missing in configuration");
-            return -1;
-        }
-    }
-
-    baudRateParam = (const char*)json_object_dotget_string(args, "baud_rate");
-    if (NULL == baudRateParam)
-    {
-        LogError("BaudRate parameter is missing in configuration");
-        return -1;
-    }
-
-    PSERIAL_DEVICE seriaDevice = NULL;
-    DWORD baudRate = atoi(baudRateParam);
-    if (useComDeviceInterface)
-    {
-#ifdef WIN32
-        if (SerialPnp_FindSerialDevices() < 0)
-#endif
-        {
-            LogError("Failed to get com port %s", port);
-            return -1;
-        }
-
-        LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(SerialDeviceList);
-        if (NULL == item)
-        {
-            LogError("No serial device was found %s", port);
-            return -1;
-        }
-
-        seriaDevice = (PSERIAL_DEVICE)singlylinkedlist_item_get_value(item);
-    }
-
-
-    LogInfo("Opening com port %s", useComDeviceInterface ? seriaDevice->InterfaceName : port);
-
-    SerialPnp_OpenDevice(useComDeviceInterface ? seriaDevice->InterfaceName : port, baudRate);
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int SerialPnp_StopDiscovery()
-{
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-void SerialPnp_SendEventCallback(DIGITALTWIN_CLIENT_RESULT pnpSendEventStatus, void* userContextCallback)
+void SerialPnp_SendEventCallback(
+    DIGITALTWIN_CLIENT_RESULT pnpSendEventStatus,
+    void* userContextCallback)
 {
     LogInfo("SerialDataSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
 }
 
-int SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_SendEventAsync(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface,
+    char* eventName,
+    char* data)
 {
     DIGITALTWIN_CLIENT_RESULT pnpClientResult;
 
@@ -1373,94 +1286,8 @@ int SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, c
     return pnpClientResult;
 }
 
-static void SerialPnp_PropertyUpdateHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback)
-{
-    DIGITALTWIN_CLIENT_RESULT pnpClientResult;
-    DIGITALTWIN_CLIENT_PROPERTY_RESPONSE propertyResponse;
-    PSERIAL_DEVICE_CONTEXT deviceContext;
-
-    if (dtClientPropertyUpdate->propertyDesired && NULL != userContextCallback)
-    {
-        LogInfo("Processed property.  propertyUpdated = %.*s",
-            (int)dtClientPropertyUpdate->propertyDesiredLen, dtClientPropertyUpdate->propertyDesired);
-
-        deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
-
-        SerialPnp_PropertyHandler(deviceContext, dtClientPropertyUpdate->propertyName, (char*)dtClientPropertyUpdate->propertyDesired);
-
-        // TODO: Send the correct response code below
-        propertyResponse.version = 1;
-        //propertyResponse.propertyData = propertyDataUpdated;
-        //propertyResponse.propertyDataLen = propertyDataUpdatedLen;
-        propertyResponse.responseVersion = dtClientPropertyUpdate->desiredVersion;
-        propertyResponse.statusCode = 200;
-        propertyResponse.statusDescription = "Property Updated Successfully";
-
-        pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(
-            PnpAdapterInterface_GetPnpInterfaceClient(deviceContext->pnpAdapterInterface),
-            dtClientPropertyUpdate->propertyName, dtClientPropertyUpdate->propertyDesired, dtClientPropertyUpdate->propertyDesiredLen, &propertyResponse, NULL, NULL);
-    }
-
-    
-}
-
-// PnPSampleEnvironmentalSensor_SetCommandResponse is a helper that fills out a PNP_CLIENT_COMMAND_RESPONSE
-static void SerialPnp_SetCommandResponse(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext, const char* responseData, int status)
-{
-    size_t responseLen = strlen(responseData);
-    memset(pnpClientCommandResponseContext, 0, sizeof(*pnpClientCommandResponseContext));
-    pnpClientCommandResponseContext->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
-
-    // Allocate a copy of the response data to return to the invoker.  The PnP layer that invoked PnPSampleEnvironmentalSensor_Blink
-    // takes responsibility for freeing this data.
-    if ((pnpClientCommandResponseContext->responseData = malloc(responseLen + 1)) == NULL)
-    {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to allocate response data");
-        pnpClientCommandResponseContext->status = 500;
-    }
-    else
-    {
-        pnpClientCommandResponseContext->responseData = (unsigned char*)responseData;
-        //strcpy_s((char*)pnpClientCommandResponseContext->responseData, responseData);
-        pnpClientCommandResponseContext->responseDataLen = responseLen;
-        pnpClientCommandResponseContext->status = status;
-    }
-}
-
-void 
-SerialPnp_CommandUpdateHandler(
-    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext,
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext,
-    void* userContextCallback
-    )
-{
-    PSERIAL_DEVICE_CONTEXT deviceContext;
-
-    // LogInfo("Processed command frequency property updated.  propertyUpdated = %.*s", (int)propertyDataUpdatedLen, propertyDataUpdated);
-
-    deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
-
-    char* response = NULL;
-    SerialPnp_CommandHandler(deviceContext, dtClientCommandContext->commandName, (char*)dtClientCommandContext->requestData, &response);
-    SerialPnp_SetCommandResponse(dtClientCommandResponseContext, response, 200);
-}
-
-const InterfaceDefinition* SerialPnp_GetInterface(PSERIAL_DEVICE_CONTEXT deviceContext, const char* interfaceId)
-{
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (interfaceDefHandle != NULL)
-    {
-        const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
-        if (strcmp(interfaceDef->Id, interfaceId) == 0)
-        {
-            return interfaceDef;
-        }
-        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
-    }
-    return NULL;
-}
-
-int SerialPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list)
+int SerialPnp_GetListCount(
+    SINGLYLINKEDLIST_HANDLE list)
 {
     if (NULL == list)
     {
@@ -1477,115 +1304,109 @@ int SerialPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list)
     return count;
 }
 
-int
-SerialPnp_StartPnpInterface(
-    _In_ PNPADAPTER_INTERFACE_HANDLE PnpInterface
-    )
+static void SerialPnp_PropertyUpdateHandler(
+    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+    void* userContextCallback)
 {
-    PSERIAL_DEVICE_CONTEXT deviceContext = PnpAdapterInterface_GetContext(PnpInterface);
-    if (deviceContext == NULL)
+    DIGITALTWIN_CLIENT_RESULT pnpClientResult;
+    DIGITALTWIN_CLIENT_PROPERTY_RESPONSE propertyResponse;
+    PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
+    int propertyCount = 0;
+
+    if (NULL != deviceContext)
     {
-        LogError("Device context is null");
-        return -1;
-    }
-
-    // Start telemetry
-    SerialPnp_UartReceiver(deviceContext);
-
-    return DIGITALTWIN_CLIENT_OK;
-}
-
-int SerialPnp_CreatePnpInterface(PNPADAPTER_CONTEXT AdapterHandle, PNPMESSAGE msg) 
-{
-    PNPMESSAGE_PROPERTIES* pnpMsgProps = NULL;
-    pnpMsgProps = PnpMessage_AccessProperties(msg);
-    PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)pnpMsgProps->Context;
-    const char* interfaceId = PnpMessage_GetInterfaceId(msg);
-    int result = 0;
-
-    // Create an Azure Pnp interface for each interface in the SerialPnp descriptor
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
-    while (interfaceDefHandle != NULL)
-    {
-        PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface = NULL;
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
-        int propertyCount = 0;
-        int commandCount = 0;
+        LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
         const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
 
         propertyCount = SerialPnp_GetListCount(interfaceDef->Properties);
-        commandCount = SerialPnp_GetListCount(interfaceDef->Commands);
 
-        DIGITALTWIN_CLIENT_RESULT dtRes;
-        //PNPMESSAGE_PROPERTIES* props = PnpMessage_AccessProperties(msg);
-        dtRes = DigitalTwin_InterfaceClient_Create(interfaceId,
-                                "serial" /* props->ComponentName */, // TODO: add component name into serial interface definition
-                                NULL,
-                                deviceContext,
-                                &pnpInterfaceClient);
-        if (DIGITALTWIN_CLIENT_OK != dtRes)
+        if (dtClientPropertyUpdate->propertyDesired && propertyCount > 0)
         {
-            result = -1;
-            goto exit;
+            LogInfo("Processed property.  propertyUpdated = %.*s",
+                (int)dtClientPropertyUpdate->propertyDesiredLen, dtClientPropertyUpdate->propertyDesired);
+
+            SerialPnp_PropertyHandler(deviceContext, dtClientPropertyUpdate->propertyName, (char*)dtClientPropertyUpdate->propertyDesired);
+
+            propertyResponse.version = 1;
+            propertyResponse.responseVersion = dtClientPropertyUpdate->desiredVersion;
+            propertyResponse.statusCode = 200;
+            propertyResponse.statusDescription = "Property Updated Successfully";
+
+            pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(deviceContext->PnpInterfaceHandle, dtClientPropertyUpdate->propertyName, 
+                                    dtClientPropertyUpdate->propertyDesired, dtClientPropertyUpdate->propertyDesiredLen, &propertyResponse, NULL, NULL);
         }
-
-        if (propertyCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient,
-                        SerialPnp_PropertyUpdateHandler, (void*)deviceContext);
-            if (DIGITALTWIN_CLIENT_OK != dtRes)
-            {
-                result = -1;
-                goto exit;
-            }
-        }
-
-        if (commandCount > 0) {
-            dtRes = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, 
-                        SerialPnp_CommandUpdateHandler, (void*)deviceContext);
-            if (DIGITALTWIN_CLIENT_OK != dtRes)
-            {
-                result = -1;
-                goto exit;
-            }
-        }
-
-        // Create PnpAdapter Interface
-        {
-            PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
-            PNPADPATER_INTERFACE_PARAMS_INIT(&interfaceParams, AdapterHandle, pnpInterfaceClient);
-            interfaceParams.InterfaceId = (char*)interfaceId;
-            interfaceParams.ReleaseInterface = SerialPnp_ReleasePnpInterface;
-            interfaceParams.StartInterface = SerialPnp_StartPnpInterface;
-
-            result = PnpAdapterInterface_Create(&interfaceParams, &pnpAdapterInterface);
-            if (result < 0)
-            {
-                goto exit;
-            }
-        }
-
-        // Save the PnpAdapterInterface in device context
-        deviceContext->pnpAdapterInterface = pnpAdapterInterface;
-
-        PnpAdapterInterface_SetContext(pnpAdapterInterface, deviceContext);
-
-        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
     }
-
-exit:
-
-    // Cleanup incase of failure
-    if (result < 0) {
-        // Destroy PnpInterfaceClient
-        //if (NULL != pnpInterfaceClient) {
-           //PnP_InterfaceClient_Destroy(pnpInterfaceClient);
-        //}
-    }
-    
-    return DIGITALTWIN_CLIENT_OK;
 }
 
-void SerialPnp_FreeFieldDefinition(FieldDefinition* fdef) {
+// SerialPnp_SetCommandResponse is a helper that fills out a PNP_CLIENT_COMMAND_RESPONSE
+static void SerialPnp_SetCommandResponse(
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
+    const char* responseData,
+    int status)
+{
+    size_t responseLen = strlen(responseData);
+    memset(pnpClientCommandResponseContext, 0, sizeof(*pnpClientCommandResponseContext));
+    pnpClientCommandResponseContext->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
+
+    // Allocate a copy of the response data to return to the invoker. The pnp layer that invoked command handler
+    // takes responsibility for freeing this data.
+    if ((pnpClientCommandResponseContext->responseData = malloc(responseLen + 1)) == NULL)
+    {
+        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to allocate response data");
+        pnpClientCommandResponseContext->status = 500;
+    }
+    else
+    {
+        pnpClientCommandResponseContext->responseData = (unsigned char*)responseData;
+        pnpClientCommandResponseContext->responseDataLen = responseLen;
+        pnpClientCommandResponseContext->status = status;
+    }
+}
+
+void 
+SerialPnp_CommandUpdateHandler(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext,
+    void* userContextCallback)
+{
+    PSERIAL_DEVICE_CONTEXT deviceContext;
+
+    deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
+    const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
+    int commandCount = SerialPnp_GetListCount(interfaceDef->Commands);
+
+
+    char* response = NULL;
+    if (commandCount > 0)
+    {
+        SerialPnp_CommandHandler(deviceContext, dtClientCommandContext->commandName, (char*)dtClientCommandContext->requestData, &response);
+        SerialPnp_SetCommandResponse(dtClientCommandResponseContext, response, 200);
+    }
+    
+}
+
+DIGITALTWIN_CLIENT_RESULT
+SerialPnp_StartPnpInterface(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    if (deviceContext == NULL)
+    {
+        LogError("Device context is null");
+        return DIGITALTWIN_CLIENT_ERROR;
+    }
+
+    // Start telemetry
+    return SerialPnp_UartReceiver(deviceContext);
+}
+
+
+void SerialPnp_FreeFieldDefinition(
+    FieldDefinition* fdef)
+{
     if (NULL != fdef->Description)
     {
         free(fdef->Description);
@@ -1602,7 +1423,8 @@ void SerialPnp_FreeFieldDefinition(FieldDefinition* fdef) {
     }
 }
 
-void SerialPnp_FreeEventDefinition(SINGLYLINKEDLIST_HANDLE events)
+void SerialPnp_FreeEventDefinition(
+    SINGLYLINKEDLIST_HANDLE events)
 {
     if (NULL == events)
     {
@@ -1623,7 +1445,8 @@ void SerialPnp_FreeEventDefinition(SINGLYLINKEDLIST_HANDLE events)
     }
 }
 
-void SerialPnp_FreeCommandDefinition(SINGLYLINKEDLIST_HANDLE cmds)
+void SerialPnp_FreeCommandDefinition(
+    SINGLYLINKEDLIST_HANDLE cmds)
 {
     if (NULL == cmds)
     {
@@ -1640,7 +1463,8 @@ void SerialPnp_FreeCommandDefinition(SINGLYLINKEDLIST_HANDLE cmds)
     }
 }
 
-void SerialPnp_FreePropertiesDefinition(SINGLYLINKEDLIST_HANDLE props)
+void SerialPnp_FreePropertiesDefinition(
+    SINGLYLINKEDLIST_HANDLE props)
 {
     if (NULL == props)
     {
@@ -1661,9 +1485,10 @@ void SerialPnp_FreePropertiesDefinition(SINGLYLINKEDLIST_HANDLE props)
     }
 }
 
-int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface)
+DIGITALTWIN_CLIENT_RESULT SerialPnp_StopPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
-    PSERIAL_DEVICE_CONTEXT deviceContext = PnpAdapterInterface_GetContext(pnpInterface);
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
 
     if (NULL == deviceContext)
     {
@@ -1689,6 +1514,23 @@ int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface)
         close(deviceContext->hSerial);
     }
 #endif
+    return DIGITALTWIN_CLIENT_OK;
+}
+
+DIGITALTWIN_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+
+    if (NULL == deviceContext) {
+        return DIGITALTWIN_CLIENT_OK;
+    }
+
+    // Call DigitalTwin_InterfaceClient_Destroy.
+    // This will block if there are any active callbacks in this interface, and then
+    // mark the underlying handle such that no future callbacks shall come to it
+
+    DigitalTwin_InterfaceClient_Destroy(deviceContext->PnpInterfaceHandle);
 
     if (deviceContext->InterfaceDefinitions)
     {
@@ -1715,27 +1557,194 @@ int SerialPnp_ReleasePnpInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface)
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int SerialPnp_Initialize(const char* adapterArgs)
+DIGITALTWIN_CLIENT_RESULT
+SerialPnp_CreatePnpInterface(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    const char* InterfaceId,
+    const char* ComponentName,
+    const JSON_Object* AdapterInterfaceConfig,
+    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
-    AZURE_UNREFERENCED_PARAMETER(adapterArgs);
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+
+    // Get device connection information
+
+    const char* port = NULL;
+    const char* useComDevInterfaceStr;
+    const char* baudRateParam;
+    bool useComDeviceInterface = false;
+
+    useComDevInterfaceStr = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_SERIALPNP_USEDEFAULT);
+    if ((NULL != useComDevInterfaceStr) && (0 == strcmp(useComDevInterfaceStr, "true")))
+    {
+        useComDeviceInterface = true;
+    }
+
+    if (!useComDeviceInterface)
+    {
+        port = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT);
+        if (NULL == port)
+        {
+            LogError("COM port parameter is missing in configuration");
+            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            goto exit;
+        }
+    }
+
+    baudRateParam = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_SERIALPNP_BAUDRATE);
+    if (NULL == baudRateParam)
+    {
+        LogError("Baud rate parameter is missing in configuration");
+        result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        goto exit;
+    }
+
+    PSERIAL_DEVICE seriaDevice = NULL;
+    DWORD baudRate = atoi(baudRateParam);
+    if (useComDeviceInterface)
+    {
+#ifdef WIN32
+        if (SerialPnp_FindSerialDevices() != DIGITALTWIN_CLIENT_OK)
+#endif
+        {
+            LogError("Failed to get com port %s", port);
+            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            goto exit;
+        }
+
+        LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(SerialDeviceList);
+        if (NULL == item)
+        {
+            LogError("No serial device was found %s", port);
+            result = DIGITALTWIN_CLIENT_ERROR;
+            goto exit;
+        }
+
+        seriaDevice = (PSERIAL_DEVICE)singlylinkedlist_item_get_value(item);
+    }
+
+    // Setup serial pnp device context
+    LogInfo("Opening com port %s", useComDeviceInterface ? seriaDevice->InterfaceName : port);
+
+    PSERIAL_DEVICE_CONTEXT deviceContext = malloc(sizeof(SERIAL_DEVICE_CONTEXT));
+    if (!deviceContext)
+    {
+        LogError("Error out of memory");
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        goto exit;
+    }
+    memset(deviceContext, 0, sizeof(SERIAL_DEVICE_CONTEXT));
+    deviceContext->RxBufferIndex = 0;
+    deviceContext->RxEscaped = false;
+
+    deviceContext->CommandLock = Lock_Init();
+    deviceContext->CommandResponseWaitLock = Lock_Init();
+    deviceContext->CommandResponseWaitCondition = Condition_Init();
+    if (NULL == deviceContext->CommandLock ||
+        NULL == deviceContext->CommandResponseWaitLock ||
+        NULL == deviceContext->CommandResponseWaitCondition)
+    {
+        if (NULL != deviceContext->CommandLock)
+        {
+            Lock_Deinit(deviceContext->CommandLock);
+        }
+        if (NULL != deviceContext->CommandResponseWaitLock)
+        {
+            Lock_Deinit(deviceContext->CommandResponseWaitLock);
+        }
+        if (NULL != deviceContext->CommandResponseWaitCondition)
+        {
+            Lock_Deinit(deviceContext->CommandResponseWaitCondition);
+        }
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
+    deviceContext->PnpInterfaceHandle = NULL;
+    deviceContext->InterfaceDefinitions = singlylinkedlist_create();
+
+    // Open device and store handle in device context
+    result = SerialPnp_OpenDevice(useComDeviceInterface ? seriaDevice->InterfaceName : port, baudRate, deviceContext);
+
+    // Retrieve device descriptor and populate supported interface configurations
+    if (THREADAPI_OK != ThreadAPI_Create(&deviceContext->SerialDeviceWorker, SerialPnp_ParseInterfaceConfig, deviceContext))
+    {
+        LogError("ThreadAPI_Create failed");
+    }
+    
+    // Create pnp interface
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
+
+    result = DigitalTwin_InterfaceClient_Create(InterfaceId, ComponentName, NULL, deviceContext, &pnpInterfaceClient);
+    if (DIGITALTWIN_CLIENT_OK != result)
+    {
+        LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
+
+    {
+        result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, 
+                                                                          SerialPnp_PropertyUpdateHandler,
+                                                                          (void*) deviceContext);
+        if (DIGITALTWIN_CLIENT_OK != result)
+        {
+            LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
+            result = DIGITALTWIN_CLIENT_ERROR;
+            goto exit;
+        }
+    }
+
+    {
+        result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient,
+                                                                 SerialPnp_CommandUpdateHandler,
+                                                                 (void*)deviceContext);
+        if (DIGITALTWIN_CLIENT_OK != result)
+        {
+            LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
+            result = DIGITALTWIN_CLIENT_ERROR;
+            goto exit;
+        }
+    }
+
+    // Save the PnpAdapterInterface in device context
+    deviceContext->PnpInterfaceHandle = pnpInterfaceClient;
+    *PnpInterfaceClient = pnpInterfaceClient;
+    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
+
+exit:
+    if (result != DIGITALTWIN_CLIENT_OK)
+    {
+        SerialPnp_DestroyPnpInterface(BridgeInterfaceHandle);
+    }
+
+    return result;
+}
+
+DIGITALTWIN_CLIENT_RESULT SerialPnp_CreatePnpAdapter(
+    const JSON_Object* AdapterGlobalConfig,
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
+{
+    AZURE_UNREFERENCED_PARAMETER(AdapterGlobalConfig);
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int SerialPnp_Shutdown()
+DIGITALTWIN_CLIENT_RESULT SerialPnp_DestroyPnpAdapter(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     return DIGITALTWIN_CLIENT_OK;
 }
-
-DISCOVERY_ADAPTER SerialPnpDiscovery = {
-    .Identity = "serial-pnp-discovery",
-    .StartDiscovery = SerialPnp_StartDiscovery,
-    .StopDiscovery = SerialPnp_StopDiscovery
-};
 
 PNP_ADAPTER SerialPnpInterface = {
     .identity = "serial-pnp-interface",
-    .initialize = SerialPnp_Initialize,
-    .shutdown = SerialPnp_Shutdown,
-    .createPnpInterface = SerialPnp_CreatePnpInterface
+    .createAdapter = SerialPnp_CreatePnpAdapter,
+    .createPnpInterface = SerialPnp_CreatePnpInterface,
+    .startPnpInterface = SerialPnp_StartPnpInterface,
+    .stopPnpInterface = SerialPnp_StopPnpInterface,
+    .destroyPnpInterface = SerialPnp_DestroyPnpInterface,
+    .destroyAdapter = SerialPnp_DestroyPnpAdapter
 };
 

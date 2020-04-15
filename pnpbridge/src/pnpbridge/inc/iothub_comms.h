@@ -14,12 +14,12 @@ IotComms_RegisterPnPInterfaces(
     MX_IOT_HANDLE_TAG* IotHandle,
     const char* ModelRepoId,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces,
-    int InterfaceCount,
-    bool traceOn,
-    PCONNECTION_PARAMETERS connectionParams
+    int InterfaceCount
     );
 
-PNPBRIDGE_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* iotHandle, bool traceOn, PCONNECTION_PARAMETERS connectionParams);
+DIGITALTWIN_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams);
+
+void IotComms_DigitalTwinClient_Destroy(MX_IOT_HANDLE_TAG* IotHandle);
 
 #ifdef __cplusplus
 }
