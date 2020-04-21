@@ -3,55 +3,39 @@
 
 #pragma once
 
-#include <cstddef>
 #include <memory>
 #include <string>
-#include <vector>
-#include <PnpBridge.h>
+
+#include <pnpbridge.h>
 
 #include "InterfaceDescriptor.h"
 
+// The BluetoothSensorDeviceAdapter adapter is responsible for listening to bluetooth sensor
+// advertisements and sending the corresponding telemetry up to the PnP bridge.
 class BluetoothSensorDeviceAdapter
 {
 public:
+    // Creates a BluetoothSensorDeviceAdapter that registers a PnP interface using the given
+    // interface ID and instance name. The adapter will listen for bluetooth advertisements
+    // that have the given bluetooth address. This function will throw if it fails to create
+    // the BluetoothSensorDeviceAdapter.
     static std::unique_ptr<BluetoothSensorDeviceAdapter> MakeUnique(
-        _In_ PNPADAPTER_CONTEXT adapterHandle,
-        _In_ PNPMESSAGE payload,
-        _In_ std::shared_ptr<InterfaceDescriptor> interfaceDescriptor);
+        const std::string& interfaceId,
+        const std::string& componentName,
+        uint64_t bluetoothAddress,
+        const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor);
 
-    void Initialize(
-        _In_ PNPADAPTER_CONTEXT adapterHandle,
-        _In_ PNPMESSAGE payload,
-        _In_ std::shared_ptr<InterfaceDescriptor> interfaceDescriptor);
+    virtual ~BluetoothSensorDeviceAdapter() = default;
 
-    void ParseManufacturerData(_In_ const std::vector<unsigned char>& buffer);
+    // Starts listening for bluetooth sensor advertisements and the corresponding telemetry to the
+    // PnP bridge. This function is a no-op if StartTelemetryReporting() is called twice in a row.
+    virtual void StartTelemetryReporting() = 0;
 
-    uint64_t GetBluetoothAddress();
+    // Stops listening for bluetooth sensor advertisements. No telemetry will be sent after this
+    // function returns. This function is a no-op if there was no preceding StartTelemetryReporting()
+    // call. Clients are expected to stop reporting before destructing this object if it was
+    // previously started.
+    virtual void StopTelemetryReporting() = 0;
 
-protected:
-    static void BluetoothSensorPnpCallback_ProcessCommandUpdate(
-        _In_ const DIGITALTWIN_CLIENT_COMMAND_REQUEST* clientCommandContext,
-        _In_ DIGITALTWIN_CLIENT_COMMAND_RESPONSE* clientCommandResponseContext,
-        _In_ void* userContextCallback);
-
-    static int OnBluetoothSensorInterfaceStart(_In_ PNPADAPTER_INTERFACE_HANDLE pnpInterface);
-
-    static int OnBluetoothSensorInterfaceRelease(_In_ PNPADAPTER_INTERFACE_HANDLE pnpInterface);
-
-    static void OnDigitalTwinInterfaceClientCreate(
-        _In_ DIGITALTWIN_CLIENT_RESULT interfaceStatus,
-        _In_ void* userInterfaceContext);
-
-    static void OnDigitalTwinInterfaceSendTelemetry(
-        _In_ DIGITALTWIN_CLIENT_RESULT pnpTelemetryStatus,
-        _In_opt_ void* userContextCallback);
-
-    void ReportSensorData(_In_ const ParsedSensorData& payload);
-
-    void ReportTelemetry(_In_ const std::string& telemetryName, _In_ const std::string& message);
-
-    uint64_t m_bluetoothAddress{};
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE m_pnpClientInterface{};
-    std::shared_ptr<InterfaceDescriptor> m_interfaceDescriptor{};
+    virtual DIGITALTWIN_INTERFACE_CLIENT_HANDLE GetPnpInterfaceClientHandle() = 0;
 };
-

@@ -86,6 +86,7 @@ if(WIN32)
 set(pnp_bridge_common_libs
     ${pnp_bridge_common_libs}
     pnpbridge_mqtt
+    pnpbridge_bluetoothsensor
     pnpbridge_coredevicehealth
 )
 endif()

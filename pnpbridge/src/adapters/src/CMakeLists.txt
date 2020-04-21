@@ -12,11 +12,11 @@ endif()
 
 compileAsC99()
 
-
 add_subdirectory(modbus_pnp)
 add_subdirectory(mqtt_pnp)
 add_subdirectory(serial_pnp)
 
 IF(WIN32)
+add_subdirectory(bluetooth_sensor)
 add_subdirectory(core_device_health)
 ENDIF(WIN32)

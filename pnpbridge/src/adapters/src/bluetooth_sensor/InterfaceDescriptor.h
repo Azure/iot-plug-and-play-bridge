@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+
 #include <parson.h>
 
 // Forward declarations
@@ -15,15 +16,14 @@ class InterfaceDescriptor;
 
 // Maps sensor data name to its stringified value.
 using ParsedSensorData = std::unordered_map<std::string, std::string>;
-// Maps interface ID (i.e. `interface_id` in config.json) to its corresponding descriptor.
+// Maps interface identity (i.e. `blesensor_identity` in config.json) to its corresponding descriptor.
 using InterfaceDescriptorMap = std::unordered_map<std::string, std::shared_ptr<InterfaceDescriptor>>;
 
-// Represents a device interface and contains properties such as company ID or how to parse the
+// Represents an interface identity. It contains properties, such as company ID, and how to parse the
 // interface's data payload.
 class InterfaceDescriptor
 {
 public:
-    static constexpr char s_interfaceIdDescriptorName[] = "interface_id";
     static constexpr char s_companyIdDescriptorName[] = "company_id";
     static constexpr char s_endianDescriptorName[] = "endianness";
     static constexpr char s_telemetryDescriptorName[] = "telemetry_descriptor";
@@ -31,13 +31,16 @@ public:
     static constexpr char s_endianLittleValue[] = "little";
     static constexpr char s_endianBigValue[] = "big";
 
-    // Parses a list of JSON interface descriptors into corresponding InterfaceDescriptor instances.
+    // Parses the adapter's global config JSON into the corresponding InterfaceDescriptor instances.
     static InterfaceDescriptorMap MakeDescriptorsFromJson(
-        _In_ const JSON_Array* interfaceDescriptorJsonObjs);
+        _In_ const JSON_Object* adapterGlobalConfigJson);
 
-    // Parses a single JSON interface descriptor into a corresponding InterfaceDescriptor instance.
+    // Parses a single global config interface JSON into an InterfaceDescriptor instance.
     static std::shared_ptr<InterfaceDescriptor> MakeSharedFromJson(
+        const std::string& interfaceIdentity,
         _In_ const JSON_Object* interfaceDescriptor);
+
+    InterfaceDescriptor(const std::string& interfaceIdentity);
 
     void Initialize(_In_ const JSON_Object* interfaceDescriptor);
 
@@ -49,14 +52,14 @@ public:
 
     std::shared_ptr<PayloadParser> GetPayloadParser();
 
-protected:
-    std::string m_interfaceId;
+private:
+    const std::string m_interfaceId;
     uint16_t m_companyId;
     bool m_isLittleEndian;
     std::shared_ptr<PayloadParser> m_payloadParser;
 };
 
-// Helper class which parses a byte buffer into an interface's data payload.
+// Helper class which parses a BLE advertisement manufacturer payload based on an interface descriptor.
 class PayloadParser
 {
 public:
@@ -90,7 +93,7 @@ public:
     static constexpr char s_conversionCoefficientDescriptorName[] = "conversion_coefficient";
     static constexpr char s_conversionBias[] = "conversion_bias";
 
-    // Parses a JSON telemetry payload descriptor into a corresponding PayloadParser instance.
+    // Parses a `telemetry_descriptor` JSON into its corresponding PayloadParser instance.
     static std::shared_ptr<PayloadParser> MakeSharedFromJson(
         _In_ const JSON_Array* dataDescriptors,
         bool isLittleEndian);
@@ -99,13 +102,13 @@ public:
 
     void Initialize(_In_ const JSON_Array* dataDescriptors);
 
-    // Parses a byte buffer into a data payload. Returns an empty ParsedSensorData if the buffer
-    // could not be parsed properly.
+    // Parses a manufacturer payload. Returns an empty ParsedSensorData if the buffer could not be
+    // parsed properly.
     ParsedSensorData ParsePayload(const std::vector<unsigned char>& buffer);
 
 private:
-    // Parses a single data field of the buffer. This simply returns the raw parsed value, the
-    // conversion coefficient and bias are not applied.
+    // Parses a single data field in the manufacturer payload. This simply returns the raw parsed
+    // value, the conversion coefficient and bias are not applied.
     double PayloadParser::ParseDataSection(
         std::vector<unsigned char> buffer,
         SupportedParseType parseType,
@@ -118,5 +121,5 @@ private:
     SupportedParseType StringToSupportedParseType(_In_z_ const char* str);
 
     std::vector<DataDescriptor> m_payloadDescriptors;
-    bool m_isLittleEndian;
+    const bool m_isLittleEndian;
 };
