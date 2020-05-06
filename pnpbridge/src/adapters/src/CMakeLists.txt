@@ -18,5 +18,6 @@ add_subdirectory(serial_pnp)
 
 IF(WIN32)
 add_subdirectory(bluetooth_sensor)
+add_subdirectory(camera)
 add_subdirectory(core_device_health)
 ENDIF(WIN32)

@@ -54,9 +54,9 @@
       },
       {
           "_comment": "Component 4 - Standard Video Camera connected to a PC, for now the first camera only.",
-          "pnp_bridge_interface_id": "urn:contoso:com:camera_health_monitor:1",
+          "pnp_bridge_interface_id": "urn:contoso:com:camera_pnp_adapter:1",
           "pnp_bridge_component_name": "MyComponent4",
-          "pnp_bridge_adapter_id": "camera-health-monitor",
+          "pnp_bridge_adapter_id": "camera-pnp-adapter",
           "pnp_bridge_adapter_config": {
               "hardware_id": "UVC_Webcam_00"
           }

@@ -11,6 +11,7 @@
 #include <strsafe.h>
 #include <memory>
 #include <list>
+#include <mutex>
 #include <vector>
 #include <string>
 #include <cfgmgr32.h>
@@ -20,6 +21,7 @@
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfcaptureengine.h>
+#include <functional>
 
 // Need ComPtr.
 #include <wrl\client.h>
@@ -32,13 +34,13 @@ using namespace Microsoft::WRL::Wrappers;
 // PnpBridge headers.
 #include <PnpBridge.h>
 
-// IOT Hub Headers 
+// IOT Hub Headers
 #include <iothub.h>
 #include <iothub_device_client.h>
 #include <iothub_client_options.h>
 #include <iothubtransportmqtt.h>
 
-// IOT PnP Headers 
+// IOT PnP Headers
 #include <digitaltwin_device_client.h>
 #include <digitaltwin_interface_client.h>
 #include <azure_c_shared_utility/lock.h>

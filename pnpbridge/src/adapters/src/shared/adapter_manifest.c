@@ -11,10 +11,12 @@ extern PNP_ADAPTER MqttPnpInterface;
 #ifdef WIN32
 
 extern PNP_ADAPTER BluetoothSensorPnpInterface;
-//extern PNP_ADAPTER CameraPnpInterface;
+extern PNP_ADAPTER CameraPnpInterface;
 extern PNP_ADAPTER CoreDeviceHealth;
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
+    &CameraPnpInterface,
+    &CoreDeviceHealth,
     &BluetoothSensorPnpInterface,
     &ModbusPnpInterface,
     &MqttPnpInterface,
