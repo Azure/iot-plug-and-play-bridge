@@ -139,4 +139,4 @@ The implementation of `BluetoothSensorDeviceAdapter` is platform dependent as it
 
 ### 2.1 Windows
 
-On Windows, the `BluetoothSensorDeviceAdapter` is implemented as `BluetoothSensorDeviceAdapterWin` and uses the [BluetoothLEAdvertisementWatcher]( https://docs.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.advertisement.bluetoothleadvertisementwatcher) WinRT API to listen for Bluetooth advertisements.
+On Windows, the `BluetoothSensorDeviceAdapter` is implemented as `BluetoothSensorDeviceAdapterWin` and uses the [BluetoothLEAdvertisementWatcher]( https://docs.microsoft.com/uwp/api/windows.devices.bluetooth.advertisement.bluetoothleadvertisementwatcher) WinRT API to listen for Bluetooth advertisements.

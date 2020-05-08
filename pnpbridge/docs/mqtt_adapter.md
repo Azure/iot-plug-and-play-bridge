@@ -18,62 +18,86 @@ The MQTT adapter is configured in `config.json`, and requires information about 
 An example configuration for a temperature sensor device which connects to an MQTT broker is here:
 
 ```json
-"devices": [
-    {
-        "_comment": "Sample MQTT Temperature Sensor",
-        "self_describing": "true",
-        "match_filters": {
-            "match_type": "exact"
-        },
-        "pnp_parameters": {
-            "identity": "mqtt-pnp-interface"
-        },
-        "discovery_parameters": {
-            "identity": "mqtt-pnp-discovery",
-            "interface":"urn:contoso:com:temperatureSensor:1",
-            "component_name": "temperature_sensor",
-            "mqtt_server":"192.168.1.1",
-            "mqtt_port":1883,
-            "protocol":"json_rpc",
-            "config":[
-                {
-                    "type":"telemetry",
-                    "json_rpc_method":"ambient_temperature",
-                    "name":"ambient_temperature",
-                    "rx_topic":"telemetry"
-                },
-                {
-                    "type":"command",
-                    "json_rpc_method":"set_telemetry_state",
-                    "name":"set_telemetry_state",
-                    "tx_topic":"control",
-                    "rx_topic":"control"
-                }
-            ]
+{
+     "pnp_bridge_interface_components": [
+       {
+        "pnp_bridge_interface_id": "urn:contoso:com:mqtt-device:1",
+        "pnp_bridge_component_name": "MqttComponent",
+        "pnp_bridge_adapter_id": "mqtt-pnp-interface",
+        "pnp_bridge_adapter_config": {
+            "mqtt_port": "1",
+            "mqtt_server": "1.1.1.1",
+            "mqtt_protocol": "json_rpc",
+            "mqtt_identity": "json_rpc_1"
         }
-    }
-]
+      }
+    ]
+}
 ```
 
-The `discovery_parameters` section contains the configuration the MQTT adapter uses to connect to the broker and communicate with the downstream device/application.
+The `pnp_bridge_adapter_config` section contains the configuration the MQTT adapter uses to connect to the broker and communicate with the downstream device/application.
 
 The following fields are required:
 
 | Field Name            | Description                              |
 | --------------------- | ---------------------------------------- |
-| `identity`            | Must be `mqtt-pnp-discovery`. |
-| `interface`           | The URN of this interface as described in the DCM. |
-| `component_name`      | The component name of this interface as described in the DCM. |
+| `pnp_bridge_adapter_id` | Must be `mqtt-pnp-discovery`. |
+| `pnp_bridge_interface_id`           | The URN of this interface as described in the DCM. |
+| `pnp_bridge_component_name`      | The component name of this interface as described in the DCM. |
 | `mqtt_server`         | IP address or domain name of the MQTT broker to connect to. |
 | `mqtt_port`           | Port of the MQTT broker to connect to. |
-| `protocol`            | The protocol that will be used to communicate over MQTT. Only `json_rpc` is currently supported. |
-| `config`              | Config specific to the protocol (e.g. JSON RPC). Please see Section 2 for more information. |
+| `mqtt_protocol`            | The protocol that will be used to communicate over MQTT. Only `json_rpc` is currently supported. |
+| `mqtt_identity`              | Config specific to the protocol (e.g. JSON RPC). Please see Section 2 for more information. |
 
 ## 2. Protocol Configuration (JSON-RPC)
 
-Currently, the JSON-RPC protocol is supported by the adapter. JSON-RPC defines payload structure, and allows for messages which require a response (normal Requests), and messages that do not require a response (Notifications). The adapter supports mapping commands to normal requests, and mapping notifications from a downstream device to telemetry.
+Currently, the JSON-RPC protocol is supported by the adapter. JSON-RPC defines payload structure, and allows for messages which require a response (normal Requests), and messages that do not require a response (Notifications). The adapter supports mapping commands to normal requests, and mapping notifications from a downstream device to telemetry. The adapter must specify this in its global adapter configuration section `pnp_bridge_adapter_global_configs`. Since the MQTT adapter currently only supports JSON RPC, `json_rpc_1` is the only supported `mqtt_identity`
 
-The `config` section is made up of one or more entries, each of which may be `telemetry` or `command`. Each entry may have the following fields:
+```json
+{
+     "pnp_bridge_adapter_global_configs": {
+      "mqtt-pnp-interface": {
+        "json_rpc_1": [
+            {
+                "type": "telemetry",
+                "json_rpc_method": "inventory_summary",
+                "name": "inventory_summary",
+                "rx_topic": "rfid/controller/events"
+            },
+            {
+                "type": "telemetry",
+                "json_rpc_method": "inventory_event",
+                "name": "inventory_event",
+                "rx_topic": "rfid/controller/events"
+            },
+            {
+                "type": "command",
+                "json_rpc_method": "inventory_get_tag_info",
+                "name": "inventory_get_tag_info",
+                "tx_topic": "rfid/controller/command",
+                "rx_topic": "rfid/controller/response"
+            },
+            {
+                "type": "command",
+                "name": "inventory_unload",
+                "json_rpc_method": "inventory_unload",
+                "tx_topic": "rfid/controller/command",
+                "rx_topic": "rfid/controller/response"
+            },
+            {
+                "type": "command",
+                "name": "scheduler_set_run_state",
+                "json_rpc_method": "scheduler_set_run_state",
+                "tx_topic": "rfid/controller/command",
+                "rx_topic": "rfid/controller/response"
+            }
+        ]
+    }
+  }
+}
+```
+
+The interface configuration section is made up of one or more entries, each of which may be `telemetry` or `command`. Each entry may have the following fields:
 
 | Field Name            | Required          | Description                              |
 | --------------------- | ----------------- | ---------------------------------------- |

@@ -1,31 +1,46 @@
 # Sample Camera Adapter
 
-## Enable PnP Adapter
+## Create PnP Adapter
+Declare a PnP Adapter, also declared in CameraPnPBridgeInterface.cpp and implement the interfaces:
 
-Enable the camera adapter by adding the `CameraPnpInterface` declaration to the PnP adapter manifest:
+```C
+PNP_ADAPTER CameraPnpInterface = {
+    "camera-pnp-adapter",         // identity
+    Camera_CreatePnpAdapter,      // createAdapter
+    Camera_CreatePnpInterface,    // createPnpInterface
+    Camera_StartPnpInterface,     // startPnpInterface
+    Camera_StopPnpInterface,      // stopPnpInterface
+    Camera_DestroyPnpInterface,   // destroyPnpInterface
+    Camera_DestroyPnpAdapter      // destroyAdapter
+};
+```
+
+Enable the PnP Adapter by adding the CameraPnpInterface declaration to the PnP Adapter Manifest:
 
 ```C
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
-    &CameraPnpInterface,
+    &CameraPnpInterface
 };
 ```
 
 ## Configuration
-
-Once the PnP adapter has been declared in the respective manifests, the configuration json must be updated to describe the camera device.
+Once the PnP Bridge Adapter has been declared in the respective manifests, the configuration json must be updated to describe the camera device.
 
 ```JSON
-"pnp_bridge_interface_components": [
-  {
-    "_comment": "Component 4 - Standard Video Camera connected to a PC, for now the first camera only.",
-    "pnp_bridge_interface_id": "urn:contoso:com:camera_pnp_adapter:1",
-    "pnp_bridge_component_name": "MyComponent4",
-    "pnp_bridge_adapter_id": "camera-pnp-adapter",
-    "pnp_bridge_adapter_config": {
-      "hardware_id": "UVC_Webcam_00"
+{
+  "pnp_bridge_interface_components": [
+    {
+      "_comment": "Component - Standard Video Camera connected to a PC, for now the first camera only.",
+          "pnp_bridge_interface_id": "urn:contoso:com:camera_pnp_adapter:1",
+          "pnp_bridge_component_name": "CameraComponent",
+          "pnp_bridge_adapter_id": "camera-pnp-adapter",
+          "pnp_bridge_adapter_config": {
+              "hardware_id": "UVC_Webcam_00"
+          }
     }
-  }
-]
+  ]
+}
+
 ```
 
 The sample JSON configuration above describes a single camera connected to the PC and the HardwareId is hardcoded to be UVC_Webcam_00.
