@@ -10,7 +10,7 @@ IoT Plug and Play bridge can be deployed as a standalone executable on any IoT d
 
 IoT Plug and Play bridge supports the following types of peripherals by default. Developers can extend the Azure PnP Bridge to support additional peripherals via the instructions in the [IoT Plug and Play bridge documentation](./pnpbridge/ReadMe.md).
 
-:heavy_check_mark: feature available  :minus_sign: feature planned but not supported  :heavy_minus_sign: no support planned  **N/A** - Not Applicable
+:heavy_check_mark: feature available  :heavy_plus_sign: feature planned but not supported  :heavy_minus_sign: no support planned  **N/A** - Not Applicable
 
 |Peripheral (with Link to Adaptor Documentation)|Windows|Linux|
 |---------|---------|---------|
@@ -20,8 +20,8 @@ IoT Plug and Play bridge supports the following types of peripherals by default.
 |[MQTT](./pnpbridge/docs/mqtt_adapter.md)     | :heavy_check_mark:        |  :heavy_check_mark:        |
 |[Serial](./serialpnp/Readme.md) [2]    |   :heavy_check_mark:      |     :heavy_check_mark:    |
 |Windows USB peripherals   |    :heavy_check_mark:     | **N/A**            |
-|REST     |     :minus_sign:    |      :minus_sign:   |
-|WMI     |    :minus_sign:     |     **N/A**     |
+|REST     |     :heavy_plus_sign:    |      :heavy_plus_sign:   |
+|WMI     |    :heavy_plus_sign:    |     **N/A**     |
 
 [1]  All [cameras](./pnpbridge/src/adapters/src/Camera/readme.md) supported by Windows OS (Webcam, MIPI cameras and IP of RGB/IR/Depth cameras). To enable full support of ONVIF cameras, it is recomended to use 20H1 or later builds.
 
