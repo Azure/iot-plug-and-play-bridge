@@ -5,12 +5,11 @@ extern "C"
 #endif
 
 #include "azure_c_shared_utility/lock.h"
-#include "../ModbusPnp.h"
-#include "../ModbusCapability.h"
 #include "ModbusConnectionHelper.h"
 #include "ModbusRtuConnection.h"
 #include "ModbusTCPConnection.h"
-
+#include "../ModbusPnp.h"
+#include "../ModbusCapability.h"
 
 // ModbusConnection "Public" methods
 

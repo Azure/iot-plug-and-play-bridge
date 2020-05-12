@@ -26,7 +26,7 @@ PnpBridge_Initialize(
     JSON_Value* config = NULL;
     bool lockAcquired = false;
 
-    TRY {
+    {
         g_PnpBridgeState = PNP_BRIDGE_UNINITIALIZED;
 
         // Allocate memory for the PNP_BRIDGE structure
@@ -34,21 +34,21 @@ PnpBridge_Initialize(
         if (NULL == pbridge) {
             LogError("Failed to allocate memory for PnpBridge global");
             result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
-            LEAVE;
+            goto exit;
         }
 
         pbridge->ExitCondition = Condition_Init();
         if (NULL == pbridge->ExitCondition) {
             LogError("Failed to init ExitCondition");
             result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
-            LEAVE;
+            goto exit;
         }
 
         pbridge->ExitLock = Lock_Init();
         if (NULL == pbridge->ExitLock) {
             LogError("Failed to init ExitLock lock");
             result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
-            LEAVE;
+            goto exit;
         }
         Lock(pbridge->ExitLock);
         lockAcquired = true;
@@ -57,14 +57,14 @@ PnpBridge_Initialize(
         result = PnpBridgeConfig_GetJsonValueFromConfigFile(ConfigFilePath, &config);
         if (DIGITALTWIN_CLIENT_OK != result) {
             LogError("Failed to retrieve the bridge configuration from specified file location.");
-            LEAVE;
+            goto exit;
         }
 
         // Check if config file has REQUIRED parameters
         result = PnpBridgeConfig_RetrieveConfiguration(config, &pbridge->Configuration);
         if (DIGITALTWIN_CLIENT_OK != result) {
             LogError("Config file is invalid");
-            LEAVE;
+            goto exit;
         }
 
         // Connect to Iot Hub and create a PnP device client handle
@@ -73,7 +73,7 @@ PnpBridge_Initialize(
             if (DIGITALTWIN_CLIENT_OK != result) {
                 LogError("IotComms_InitializeIotHandle failed\n");
                 result = DIGITALTWIN_CLIENT_ERROR;
-                LEAVE;
+                goto exit;
             }
         }
 
@@ -81,7 +81,7 @@ PnpBridge_Initialize(
 
         g_PnpBridgeState = PNP_BRIDGE_INITIALIZED;
     }
-    FINALLY
+exit:
     {
         if (DIGITALTWIN_CLIENT_OK != result) {
             if (lockAcquired) {
@@ -148,19 +148,19 @@ PnpBridge_Main(const char * ConfigurationFilePath)
     DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
     PPNP_BRIDGE pnpBridge = NULL;
 
-    TRY {
+    {
             LogInfo("Starting Azure PnpBridge");
 
             if (IoTHub_Init() != 0) {
                 LogError("IoTHub_Init failed\n");
                 result = DIGITALTWIN_CLIENT_ERROR;
-                LEAVE;
+                goto exit;
             }
 
             result = PnpBridge_Initialize(&pnpBridge, ConfigurationFilePath);
             if (DIGITALTWIN_CLIENT_OK != result) {
                 LogError("PnpBridge_Initialize failed: %d", result);
-                LEAVE;
+                goto exit;
             }
 
             g_PnpBridge = pnpBridge;
@@ -171,25 +171,25 @@ PnpBridge_Main(const char * ConfigurationFilePath)
             result = PnpAdapterManager_CreateManager(&pnpBridge->PnpMgr, pnpBridge->Configuration.JsonConfig);
             if (DIGITALTWIN_CLIENT_OK != result) {
                 LogError("PnpAdapterManager_Create failed: %d", result);
-                LEAVE;
+                goto exit;
             }
 
             result = PnpAdapterManager_CreateInterfaces(pnpBridge->PnpMgr, pnpBridge->Configuration.JsonConfig);
             if (DIGITALTWIN_CLIENT_OK != result) {
                 LogError("PnpAdapterManager_CreateInterfaces failed: %d", result);
-                LEAVE;
+                goto exit;
             }
 
             result = PnPAdapterManager_RegisterInterfaces(pnpBridge->PnpMgr);
             if (DIGITALTWIN_CLIENT_OK != result) {
                 LogError("PnPAdapterManager_RegisterInterfaces failed: %d", result);
-                LEAVE;
+                goto exit;
             }
 
             result = PnpAdapterManager_StartInterfaces(pnpBridge->PnpMgr);
             if (DIGITALTWIN_CLIENT_OK != result) {
                 LogError("PnpAdapterManager_StartInterfaces failed: %d", result);
-                LEAVE;
+                goto exit;
             }
 
             // Prevent main thread from returning by waiting for the
@@ -199,7 +199,9 @@ PnpBridge_Main(const char * ConfigurationFilePath)
             Condition_Wait(pnpBridge->ExitCondition, pnpBridge->ExitLock, 0);
             Unlock(pnpBridge->ExitLock);
 
-    } FINALLY  {
+    } 
+exit:
+    {
         // Destroy the DigitalTwinClient and recreate it
         IotComms_DigitalTwinClient_Destroy(&pnpBridge->IotHandle);
         g_PnpBridge = NULL;

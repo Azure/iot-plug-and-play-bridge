@@ -9,7 +9,7 @@
 #include <windows.devices.bluetooth.advertisement.h>
 #include <wrl\event.h>
 #include <wrl\wrappers\corewrappers.h>
-
+#include <stdexcept>
 #include "BluetoothSensorDeviceAdapterBase.h"
 
 // Windows specific implementation of the BluetoothSensorDeviceAdapter. The Bluetooth WinRT APIs

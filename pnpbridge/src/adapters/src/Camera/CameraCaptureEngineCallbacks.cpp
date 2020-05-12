@@ -165,9 +165,6 @@ CameraCaptureEngineSampleCallback::InternalInitialize(
     return S_OK;
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////// 
-/// 
 HRESULT
 CameraCaptureEngineCallback::CreateInstance(
     _COM_Outptr_ CameraCaptureEngineCallback** ppCallback

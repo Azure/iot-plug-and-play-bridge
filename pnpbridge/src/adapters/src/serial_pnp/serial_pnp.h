@@ -111,7 +111,7 @@ extern "C"
         HANDLE hSerial;
         DIGITALTWIN_INTERFACE_CLIENT_HANDLE PnpInterfaceHandle;
 
-        byte RxBuffer[MAX_BUFFER_SIZE]; // temporary buffer that gets filled by the reading thread. TODO: maximum buffer size
+        byte RxBuffer[MAX_BUFFER_SIZE]; // Temporary buffer that gets filled by the reading thread. TODO: maximum buffer size
         byte* pbMainBuffer;             // pointer used to pass buffers back to the main thread
         LOCK_HANDLE CommandLock;
         LOCK_HANDLE CommandResponseWaitLock;
@@ -123,7 +123,7 @@ extern "C"
         unsigned int RxBufferIndex;
         bool RxEscaped;
         THREAD_HANDLE SerialDeviceWorker;
-        
+        THREAD_HANDLE TelemetryWorkerHandle;
         // list of interface definitions on this serial device
         SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
     } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;

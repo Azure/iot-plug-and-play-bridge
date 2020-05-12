@@ -20,7 +20,7 @@
 
 class JsonRpcCallContext {
 public:
-    // void*                                       Event;
+
     COND_HANDLE Condition;
     LOCK_HANDLE Lock;
     const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   CommandRequest;
@@ -114,17 +114,13 @@ JsonRpcProtocolHandler::OnPnpMethodCall(
     call.CommandRequest = CommandRequest;
     call.CommandResponse = CommandResponse;
     const char* call_str = s_JsonRpc->RpcCall(json_method, commandParams, &call);
-    // todo send params
+
     printf("Generated JSON %s\n", call_str);
-    // if (commandParams) {
-    //     json_value_free(commandParams);
-    //     commandParams = nullptr;
-    // }
+
 
     // Create event
     call.Condition = Condition_Init();
     call.Lock = Lock_Init();
-    // call.Event = CreateEventA(NULL, TRUE, FALSE, NULL);
 
     // Send appropriate command over json rpc, return success
     printf("Publishing command call on %s : %s\n", tx_topic, call_str);
@@ -135,10 +131,8 @@ JsonRpcProtocolHandler::OnPnpMethodCall(
     Lock(call.Lock);
     Condition_Wait(call.Condition, call.Lock, 0);
     Unlock(call.Lock);
-    // WaitForSingleObject(call.Event, INFINITE);
 
     printf("Response length %d, %s\n", (int) CommandResponse->responseDataLen, CommandResponse->responseData);
-    // CloseHandle(call.Event);
     Condition_Deinit(call.Condition);
     Lock_Deinit(call.Lock);
 }
@@ -172,7 +166,6 @@ JsonRpcProtocolHandler::RpcResultCallback(
     Condition_Post(ctx->Condition);
     Unlock(ctx->Lock);
 
-    // SetEvent(ctx->Event);
 }
 
 void
@@ -193,6 +186,7 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
     }
 
     if (tname) {
+
         // Publish telemetry
         char *out = json_serialize_to_string(Parameters);
         DIGITALTWIN_CLIENT_RESULT res = DIGITALTWIN_CLIENT_OK;

@@ -11,7 +11,6 @@ uint16_t GetCRC(
 {
     if (NULL == message)
     {
-        // TODO: This was -1. Check what should be the correct return value.
         return 0;
     }
 
@@ -241,8 +240,6 @@ int ModbusRtu_ReadResponse(
         return -1;
     }
 #endif
-
-    
 
     bool result = false;
     uint32_t bytesReceived = 0;

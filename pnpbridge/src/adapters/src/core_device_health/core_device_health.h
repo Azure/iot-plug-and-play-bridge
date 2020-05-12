@@ -10,16 +10,16 @@ extern "C"
 
 // Core device context
 typedef struct _CORE_DEVICE_TAG {
-    // Azure IOT PnP Interface handle
+    // Azure IoT PnP Interface handle
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinInterface;
 
     // Windows PnP event notification registration handle
     HCMNOTIFICATION NotifyHandle;
-    
+
     // Device symbolic link
     char* SymbolicLink;
 
-    // Device active
+    // Device active state
     bool DeviceActive;
 } CORE_DEVICE_TAG, *PCORE_DEVICE_TAG;
 

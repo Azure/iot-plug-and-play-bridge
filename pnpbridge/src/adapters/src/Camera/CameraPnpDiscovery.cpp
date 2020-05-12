@@ -85,7 +85,7 @@ HRESULT CameraPnpDiscovery::GetUniqueIdByCameraId(_In_ const std::string& camera
         }
     }
 
-    // no camera in our list matches the input camera Id
+    // No camera in our list matches the input camera Id
     if (uniqueId == L"")
     {
         return E_NOINTERFACE;
@@ -119,8 +119,8 @@ HRESULT CameraPnpDiscovery::EnumerateCameras(_In_ REFGUID guidCategory) try
         cr = CM_Get_Device_Interface_List_Size(&cchInterfaceList, (GUID*)&guidCategory, nullptr, CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
         if (cr != CR_SUCCESS || cchInterfaceList == 0)
         {
-            // No Sensor Groups available, this is not an error, it just makes this
-            // test a no-op.  Leave.
+            // No sensor groups available, this is not an error, it just makes this
+            // test a no-op, leave
             return S_OK;
         }
 
@@ -133,11 +133,11 @@ HRESULT CameraPnpDiscovery::EnumerateCameras(_In_ REFGUID guidCategory) try
     }
     while (cr == CR_BUFFER_SMALL);
 
-    // This should never be null...
+    // This should never be null
     RETURN_HR_IF_NULL (E_UNEXPECTED, pwzInterfaceList.get());
     if (cchInterfaceList <= 1)
     {
-        // This is empty...leave.
+        // This is empty, leave
         return S_OK;
     }
 
@@ -151,12 +151,12 @@ HRESULT CameraPnpDiscovery::EnumerateCameras(_In_ REFGUID guidCategory) try
         std::wstring deviceName(pwz);
         RETURN_IF_FAILED (CameraPnpDiscovery::MakeUniqueId(deviceName, uniqueId->m_UniqueId, uniqueId->m_cameraId));
 
-        // Filter out duplicates.
+        // Filter out duplicates
         for (CameraUniqueIdPtrList::iterator itr = m_cameraUniqueIds.begin(); itr != m_cameraUniqueIds.end(); itr++)
         {
             if (_wcsicmp((*itr)->m_UniqueId.c_str(), uniqueId->m_UniqueId.c_str()) == 0)
             {
-                // Dupe.
+                // Dupe
                 fDupe = true;
                 break;
             }
@@ -223,7 +223,7 @@ DWORD CameraPnpDiscovery::PcmNotifyCallback(
 {
     ((CameraPnpDiscovery*)Context)->OnCameraArrivalRemoval();
 
-    // Must always return this since we don't want to "cancel" a device add/remove.
+    // Must always return this since we don't want to "cancel" a device add/remove
     return ERROR_SUCCESS;
 }
 
@@ -279,12 +279,12 @@ HRESULT CameraPnpDiscovery::GetDeviceProperty(
         if (pbBuffer == nullptr || cbBuffer == 0)
         {
             // If the in param for the buffer, we're just asking for the
-            // size, so return S_OK along with the size required.
+            // size, so return S_OK along with the size required
             return S_OK;
         }
 
         // Otherwise, if the input buffer is not large enough, return an
-        // error.
+        // error
         RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), cb > cbBuffer);
         cb = cbBuffer;
         cr = CM_Get_DevNode_Property(hDevInstance, pKey, &propType, pbBuffer, &cb, 0);
@@ -316,12 +316,12 @@ HRESULT CameraPnpDiscovery::GetDeviceInterfaceProperty(
         if (pbBuffer == nullptr || cbBuffer == 0)
         {
             // If the in param for the buffer, we're just asking for the
-            // size, so return S_OK along with the size required.
+            // size, so return S_OK along with the size required
             return S_OK;
         }
 
         // Otherwise, if the input buffer is not large enough, return an
-        // error.
+        // error
         RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), cb > cbBuffer);
         cb = cbBuffer;
         cr = CM_Get_Device_Interface_Property(deviceName, pKey, &propType, (PBYTE)pbBuffer, &cb, 0);
@@ -338,7 +338,7 @@ bool CameraPnpDiscovery::IsDeviceInterfaceEnabled(_In_z_ LPCWSTR deviceName)
     DEVPROP_BOOLEAN fdpEnabled = DEVPROP_FALSE;
     ULONG           cb = sizeof(fdpEnabled);
 
-    // Empty string, it's disabled.
+    // Empty string, it's disabled
     if (nullptr == deviceName || *deviceName == L'\0')
     {
         return false;
@@ -364,7 +364,7 @@ HRESULT CameraPnpDiscovery::MakeUniqueId(
         return E_INVALIDARG;
     }
 
-    // Reset the ID.
+    // Reset the ID
     uniqueId.clear();
     cameraId.clear();
 
@@ -389,12 +389,12 @@ HRESULT CameraPnpDiscovery::MakeUniqueId(
     }
 
     // If we haven't found it, then this isn't a camera, so
-    // leave.
+    // leave
     RETURN_HR_IF (E_INVALIDARG, uniqueId.empty());
 
     // If it's not a IP camera, get the hardware ID via the propkey and use it as the camera ID.
     // If it is a IP camera, use the UUID as the camera ID.
-    // TODO: maybe just use uniqueID throughout, but these are pretty long and not as accessible
+
     if (wcsstr(deviceName.c_str(), L"NetworkCamera") != NULL)
     {
         const wchar_t* pUUIDptr = wcsstr(deviceName.c_str(), L"uuid:");
@@ -418,8 +418,8 @@ HRESULT CameraPnpDiscovery::MakeUniqueId(
             &cb));
     }
     // HWID has the "most unique" ID as the first of the null terminated
-    // multi-string.  So we can just take that and assign it to our
-    // HWID.
+    // multi-string. So we can just take that and assign it to our
+    // HWID
     cameraId = (LPCWSTR)pbCameraId.get();
 
     return S_OK;

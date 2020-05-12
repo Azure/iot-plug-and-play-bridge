@@ -85,7 +85,7 @@ void CameraIotPnpDeviceAdapter::OnCameraArrivalRemoval()
 
         // For now, assume:
         //   - IP camera IDs begin with "uuid"
-        //   - Other camera IDs begin with "USB\"..
+        //   - Other camera IDs begin with "USB\"
         std::unique_ptr<CameraIotPnpDeviceAdapter> newCameraDevice;
         if (m_cameraId.rfind("uuid", 0) == 0)
         {

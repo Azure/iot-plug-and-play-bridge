@@ -39,7 +39,7 @@ typedef uint16_t UINT16;
 
 #include "serial_pnp.h"
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_UartReceiver(
+int SerialPnp_UartReceiver(
     void* context)
 {
     int result = 0;
@@ -418,7 +418,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_PropertyHandler(
         return DIGITALTWIN_CLIENT_ERROR;
     }
 
-    // otherwise serialize data
+    // Otherwise serialize data
     int dataLength = 0;
     byte* inputPayload = SerialPnp_StringSchemaToBinary(prop->DataSchema, input, &dataLength);
     if (!inputPayload)
@@ -473,7 +473,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
         return DIGITALTWIN_CLIENT_ERROR;
     }
 
-    // otherwise serialize data
+    // Otherwise serialize data
     int length = 0;
     byte* inputPayload = SerialPnp_StringSchemaToBinary(cmd->RequestSchema, input, &length);
     if (!inputPayload)
@@ -496,7 +496,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
     txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = (byte)(txlength & 0xFF);
     txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET + 1] = (byte)(txlength >> 8);
     txPacket[SERIALPNP_PACKET_PACKET_TYPE_OFFSET] = SERIALPNP_PACKET_TYPE_COMMAND_REQUEST;
-    //txPacket[3] is reserved
+    // txPacket[3] is reserved
     txPacket[SERIALPNP_PACKET_INTERFACE_NUMBER_OFFSET] = (byte)0;
     txPacket[SERIALPNP_PACKET_NAME_LENGTH_OFFSET] = (byte)nameLength;
 
@@ -568,7 +568,6 @@ void SerialPnp_ParseDescriptor(
     {
         if (descriptor[c++] == 0x05)
         {
-            // inline interface
             InterfaceDefinition* indef = calloc(1, sizeof(InterfaceDefinition));
             indef->Events = singlylinkedlist_create();
             indef->Properties = singlylinkedlist_create();
@@ -1399,8 +1398,12 @@ SerialPnp_StartPnpInterface(
         return DIGITALTWIN_CLIENT_ERROR;
     }
 
-    // Start telemetry
-    return SerialPnp_UartReceiver(deviceContext);
+    // Start telemetry thread
+    if (ThreadAPI_Create(&deviceContext->TelemetryWorkerHandle, SerialPnp_UartReceiver, deviceContext) != THREADAPI_OK) {
+        LogError("ThreadAPI_Create failed");
+        return DIGITALTWIN_CLIENT_ERROR;
+    }
+    return DIGITALTWIN_CLIENT_OK;
 }
 
 
@@ -1514,6 +1517,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_StopPnpInterface(
         close(deviceContext->hSerial);
     }
 #endif
+    ThreadAPI_Join(deviceContext->TelemetryWorkerHandle, NULL);
     return DIGITALTWIN_CLIENT_OK;
 }
 

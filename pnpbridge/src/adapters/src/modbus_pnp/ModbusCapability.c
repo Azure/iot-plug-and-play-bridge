@@ -18,36 +18,6 @@ static COND_HANDLE StopPolling;
 
 #pragma region Commands
 
-static void ModbusPnp_SetCommandResponse(
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
-    const char* responseData,
-    int status)
-{
-    if (NULL == responseData)
-    {
-        return;
-    }
-
-    size_t responseLen = strlen(responseData);
-    memset(pnpClientCommandResponseContext, 0, sizeof(*pnpClientCommandResponseContext));
-    pnpClientCommandResponseContext->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
-
-    // Allocate a copy of the response data to return to the invoker. The Pnp layer that invoked
-    // PnPSampleEnvironmentalSensor_Blink takes responsibility for freeing this data.
-    if ((pnpClientCommandResponseContext->responseData = malloc(responseLen + 1)) == NULL)
-    {
-        LogError("ModbusPnp: Unable to allocate response data");
-        pnpClientCommandResponseContext->status = 500;
-    }
-    else
-    {
-        pnpClientCommandResponseContext->responseData = (unsigned char*)responseData;
-        //strcpy_s((char*)pnpClientCommandResponseContext->responseData, responseData);
-        pnpClientCommandResponseContext->responseDataLen = responseLen;
-        pnpClientCommandResponseContext->status = status;
-    }
-}
-
 const ModbusCommand* ModbusPnp_LookupCommand(
     PModbusInterfaceConfig interfaceDefinitions,
     const char* commandName)
@@ -259,7 +229,7 @@ int ModbusPnp_ReportTelemetry(
 
     if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), ModbusPnp_ReportTelemetryCallback, (void*)eventName)) != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("PnP_InterfaceClient_SendTelemetryAsync failed, result=%d\n", pnpClientResult);
+        LogError("ModbusPnp_ReportTelemetry failed, result=%d\n", pnpClientResult);
     }
 
     return pnpClientResult;
@@ -320,7 +290,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
     LIST_ITEM_HANDLE propertyItemHandle = NULL;
 
 
-    //Initialize the polling tasks for telemetry and properties
+    // Initialize the polling tasks for telemetry and properties
     deviceContext->PollingTasks = NULL;
     if (telemetryCount > 0 || propertyCount > 0)
     {

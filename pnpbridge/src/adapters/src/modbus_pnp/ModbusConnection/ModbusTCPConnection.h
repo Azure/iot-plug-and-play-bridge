@@ -15,7 +15,7 @@ extern "C"
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#define SOCKET int
+typedef int SOCKET;
 #define SOCKET_ERROR (-1)
 #define INVALID_SOCKET (~0)
 #endif

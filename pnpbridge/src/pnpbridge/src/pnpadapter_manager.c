@@ -96,7 +96,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(const char* a
 DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateAdapter(const char* adapterId, PPNP_ADAPTER_CONTEXT_TAG* adapterContext, JSON_Value* config)
 {
     DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
-    //JSON_Object* globalAdapterParameters = NULL;
+
     PPNP_ADAPTER_CONTEXT_TAG pnpAdapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)malloc(sizeof(PNP_ADAPTER_CONTEXT_TAG));
     if (pnpAdapterHandle == NULL)
     {

@@ -50,12 +50,6 @@ extern "C"
 
 #define DIGITALTWIN_MODULE_CLIENT_HANDLE void*
 
-#define TRY
-#define LEAVE   goto __tryLabel;
-#define FINALLY goto __tryLabel; __tryLabel:
-#undef __try
-#undef __finally
-
 #define PNPBRIDGE_RESULT_VALUES \
     PNPBRIDGE_OK, \
     PNPBRIDGE_INSUFFICIENT_MEMORY, \

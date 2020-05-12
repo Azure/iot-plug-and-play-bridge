@@ -60,25 +60,25 @@ int ProcessModbusResponse(
     int resultLength = -1;
 
     // Get excpectd number of bits or registers in the payload
-    switch (response[dataOffset])//function code
+    switch (response[dataOffset])   // Function code
     {
     case ReadCoils:
     case ReadInputs:
         stepSize = 1;
-        dataOffset += 2;    // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
+        dataOffset += 2;            // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
         break;
     case ReadHoldingRegisters:
     case ReadInputRegisters:
         stepSize = 2;
-        dataOffset += 2;    // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
+        dataOffset += 2;            // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
         break;
     case WriteCoil:
         stepSize = 1;
-        dataOffset += 3;    // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
+        dataOffset += 3;            // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
         break;
     case WriteHoldingRegister:
         stepSize = 2;
-        dataOffset += 3;    // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
+        dataOffset += 3;            // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
         break;
     }
 
@@ -112,11 +112,11 @@ int ProcessModbusResponse(
     }
     }
 
-    //Check Endian-ness
+    // Check Endian-ness
 
     if (stepSize == 1)
     {
-        //Read bits (1 bit)
+        // Read bits (1 bit)
         uint8_t bitVal = (uint8_t)(response[dataOffset] & 0b1);
         const char* data = (bitVal == (uint8_t)1) ? "true" : "false";
         resultLength = sprintf_s((char*)result, MODBUS_RESPONSE_MAX_LENGTH, "%s", data);
@@ -134,7 +134,7 @@ int ProcessModbusResponse(
                 LogError("Failed to convert the response to string: Memory allocation failed.");
                 return -1;
             }
-            //reverse data array
+            // Reverse data array
             for (int i = 0; i < dataLength * 2; i++)
             {
                 strBuffer[(dataLength * 2) - i - 1] = response[dataOffset + i];
@@ -148,7 +148,7 @@ int ProcessModbusResponse(
                 strBuffer[(i * 2) + 1] = temp;
             }
 
-            //Convert Hex string
+            // Convert Hex string
             char* strPtr = (char*)result;
             *(strPtr++) = '\"';
             resultLength = 1;
@@ -165,6 +165,7 @@ int ProcessModbusResponse(
                 result[resultLength++] = '\"';
                 result[resultLength++] = '\0';
             }
+
             free(strBuffer);
             return resultLength;
         }
@@ -176,7 +177,7 @@ int ProcessModbusResponse(
                 LogError("Failed to convert the response to string: Memory allocation failed.");
                 return -1;
             }
-            //reverse data array
+            // Reverse data array
             for (int i = 0; i < dataLength * 2; i++)
             {
                 strBuffer[(dataLength * 2) - i - 1] = response[dataOffset + i];
@@ -190,7 +191,7 @@ int ProcessModbusResponse(
                 strBuffer[(i * 2) + 1] = temp;
             }
 
-            //Convert non-alpha-numberic char to Hex char
+            // Convert non-alpha-numberic char to Hex char
             char* strPtr = (char*)result;
             *(strPtr++) = '\"';
             resultLength = 1;
@@ -223,7 +224,7 @@ int ProcessModbusResponse(
             int n = 1;
             if (dataLength > 1 && *(char *)&n == 1)
             {
-                //Is little Endian, reverse response array
+                // Is little Endian, reverse response array
                 uint8_t temp = 0x00;
                 for (size_t i = dataOffset, j = responseLength - 1; i < ((responseLength - dataOffset) / 2); i++, j--)
                 {
@@ -232,36 +233,37 @@ int ProcessModbusResponse(
                     response[j] = temp;
                 }
             }
+
             switch (dataLength)
             {
-            case 1:
-            {
-                uint16_t rawValue = ((response[dataOffset] << 8) + response[dataOffset + 1]);
-                value = rawValue * conversionCoefficient;
-                break;
-            }
-            case 2:
-            {
-                uint32_t rawValue = 0;
-                for (int i = 0; i < dataLength; i++)
+                case 1:
                 {
-                    rawValue <<= 16;
-                    rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    uint16_t rawValue = ((response[dataOffset] << 8) + response[dataOffset + 1]);
+                    value = rawValue * conversionCoefficient;
+                    break;
                 }
-                value = rawValue * conversionCoefficient;
-                break;
-            }
-            case 4:
-            {
-                uint64_t rawValue = 0;
-                for (int i = 0; i < dataLength; i++)
+                case 2:
                 {
-                    rawValue <<= 16;
-                    rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    uint32_t rawValue = 0;
+                    for (int i = 0; i < dataLength; i++)
+                    {
+                        rawValue <<= 16;
+                        rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    }
+                    value = rawValue * conversionCoefficient;
+                    break;
                 }
-                value = rawValue * conversionCoefficient;
-                break;
-            }
+                case 4:
+                {
+                    uint64_t rawValue = 0;
+                    for (int i = 0; i < dataLength; i++)
+                    {
+                        rawValue <<= 16;
+                        rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    }
+                    value = rawValue * conversionCoefficient;
+                    break;
+                }
             }
             break;
         }
@@ -281,14 +283,14 @@ bool ModbusPnp_CloseDevice(
     bool result = false;
     switch (connectionType)
     {
-    case TCP:
-        result = ModbusTcp_CloseDevice((SOCKET)hDevice, hLock);
-        break;
-    case RTU:
-        result = ModbusRtu_CloseDevice(hDevice, hLock);
-        break;
-    default:
-        break;
+        case TCP:
+            result = ModbusTcp_CloseDevice((SOCKET)hDevice, hLock);
+            break;
+        case RTU:
+            result = ModbusRtu_CloseDevice(hDevice, hLock);
+            break;
+        default:
+            break;
     }
     return result;
 }
@@ -365,14 +367,14 @@ int ModbusPnp_SendRequest(
     int result = -1;
     switch (connectionType)
     {
-    case TCP:
-        result = ModbusTcp_SendRequest((SOCKET)handler, requestArr, arrLen);
-        break;
-    case RTU:
-        result = ModbusRtu_SendRequest(handler, requestArr, arrLen);
-        break;
-    default:
-        break;
+        case TCP:
+            result = ModbusTcp_SendRequest((SOCKET)handler, requestArr, arrLen);
+            break;
+        case RTU:
+            result = ModbusRtu_SendRequest(handler, requestArr, arrLen);
+            break;
+        default:
+            break;
     }
     return result;
 }

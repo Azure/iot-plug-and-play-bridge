@@ -11,28 +11,28 @@ bool ModbusConnectionHelper_GetFunctionCode(
     uint8_t entityType = (uint8_t)atoi(&entityChar);
     switch (entityType)
     {
-    case CoilStatus:
-    {
-        *functionCode = isRead ? ReadCoils : WriteCoil;
-        break;
-    }
-    case InputStatus:
-    {
-        *functionCode = ReadInputs;
-        break;
-    }
-    case HoldingRegister:
-    {
-        *functionCode = isRead ? ReadHoldingRegisters : WriteHoldingRegister;
-        break;
-    }
-    case InputRegister:
-    {
-        *functionCode = ReadInputRegisters;
-        break;
-    }
-    default:
-        return false;
+        case CoilStatus:
+        {
+            *functionCode = isRead ? ReadCoils : WriteCoil;
+            break;
+        }
+        case InputStatus:
+        {
+            *functionCode = ReadInputs;
+            break;
+        }
+        case HoldingRegister:
+        {
+            *functionCode = isRead ? ReadHoldingRegisters : WriteHoldingRegister;
+            break;
+        }
+        case InputRegister:
+        {
+            *functionCode = ReadInputRegisters;
+            break;
+        }
+        default:
+            return false;
     }
 
     char subAddress[5] = "";
@@ -55,12 +55,12 @@ bool ModbusConnectionHelper_ConvertValueStrToUInt16(
             {
                 if (strcmp(valueStr, "true") == 0)
                 {
-                    //ON
+                    // On
                     *value = 0xFF00;
                 }
                 else
                 {
-                    //OFF
+                    // Off
                     *value = 0x0000;
                 }
             }

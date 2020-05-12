@@ -48,7 +48,6 @@ typedef struct ModbusProperty {
     int    DefaultFrequency;
     ModbusAccessType Access;
     CapabilityType Type;
-    //ModbusDevice HostDevice;
 } ModbusProperty, *PModbusProperty;
 
 typedef struct ModbusCommand {
@@ -59,7 +58,6 @@ typedef struct ModbusCommand {
     double ConversionCoefficient;
     MODBUS_WRITE_1_REG_REQUEST WriteRequest;
     CapabilityType Type;
-    //ModbusDevice HostDevice;
 } ModbusCommand, *PModbusCommand;
 
 typedef struct CapabilityContext {

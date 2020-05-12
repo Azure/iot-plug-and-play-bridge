@@ -42,7 +42,7 @@ typedef enum MODBUS_CONNECTION_TYPE
     UNKOWN,
     RTU,
     TCP,
-}MODBUS_CONNECTION_TYPE;
+} MODBUS_CONNECTION_TYPE;
 
 #ifdef __cplusplus
 }

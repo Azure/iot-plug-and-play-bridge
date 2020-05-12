@@ -90,7 +90,7 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
     SECURE_DEVICE_TYPE secureDeviceTypeForProvisioning;
     IOTHUB_SECURITY_TYPE secureDeviceTypeForIotHub;
 
-    TRY{
+    {
 
         if (AUTH_TYPE_SYMMETRIC_KEY == ConnectionParams->AuthParameters.AuthType) {
             secureDeviceTypeForProvisioning = SECURE_DEVICE_TYPE_SYMMETRIC_KEY;
@@ -102,14 +102,14 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
         }
         else {
             LogError("IotComms_InitializeIotHubViaProvisioning: Unknown AuthType");
-            LEAVE;
+            goto exit;
         }
 
         size_t customProvDataLength = strlen(pnpSample_CustomProvisioningData) + strlen(dcmModelId) + 1;
         customProvisioningData = calloc(1, customProvDataLength * sizeof(char));
         if (NULL == customProvisioningData) {
             LogError("Failed to allocate memory fo the customProvisiongData.");
-            LEAVE;
+            goto exit;
         }
 
         if (-1 == sprintf_s(customProvisioningData, customProvDataLength, pnpSample_CustomProvisioningData, dcmModelId)) {
@@ -188,7 +188,9 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
             }
         }
 
-    } FINALLY{
+    } 
+exit:
+    {
 
         if (NULL != customProvisioningData) {
             free(customProvisioningData);
@@ -371,7 +373,7 @@ IotComms_InitializeIotDeviceHandle(
 {
     DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
 
-    TRY{
+    {
         // Mark this as device handle
         IotHandle->IsModule = false;
 
@@ -380,15 +382,13 @@ IotComms_InitializeIotDeviceHandle(
     if (NULL == IotHandle->u1.IotDevice.deviceHandle) {
         LogError("IotComms_InitializeIotDevice failed\n");
         result = DIGITALTWIN_CLIENT_ERROR;
-        LEAVE;
+        goto exit;
     }
 
     // We have completed initializing the pnp client
     IotHandle->DeviceClientInitialized = true;
-    } FINALLY{
-
     }
-
+exit:
     return result;
 }
 

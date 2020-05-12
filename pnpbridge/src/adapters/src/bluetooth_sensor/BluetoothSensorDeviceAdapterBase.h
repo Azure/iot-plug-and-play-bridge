@@ -5,7 +5,7 @@
 
 #include <unordered_map>
 #include <string>
-
+#include <stdexcept>
 #include "BluetoothSensorDeviceAdapter.h"
 
 // This base class contains the digital twin implementation of the BluetoothSensorDeviceAdapter.

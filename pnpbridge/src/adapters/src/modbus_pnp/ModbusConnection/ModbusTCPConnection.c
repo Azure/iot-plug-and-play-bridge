@@ -1,6 +1,6 @@
 #include "ModbusTCPConnection.h"
 
-// timeout interval for waiting for socket readiness
+// Timeout interval for waiting for socket readiness
 #define SOCKET_TIMEOUT_SEC	5
 #define SOCKET_TIMEOUT_USEC	0
 
@@ -212,7 +212,7 @@ int ModbusTcp_SendRequest(
     int totalBytesSent = send(socket, (const char*)requestArr, arrLen, 0);
 
     if (SOCKET_ERROR == totalBytesSent) {
-        //error setting serial port state
+        // Error setting serial port state
 #ifdef WIN32
         LogError("Failed to send request through socket with error: %ld.", WSAGetLastError());
 #else

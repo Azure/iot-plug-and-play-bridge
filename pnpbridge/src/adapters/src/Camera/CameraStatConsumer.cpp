@@ -233,7 +233,7 @@ CameraStatConsumer::AddStat(
 
     if (FAILED(m_stats.m_hrstatus))
     {
-        // Do nothing.  We don't want to lose the old state information.
+        // Do nothing. We don't want to lose the old state information.
         return S_OK;
     }
 

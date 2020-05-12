@@ -238,11 +238,11 @@ HRESULT CameraIotPnpDevice::LoopTelemetry(_In_ DWORD dwMilliseconds)
         switch (dwWait)
         {
         case WAIT_OBJECT_0:
-            // Time to shutdown...return from this.
+            // Shutdown, return
             fShutdown = true;
             break;
         case WAIT_TIMEOUT:
-            // Just keep looping.
+            // Just keep looping
             if ((stats_pre.m_dropped + stats_pre.m_output) > 0)
             {
                 RETURN_IF_FAILED (m_cameraStats->PostStats(stats_post, &llEnd));
@@ -257,7 +257,7 @@ HRESULT CameraIotPnpDevice::LoopTelemetry(_In_ DWORD dwMilliseconds)
         }
 
         if (!fShutdown && ((stats_pre.m_dropped + stats_pre.m_output) > 0)
-            // don't log if pre and post stats are the same (stream has stopped and stats are unchanged)
+            // Don't log if pre and post stats are the same (stream has stopped and stats are unchanged)
             && !(stats_pre.m_dropped == stats_post.m_dropped && stats_pre.m_output == stats_post.m_output))
         {
             LONGLONG                        llDelta = (llEnd - llStart);
@@ -500,4 +500,3 @@ DWORD WINAPI CameraIotPnpDevice::TelemetryWorkerThreadProc(_In_opt_ PVOID pv)
 
     return 0;
 }
-

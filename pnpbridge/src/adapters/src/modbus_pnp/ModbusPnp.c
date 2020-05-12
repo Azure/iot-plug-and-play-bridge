@@ -278,14 +278,14 @@ int ModbusPnp_ParseRtuSettings(
     ModbusDeviceConfig* deviceConfig,
     JSON_Object* configObj)
 {
-    //Get serial port name
+    // Get serial port name
     deviceConfig->ConnectionConfig.RtuConfig.Port = (char*)json_object_dotget_string(configObj, "port");
     if (NULL == deviceConfig->ConnectionConfig.RtuConfig.Port) {
         LogError("ComPort parameter is missing in RTU configuration");
         return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
-    //Get serial baudRate
+    // Get serial baudRate
     const char* baudRateStr = (const char*)json_object_dotget_string(configObj, "baudRate");
     if (NULL == baudRateStr) {
         LogError("BaudRate parameter is missing in RTU configuration");
@@ -293,14 +293,14 @@ int ModbusPnp_ParseRtuSettings(
     }
     deviceConfig->ConnectionConfig.RtuConfig.BaudRate = atoi(baudRateStr);
 
-    //Get serial dataBits
+    // Get serial dataBits
     deviceConfig->ConnectionConfig.RtuConfig.DataBits = (uint8_t)json_object_dotget_number(configObj, "dataBits");
     if (7 != deviceConfig->ConnectionConfig.RtuConfig.DataBits && 8 != deviceConfig->ConnectionConfig.RtuConfig.DataBits) {
         LogError("data Bits parameter is missing or invalid in RTU configuration.  Valid Input: {7, 8}");
         return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
-    //Get serial stopBits
+    // Get serial stopBits
     const char* stopBitStr = (const char*)json_object_dotget_string(configObj, "stopBits");
     if (NULL != stopBitStr) {
         if (strcmpcasei(stopBitStr, "ONE") == 0 || strcmpcasei(stopBitStr, "1") == 0) {
@@ -342,7 +342,7 @@ int ModbusPnp_ParseRtuSettings(
         }
     }
 
-    //Get serial port partiy
+    // Get serial port partiy
     const char* parityStr = (const char*)json_object_dotget_string(configObj, "parity");
     if (NULL == parityStr) {
         LogError("Parity parameter is missing in RTU configuration.");
@@ -377,14 +377,14 @@ int ModbusPnP_ParseTcpSettings(
     ModbusDeviceConfig* deviceConfig,
     JSON_Object* configObj)
 {
-    //Get serial port name
+    // Get serial port name
     deviceConfig->ConnectionConfig.TcpConfig.Host = (char*)json_object_dotget_string(configObj, "host");
     if (NULL == deviceConfig->ConnectionConfig.TcpConfig.Host) {
         LogError("\"Host\" parameter is missing in TCP configuration");
         return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
-    //Get serial dataBits
+    // Get serial dataBits
     deviceConfig->ConnectionConfig.TcpConfig.Port = (uint16_t)json_object_dotget_number(configObj, "port");
     if (0 == deviceConfig->ConnectionConfig.TcpConfig.Port) {
         LogError("\"Port\" is invalide in TCP configuration: Cannot be 0.");
@@ -439,7 +439,7 @@ int ModbusPnp_OpenSerial(
     dcbSerialParams.StopBits = rtuConfig->StopBits;
     dcbSerialParams.Parity = rtuConfig->Parity;
     if (!SetCommState(*serialHandle, &dcbSerialParams)) {
-        //error setting serial port state
+        // Error setting serial port state
         LogError("Failed to open com port %s, %x", rtuConfig->Port, GetLastError());
         return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
