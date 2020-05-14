@@ -53,9 +53,9 @@ CameraStatConsumer::~CameraStatConsumer(
     InternalShutdown();
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::Initialize(
-    _In_opt_z_ LPCWSTR SessionName, 
+    _In_opt_z_ LPCWSTR SessionName,
     _In_ REFGUID guidSession,
     _In_opt_z_ LPCWSTR SymbolicName
     )
@@ -99,7 +99,7 @@ CameraStatConsumer::Initialize(
     return S_OK;
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::AddProvider(
     _In_ REFGUID guidProvider
     )
@@ -111,7 +111,7 @@ CameraStatConsumer::AddProvider(
     return S_OK;
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::Start(
     )
 {
@@ -120,7 +120,7 @@ CameraStatConsumer::Start(
     return InternalStart();
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::Stop(
     )
 {
@@ -129,7 +129,7 @@ CameraStatConsumer::Stop(
     return InternalStop();
 }
 
-void 
+void
 CameraStatConsumer::Shutdown(
     )
 {
@@ -139,9 +139,9 @@ CameraStatConsumer::Shutdown(
     (void) InternalShutdown();
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::PreStats(
-    _Inout_ FSStatisticsEntry& stats_pre, 
+    _Inout_ FSStatisticsEntry& stats_pre,
     _Out_ LONGLONG* pllPreTs
     )
 {
@@ -155,9 +155,9 @@ CameraStatConsumer::PreStats(
     return S_OK;
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::PostStats(
-    _Inout_ FSStatisticsEntry& stats_post, 
+    _Inout_ FSStatisticsEntry& stats_post,
     _Out_ LONGLONG* pllPostTs
     )
 {
@@ -171,100 +171,9 @@ CameraStatConsumer::PostStats(
     return S_OK;
 }
 
-// Deprecated, camera functions not through CameraStatConsumer anymore
-HRESULT 
-CameraStatConsumer::TakePhoto(
-    )
-{
-    CameraCaptureEngine     camera;
-    ComPtr<IMFSample>       jpegFrame;
-    std::wstring            symbolicName;
-
-    m_lock.Lock();
-    symbolicName = m_SymbolicLinkName;
-    m_lock.Unlock();
-
-    LogInfo ("Taking photo...");
-    RETURN_IF_FAILED (camera.TakePhoto((symbolicName.empty() ? nullptr : symbolicName.c_str()), &jpegFrame));
-
-    if (jpegFrame.Get() != nullptr)
-    {
-        DWORD  cBufCount = 0;
-        ComPtr<IMFMediaBuffer>  spJpegBuffer;
-        ULONG cbJpegSize = 0;
-        PBYTE pbJpeg = nullptr;
-        errno_t err = 0;
-
-        RETURN_IF_FAILED (jpegFrame->GetBufferCount(&cBufCount));
-        RETURN_HR_IF (E_UNEXPECTED, cBufCount != 1);
-        RETURN_IF_FAILED (jpegFrame->ConvertToContiguousBuffer(&spJpegBuffer));
-        RETURN_IF_FAILED (spJpegBuffer->Lock(&pbJpeg, nullptr, (DWORD*)&cbJpegSize));
-
-        m_lock.Lock();
-        m_jpegFrameSize = cbJpegSize;
-        m_jpegFrame = std::make_unique<BYTE[]>(cbJpegSize);
-        err = memcpy_s(m_jpegFrame.get(), cbJpegSize, pbJpeg, cbJpegSize);
-        m_lock.Unlock();
-
-        RETURN_HR_IF (E_UNEXPECTED, err != 0);
-    }
-
-    return S_OK;
-}
-
-HRESULT 
-CameraStatConsumer::GetJpegFrameSize(
-    _Out_ ULONG* pcbJpegFrameSize
-    )
-{
-    AutoLock lock(&m_lock);
-
-    RETURN_HR_IF_NULL (E_POINTER, pcbJpegFrameSize);
-    *pcbJpegFrameSize = (ULONG)m_jpegFrameSize;
-
-    return S_OK;
-}
-
-HRESULT 
-CameraStatConsumer::GetJpegFrame(
-    _Inout_ PBYTE pbJpegFrame, 
-    _In_ ULONG cbJpegFrame, 
-    _Out_opt_ ULONG* pcbWritten
-    )
-{
-    AutoLock lock(&m_lock);
-
-    ComPtr<IMFMediaBuffer>  spJpegBuffer;
-    errno_t                 err = 0;
-    
-    RETURN_HR_IF_NULL (E_INVALIDARG, pbJpegFrame);
-    RETURN_HR_IF (E_INVALIDARG, cbJpegFrame == 0);
-
-    // There should be one buffer (we shouldn't see multi-buffer
-    // samples since that's only for network streaming samples).
-    RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_NOT_FOUND), m_jpegFrame.get() == nullptr);
-
-    if (m_jpegFrameSize > cbJpegFrame)
-    {
-        RETURN_IF_FAILED (HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
-    }
-    // errno_t doesn't translate to Win32 errors, just return
-    // E_INVALIDARG since that's what will cause memcpy_s to 
-    // fail.
-    err = memcpy_s (pbJpegFrame, cbJpegFrame, m_jpegFrame.get(), m_jpegFrameSize);
-    RETURN_HR_IF (E_INVALIDARG, err != 0);
-
-    if (pcbWritten)
-    {
-        *pcbWritten = (ULONG)m_jpegFrameSize;
-    }
-
-    return S_OK;
-}
-
 
 /// Protected methods.
-void 
+void
 CameraStatConsumer::ProcessETWEventCallback(
     _In_ PEVENT_RECORD pRecord
     )
@@ -295,7 +204,7 @@ CameraStatConsumer::ProcessETWEventCallback(
     return;
 }
 
-DWORD 
+DWORD
 CameraStatConsumer::ETWProcessThreadProc(
     _In_opt_ PVOID pv
     )
@@ -313,9 +222,9 @@ CameraStatConsumer::ETWProcessThreadProc(
     return 0;
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::AddStat(
-    _In_ FSStatisticsEntry* pstats, 
+    _In_ FSStatisticsEntry* pstats,
     _In_opt_z_ LPCWSTR DeviceSymbolicName
     )
 {
@@ -324,7 +233,7 @@ CameraStatConsumer::AddStat(
 
     if (FAILED(m_stats.m_hrstatus))
     {
-        // Do nothing.  We don't want to lose the old state information.
+        // Do nothing. We don't want to lose the old state information.
         return S_OK;
     }
 
@@ -348,7 +257,7 @@ CameraStatConsumer::AddStat(
     // the camera health.
     if (pstats->m_statsource == (UINT32)FSCapStatSource_FSStream)
     {
-        // Look for the first stream we recieve and ignore all 
+        // Look for the first stream we recieve and ignore all
         // others.  NOTE:  We're assuming only one camera will
         // be active at any given time, if multiple cameras, we'll
         // want to filter based on the symbolic name.
@@ -377,7 +286,7 @@ CameraStatConsumer::AddStat(
     return S_OK;
 }
 
-HRESULT 
+HRESULT
 CameraStatConsumer::InternalStart(
     )
 {
@@ -415,7 +324,7 @@ CameraStatConsumer::InternalStart(
     {
         ullResult = EnableTraceEx(&guidProvider, &m_guidSession, m_hTraceSession, TRUE, TRACE_LEVEL_VERBOSE, 0, 0, 0, NULL);
         RETURN_IF_FAILED ((ullResult != ERROR_SUCCESS ? HRESULT_FROM_WIN32(ullResult) : S_OK));
-    }    
+    }
     m_eState = CameraStatConsumerState_Running;
 
     return S_OK;

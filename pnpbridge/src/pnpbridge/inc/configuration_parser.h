@@ -97,18 +97,18 @@ typedef struct PNPBRIDGE_CONFIGURATION {
 *
 * @param    Config              JSON_Value representing the root of the config file
 *
-* @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
+* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
 */
-PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* Filename, JSON_Value** Config);
+DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* Filename, JSON_Value** Config);
 
 /**
 * @brief    PnpBridgeConfig_GetJsonValueFromString reads a PnpBridge JSON config from string.
 *
 * @param    ConfigString        String containing JSON config
 *
-* @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
+* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
 */
-PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *ConfigString, JSON_Value** Config);
+DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *ConfigString, JSON_Value** Config);
 
 /**
 * @brief    PnpBridgeConfig_GetConnectionDetails parses the connection parameters from 
@@ -116,7 +116,7 @@ PNPBRIDGE_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *ConfigString
 *
 * @param    config            String containing JSON config
 *
-* @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
+* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
 */
 PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* ConnectionParams);
 
@@ -126,10 +126,10 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
 *
 * @param    config   JSON value of the config file from parson
 *
-* @returns  PNPBRIDGE_OK on success and other PNPBRIDGE_RESULT values on failure.
+* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
 */
 MOCKABLE_FUNCTION(,
-PNPBRIDGE_RESULT,
+DIGITALTWIN_CLIENT_RESULT,
 PnpBridgeConfig_RetrieveConfiguration,
     JSON_Value*, ConfigJson,
     PNPBRIDGE_CONFIGURATION*, BridgeConfig
@@ -141,40 +141,23 @@ Configuration_GetMatchParametersForDevice,
     JSON_Object*, device
     );
 
-MOCKABLE_FUNCTION(,
-JSON_Object*,
-Configuration_GetDiscoveryParametersForDevice,
-    _In_ JSON_Object*, device
-    );
-
-MOCKABLE_FUNCTION(, 
-JSON_Object*,
-Configuration_GetPnpParametersForDevice,
-    JSON_Object*, device
-    );
-
 MOCKABLE_FUNCTION(, 
 JSON_Object*,
 Configuration_GetPnpParameters,
     JSON_Value*, config, const char*, identity
     );
 
-MOCKABLE_FUNCTION(, 
-JSON_Object*,
-Configuration_GetDiscoveryParameters,
+MOCKABLE_FUNCTION(,
+    JSON_Object*,
+    Configuration_GetGlobalAdapterParameters,
     JSON_Value*, config, const char, *identity
-    );
+);
 
 MOCKABLE_FUNCTION(,
 JSON_Array*,
-Configuration_GetConfiguredDevices, JSON_Value*, config
+Configuration_GetDevices, JSON_Value*, config
     );
 
-MOCKABLE_FUNCTION(, 
-PNPBRIDGE_RESULT,
-Configuration_IsDeviceConfigured,
-    JSON_Value*, config, JSON_Object*, Message, JSON_Object**, Device
-    );
 
 #ifdef __cplusplus
 }

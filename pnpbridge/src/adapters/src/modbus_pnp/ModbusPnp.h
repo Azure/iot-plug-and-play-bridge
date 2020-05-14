@@ -80,27 +80,33 @@ typedef int SOCKET;
     typedef struct ModbusInterfaceConfig
     {
         const char* Id;
-        int Index;
         SINGLYLINKEDLIST_HANDLE Events;
         SINGLYLINKEDLIST_HANDLE Properties;
         SINGLYLINKEDLIST_HANDLE Commands;
-    } ModbusInterfaceConfig;
+    } ModbusInterfaceConfig, *PModbusInterfaceConfig;
 
     typedef struct _MODBUS_DEVICE_CONTEXT {
         HANDLE hDevice;
         LOCK_HANDLE hConnectionLock;
-        PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
-
+        DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle;
         THREAD_HANDLE ModbusDeviceWorker;
-        PNPBRIDGE_NOTIFY_CHANGE ModbusDeviceChangeCallback;
 
-        // list of interface definitions on this modbus device
         PModbusDeviceConfig DeviceConfig;
-        SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
+        PModbusInterfaceConfig InterfaceConfig;
         THREAD_HANDLE* PollingTasks;
     } MODBUS_DEVICE_CONTEXT, *PMODBUS_DEVICE_CONTEXT;
 
+    typedef struct _MODBUS_ADAPTER_CONTEXT {
+        SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
+    } MODBUS_ADAPTER_CONTEXT, * PMODBUS_ADAPTER_CONTEXT;
+
     int ModbusPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list);
+
+    // Modbus Adapter Config
+    #define PNP_CONFIG_ADAPTER_MODBUS_IDENTITY "modbus_identity"
+    #define PNP_CONFIG_ADAPTER_INTERFACE_UNITID "unit_id"
+    #define PNP_CONFIG_ADAPTER_INTERFACE_TCP "tcp"
+    #define PNP_CONFIG_ADAPTER_INTERFACE_RTU "rtu"
 
     // TODO: Fix this missing reference
     #ifndef AZURE_UNREFERENCED_PARAMETER

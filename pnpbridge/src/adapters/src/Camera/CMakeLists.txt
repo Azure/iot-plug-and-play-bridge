@@ -13,7 +13,7 @@ endif()
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 
 set(pnpbridge_adapters_c_files
-    CameraIotPnpAPIs.cpp
+    CameraPnPBridgeInterface.cpp
     CameraCaptureEngineCallbacks.cpp
     CameraCaptureEngine.cpp
     CameraMediaCapture.cpp
@@ -22,6 +22,7 @@ set(pnpbridge_adapters_c_files
     JsonWrapper.cpp
     CameraStatConsumer.cpp
     NetworkCameraIotPnpDevice.cpp
+    CameraIotPnpDeviceAdapter.cpp
     util.cpp
 )
 
@@ -29,17 +30,18 @@ set(pnpbridge_adapters_h_files
     CameraCaptureEngine.h
     CameraCaptureEngineCallbacks.h
     CameraMediaCapture.h
-    CameraIotPnpAPIs.h
+    CameraPnPBridgeInterface.h
     CameraIotPnpDevice.h
     CameraPnpDiscovery.h
     CameraStatConsumer.h
     JsonWrapper.h
-    pch.h    
+    pch.h
     util.h
     NetworkCameraIotPnpDevice.h
+    CameraIotPnpDeviceAdapter.h
 )
 
-add_definitions("-D_UNICODE") 
+add_definitions("-D_UNICODE")
 
 set(pnpbridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/../../pnpbridge/inc CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
 
@@ -60,7 +62,7 @@ ENDIF(WIN32)
 
 add_definitions(-DPNP_LOGGING_ENABLED)
 
-add_library(${PROJECT_NAME} STATIC 
+add_library(${PROJECT_NAME} STATIC
     ${pnpbridge_adapters_c_files}
     ${pnpbridge_adapters_h_files}
 )

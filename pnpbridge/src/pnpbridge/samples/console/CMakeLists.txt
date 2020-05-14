@@ -73,9 +73,9 @@ set(pnp_bridge_common_libs
     pnpbridge
     pnpbridge_adapters
     digitaltwin_client
-    pnpbridge_serial
-    pnpbridge_mqtt
     pnpbridge_modbus
+    pnpbridge_mqtt
+    pnpbridge_serial
 )
 
 if(WIN32)

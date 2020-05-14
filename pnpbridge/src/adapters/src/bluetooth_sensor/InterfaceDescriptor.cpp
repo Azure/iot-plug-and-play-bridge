@@ -10,25 +10,25 @@
 
 // static
 InterfaceDescriptorMap InterfaceDescriptor::MakeDescriptorsFromJson(
-    const JSON_Array* interfaceDescriptorJsonObjs)
+    const JSON_Object* adapterGlobalConfigJson)
 {
     InterfaceDescriptorMap interfaceDescriptorMap;
 
-    for (size_t i = 0; i < json_array_get_count(interfaceDescriptorJsonObjs); i++)
+    for (size_t i = 0; i < json_object_get_count(adapterGlobalConfigJson); i++)
     {
-        auto interfaceDescriptorObj = json_array_get_object(interfaceDescriptorJsonObjs, i);
-        if (!interfaceDescriptorObj)
-        {
-            throw std::invalid_argument("Unable to get interface descriptor.");
-        }
+        const std::string interfaceIdentity(json_object_get_name(adapterGlobalConfigJson, i));
+        const auto interfaceDescriptorJson = json_value_get_object(
+            json_object_get_value_at(adapterGlobalConfigJson, i));
 
-        auto newInterfaceDescriptor = InterfaceDescriptor::MakeSharedFromJson(interfaceDescriptorObj);
+        auto newInterfaceDescriptor = InterfaceDescriptor::MakeSharedFromJson(
+            interfaceIdentity,
+            interfaceDescriptorJson);
+
         auto emplaceResult = interfaceDescriptorMap.emplace(newInterfaceDescriptor->GetInterfaceId(),
             newInterfaceDescriptor);
-
         if (!emplaceResult.second)
         {
-            throw std::invalid_argument("Config.txt contained a duplicate descriptor for " +
+            throw std::invalid_argument("config.txt contained a duplicate interface identity: " +
                 newInterfaceDescriptor->GetInterfaceId());
         }
     }
@@ -38,23 +38,21 @@ InterfaceDescriptorMap InterfaceDescriptor::MakeDescriptorsFromJson(
 
 // static
 std::shared_ptr<InterfaceDescriptor> InterfaceDescriptor::MakeSharedFromJson(
+    const std::string& interfaceIdentity,
     const JSON_Object* interfaceDescriptor)
 {
-    auto newInterfaceDescriptor = std::make_shared<InterfaceDescriptor>();
+    auto newInterfaceDescriptor = std::make_shared<InterfaceDescriptor>(interfaceIdentity);
     newInterfaceDescriptor->Initialize(interfaceDescriptor);
     return newInterfaceDescriptor;
 }
 
+InterfaceDescriptor::InterfaceDescriptor(const std::string& interfaceIdentity) :
+    m_interfaceId(interfaceIdentity)
+{
+}
+
 void InterfaceDescriptor::Initialize(const JSON_Object* interfaceDescriptor)
 {
-    auto interfaceId = json_object_dotget_string(interfaceDescriptor, s_interfaceIdDescriptorName);
-    if (!interfaceId)
-    {
-        throw std::invalid_argument(
-            std::string("Unable to extract ") + s_interfaceIdDescriptorName + " from descriptor.");
-    }
-    m_interfaceId = interfaceId;
-
     auto companyId = json_object_dotget_string(interfaceDescriptor, s_companyIdDescriptorName);
     if (!companyId)
     {

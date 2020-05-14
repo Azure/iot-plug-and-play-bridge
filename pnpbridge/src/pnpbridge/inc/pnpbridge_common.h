@@ -50,12 +50,6 @@ extern "C"
 
 #define DIGITALTWIN_MODULE_CLIENT_HANDLE void*
 
-#define TRY
-#define LEAVE   goto __tryLabel;
-#define FINALLY goto __tryLabel; __tryLabel:
-#undef __try
-#undef __finally
-
 #define PNPBRIDGE_RESULT_VALUES \
     PNPBRIDGE_OK, \
     PNPBRIDGE_INSUFFICIENT_MEMORY, \
@@ -68,7 +62,7 @@ extern "C"
 
 MU_DEFINE_ENUM(PNPBRIDGE_RESULT, PNPBRIDGE_RESULT_VALUES);
 
-#define PNPBRIDGE_SUCCESS(Result) (Result == PNPBRIDGE_OK)
+#define PNPBRIDGE_SUCCESS(Result) (Result == DIGITALTWIN_CLIENT_OK)
 #include "configuration_parser.h"
 
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
@@ -77,9 +71,8 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 
 #include <pnpbridge.h>
 
-#define PNP_CONFIG_BRIDGE_PARAMETERS "pnp_bridge_parameters"
-#define PNP_CONFIG_TRACE_ON "trace_on"
-#define PNP_CONFIG_CONNECTION_PARAMETERS "connection_parameters"
+#define PNP_CONFIG_CONNECTION_PARAMETERS "pnp_bridge_connection_parameters"
+#define PNP_CONFIG_TRACE_ON "pnp_bridge_debug_trace"
 
 #define PNP_CONFIG_CONNECTION_TYPE "connection_type"
 #define PNP_CONFIG_CONNECTION_TYPE_STRING "connection_string"
@@ -101,10 +94,13 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_CONNECTION_AUTH_TYPE_X509 "x509"
 #define PNP_CONFIG_CONNECTION_AUTH_TYPE_DEVICE_SYMM_KEY "symmetric_key"
 
-#define PNP_CONFIG_DEVICES "devices"
+#define PNP_CONFIG_ADAPTER_GLOBAL "pnp_bridge_adapter_global_configs"
+#define PNP_CONFIG_DEVICES "pnp_bridge_interface_components"
 #define PNP_CONFIG_IDENTITY "identity"
-#define PNP_CONFIG_INTERFACE_ID "interface_id"
-#define PNP_CONFIG_COMPONENT_NAME "component_name"
+#define PNP_CONFIG_INTERFACE_ID "pnp_bridge_interface_id"
+#define PNP_CONFIG_COMPONENT_NAME "pnp_bridge_component_name"
+#define PNP_CONFIG_ADAPTER_ID "pnp_bridge_adapter_id"
+#define PNP_CONFIG_DEVICE_ADAPTER_CONFIG "pnp_bridge_adapter_config"
 #define PNP_CONFIG_PUBLISH_MODE "publish_mode"
 #define PNP_CONFIG_MATCH_FILTERS "match_filters"
 #define PNP_CONFIG_MATCH_TYPE "match_type"
@@ -149,82 +145,11 @@ typedef struct _MX_IOT_HANDLE_TAG {
     bool DigitalTwinClientInitialized;
 } MX_IOT_HANDLE_TAG;
 
-typedef struct _PNPBRIDGE_CHANGE_PAYLOAD {
-    const char* Message;
-    int MessageLength;
-    char* InterfaceId;
-    PNPMEMORY Self;
-    DLIST_ENTRY Entry;
-    PNPMESSAGE_PROPERTIES Properties;
-} PNPBRIDGE_CHANGE_PAYLOAD, *PPNPBRIDGE_CHANGE_PAYLOAD;
-
-typedef struct _MESSAGE_QUEUE {
-    DLIST_ENTRY IngressQueue;
-
-    DLIST_ENTRY PublishQueue;
-
-    LOCK_HANDLE QueueLock;
-
-    volatile int PublishCount;
-
-    volatile int InCount;
-
-    THREAD_HANDLE Worker;
-
-    LOCK_HANDLE WaitConditionLock;
-
-    COND_HANDLE WaitCondition;
-
-    bool TearDown;
-} MESSAGE_QUEUE, *PMESSAGE_QUEUE;
-
-
-// PnpMessage Queue APIs
-PNPBRIDGE_RESULT 
-PnpMessageQueue_Create(
-    PMESSAGE_QUEUE* PnpMessageQueue
-    );
-
-void
-PnpMessageQueue_Release(
-    PMESSAGE_QUEUE Queue
-    );
-
-// Thread entry callback
-int
-PnpMessageQueue_Worker(
-    void* threadArgument
-    );
-
-PNPBRIDGE_RESULT 
-PnpMesssageQueue_Add(
-    PMESSAGE_QUEUE Queue,
-    PNPMESSAGE PnpMessage
-    );
-
-PNPBRIDGE_RESULT 
-PnpMesssageQueue_Remove(
-    PMESSAGE_QUEUE Queue,
-    PNPMESSAGE* PnpMessage
-    );
-
-PNPBRIDGE_RESULT
-PnpMesssageQueue_AddToPublishQ(
-    PMESSAGE_QUEUE Queue,
-    PNPMESSAGE PnpMessage
+DIGITALTWIN_CLIENT_RESULT
+PnpBridge_RegisterInterfaces(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces,
+    unsigned int interfaceCount
 );
-
-int PnpBridge_ProcessPnpMessage(PNPMESSAGE PnpMessage);
-
-int
-DiscoveryAdapter_PublishInterfaces(
-    void
-    );
-
-int
-PnpBridge_ReinitPnpAdapters(
-    void
-    );
 
 #ifdef __cplusplus
 }

@@ -29,11 +29,11 @@ Although IoT Central is covered in this demo, you can also use an Azure IoT Hub 
 ### Setting up Azure IoT Central (Environmental Sensor)
 Complete the following to enable an IoT Central application to accept data from your bridge:
 
-1. Complete the [Create an Azure IoT Central application (preview features)](https://docs.microsoft.com/en-us/azure/iot-central/quick-deploy-iot-central-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) quickstart to create an IoT Central application using the Preview application template.
+1. Complete the [Create an Azure IoT Central application (preview features)](https://docs.microsoft.com/azure/iot-central/quick-deploy-iot-central-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) quickstart to create an IoT Central application using the Preview application template.
 
-2. Complete [Create device template from scratch](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-device-template-from-scratch), [Create a capability model](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-capability-model), and [Publish a device template](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type#publish-a-device-template) sections, described in IoT Central's guide to [Build and Manage an IoT Device Template](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type). Instead of using the capability model provided in the instructions, use the capability model JSON provided [here](./docs/schemas/EnvironmentalSensorInline.capabilitymodel.json)
+2. Complete [Create device template from scratch](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-device-template-from-scratch), [Create a capability model](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-capability-model), and [Publish a device template](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type#publish-a-device-template) sections, described in IoT Central's guide to [Build and Manage an IoT Device Template](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type). Instead of using the capability model provided in the instructions, use the capability model JSON provided [here](./docs/schemas/EnvironmentalSensorInline.capabilitymodel.json)
 
-3. Obtain the connection information for your device using IoT Central documentation on [Device connectivity in Azure IoT Central](https://docs.microsoft.com/en-us/azure/iot-central/core/concepts-connectivity).
+3. Obtain the connection information for your device using IoT Central documentation on [Device connectivity in Azure IoT Central](https://docs.microsoft.com/azure/iot-central/core/concepts-connectivity).
 
 
 ### Setting up the Configuration JSON (Environmental Sensor)
@@ -74,7 +74,7 @@ After cloning the Azure PnP Bridge repo to your machine, open the "Developer Com
     }
   }
   ```
-  > Note: Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "CapabilityModelId" that is listed for your device's Device Capability Model in Azure IoT Central.
+  > Note: Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/azure/iot-central/concepts-connectivity-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "CapabilityModelId" that is listed for your device's Device Capability Model in Azure IoT Central.
  
  Once filled in you the config file should resemble:
    ```JSON
@@ -153,11 +153,11 @@ For more specific information on the modbus adaptor being used in this example s
 ### Setting up Azure IoT Central Generic Sensor (Modbus Example)
 Complete the following to enable an IoT Central application to accept data from your bridge for a simple CO2 Modbus sensor:
 
-1. Complete the [Create an Azure IoT Central application (preview features)](https://docs.microsoft.com/en-us/azure/iot-central/quick-deploy-iot-central-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) quickstart to create an IoT Central application using the Preview application template.
+1. Complete the [Create an Azure IoT Central application (preview features)](https://docs.microsoft.com/azure/iot-central/quick-deploy-iot-central-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) quickstart to create an IoT Central application using the Preview application template.
 
-2. Complete [Create device template from scratch](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-device-template-from-scratch), [Create a capability model](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-capability-model), and [Publish a device template](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type#publish-a-device-template) sections, described in IoT Central's guide to [Build and Manage an IoT Device Template](https://docs.microsoft.com/en-us/azure/iot-central/preview/tutorial-define-iot-device-type). Instead of using the capability model provided in the instructions, use the capability model provided [here](./docs/schemas/CO2SensorInline.capabilitymodel.json)
+2. Complete [Create device template from scratch](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-device-template-from-scratch), [Create a capability model](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type#create-a-capability-model), and [Publish a device template](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type#publish-a-device-template) sections, described in IoT Central's guide to [Build and Manage an IoT Device Template](https://docs.microsoft.com/azure/iot-central/preview/tutorial-define-iot-device-type). Instead of using the capability model provided in the instructions, use the capability model provided [here](./docs/schemas/CO2SensorInline.capabilitymodel.json)
 
-3. Obtain the connection information for your device using IoT Central documentation on [Device connectivity in Azure IoT Central](https://docs.microsoft.com/en-us/azure/iot-central/core/concepts-connectivity).
+3. Obtain the connection information for your device using IoT Central documentation on [Device connectivity in Azure IoT Central](https://docs.microsoft.com/azure/iot-central/core/concepts-connectivity).
 
 >Note: for other generic sensors you would follow similar steps; providing a customized capability model.
 
@@ -203,7 +203,7 @@ Modify the folowing parameters under **pnp_bridge_parameters** node in the confi
     }
   }
   ```
-  > Note: Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/en-us/azure/iot-central/concepts-connectivity-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "CapabilityModelId" that is listed for your device's Device Capability Model in Azure IoT Central.
+  > Note: Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/azure/iot-central/concepts-connectivity-pnp?toc=/azure/iot-central-pnp/toc.json&bc=/azure/iot-central-pnp/breadcrumb/toc.json) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "CapabilityModelId" that is listed for your device's Device Capability Model in Azure IoT Central.
 
 ### Start the IoT Plug and Play bridge for Generic Sensors (Modbus Example) on Windows
 Start PnpBridge by running it in a command prompt.

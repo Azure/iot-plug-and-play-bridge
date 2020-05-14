@@ -5,116 +5,56 @@ This a README for the Modbus adapter on PnPBridge
 - [Modbus Adapter for PnP Bridge](#modbus-adapter-for-pnp-bridge)
   - [Table of Contents](#table-of-contents)
   - [Adapter Configuration](#adapter-configuration)
-    - [`DeviceConfig`](#deviceconfig)
-    - [`interfaceConfig`](#interfaceconfig)
+    - [PnP Bridge Adapter Config](#pnp-bridge-adapter-config)
+    - [PnP Bridge Adapter Global Configs](#pnp-bridge-adapter-global-configs)
   - [Reference](#reference)
     - [Modbus](#modbus)
 
 ## Adapter Configuration
-The adapter configuration follows the format defined by [Modbus Gateway configruation interface](./schemas/modbusGateway.interface.json), an Azure PnP Interface. Follow the steps below to update `config.json` to add a Modbus device to your PnPBrdige.
+The adapter configuration follows the format defined by [Modbus Gateway configruation interface](./schemas/modbusGateway.interface.json), an Azure PnP Interface. Follow the steps below to update `config.json` to add a Modbus device to your PnPBridge.
 
 1. Open `config.json` for the PnPBridge.
-2. Add the following json payload to `Devices`.
-3. Modify `deviceConfig` and `interfaceConfig` objects under `DiscoveryParameters` to match your Modbus device configuration. Refer to following sections for more detailed descriptions of each field in these two `JSON` objects.
+2. Add the following json payload to `pnp_bridge_interface_components`.
+3. Add any supported modbus interface configurations into the `pnp_bridge_adapter_global_configs` dictionary with a key that an interface component can use as `modbus_identity` under `pnp_bridge_adapter_config`. More information in the [PnP Bridge Adapter Global Configs](#pnp-bridge-adapter-global-configs) section.
+4. Modify `rtu` or `tcp` and `modbus_identity` parameters under `pnp_bridge_adapter_config` to match your Modbus device configuration. Refer to following sections for more detailed descriptions of each field in these `JSON` objects. "DL679" is the name of the interface configuration that the Modbus Adapter supports, and that the device corresponding to the interface component specifying it, uses to interact with the adapter.
 
 ```json
 {
-    "_comment": "My Modbus Device",
-    "MatchFilters": {
-        "MatchType": "Exact"
-    },
-    "SelfDescribing": "true",
-    "PnpParameters": {
-        "Identity": "modbus-pnp-interface"
-    },
-    "DiscoveryParameters": {
-        "Identity": "modbus-pnp-discovery",
-        "deviceConfig": {
-            "unitId": 1,
-            "rtu": {
+    "pnp_bridge_interface_components": [
+      {
+          "_comment": "Component - Modbus Device",
+          "pnp_bridge_interface_id": "urn:contoso:com:Co2Detector:1",
+          "pnp_bridge_component_name": "ModbusComponent",
+          "pnp_bridge_adapter_id": "modbus-pnp-interface",
+          "pnp_bridge_adapter_config": {
+              "unit_id": 1,
+              "rtu": {
                 "port": "COM5",
                 "baudRate": "9600",
                 "dataBits": 8,
                 "stopBits": "ONE",
                 "parity": "NONE"
-            },
-            "tcp": null
-        },
-        "interfaceConfig": {
-            "interfaceId": "http://contoso.com/Co2Detector/1.0.0",
-            "telemetry": {
-                "co2": {
-                    "startAddress": "40001",
-                    "length": 1,
-                    "dataType": "integer",
-                    "defaultFrequency": 5000,
-                    "conversionCoefficient": 1
-                },
-                "temperature": {
-                    "startAddress": "40003",
-                    "length": 1,
-                    "dataType": "decimal",
-                    "defaultFrequency": 5000,
-                    "conversionCoefficient": 0.01
-                }
-            },
-            "properties": {
-                "firmwareVersion": {
-                    "startAddress": "40482",
-                    "length": 1,
-                    "dataType": "hexstring",
-                    "defaultFrequency": 60000,
-                    "conversionCoefficient": 1,
-                    "access": 1
-                },
-                "modelName": {
-                    "startAddress": "40483",
-                    "length": 2,
-                    "dataType": "string",
-                    "defaultFrequency": 60000,
-                    "conversionCoefficient": 1,
-                    "access": 1
-                },
-                "alarmStatus_co2": {
-                    "startAddress": "00305",
-                    "length": 1,
-                    "dataType": "boolean",
-                    "defaultFrequency": 30000,
-                    "conversionCoefficient": 1,
-                    "access": 1
-                },
-                "alarmThreshold_co2": {
-                    "startAddress": "40225",
-                    "length": 1,
-                    "dataType": "integer",
-                    "defaultFrequency": 30000,
-                    "conversionCoefficient": 1,
-                    "access": 2
-                }
-            },
-            "commands": {
-                "clearAlarm_co2": {
-                    "startAddress": "00305",
-                    "length": 1,
-                    "dataType": "flag",
-                    "conversionCoefficient": 1
-                }
-            }
-        }
-    }
+              },
+              "tcp": null,
+              "modbus_identity": "DL679"
+          }
+      }
+    ]
 }
 ```
 
-### `DeviceConfig`
-DeviceConfig provides the physical connection information between the Modbus gateway and the Modbus edge devices. This part of configuration provides TCP/IP or serial connection information (must pick either one). You may provide `null` value for the connection you do not use.
+### PnP Bridge Adapter Config
+`pnp_bridge_adapter_config` provides the physical connection information between the Modbus gateway and the Modbus edge devices. This part of configuration provides TCP/IP or serial connection information (must pick either one). You may provide `null` value for the connection you do not use.
 
 ```json
-"deviceConfig": {
+{
+    "pnp_bridge_adapter_config": {
     "unitId": 1,
     "rtu": null,
     "tcp": {
         "host": "192.168.1.111",
         "port": 502
+       }
     }
 }
 ```
@@ -134,69 +74,75 @@ Configuration Definition:
 |`host`|string|Ipv4 address of the Modbus device|
 |`port`|integer|Port number of the Modbus device|
 
-### `interfaceConfig`
-Interface Configuration provides a mapping of Modbus device's memory addresses to P&P interfaces. This sample configuration is based on the [schema of a sample CO₂ detector](./schemas/Co2Detector.interface.json). The interfaceId and capability names provided here should match those of device interfaces schema.
+### PnP Bridge Adapter Global Configs
+PnP Bridge Adapter Global Configs provide PnP Bridge Adapters to optionally list supported interface configurations. These interface configurations are identified with a key that a Modbus interface component uses to identify how the adapter must parse data coming from the device. The data sheet of the physical device would usually outline this information. This sample configuration is based on the [schema of a sample CO₂ detector](./schemas/Co2Detector.interface.json).
 
 ``` json
-"interfaceConfig": {
-    "interfaceId": "http://contoso.com/Co2Detector/1.0.0",
-    "telemetry": {
-        "co2": {
-            "startAddress": "40001",
-            "length": 1,
-            "dataType": "integer",
-            "defaultFrequency": 5000,
-            "conversionCoefficient": 1
-        },
-        "temperature": {
-            "startAddress": "40003",
-            "length": 1,
-            "dataType": "decimal",
-            "defaultFrequency": 5000,
-            "conversionCoefficient": 0.01
-        }
-    },
-    "properties": {
-        "firmwareVersion": {
-            "startAddress": "40482",
-            "length": 1,
-            "dataType": "hexstring",
-            "defaultFrequency": 60000,
-            "conversionCoefficient": 1,
-            "access": 1
-        },
-        "modelName": {
-            "startAddress": "40483",
-            "length": 2,
-            "dataType": "string",
-            "defaultFrequency": 60000,
-            "conversionCoefficient": 1,
-            "access": 1
-        },
-        "alarmStatus_co2": {
-            "startAddress": "00305",
-            "length": 1,
-            "dataType": "boolean",
-            "defaultFrequency": 30000,
-            "conversionCoefficient": 1,
-            "access": 1
-        },
-        "alarmThreshold_co2": {
-            "startAddress": "40225",
-            "length": 1,
-            "dataType": "integer",
-            "defaultFrequency": 30000,
-            "conversionCoefficient": 1,
-            "access": 2
-        }
-    },
-    "commands": {
-        "clearAlarm_co2": {
-            "startAddress": "00305",
-            "length": 1,
-            "dataType": "flag",
-            "conversionCoefficient": 1
-        }
+{
+    ,
+    "pnp_bridge_adapter_global_configs": {
+      "modbus-pnp-interface": {
+          "DL679": {
+              "telemetry": {
+                  "co2": {
+                      "startAddress": "40001",
+                      "length": 1,
+                      "dataType": "integer",
+                      "defaultFrequency": 5000,
+                      "conversionCoefficient": 1
+                  },
+                  "temperature": {
+                      "startAddress": "40003",
+                      "length": 1,
+                      "dataType": "decimal",
+                      "defaultFrequency": 5000,
+                      "conversionCoefficient": 0.01
+                  }
+              },
+              "properties": {
+                  "firmwareVersion": {
+                      "startAddress": "40482",
+                      "length": 1,
+                      "dataType": "hexstring",
+                      "defaultFrequency": 60000,
+                      "conversionCoefficient": 1,
+                      "access": 1
+                  },
+                  "modelName": {
+                      "startAddress": "40483",
+                      "length": 2,
+                      "dataType": "string",
+                      "defaultFrequency": 60000,
+                      "conversionCoefficient": 1,
+                      "access": 1
+                  },
+                  "alarmStatus_co2": {
+                      "startAddress": "00305",
+                      "length": 1,
+                      "dataType": "boolean",
+                      "defaultFrequency": 1000,
+                      "conversionCoefficient": 1,
+                      "access": 1
+                  },
+                  "alarmThreshold_co2": {
+                      "startAddress": "40225",
+                      "length": 1,
+                      "dataType": "integer",
+                      "defaultFrequency": 30000,
+                      "conversionCoefficient": 1,
+                      "access": 2
+                  }
+              },
+              "commands": {
+                  "clearAlarm_co2": {
+                      "startAddress": "00305",
+                      "length": 1,
+                      "dataType": "flag",
+                      "conversionCoefficient": 1
+                  }
+              }
+          }
+      }
     }
 }
 ```
@@ -204,7 +150,6 @@ Configuration Definition:
 
 |Field|Data Type|Description|
 |:---|:---:|:---|
-|`interfaceId`|string|The interfaceID of the Modbus device. This should map the device type of the Modbus devices listed in `deviceMap.json` |
 |`Capability Definition`|
 |`startAddress`|integer|Starting address of the Modbus device to read from |
 |`length`|integer| Number of bytes to read.|

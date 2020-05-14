@@ -199,7 +199,6 @@ MqttConnectionManager::OnComplete(
     const void*                 /*MessageInfo*/
 )
 {
-    // printf("MQTT complete callback\n");
     switch (Result) {
     case MQTT_CLIENT_ON_CONNACK:
         printf("mqtt-pnp: got MQTT CONNACK\n");
@@ -211,7 +210,6 @@ MqttConnectionManager::OnComplete(
         // todo stop read thread here
         break;
     default:
-        // printf("OTHER MQTT %d\n", Result);
         break;
     }
 }
@@ -239,10 +237,7 @@ MqttConnectionManager::Disconnect()
                            [](void* Context){
                                 auto mcm = static_cast<MqttConnectionManager*>(Context);
                                 xio_close(mcm->s_XioHandle,
-                                          [](void* /*Context*/){
-                                                // auto mcm = static_cast<MqttConnectionManager*>(Context);
-                                                // delete mcm;
-                                            },
+                                          [](void* /*Context*/){ },
                                           Context);
                             },
                             this);

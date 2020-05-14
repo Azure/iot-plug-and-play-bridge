@@ -1,21 +1,28 @@
 ﻿
 #include "ModbusConnection.h"
 
-int ModbusPnp_GetHeaderSize(MODBUS_CONNECTION_TYPE connectionType)
+int ModbusPnp_GetHeaderSize(
+    MODBUS_CONNECTION_TYPE connectionType)
 {
+    int headerSize = 0;
     switch (connectionType)
     {
     case TCP:
-        return ModbusTcp_GetHeaderSize();;
+        headerSize = ModbusTcp_GetHeaderSize();
+        break;
     case RTU:
-        return ModbusRtu_GetHeaderSize();
+        headerSize = ModbusRtu_GetHeaderSize();
+        break;
     default:
         break;
     }
-    return 0;
+    return headerSize;
 }
 
-bool ValidateModbusResponse(MODBUS_CONNECTION_TYPE connectionType, uint8_t* response, uint8_t* request)
+bool ValidateModbusResponse(
+    MODBUS_CONNECTION_TYPE connectionType,
+    uint8_t* response,
+    uint8_t* request)
 {
     if (NULL == response)
     {
@@ -40,32 +47,38 @@ bool ValidateModbusResponse(MODBUS_CONNECTION_TYPE connectionType, uint8_t* resp
     }
 }
 
-int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType capabilityType, void* capability, uint8_t* response, size_t responseLength, uint8_t* result)
+int ProcessModbusResponse(
+    MODBUS_CONNECTION_TYPE connectionType,
+    CapabilityType capabilityType,
+    void* capability,
+    uint8_t* response,
+    size_t responseLength,
+    uint8_t* result)
 {
     int stepSize = 0;
     int dataOffset = ModbusPnp_GetHeaderSize(connectionType);
     int resultLength = -1;
 
     // Get excpectd number of bits or registers in the payload
-    switch (response[dataOffset])//function code
+    switch (response[dataOffset])   // Function code
     {
     case ReadCoils:
     case ReadInputs:
         stepSize = 1;
-        dataOffset += 2;    // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
+        dataOffset += 2;            // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
         break;
     case ReadHoldingRegisters:
     case ReadInputRegisters:
         stepSize = 2;
-        dataOffset += 2;    // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
+        dataOffset += 2;            // Header + Function Code (1 uint8_t) + Data Length (1 uint8_t)
         break;
     case WriteCoil:
         stepSize = 1;
-        dataOffset += 3;    // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
+        dataOffset += 3;            // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
         break;
     case WriteHoldingRegister:
         stepSize = 2;
-        dataOffset += 3;    // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
+        dataOffset += 3;            // Header + Function Code (1 uint8_t) + Address (2 uint8_t)
         break;
     }
 
@@ -99,11 +112,11 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
     }
     }
 
-    //Check Endian-ness
+    // Check Endian-ness
 
     if (stepSize == 1)
     {
-        //Read bits (1 bit)
+        // Read bits (1 bit)
         uint8_t bitVal = (uint8_t)(response[dataOffset] & 0b1);
         const char* data = (bitVal == (uint8_t)1) ? "true" : "false";
         resultLength = sprintf_s((char*)result, MODBUS_RESPONSE_MAX_LENGTH, "%s", data);
@@ -121,7 +134,7 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
                 LogError("Failed to convert the response to string: Memory allocation failed.");
                 return -1;
             }
-            //reverse data array
+            // Reverse data array
             for (int i = 0; i < dataLength * 2; i++)
             {
                 strBuffer[(dataLength * 2) - i - 1] = response[dataOffset + i];
@@ -135,7 +148,7 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
                 strBuffer[(i * 2) + 1] = temp;
             }
 
-            //Convert Hex string
+            // Convert Hex string
             char* strPtr = (char*)result;
             *(strPtr++) = '\"';
             resultLength = 1;
@@ -163,7 +176,7 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
                 LogError("Failed to convert the response to string: Memory allocation failed.");
                 return -1;
             }
-            //reverse data array
+            // Reverse data array
             for (int i = 0; i < dataLength * 2; i++)
             {
                 strBuffer[(dataLength * 2) - i - 1] = response[dataOffset + i];
@@ -177,7 +190,7 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
                 strBuffer[(i * 2) + 1] = temp;
             }
 
-            //Convert non-alpha-numberic char to Hex char
+            // Convert non-alpha-numberic char to Hex char
             char* strPtr = (char*)result;
             *(strPtr++) = '\"';
             resultLength = 1;
@@ -210,7 +223,7 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
             int n = 1;
             if (dataLength > 1 && *(char *)&n == 1)
             {
-                //Is little Endian, reverse response array
+                // Is little Endian, reverse response array
                 uint8_t temp = 0x00;
                 for (size_t i = dataOffset, j = responseLength - 1; i < ((responseLength - dataOffset) / 2); i++, j--)
                 {
@@ -219,36 +232,37 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
                     response[j] = temp;
                 }
             }
+
             switch (dataLength)
             {
-            case 1:
-            {
-                uint16_t rawValue = ((response[dataOffset] << 8) + response[dataOffset + 1]);
-                value = rawValue * conversionCoefficient;
-                break;
-            }
-            case 2:
-            {
-                uint32_t rawValue = 0;
-                for (int i = 0; i < dataLength; i++)
+                case 1:
                 {
-                    rawValue <<= 16;
-                    rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    uint16_t rawValue = ((response[dataOffset] << 8) + response[dataOffset + 1]);
+                    value = rawValue * conversionCoefficient;
+                    break;
                 }
-                value = rawValue * conversionCoefficient;
-                break;
-            }
-            case 4:
-            {
-                uint64_t rawValue = 0;
-                for (int i = 0; i < dataLength; i++)
+                case 2:
                 {
-                    rawValue <<= 16;
-                    rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    uint32_t rawValue = 0;
+                    for (int i = 0; i < dataLength; i++)
+                    {
+                        rawValue <<= 16;
+                        rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    }
+                    value = rawValue * conversionCoefficient;
+                    break;
                 }
-                value = rawValue * conversionCoefficient;
-                break;
-            }
+                case 4:
+                {
+                    uint64_t rawValue = 0;
+                    for (int i = 0; i < dataLength; i++)
+                    {
+                        rawValue <<= 16;
+                        rawValue += ((response[dataOffset + i * 2] << 8) + response[dataOffset + 1]);
+                    }
+                    value = rawValue * conversionCoefficient;
+                    break;
+                }
             }
             break;
         }
@@ -260,26 +274,32 @@ int ProcessModbusResponse(MODBUS_CONNECTION_TYPE connectionType, CapabilityType 
     }
     return resultLength;
 }
-bool ModbusPnp_CloseDevice(MODBUS_CONNECTION_TYPE connectionType, HANDLE hDevice, LOCK_HANDLE hLock)
+bool ModbusPnp_CloseDevice(
+    MODBUS_CONNECTION_TYPE connectionType,
+    HANDLE hDevice,
+    LOCK_HANDLE hLock)
 {
     bool result = false;
     switch (connectionType)
     {
-    case TCP:
-        result = ModbusTcp_CloseDevice((SOCKET)hDevice, hLock);
-        break;
-    case RTU:
-        result = ModbusRtu_CloseDevice(hDevice, hLock);
-        break;
-    default:
-        break;
+        case TCP:
+            result = ModbusTcp_CloseDevice((SOCKET)hDevice, hLock);
+            break;
+        case RTU:
+            result = ModbusRtu_CloseDevice(hDevice, hLock);
+            break;
+        default:
+            break;
     }
     return result;
 }
 
-int ModbusPnp_SetReadRequest(ModbusDeviceConfig* deviceConfig, CapabilityType capabilityType, void* capability)
+DIGITALTWIN_CLIENT_RESULT ModbusPnp_SetReadRequest(
+    ModbusDeviceConfig* deviceConfig,
+    CapabilityType capabilityType,
+    void* capability)
 {
-    int result = -1;
+    int result = DIGITALTWIN_CLIENT_ERROR;
     switch (deviceConfig->ConnectionType)
     {
         case TCP:
@@ -294,9 +314,13 @@ int ModbusPnp_SetReadRequest(ModbusDeviceConfig* deviceConfig, CapabilityType ca
     return result;
 }
 
-int ModbusPnp_SetWriteRequest(MODBUS_CONNECTION_TYPE connectionType, CapabilityType capabilityType, void* capability, char* valueStr)
+DIGITALTWIN_CLIENT_RESULT ModbusPnp_SetWriteRequest(
+    MODBUS_CONNECTION_TYPE connectionType,
+    CapabilityType capabilityType,
+    void* capability,
+    char* valueStr)
 {
-    int result = -1;
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR;
     switch (connectionType)
     {
         case TCP:
@@ -312,7 +336,11 @@ int ModbusPnp_SetWriteRequest(MODBUS_CONNECTION_TYPE connectionType, CapabilityT
     return result;
 }
 
-int ModbusPnp_ReadResponse(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler, uint8_t *responseArr, uint32_t arrLen)
+int ModbusPnp_ReadResponse(
+    MODBUS_CONNECTION_TYPE connectionType,
+    HANDLE handler,
+    uint8_t *responseArr,
+    uint32_t arrLen)
 {
     int result = -1;
     switch (connectionType)
@@ -329,24 +357,31 @@ int ModbusPnp_ReadResponse(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler
     return result;
 }
 
-int ModbusPnp_SendRequest(MODBUS_CONNECTION_TYPE connectionType, HANDLE handler, uint8_t *requestArr, uint32_t arrLen)
+int ModbusPnp_SendRequest(
+    MODBUS_CONNECTION_TYPE connectionType,
+    HANDLE handler,
+    uint8_t *requestArr,
+    uint32_t arrLen)
 {
     int result = -1;
     switch (connectionType)
     {
-    case TCP:
-        result = ModbusTcp_SendRequest((SOCKET)handler, requestArr, arrLen);
-        break;
-    case RTU:
-        result = ModbusRtu_SendRequest(handler, requestArr, arrLen);
-        break;
-    default:
-        break;
+        case TCP:
+            result = ModbusTcp_SendRequest((SOCKET)handler, requestArr, arrLen);
+            break;
+        case RTU:
+            result = ModbusRtu_SendRequest(handler, requestArr, arrLen);
+            break;
+        default:
+            break;
     }
     return result;
 }
 
-int ModbusPnp_ReadCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, uint8_t* resultedData)
+int ModbusPnp_ReadCapability(
+    CapabilityContext* capabilityContext,
+    CapabilityType capabilityType,
+    uint8_t* resultedData)
 {
     uint8_t response[MODBUS_RESPONSE_MAX_LENGTH];
     memset(response, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
@@ -451,7 +486,11 @@ exit:
     return resultLength;
 }
 
-int ModbusPnp_WriteToCapability(CapabilityContext* capabilityContext, CapabilityType capabilityType, char* requestStr, uint8_t* resultedData)
+int ModbusPnp_WriteToCapability(
+    CapabilityContext* capabilityContext,
+    CapabilityType capabilityType,
+    char* requestStr,
+    uint8_t* resultedData)
 {
     uint8_t response[MODBUS_RESPONSE_MAX_LENGTH];
     memset(response, 0x00, MODBUS_RESPONSE_MAX_LENGTH);

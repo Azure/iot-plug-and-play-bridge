@@ -12,31 +12,28 @@ endif()
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 
 set(pnpbridge_adapters_c_files
-    BluetoothSensorDeviceAdapter.cpp
-	BluetoothSensorDiscovery.cpp
-    BluetoothSensorDiscoveryAdapter.cpp
+    BluetoothSensorPnPBridgeInterface.cpp
+    BluetoothSensorDeviceAdapterBase.cpp
     InterfaceDescriptor.cpp
 )
 
 IF(WIN32)
 set(pnpbridge_adapters_c_files
     ${pnpbridge_adapters_c_files}
-    BluetoothSensorDiscoveryAdapterWin.cpp
+    BluetoothSensorDeviceAdapterWin.cpp
 )
 ENDIF(WIN32)
 
 set(pnpbridge_adapters_h_files
+    BluetoothSensorPnPBridgeInterface.h
     BluetoothSensorDeviceAdapter.h
-	BluetoothSensorDiscovery.h
-    BluetoothSensorDiscoveryAdapter.h
-    InterfaceDescriptor.h
-    Common.h
+    BluetoothSensorDeviceAdapterBase.h
 )
 
 IF(WIN32)
 set(pnpbridge_adapters_h_files
     ${pnpbridge_adapters_h_files}
-    BluetoothSensorDiscoveryAdapterWin.h
+    BluetoothSensorDeviceAdapterWin.h
 )
 ENDIF(WIN32)
 

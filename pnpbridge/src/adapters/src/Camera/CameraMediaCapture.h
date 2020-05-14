@@ -25,7 +25,7 @@ protected:
     ComPtr<ABI::Windows::Media::Capture::IMediaCapture> m_spMediaCapture; 
 };
 
-// derived mediacapture class with framereader capabilities, meant to be used with VisionSkills
+// Derived mediacapture class with framereader capabilities, meant to be used with VisionSkills
 class CameraMediaCaptureFrameReader : public CameraMediaCapture
 {
 public:
@@ -46,7 +46,5 @@ private:
     HRESULT FrameArrivedHandler(ABI::Windows::Media::Capture::Frames::IMediaFrameReader* pFrameReader, 
         ABI::Windows::Media::Capture::Frames::IMediaFrameArrivedEventArgs*);
 
-    // store a handle to the DT so that we can post telemetry from this class
-    // TODO: this is not especially elegant. 
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE m_PnpClientInterface; 
 };

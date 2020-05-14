@@ -28,4 +28,8 @@ public:
     AssignDigitalTwin(
         DIGITALTWIN_INTERFACE_CLIENT_HANDLE DtHandle
     ) = 0;
+
+    virtual
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE
+    GetDigitalTwin() = 0;
 };

@@ -1,9 +1,5 @@
-//*@@@+++@@@@*******************************************************************
-//
-// Microsoft Windows Media
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//
-//*@@@---@@@@*******************************************************************
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #pragma once
 
 #include "pch.h"
@@ -34,9 +30,6 @@ public:
     void                                                Shutdown();
     HRESULT                                             PreStats(_Inout_ FSStatisticsEntry& stats_pre, _Out_ LONGLONG* llPreTs);
     HRESULT                                             PostStats(_Inout_ FSStatisticsEntry& stats_post, _Out_ LONGLONG* llPostTs);
-    HRESULT                                             TakePhoto();
-    HRESULT                                             GetJpegFrameSize(_Out_ ULONG* pcbJpegFrameSize);
-    HRESULT                                             GetJpegFrame(_Inout_ PBYTE pbJpegFrame, _In_ ULONG cbJpegFrame, _Out_opt_ ULONG* pcbWritten);
 protected:
 
     static void  WINAPI                                 ProcessETWEventCallback(_In_ PEVENT_RECORD precord);

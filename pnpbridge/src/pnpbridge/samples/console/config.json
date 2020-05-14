@@ -1,166 +1,242 @@
 {
-  "$schema" : "../../../pnpbridge/src/pnpbridge_config_schema.json",
-  "pnp_bridge_parameters": {
-    "_comment_connection_type": "dps (symmetric key support only)/connectionstring",
-    "connection_parameters": {
+  "$schema": "../../../pnpbridge/src/pnpbridge_config_schema.json",
+  "pnp_bridge_connection_parameters": {
       "connection_type" : "connection_string",
       "connection_string" : "[To fill in]",
       "device_capability_model_uri": "[To fill in]",
-      "auth_parameters" : {
-        "auth_type" : "symmetric_key",
-        "symmetric_key" : "[To fill in]"
+      "auth_parameters": {
+          "auth_type": "symmetric_key",
+          "symmetric_key": "[To fill in]"
       },
-      "dps_parameters" : {
-        "global_prov_uri" : "[To fill in]",
-        "id_scope": "[To fill in]",
-        "device_id": "[To fill in]"
+      "dps_parameters": {
+          "global_prov_uri": "[To fill in]",
+          "id_scope": "[To fill in]",
+          "device_id": "[To fill in]"
       }
-    },
-    "trace_on": false
   },
-  "config_source": "local",
-  "_comment_devices": "Array of devices for Azure Pnp interface should be published",
-  "devices": [
-	{
-      "_comment": "DEVICE1 - USB device",
-      "match_filters": {
-        "match_type": "exact",
-        "match_parameters": {
-          "hardware_id": "USB\\VID_06CB&PID_00B3"
-        }
-      },
-      "interface_id": "urn:contoso:com:coredevicehealth:1",
-      "component_name": "MyComponent1",
-      "pnp_parameters": {
-        "identity": "core-device-health"
-      }
-    },
-    {
-      "_comment": "DEVICE4 - Modbus Sensor",
-      "match_filters": {
-        "match_type": "exact"
-      },
-      "self_describing": "true",
-      "component_name": "MyComponent2",
-      "pnp_parameters": {
-        "identity": "modbus-pnp-interface"
-      },
-      "discovery_parameters": {
-        "identity": "modbus-pnp-discovery",
-        "_comment": "NOTE: ComPort parameter will be used when UseComDeviceInterface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting UseComDeviceInterface to false will pick the first available COM interface.",
-        "deviceConfig": {
-          "unitId": 1,
-          "rtu": null,
-          "tcp": {
-            "host": "192.168.1.111",
-            "port": 502
-          }
-        },
-        "interfaceConfig": {
-          "interfaceId": "urn:contoso:com:Co2Detector:1",
-          "telemetry": {
-            "co2": {
-              "startAddress": "40001",
-              "length": 1,
-              "dataType": "integer",
-              "defaultFrequency": 5000,
-              "conversionCoefficient": 1
-            },
-            "temperature": {
-              "startAddress": "40003",
-              "length": 1,
-              "dataType": "decimal",
-              "defaultFrequency": 5000,
-              "conversionCoefficient": 0.01
-            }
-          },
-          "properties": {
-            "firmwareVersion": {
-              "startAddress": "40482",
-              "length": 1,
-              "dataType": "hexstring",
-              "defaultFrequency": 60000,
-              "conversionCoefficient": 1,
-              "access": 1
-            },
-            "modelName": {
-              "startAddress": "40483",
-              "length": 2,
-              "dataType": "string",
-              "defaultFrequency": 60000,
-              "conversionCoefficient": 1,
-              "access": 1
-            },
-            "alarmStatus_co2": {
-              "startAddress": "00305",
-              "length": 1,
-              "dataType": "boolean",
-              "defaultFrequency": 1000,
-              "conversionCoefficient": 1,
-              "access": 1
-            },
-            "alarmThreshold_co2": {
-              "startAddress": "40225",
-              "length": 1,
-              "dataType": "integer",
-              "defaultFrequency": 30000,
-              "conversionCoefficient": 1,
-              "access": 2
-            }
-          },
-          "commands": {
-            "clearAlarm_co2": {
-              "startAddress": "00305",
-              "length": 1,
-              "dataType": "flag",
-              "conversionCoefficient": 1
-            }
-          }
-        }
-      }
-    },
-    {
-      "_comment": "DEVICE2 - MCU sensor hub which reports Azure IoT Pnp interfaces",
-      "match_filters": {
-        "match_type": "exact"
-      },
-      "self_describing": "true",
-      "component_name": "MyComponent3",
-      "pnp_parameters": {
-        "identity": "serial-pnp-interface"
-      },
-      "discovery_parameters": {
-        "identity": "serial-pnp-discovery",
-        "com_port": "COM1",
-        "_comment": "NOTE: com_port parameter will NOT be used when use_com_device_interface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting use_com_device_interface to false will pick the first available COM interface.",
-        "use_com_device_interface": "false",
-        "baud_rate": "115200"
-      }
-    },
-    {
-      "_comment": "DEVICE3 - Standard Video Camera connected to a PC, for now the first camera only.",
-      "match_filters": {
-        "match_type": "exact",
-        "match_parameters": {
-          "hardware_id": "UVC_Webcam_00"
-        }
-      },
-      "interface_id": "urn:contoso:com:camera_health_monitor:1",
-      "component_name": "MyComponent4",
-      "pnp_parameters": {
-        "identity": "camera-health-monitor"
-      }
-    }
-  ],
-  "discovery_adapters": {
-    "parameters": [
+  "pnp_bridge_debug_trace": false,
+  "pnp_bridge_interface_components": [
       {
-        "identity": "core-device-discovery",
-        "_comment1": "USB Device class",
-        "device_interface_classes": [
-          "A5DCBF10-6530-11D2-901F-00C04FB951ED"
-        ]
+          "_comment": "Component 1 - Modbus Device",
+          "pnp_bridge_interface_id": "urn:contoso:com:Co2Detector:1",
+          "pnp_bridge_component_name": "MyComponent1",
+          "pnp_bridge_adapter_id": "modbus-pnp-interface",
+          "pnp_bridge_adapter_config": {
+              "unit_id": 1,
+              "rtu": null,
+              "tcp": {
+                  "host": "10.159.29.9",
+                  "port": 502
+              },
+              "modbus_identity": "DL679"
+          }
+      },
+      {
+          "_comment": "Component 2 - USB device",
+          "pnp_bridge_interface_id": "urn:contoso:com:coredevicehealth:1",
+          "pnp_bridge_component_name": "MyComponent2",
+          "pnp_bridge_adapter_id": "core-device-health",
+          "pnp_bridge_adapter_config": {
+              "hardware_id": "USB\\VID_06CB&PID_00B3"
+          }
+      },
+      {
+          "_comment": "Component 3 - MCU sensor hub which reports Azure IoT Pnp interfaces",
+          "pnp_bridge_interface_id": "urn:contoso:com:serialpnp:1",
+          "pnp_bridge_component_name": "MyComponent3",
+          "pnp_bridge_adapter_id": "serial-pnp-interface",
+          "pnp_bridge_adapter_config": {
+              "com_port": "COM1",
+              "_comment": "NOTE: com_port parameter will NOT be used when use_com_device_interface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting use_com_device_interface to false will pick the first available COM interface.",
+              "use_com_device_interface": "false",
+              "baud_rate": "115200"
+          }
+      },
+      {
+          "_comment": "Component 4 - Standard Video Camera connected to a PC, for now the first camera only.",
+          "pnp_bridge_interface_id": "urn:contoso:com:camera_pnp_adapter:1",
+          "pnp_bridge_component_name": "MyComponent4",
+          "pnp_bridge_adapter_id": "camera-pnp-adapter",
+          "pnp_bridge_adapter_config": {
+              "hardware_id": "UVC_Webcam_00"
+          }
+      },
+      {
+          "_comment": "Component 5 - Ruuvi Instance 1",
+          "pnp_bridge_interface_id": "urn:contoso:com:ruuvi:1",
+          "pnp_bridge_component_name": "MyComponent5",
+          "pnp_bridge_adapter_id": "bluetooth-sensor-pnp-adapter",
+          "pnp_bridge_adapter_config": {
+              "bluetooth_address": "267541100483322",
+              "blesensor_identity" : "Ruuvi"
+          }
+      },
+      {
+        "pnp_bridge_interface_id": "urn:contoso:com:mqtt-device:1",
+        "pnp_bridge_component_name": "Component6",
+        "pnp_bridge_adapter_id": "mqtt-pnp-interface",
+        "pnp_bridge_adapter_config": {
+            "mqtt_port": "1",
+            "mqtt_server": "1.1.1.1",
+            "mqtt_protocol": "json_rpc",
+            "mqtt_identity": "json_rpc_1"
+        }
       }
-    ]
+  ],
+  "pnp_bridge_adapter_global_configs": {
+      "modbus-pnp-interface": {
+          "DL679": {
+              "telemetry": {
+                  "co2": {
+                      "startAddress": "40001",
+                      "length": 1,
+                      "dataType": "integer",
+                      "defaultFrequency": 5000,
+                      "conversionCoefficient": 1
+                  },
+                  "temperature": {
+                      "startAddress": "40003",
+                      "length": 1,
+                      "dataType": "decimal",
+                      "defaultFrequency": 5000,
+                      "conversionCoefficient": 0.01
+                  }
+              },
+              "properties": {
+                  "firmwareVersion": {
+                      "startAddress": "40482",
+                      "length": 1,
+                      "dataType": "hexstring",
+                      "defaultFrequency": 60000,
+                      "conversionCoefficient": 1,
+                      "access": 1
+                  },
+                  "modelName": {
+                      "startAddress": "40483",
+                      "length": 2,
+                      "dataType": "string",
+                      "defaultFrequency": 60000,
+                      "conversionCoefficient": 1,
+                      "access": 1
+                  },
+                  "alarmStatus_co2": {
+                      "startAddress": "00305",
+                      "length": 1,
+                      "dataType": "boolean",
+                      "defaultFrequency": 1000,
+                      "conversionCoefficient": 1,
+                      "access": 1
+                  },
+                  "alarmThreshold_co2": {
+                      "startAddress": "40225",
+                      "length": 1,
+                      "dataType": "integer",
+                      "defaultFrequency": 30000,
+                      "conversionCoefficient": 1,
+                      "access": 2
+                  }
+              },
+              "commands": {
+                  "clearAlarm_co2": {
+                      "startAddress": "00305",
+                      "length": 1,
+                      "dataType": "flag",
+                      "conversionCoefficient": 1
+                  }
+              }
+          }
+      },
+      "core-device-health": {
+          "device_interface_classes": [
+              "A5DCBF10-6530-11D2-901F-00C04FB951ED"
+            ]
+      },
+      "bluetooth-sensor-pnp-adapter": {
+          "Ruuvi" : {
+              "company_id": "0x499",
+              "endianness": "big",
+              "telemetry_descriptor": [
+                {
+                  "telemetry_name": "humidity",
+                  "data_parse_type": "uint8",
+                  "data_offset": 1,
+                  "conversion_bias": 0,
+                  "conversion_coefficient": 0.5
+                },
+                {
+                  "telemetry_name": "temperature",
+                  "data_parse_type": "int8",
+                  "data_offset": 2,
+                  "conversion_bias": 0,
+                  "conversion_coefficient": 1.0
+                },
+                {
+                  "telemetry_name": "pressure",
+                  "data_parse_type": "int16",
+                  "data_offset": 4,
+                  "conversion_bias": 0,
+                  "conversion_coefficient": 1.0
+                },
+                {
+                  "telemetry_name": "acceleration_x",
+                  "data_parse_type": "int16",
+                  "data_offset": 6,
+                  "conversion_bias": 0,
+                  "conversion_coefficient": 0.00980665
+                },
+                {
+                  "telemetry_name": "acceleration_y",
+                  "data_parse_type": "int16",
+                  "data_offset": 8,
+                  "conversion_bias": 0,
+                  "conversion_coefficient": 0.00980665
+                },
+                {
+                  "telemetry_name": "acceleration_z",
+                  "data_parse_type": "int16",
+                  "data_offset": 10,
+                  "conversion_bias": 0,
+                  "conversion_coefficient": 0.00980665
+                }
+              ]
+          }
+      },
+      "mqtt-pnp-interface": {
+        "json_rpc_1": [
+            {
+                "type": "telemetry",
+                "json_rpc_method": "inventory_summary",
+                "name": "inventory_summary",
+                "rx_topic": "rfid/controller/events"
+            },
+            {
+                "type": "telemetry",
+                "json_rpc_method": "inventory_event",
+                "name": "inventory_event",
+                "rx_topic": "rfid/controller/events"
+            },
+            {
+                "type": "command",
+                "json_rpc_method": "inventory_get_tag_info",
+                "name": "inventory_get_tag_info",
+                "tx_topic": "rfid/controller/command",
+                "rx_topic": "rfid/controller/response"
+            },
+            {
+                "type": "command",
+                "name": "inventory_unload",
+                "json_rpc_method": "inventory_unload",
+                "tx_topic": "rfid/controller/command",
+                "rx_topic": "rfid/controller/response"
+            },
+            {
+                "type": "command",
+                "name": "scheduler_set_run_state",
+                "json_rpc_method": "scheduler_set_run_state",
+                "tx_topic": "rfid/controller/command",
+                "rx_topic": "rfid/controller/response"
+            }
+        ]
+    }
   }
 }

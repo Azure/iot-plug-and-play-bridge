@@ -9,9 +9,10 @@ class PnpBridgeSvc : public ServiceBase
 {
 public:
 
-    PnpBridgeSvc(PWSTR pszServiceName, 
-        BOOL fCanStop = TRUE, 
-        BOOL fCanShutdown = TRUE, 
+    PnpBridgeSvc(PWSTR pszServiceName,
+        char * configFilePath,
+        BOOL fCanStop = TRUE,
+        BOOL fCanShutdown = TRUE,
         BOOL fCanPauseContinue = FALSE);
     virtual ~PnpBridgeSvc(void);
 
@@ -32,4 +33,5 @@ private:
     BOOL m_fStopping;
     HANDLE m_hStoppedEvent;
 	PTP_WORK m_Work;
+    char* m_configFilePath;
 };

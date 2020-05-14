@@ -242,14 +242,29 @@ int wmain(int argc, wchar_t *argv[])
     else
     {
         wprintf(L"Parameters:\n");
-        wprintf(L" -install  to install the service.\n");
-        wprintf(L" -remove   to remove the service.\n");
+        wprintf(L" -install <optional path to config file> to install the service.\n");
+        wprintf(L" -remove  to remove the service.\n");
+        return -1;
+    }
 
-        PnpBridgeSvc service(SERVICE_NAME);
-        if (!ServiceBase::Run(service))
-        {
-            wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
-        }
+    char * ConfigurationFilePath = NULL;
+    if (argc > 2)
+    {
+        size_t size = wcslen(argv[2]) + 1;
+        ConfigurationFilePath = (char*) malloc(size);
+        strcpy_s(ConfigurationFilePath, size, (const char*)argv[2]);
+    }
+    else
+    {
+        size_t size = strlen("config.json") + 1;
+        ConfigurationFilePath = (char*) malloc(size);
+        strcpy_s(ConfigurationFilePath, size, "config.json");
+    }
+
+    PnpBridgeSvc service(SERVICE_NAME, ConfigurationFilePath);
+    if (!ServiceBase::Run(service))
+    {
+        wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
     }
 
     return 0;

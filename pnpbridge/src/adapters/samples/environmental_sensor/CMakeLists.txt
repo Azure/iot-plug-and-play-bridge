@@ -14,7 +14,6 @@ compileAsC99()
 
 set(pnpbridge_adaptersample_c_files
     ./environmental_sensor.c
-    ./environmental_sensor_pnpbridge_discovery.c
     ./environmental_sensor_pnpbridge.c
     ./adapter_manifest_pnpbridge.c
 )

@@ -94,12 +94,16 @@ typedef struct DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE_TAG
     char* requestId;
 } DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE;
 
-// State for interface.  For simplicity we set this as a global and set during DigitalTwin_InterfaceClient_Create, but  
-// callbacks of this interface don't reference it directly but instead use userContextCallback passed to them.
+// State for interface.  For simplicity we set this as a global and set during DigitalTwin_InterfaceClient_Create
+// but callbacks of this interface don't reference it directly but instead use userContextCallback passed to them
+
 static DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE digitaltwinSample_EnvironmentalSensorState;
 
 // DigitalTwinSampleEnvironmentalSensor_SetCommandResponse is a helper that fills out a DIGITALTWIN_CLIENT_COMMAND_RESPONSE
-static int DigitalTwinSampleEnvironmentalSensor_SetCommandResponse(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse, const unsigned char* responseData, int status)
+static int DigitalTwinSampleEnvironmentalSensor_SetCommandResponse(
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse, 
+    const unsigned char* responseData, 
+    int status)
 {
     size_t responseLen = strlen((char*)responseData);
     memset(dtCommandResponse, 0, sizeof(*dtCommandResponse));
@@ -124,9 +128,14 @@ static int DigitalTwinSampleEnvironmentalSensor_SetCommandResponse(DIGITALTWIN_C
     return result;
 }
 
-// Implement the callback to process the command "blink".  Information pertaining to the request is specified in DIGITALTWIN_CLIENT_COMMAND_REQUEST,
-// and the callback fills out data it wishes to return to the caller on the service in DIGITALTWIN_CLIENT_COMMAND_RESPONSE.
-static void DigitalTwinSampleEnvironmentalSensor_BlinkCallback(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest, DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse, void* userInterfaceContext)
+// Implement the callback to process the command "blink".  Information pertaining to the request is
+// specified in DIGITALTWIN_CLIENT_COMMAND_REQUEST, and the callback fills out data it wishes to
+// return to the caller on the service in DIGITALTWIN_CLIENT_COMMAND_RESPONSE.
+
+static void DigitalTwinSampleEnvironmentalSensor_BlinkCallback(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
+    void* userInterfaceContext)
 {
     DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE* sensorState = (DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE*)userInterfaceContext;
 
@@ -139,7 +148,10 @@ static void DigitalTwinSampleEnvironmentalSensor_BlinkCallback(const DIGITALTWIN
 }
 
 // Implement the callback to process the command "turnon".
-static void DigitalTwinSampleEnvironmentalSensor_TurnOnLightCallback(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest, DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse, void* userInterfaceContext)
+static void DigitalTwinSampleEnvironmentalSensor_TurnOnLightCallback(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
+    void* userInterfaceContext)
 {
     DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE* sensorState = (DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE*)userInterfaceContext;
     (void)sensorState; // Sensor state not used in this sample
@@ -151,7 +163,10 @@ static void DigitalTwinSampleEnvironmentalSensor_TurnOnLightCallback(const DIGIT
 }
 
 // Implement the callback to process the command "turnoff".
-static void DigitalTwinSampleEnvironmentalSensor_TurnOffLightCallback(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest, DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse, void* userInterfaceContext)
+static void DigitalTwinSampleEnvironmentalSensor_TurnOffLightCallback(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
+    void* userInterfaceContext)
 {
     DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE* sensorState = (DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE*)userInterfaceContext;
     (void)sensorState; // Sensor state not used in this sample
@@ -165,7 +180,10 @@ static void DigitalTwinSampleEnvironmentalSensor_TurnOffLightCallback(const DIGI
 
 // Implement the callback to process the command "rundiagnostic".  Note that this is an asyncronous command, so all we do in this 
 // stage is to do some rudimentary checks and to store off the fact we're async for later.
-static void DigitalTwinSampleEnvironmentalSensor_RunDiagnosticsCallback(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest, DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse, void* userInterfaceContext)
+static void DigitalTwinSampleEnvironmentalSensor_RunDiagnosticsCallback(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
+    void* userInterfaceContext)
 {
     DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE* sensorState = (DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE*)userInterfaceContext;
 
@@ -204,7 +222,10 @@ static void DigitalTwinSampleEnvironmentalSensor_RunDiagnosticsCallback(const DI
 }
 
 // DigitalTwinSampleEnvironmentalSensor_SetAsyncUpdateState is a helper to fill in a DIGITALTWIN_CLIENT_ASYNC_COMMAND_UPDATE structure.
-static void DigitalTwinSampleEnvironmentalSensor_SetAsyncUpdateState(DIGITALTWIN_CLIENT_ASYNC_COMMAND_UPDATE* asyncCommandUpdate, const unsigned char* propertyData, int status)
+static void DigitalTwinSampleEnvironmentalSensor_SetAsyncUpdateState(
+    DIGITALTWIN_CLIENT_ASYNC_COMMAND_UPDATE* asyncCommandUpdate,
+    const unsigned char* propertyData,
+    int status)
 {
     memset(asyncCommandUpdate, 0, sizeof(*asyncCommandUpdate));
     asyncCommandUpdate->version = DIGITALTWIN_CLIENT_ASYNC_COMMAND_UPDATE_VERSION_1;
@@ -222,7 +243,8 @@ static void DigitalTwinSampleEnvironmentalSensor_SetAsyncUpdateState(DIGITALTWIN
 // run on any thread - while processing a callback, on the main() thread itself, or on a new thread spun up by the process.
 // When running on the _LL_ layer (../digitaltwin_sample_ll_device) it *must* run on the main() thread because the the _LL_ is not
 // thread safe by design.
-DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_ProcessDiagnosticIfNecessaryAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
+DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_ProcessDiagnosticIfNecessaryAsync(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
 {
     DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR;
 
@@ -282,7 +304,9 @@ DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_ProcessDiagnostic
 // DigitalTwinSampleEnvironmentalSensor_PropertyCallback is invoked when a property is updated (or failed) going to server.
 // In this sample, we route ALL property callbacks to this function and just have the userContextCallback set
 // to the propertyName.  Product code will potentially have context stored in this userContextCallback.
-static void DigitalTwinSampleEnvironmentalSensor_PropertyCallback(DIGITALTWIN_CLIENT_RESULT dtReportedStatus, void* userContextCallback)
+static void DigitalTwinSampleEnvironmentalSensor_PropertyCallback(
+    DIGITALTWIN_CLIENT_RESULT dtReportedStatus,
+    void* userContextCallback)
 {
     if (dtReportedStatus == DIGITALTWIN_CLIENT_OK)
     {
@@ -295,7 +319,9 @@ static void DigitalTwinSampleEnvironmentalSensor_PropertyCallback(DIGITALTWIN_CL
 }
 
 // Processes a property update, which the server initiated, for customer name.
-static void DigitalTwinSampleEnvironmentalSensor_CustomerNameCallback(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userInterfaceContext)
+static void DigitalTwinSampleEnvironmentalSensor_CustomerNameCallback(
+    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+    void* userInterfaceContext)
 {
     DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE* sensorState = (DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE*)userInterfaceContext;
     DIGITALTWIN_CLIENT_RESULT result;
@@ -347,7 +373,9 @@ static void DigitalTwinSampleEnvironmentalSensor_CustomerNameCallback(const DIGI
 }
 
 // Processes a property update, which the server initiated, for brightness.
-static int DigitalTwinSampleEnvironmentalSensor_ParseBrightness(const char* propertyDesired, int* brightness)
+static int DigitalTwinSampleEnvironmentalSensor_ParseBrightness(
+    const char* propertyDesired,
+    int* brightness)
 {
     int result;
 
@@ -367,7 +395,9 @@ static int DigitalTwinSampleEnvironmentalSensor_ParseBrightness(const char* prop
 }
 
 // Process a property update for bright level.
-static void DigitalTwinSampleEnvironmentalSensor_BrightnessCallback(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userInterfaceContext)
+static void DigitalTwinSampleEnvironmentalSensor_BrightnessCallback(
+    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+    void* userInterfaceContext)
 {
     DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE* sensorState = (DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE*)userInterfaceContext;
     DIGITALTWIN_CLIENT_RESULT result;
@@ -418,7 +448,8 @@ static void DigitalTwinSampleEnvironmentalSensor_BrightnessCallback(const DIGITA
 }
 
 // Sends a reported property for device state of this simulated device.
-static DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_ReportDeviceStateAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
+static DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_ReportDeviceStateAsync(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
 {
     DIGITALTWIN_CLIENT_RESULT result;
 
@@ -439,7 +470,9 @@ static DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_ReportDevi
 
 // DigitalTwinSampleEnvironmentalSensor_InterfaceRegisteredCallback is invoked when this interface
 // is successfully or unsuccessfully registered with the service, and also when the interface is deleted.
-static void DigitalTwinSampleEnvironmentalSensor_InterfaceRegisteredCallback(DIGITALTWIN_CLIENT_RESULT dtInterfaceStatus, void* userInterfaceContext)
+static void DigitalTwinSampleEnvironmentalSensor_InterfaceRegisteredCallback(
+    DIGITALTWIN_CLIENT_RESULT dtInterfaceStatus,
+    void* userInterfaceContext)
 {
     DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE* sensorState = (DIGITALTWIN_SAMPLE_ENVIRONMENTAL_SENSOR_STATE*)userInterfaceContext;
     if (dtInterfaceStatus == DIGITALTWIN_CLIENT_OK)
@@ -464,7 +497,10 @@ static void DigitalTwinSampleEnvironmentalSensor_InterfaceRegisteredCallback(DIG
 
 // DigitalTwinSample_ProcessCommandUpdate receives commands from the server.  This implementation acts as a simple dispatcher
 // to the functions to perform the actual processing.
-void DigitalTwinSample_ProcessCommandUpdate(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest, DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse, void* userInterfaceContext)
+void DigitalTwinSample_ProcessCommandUpdate(
+    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
+    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
+    void* userInterfaceContext)
 {
     if (strcmp(dtCommandRequest->commandName, digitaltwinSample_EnvironmentalSensorCommandBlink) == 0)
     {
@@ -492,7 +528,9 @@ void DigitalTwinSample_ProcessCommandUpdate(const DIGITALTWIN_CLIENT_COMMAND_REQ
 
 // DigitalTwinSampleEnvironmentalSensor_ProcessPropertyUpdate receives updated properties from the server.  This implementation
 // acts as a simple dispatcher to the functions to perform the actual processing.
-static void DigitalTwinSampleEnvironmentalSensor_ProcessPropertyUpdate(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userInterfaceContext)
+static void DigitalTwinSampleEnvironmentalSensor_ProcessPropertyUpdate(
+    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+    void* userInterfaceContext)
 {
     if (strcmp(dtClientPropertyUpdate->propertyName, digitaltwinSample_EnvironmentalSensorPropertyCustomerName) == 0)
     {
@@ -523,7 +561,9 @@ static void DigitalTwinSampleEnvironmentalSensor_ProcessPropertyUpdate(const DIG
 // NOTE: The actual registration of this interface is left to the caller, which may register 
 // multiple interfaces on one DIGITALTWIN_DEVICE_CLIENT_HANDLE.
 //
-DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateInterface(char* InterfaceId, char* ComponentName)
+DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateInterface(
+    const char* InterfaceId,
+    const char* ComponentName)
 {
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle;
     DIGITALTWIN_CLIENT_RESULT result;
@@ -562,7 +602,9 @@ DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateI
 // is either successfully delivered to the service or else fails.  For this sample, the userContextCallback
 // is simply a string pointing to the name of the message sent.  More complex scenarios may include
 // more detailed state information as part of this callback.
-static void DigitalTwinSampleEnvironmentalSensor_TelemetryCallback(DIGITALTWIN_CLIENT_RESULT dtTelemetryStatus, void* userContextCallback)
+static void DigitalTwinSampleEnvironmentalSensor_TelemetryCallback(
+    DIGITALTWIN_CLIENT_RESULT dtTelemetryStatus,
+    void* userContextCallback)
 {
     if (dtTelemetryStatus == DIGITALTWIN_CLIENT_OK)
     {
@@ -580,7 +622,8 @@ static void DigitalTwinSampleEnvironmentalSensor_TelemetryCallback(DIGITALTWIN_C
 // send telemetry containing the current temperature and humidity (in both cases random numbers
 // so this sample will work on platforms without these sensors).
 //
-DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_SendTelemetryMessagesAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
+DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_SendTelemetryMessagesAsync(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
 {
     DIGITALTWIN_CLIENT_RESULT result;
 
@@ -604,7 +647,8 @@ DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_SendTelemetryMess
 //
 // DigitalTwinSampleEnvironmentalSensor_Close is invoked when the sample device is shutting down.
 //
-void DigitalTwinSampleEnvironmentalSensor_Close(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
+void DigitalTwinSampleEnvironmentalSensor_Close(
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle)
 {
     // On shutdown, in general the first call made should be to DigitalTwin_InterfaceClient_Destroy.
     // This will block if there are any active callbacks in this interface, and then
