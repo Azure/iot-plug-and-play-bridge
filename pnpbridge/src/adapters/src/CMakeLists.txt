@@ -15,8 +15,6 @@ compileAsC99()
 add_subdirectory(modbus_pnp)
 add_subdirectory(mqtt_pnp)
 add_subdirectory(serial_pnp)
-add_subdirectory(mqtt_pnp)
-add_subdirectory(modbus_pnp)
 
 IF(WIN32)
 add_subdirectory(bluetooth_sensor)

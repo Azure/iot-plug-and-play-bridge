@@ -232,8 +232,6 @@ PnpBridge_Stop()
 
         IoTHub_Deinit();
     }
-
-    IoTHub_Deinit();
 }
 
 // Note: PnpBridge_UploadToBlobAsync method is not synchronized 

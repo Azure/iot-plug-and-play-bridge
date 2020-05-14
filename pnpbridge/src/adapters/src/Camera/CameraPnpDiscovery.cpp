@@ -68,11 +68,6 @@ catch (std::exception e)
     LogInfo("Exception occurred while shutting down the camera discovery adapter (%s)", e.what());
     return;
 }
-catch (std::exception e)
-{
-    LogInfo("Exception occurred in camera discovery adapter's StartDiscovery. Continuing without starting up the adapter (%s)", e.what());
-    return S_OK;
-}
 
 HRESULT CameraPnpDiscovery::GetUniqueIdByCameraId(_In_ const std::string& cameraId, _Out_ std::wstring& uniqueId) try
 {
@@ -99,55 +94,12 @@ HRESULT CameraPnpDiscovery::GetUniqueIdByCameraId(_In_ const std::string& camera
     {
         return S_OK;
     }
-} 
-catch (std::exception e)
-{
-    LogInfo("Exception occurred while shutting down the camera discovery adapter (%s)", e.what());
-    return;
 }
 catch (std::exception e)
 {
     LogInfo("Exception occurred getting camera ID (%s)", e.what());
     return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
 }
-catch (std::exception e)
-{
-    LogInfo("Exception occurred getting camera ID (%s)", e.what());
-    return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
-}
-
-HRESULT CameraPnpDiscovery::GetUniqueIdByCameraId(_In_ std::string& cameraId, _Out_ std::wstring& uniqueId) try
-{
-    AutoLock lock(&m_lock);
-    RETURN_IF_FAILED(CheckShutdown());
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), m_cameraUniqueIds.size() == 0);
-
-    uniqueId = L"";
-    for (auto iter = m_cameraUniqueIds.begin(); iter != m_cameraUniqueIds.end(); iter++)
-    {
-        std::string cameraIdStr = wstr2str((*iter)->m_cameraId);
-        if (cameraIdStr == cameraId.c_str())
-        {
-            uniqueId = (*iter)->m_UniqueId;
-        }
-    }
-    
-    // no camera in our list matches the input camera Id
-    if (uniqueId == L"")
-    {
-        return E_FAIL;
-    }
-    else 
-    {
-        return S_OK;
-    }
-}
-catch (std::exception e)
-{
-    LogInfo("Exception occurred getting camera ID (%s)", e.what());
-    return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
-}
-
 
 
 /// Protected methods...
@@ -228,11 +180,6 @@ HRESULT CameraPnpDiscovery::EnumerateCameras(_In_ REFGUID guidCategory) try
     }
 
     return S_OK;
-} 
-catch (std::exception e)
-{
-    LogInfo("Exception occurred enumerating cameras on device (%s)", e.what());
-    return E_UNEXPECTED;
 }
 catch (std::exception e)
 {
@@ -296,11 +243,6 @@ void CameraPnpDiscovery::OnCameraArrivalRemoval()
     {
         m_onCameraArrivalRemoval();
     }
-}
-catch (std::exception e)
-{
-    LogInfo("Exception occurred processing camera event (%s)", e.what());
-    return E_UNEXPECTED;
 }
 
 HRESULT CameraPnpDiscovery::GetDeviceProperty(

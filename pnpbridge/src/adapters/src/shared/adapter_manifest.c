@@ -15,7 +15,6 @@ extern PNP_ADAPTER CameraPnpInterface;
 extern PNP_ADAPTER CoreDeviceHealth;
 
 PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
-    &BluetoothSensorPnpInterface,
     &CameraPnpInterface,
     &CoreDeviceHealth,
     &BluetoothSensorPnpInterface,

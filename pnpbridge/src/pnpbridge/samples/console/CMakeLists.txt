@@ -76,8 +76,6 @@ set(pnp_bridge_common_libs
     pnpbridge_modbus
     pnpbridge_mqtt
     pnpbridge_serial
-    pnpbridge_mqtt
-    pnpbridge_modbus
 )
 
 if(WIN32)

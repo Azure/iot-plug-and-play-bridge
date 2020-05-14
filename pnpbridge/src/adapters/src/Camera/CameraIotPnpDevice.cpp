@@ -448,11 +448,6 @@ HRESULT CameraIotPnpDevice::StartDetection()
     //RETURN_IF_FAILED(m_spCameraMediaCaptureFR->StartFrameReader());
     return S_OK;
 }
-catch (std::exception e)
-{
-    LogInfo("Exception occurred in get URI operation (%s)", e.what());
-    return E_UNEXPECTED;
-}
 
 HRESULT CameraIotPnpDevice::GetURIOp(std::string& strResponse) try
 {
