@@ -26,6 +26,9 @@ public:
         DIGITALTWIN_INTERFACE_CLIENT_HANDLE DtHandle
     );
 
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE
+    GetDigitalTwin();
+
 private:
     MqttConnectionManager*              s_ConnectionManager = nullptr;
     // Maps method name to 

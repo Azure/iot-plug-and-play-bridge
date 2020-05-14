@@ -47,3 +47,25 @@ add_library(${PROJECT_NAME} STATIC
     ${pnpbridge_adapters_c_files}
     ${pnpbridge_adapters_h_files}
 )
+
+set(pnp_bridge_common_libs
+    aziotsharedutil
+    pnpbridge
+    iothub_client 
+    iothub_client_http_transport
+    iothub_client_amqp_transport
+    iothub_client_amqp_ws_transport
+    iothub_client_mqtt_transport
+    iothub_client_mqtt_ws_transport
+    parson
+    umqtt
+    msr_riot
+    hsm_security_client
+    prov_auth_client
+    prov_device_client
+    prov_mqtt_transport
+    utpm
+    digitaltwin_client
+)
+
+target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})

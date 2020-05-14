@@ -32,7 +32,6 @@ typedef struct ModbusTelemetry {
     double ConversionCoefficient;
     MODBUS_READ_REQUEST  ReadRequest;
     int    DefaultFrequency;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE InterfaceClient;
     CapabilityType Type;
 } ModbusTelemetry, *PModbusTelemetry;
 
@@ -46,11 +45,9 @@ typedef struct ModbusProperty {
     double ConversionCoefficient;
     MODBUS_READ_REQUEST  ReadRequest;
     MODBUS_WRITE_1_REG_REQUEST WriteRequest;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE InterfaceClient;
     int    DefaultFrequency;
     ModbusAccessType Access;
     CapabilityType Type;
-    //ModbusDevice HostDevice;
 } ModbusProperty, *PModbusProperty;
 
 typedef struct ModbusCommand {
@@ -60,19 +57,18 @@ typedef struct ModbusCommand {
     ModbusDataType  DataType;
     double ConversionCoefficient;
     MODBUS_WRITE_1_REG_REQUEST WriteRequest;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE InterfaceClient;
     CapabilityType Type;
-    //ModbusDevice HostDevice;
-} ModbusCommand;
+} ModbusCommand, *PModbusCommand;
 
 typedef struct CapabilityContext {
     void* capability;
     HANDLE hDevice;
     LOCK_HANDLE hLock;
     MODBUS_CONNECTION_TYPE connectionType;
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE InterfaceClient;
 }CapabilityContext;
 
-int ModbusPnp_StartPollingAllTelemetryProperty(void* context);
+DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(void* context);
 void StopPollingTasks();
 
 void ModbusPnp_CommandHandler(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext, 

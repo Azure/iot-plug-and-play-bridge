@@ -14,7 +14,8 @@ extern "C"
 #endif
 
     // Creates a new DIGITALTWIN_INTERFACE_CLIENT_HANDLE for this interface.
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateInterface(char* interfaceId, char* ComponentName);
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateInterface(const char* interfaceId, const char* ComponentName);
+
     // Sends DigitalTwin telemetry messages about current environment
     DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_SendTelemetryMessagesAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle);
 

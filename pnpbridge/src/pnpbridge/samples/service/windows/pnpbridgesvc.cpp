@@ -7,12 +7,14 @@
 #pragma endregion
 
 
-PnpBridgeSvc::PnpBridgeSvc(PWSTR pszServiceName, 
-                               BOOL fCanStop, 
-                               BOOL fCanShutdown, 
-                               BOOL fCanPauseContinue)
+PnpBridgeSvc::PnpBridgeSvc(PWSTR pszServiceName,
+                            char * configFilePath,
+                            BOOL fCanStop,
+                            BOOL fCanShutdown,
+                            BOOL fCanPauseContinue)
 : ServiceBase(pszServiceName, fCanStop, fCanShutdown, fCanPauseContinue)
 {
+    mallocAndStrcpy_s(&m_configFilePath, (const char*) configFilePath);
     m_fStopping = FALSE;
 
     // Create a manual-reset event that is not signaled at first to indicate 
@@ -104,7 +106,7 @@ void PnpBridgeSvc::ServiceWorkerThread(PTP_CALLBACK_INSTANCE Instance, PVOID Con
     while (!svc->m_fStopping)
     {
         // Perform main service function here...
-        ::PnpBridge_Main();
+        ::PnpBridge_Main(svc->m_configFilePath);
     }
 
     // Signal the stopped event.

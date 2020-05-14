@@ -12,60 +12,45 @@ extern const int PnpAdapterCount;
 #include "pnpadapter_manager.h"
 #endif
 
-PNPBRIDGE_RESULT PnpAdapterManager_ValidatePnpAdapter(PPNP_ADAPTER  pnpAdapter, MAP_HANDLE pnpAdapterMap) {
-    bool containsKey = false;
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_ValidatePnpAdapter(PPNP_ADAPTER  pnpAdapter) {
+
     if (NULL == pnpAdapter->identity) {
-        LogError("PnpAdapter's Identity filed is not initialized");
-        return PNPBRIDGE_INVALID_ARGS;
-    }
-    if (MAP_OK != Map_ContainsKey(pnpAdapterMap, pnpAdapter->identity, &containsKey)) {
-        LogError("Map_ContainsKey failed");
-        return PNPBRIDGE_FAILED;
-    }
-    if (containsKey) {
-        LogError("Found duplicate pnp adapter identity %s", pnpAdapter->identity);
-        return PNPBRIDGE_DUPLICATE_ENTRY;
-    }
-    if (NULL == pnpAdapter->initialize || NULL == pnpAdapter->shutdown || NULL == pnpAdapter->createPnpInterface) {
-        LogError("PnpAdapter's callbacks are not initialized");
-        return PNPBRIDGE_INVALID_ARGS;
+        LogError("PnpAdapter's Identity field is not initialized");
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
     }
 
-    return PNPBRIDGE_OK;
+    if (NULL == pnpAdapter->createAdapter || NULL == pnpAdapter->createPnpInterface || NULL == pnpAdapter->startPnpInterface ||
+        NULL == pnpAdapter->stopPnpInterface || NULL == pnpAdapter->destroyPnpInterface || NULL == pnpAdapter->destroyAdapter) {
+        LogError("PnpAdapter's callbacks are not initialized");
+        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    }
+
+    return DIGITALTWIN_CLIENT_OK;
 }
 
-PNPBRIDGE_RESULT PnpAdapterManager_InitializeAdapter(PPNP_ADAPTER adapter, PPNP_ADAPTER_TAG* adapterTag) {
-    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_InitializeAdapter(PPNP_ADAPTER adapter, PPNP_ADAPTER_TAG adapterTag) {
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
     PPNP_ADAPTER_TAG adapterT = NULL;
-    TRY
-    {
-        adapterT = calloc(1, sizeof(PNP_ADAPTER_TAG));
-        if (NULL == adapterT) {
-            result = PNPBRIDGE_INSUFFICIENT_MEMORY;
-            LEAVE;
-        }
 
-        adapterT->adapter = adapter;
-        adapterT->InterfaceListLock = Lock_Init();
-        adapterT->pnpInterfaceList = singlylinkedlist_create();
-        if (NULL == adapterT->InterfaceListLock) {
-            result = PNPBRIDGE_INSUFFICIENT_MEMORY;
-            LEAVE;
-        }
-
-        *adapterTag = adapterT;
-    }
-    FINALLY 
-    {
-        if (!PNPBRIDGE_SUCCESS(result)) {
-            PnpAdapterManager_ReleaseAdapter(adapterT);
-        }
+    adapterT = calloc(1, sizeof(PNP_ADAPTER_TAG));
+    if (NULL == adapterT) {
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        goto exit;
     }
 
+    adapterT->adapter = adapter;
+    adapterT->InterfaceListLock = Lock_Init();
+    adapterT->pnpInterfaceList = singlylinkedlist_create();
+    if (NULL == adapterT->InterfaceListLock) {
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+    }
+
+    adapterTag = adapterT;
+exit:
     return result;
 }
 
-void PnpAdapterManager_ReleaseAdapter(PPNP_ADAPTER_TAG adapterTag) {
+void PnpAdapterManager_ReleaseAdapterInterfaces(PPNP_ADAPTER_TAG adapterTag) {
     if (NULL == adapterTag) {
         return;
     }
@@ -75,14 +60,9 @@ void PnpAdapterManager_ReleaseAdapter(PPNP_ADAPTER_TAG adapterTag) {
         Lock(adapterTag->InterfaceListLock);
         LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
         while (NULL != handle) {
-            PPNPADAPTER_INTERFACE_TAG adapterInterface = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(handle);
-            // Disconnect the adapter interface from the list. The cleanup of adapte interface
-            // will be done when destroy API is called
-            if (NULL != adapterInterface->adapterEntry) {
-                adapterInterface->adapterEntry = NULL;
-            }
-            adapterInterface->params.ReleaseInterface(adapterInterface);
-            
+            PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(handle);
+            adapterTag->adapter->stopPnpInterface(interfaceHandle);
+            adapterTag->adapter->destroyPnpInterface(interfaceHandle);
             handle = singlylinkedlist_get_next_item(handle);
         }
         Unlock(adapterTag->InterfaceListLock);
@@ -90,287 +70,327 @@ void PnpAdapterManager_ReleaseAdapter(PPNP_ADAPTER_TAG adapterTag) {
         singlylinkedlist_destroy(adapterTag->pnpInterfaceList);
         Lock_Deinit(adapterTag->InterfaceListLock);
     }
-
-    free(adapterTag);
 }
 
-PNPBRIDGE_RESULT PnpAdapterManager_Create(PPNP_ADAPTER_MANAGER* adapterMgr, JSON_Value* config) {
-    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
-    PPNP_ADAPTER_MANAGER adapter = NULL;
-
-    if (NULL == adapterMgr) {
-        result = PNPBRIDGE_INVALID_ARGS;
-        goto exit;
-    }
-
-    adapter = (PPNP_ADAPTER_MANAGER) malloc(sizeof(PNP_ADAPTER_MANAGER));
-    if (NULL == adapter) {
-        result = PNPBRIDGE_INSUFFICIENT_MEMORY;
-        goto exit;
-    }
-
-    adapter->pnpAdapterMap = Map_Create(NULL);
-    if (NULL == adapter->pnpAdapterMap) {
-        result = PNPBRIDGE_FAILED;
-        goto exit;
-    }
-
-    // Create PNP_ADAPTER_HANDLE's
-    adapter->pnpAdapters = calloc(PnpAdapterCount, sizeof(PPNP_ADAPTER_TAG));
-    if (NULL == adapter->pnpAdapters) {
-        result = PNPBRIDGE_FAILED;
-        goto exit;
-    }
-
-    // Load a list of static modules and build an interface map
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(const char* adapterId, PPNP_ADAPTER* adapter)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    PPNP_ADAPTER pnpAdapter = NULL;
     for (int i = 0; i < PnpAdapterCount; i++) {
-        PPNP_ADAPTER  pnpAdapter = PNP_ADAPTER_MANIFEST[i];
-        
-        result = PnpAdapterManager_InitializeAdapter(pnpAdapter, &adapter->pnpAdapters[i]);
-        if (!PNPBRIDGE_SUCCESS(result)) {
-            LogError("Failed to initialize PnpAdapter %s", pnpAdapter->identity);
-            continue;
+        pnpAdapter = PNP_ADAPTER_MANIFEST[i];
+        if (0 == strcmp(pnpAdapter->identity, adapterId))
+        {
+            *adapter = pnpAdapter;
+            result = DIGITALTWIN_CLIENT_OK;
         }
-
-        if (NULL == pnpAdapter->identity) {
-            LogError("Invalid Identity specified for a PnpAdapter");
-            continue;
-        }
-
-        // Validate Pnp Adapter Methods
-        result = PnpAdapterManager_ValidatePnpAdapter(pnpAdapter, adapter->pnpAdapterMap);
-        if (PNPBRIDGE_OK != result) {
-            LogError("PnpAdapter structure is not initialized properly");
-            goto exit;
-        }
-
-        JSON_Object* initParams = Configuration_GetPnpParameters(config, pnpAdapter->identity);
-        const char* initParamstring = NULL;
-        if (initParams != NULL) {
-            initParamstring = json_serialize_to_string(json_object_get_wrapping_value(initParams));
-        }
-        result = pnpAdapter->initialize(initParamstring);
-        if (PNPBRIDGE_OK != result) {
-            LogError("Failed to initialze a PnpAdapter");
-            continue;
-        }
-
-        Map_Add_Index(adapter->pnpAdapterMap, pnpAdapter->identity, i);
     }
 
-    *adapterMgr = adapter;
+    // Validate Pnp Adapter Methods
+    result = PnpAdapterManager_ValidatePnpAdapter(pnpAdapter);
+    if (DIGITALTWIN_CLIENT_OK != result) {
+        LogError("PnpAdapter structure is not initialized properly");
+    }
+    return result;
+}
+
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateAdapter(const char* adapterId, PPNP_ADAPTER_CONTEXT_TAG* adapterContext, JSON_Value* config)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+
+    PPNP_ADAPTER_CONTEXT_TAG pnpAdapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)malloc(sizeof(PNP_ADAPTER_CONTEXT_TAG));
+    if (pnpAdapterHandle == NULL)
+    {
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        LogError("Couldn't allocate memory for PNP_ADAPTER_CONTEXT_TAG");
+        goto exit;
+    }
+
+    pnpAdapterHandle->context = NULL;
+    pnpAdapterHandle->adapterGlobalConfig = NULL;
+    // Get adapter structure from manifest
+    pnpAdapterHandle->adapter = (PPNP_ADAPTER_TAG)malloc(sizeof(PNP_ADAPTER_TAG));
+    if (pnpAdapterHandle->adapter == NULL)
+    {
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        LogError("Couldn't allocate memory for PNP_ADAPTER_TAG");
+        goto exit;
+    }
+    PPNP_ADAPTER  pnpAdapter = NULL;
+    result = PnpAdapterManager_GetAdapterFromManifest(adapterId, &pnpAdapter);
+    if (!PNPBRIDGE_SUCCESS(result))
+    {
+        LogError("Adapter not setup correctly.");
+        goto exit;
+    }
+
+    pnpAdapterHandle->adapter->adapter = pnpAdapter;
+    pnpAdapterHandle->adapter->InterfaceListLock = Lock_Init();
+    pnpAdapterHandle->adapter->pnpInterfaceList = singlylinkedlist_create();
+    if (NULL == pnpAdapterHandle->adapter->InterfaceListLock) {
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        goto exit;
+    }
+
+    // Get global adapter parameters and allow the adapter to do internal setup
+
+    pnpAdapterHandle->adapterGlobalConfig = Configuration_GetGlobalAdapterParameters(config, adapterId);
+    if (NULL == pnpAdapterHandle->adapterGlobalConfig)
+    {
+        LogInfo("Adapter with identity %s does not have any associated global parameters. Proceeding with adapter creation.", adapterId);
+    }
+    result = pnpAdapterHandle->adapter->adapter->createAdapter(pnpAdapterHandle->adapterGlobalConfig, pnpAdapterHandle);
+    if (!PNPBRIDGE_SUCCESS(result)) {
+        LogError("Adapter %s'couldn't be created.", adapterId);
+        goto exit;
+    }
+
+    *adapterContext = pnpAdapterHandle;
+exit:
+    return result;
+}
+
+bool PnpAdapterManager_AdapterCreated(PPNP_ADAPTER_MANAGER adapterMgr, const char* adapterId)
+{
+    LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
+
+    while (NULL != adapterListItem) {
+
+        PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+        if (adapterHandle->adapter)
+        {
+            if (!strcmp(adapterHandle->adapter->adapter->identity, adapterId))
+            {
+                return true;
+            }
+        }
+        adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+    }
+    return false;
+}
+
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateManager(PPNP_ADAPTER_MANAGER* adapterMgr, JSON_Value* config) {
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    PPNP_ADAPTER_MANAGER adapterManager = NULL;
+
+    adapterManager = (PPNP_ADAPTER_MANAGER)malloc(sizeof(PNP_ADAPTER_MANAGER));
+    if (NULL == adapterManager) {
+        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        goto exit;
+    }
+
+    adapterManager->NumInterfaces = 0;
+    adapterManager->PnpAdapterHandleList = singlylinkedlist_create();
+    JSON_Array* devices = Configuration_GetDevices(config);
+    if (NULL == devices) {
+        LogError("No configured devices in the pnpbridge config");
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
+
+    // Pre-allocate contiguous memory for maximum number of registerable devices
+    adapterManager->PnpInterfacesRegistrationList = calloc(json_array_get_count(devices), sizeof(DIGITALTWIN_INTERFACE_CLIENT_HANDLE));
+
+    for (size_t i = 0; i < json_array_get_count(devices); i++) {
+        JSON_Object* device = json_array_get_object(devices, i);
+        const char* adapterId = json_object_dotget_string(device, PNP_CONFIG_ADAPTER_ID);
+
+
+        // Create and initialize adapter if it has never been done before
+
+        if (!PnpAdapterManager_AdapterCreated(adapterManager, adapterId))
+        {
+            PPNP_ADAPTER_CONTEXT_TAG pnpAdapterHandle = NULL;
+
+            result = PnpAdapterManager_CreateAdapter(adapterId, &pnpAdapterHandle, config);
+            if (pnpAdapterHandle == NULL || result != DIGITALTWIN_CLIENT_OK)
+            {
+                LogError("Adapter creation and initialization failed. Destroying all adapters previously created.");
+                goto exit;
+            }
+
+            // Add to list of manager's adapters
+            singlylinkedlist_add(adapterManager->PnpAdapterHandleList, pnpAdapterHandle);
+
+        }
+    }
+
+    *adapterMgr = adapterManager;
 
 exit:
     if (!PNPBRIDGE_SUCCESS(result)) {
-        if (NULL != adapter) {
-            PnpAdapterManager_Release(adapter);
+        if (NULL != adapterManager) {
+            PnpAdapterManager_ReleaseManager(adapterManager);
         }
     }
     return result;
 }
 
-void PnpAdapterManager_Release(PPNP_ADAPTER_MANAGER adapterMgr) {
-    const char* const* keys;
-    const char* const* values;
-    size_t count;
+void PnpAdapterManager_ReleaseManager(PPNP_ADAPTER_MANAGER adapterMgr) {
+    if (NULL != adapterMgr)
+    {
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
 
-    if (NULL != adapterMgr->pnpAdapterMap) {
-        // Call shutdown on all interfaces
-        if (Map_GetInternals(adapterMgr->pnpAdapterMap, &keys, &values, &count) != MAP_OK) {
-            LogError("Map_GetInternals failed to get all pnp adapters");
+        while (NULL != adapterListItem) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+            if (adapterHandle->adapter)
+            {
+                // Clean up adapter interfaces
+                PnpAdapterManager_ReleaseAdapterInterfaces(adapterHandle->adapter);
+
+                // Clean up adapter's context
+                adapterHandle->adapter->adapter->destroyAdapter(adapterHandle);
+
+                free(adapterHandle->adapter);
+            }
+
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
         }
-        else
-        {
-            for (int i = 0; i < (int)count; i++) {
-                int index = atoi(values[i]);
-                PPNP_ADAPTER_TAG  adapterT = adapterMgr->pnpAdapters[index];
-                if (NULL != adapterT) {
-                    // Release all interfaces
-                    PnpAdapterManager_ReleaseAdapter(adapterT);
+        singlylinkedlist_destroy(adapterMgr->PnpAdapterHandleList);
 
-                    PPNP_ADAPTER adapter = PNP_ADAPTER_MANIFEST[index];
-                    if (NULL != adapter->shutdown) {
-                        adapter->shutdown();
+        if (adapterMgr->PnpInterfacesRegistrationList)
+        {
+            free(adapterMgr->PnpInterfacesRegistrationList);
+        }
+        free(adapterMgr);
+    }
+}
+
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(PPNP_ADAPTER_MANAGER adapterMgr, const char* adapterIdentity, PPNP_ADAPTER_CONTEXT_TAG* adapterContext)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    if (NULL != adapterMgr)
+    {
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
+
+        while (NULL != adapterListItem) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+            if (!strcmp(adapterHandle->adapter->adapter->identity, adapterIdentity))
+            {
+                *adapterContext = adapterHandle;
+                result = DIGITALTWIN_CLIENT_OK;
+                break;
+            }
+
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        }
+    }
+
+    return result;
+
+}
+
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(PPNP_ADAPTER_MANAGER adapterMgr, JSON_Value* config)
+{
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+
+    JSON_Array* devices = Configuration_GetDevices(config);
+    if (NULL == devices) {
+        LogError("No configured devices in the pnpbridge config");
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
+    }
+
+    for (size_t i = 0; i < json_array_get_count(devices); i++) {
+
+        JSON_Object* device = json_array_get_object(devices, i);
+        const char* adapterId = json_object_dotget_string(device, PNP_CONFIG_ADAPTER_ID);
+        const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_INTERFACE_ID);
+        const char* interfaceName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
+
+        JSON_Object* deviceAdapterArgs = json_object_dotget_object(device, PNP_CONFIG_DEVICE_ADAPTER_CONFIG);
+        PPNP_ADAPTER_CONTEXT_TAG adapterHandle = NULL;
+
+        result = PnpAdapterManager_GetAdapterHandle(adapterMgr, adapterId, &adapterHandle);
+
+        if (DIGITALTWIN_CLIENT_OK == result)
+        {
+            PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)malloc(sizeof(PNPADAPTER_INTERFACE_TAG));
+
+            if (interfaceHandle != NULL)
+            {
+                DIGITALTWIN_INTERFACE_CLIENT_HANDLE digitalTwinInterfaceHandle;
+
+                interfaceHandle->interfaceId = interfaceId;
+                interfaceHandle->interfaceName = interfaceName;
+                interfaceHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
+                result = adapterHandle->adapter->adapter->createPnpInterface(adapterHandle, interfaceId, interfaceName, deviceAdapterArgs,
+                                                                                interfaceHandle, &digitalTwinInterfaceHandle);
+                if (result == DIGITALTWIN_CLIENT_OK)
+                {
+                    if (digitalTwinInterfaceHandle != NULL)
+                    {
+                        interfaceHandle->pnpInterfaceClient = digitalTwinInterfaceHandle;
+                        singlylinkedlist_add(adapterHandle->adapter->pnpInterfaceList, interfaceHandle);
+                        adapterMgr->PnpInterfacesRegistrationList[adapterMgr->NumInterfaces] = digitalTwinInterfaceHandle;
+                        adapterMgr->NumInterfaces++;
+                    }
+                    else
+                    {
+                        LogError("The adapter returned from successful interface creation but interface client handle is invalid");
+                        result = DIGITALTWIN_CLIENT_ERROR;
+                        goto exit;
                     }
                 }
+                else
+                {
+                    LogInfo("Interface with ID: %s and instance name: %s failed.", interfaceId, interfaceName);
+                    free(interfaceHandle);
+                    goto exit;
+                }
+            }
+            else
+            {
+                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                goto exit;
             }
         }
     }
 
-    if (NULL != adapterMgr->pnpAdapters) {
-        free(adapterMgr->pnpAdapters);
-    }
-
-    Map_Destroy(adapterMgr->pnpAdapterMap);
-    free(adapterMgr);
+exit:
+    return result;
 }
 
-PNPBRIDGE_RESULT PnpAdapterManager_SupportsIdentity(PPNP_ADAPTER_MANAGER adapter, JSON_Object* Message, bool* supported, int* key) {
-    bool containsMessageKey = false;
-    JSON_Object* pnpParams = json_object_get_object(Message, PNP_CONFIG_PNP_PARAMETERS);
-    char* getIdentity = (char*) json_object_get_string(pnpParams, PNP_CONFIG_IDENTITY);
-    MAP_RESULT mapResult;
-
-    *supported = false;
-
-    mapResult = Map_ContainsKey(adapter->pnpAdapterMap, getIdentity, &containsMessageKey);
-    if (MAP_OK != mapResult || !containsMessageKey) {
-        LogError("PnpAdapter %s is not present in AdapterManifest", getIdentity);
-        return PNPBRIDGE_FAILED;
-    }
-
-    // Get the interface ID
-    int index = Map_GetIndexValueFromKey(adapter->pnpAdapterMap, getIdentity);
-
-    *supported = true;
-    *key = index;
-
-    return PNPBRIDGE_OK;
-}
-
-/*
-    Once an interface is registerd with Azure PnpDeviceClient this 
-    method will take care of binding it to a module implementing 
-    PnP primitives
-*/
-PNPBRIDGE_RESULT 
-PnpAdapterManager_CreatePnpInterface(
-    PPNP_ADAPTER_MANAGER AdapterMgr,
-    MX_IOT_HANDLE_TAG* IotHandle,
-    int key,
-    JSON_Object* deviceConfig,
-    PNPMESSAGE DeviceChangeMessage
-    ) 
+DIGITALTWIN_CLIENT_RESULT PnPAdapterManager_RegisterInterfaces(PPNP_ADAPTER_MANAGER adapterMgr)
 {
-    // Get the module using the key as index
-    PPNP_ADAPTER_TAG  adapterT = AdapterMgr->pnpAdapters[key];
-    PNP_ADAPTER_CONTEXT_TAG context = { 0 };
-
-    AZURE_UNREFERENCED_PARAMETER(IotHandle);
-
-    context.adapter = adapterT;
-    context.deviceConfig = deviceConfig;
-
-    // Invoke interface binding method
-    int ret = adapterT->adapter->createPnpInterface(&context, DeviceChangeMessage);
-    if (ret < 0) {
-        return PNPBRIDGE_FAILED;
-    }
-
-    return PNPBRIDGE_OK;
-}
-
-PNPBRIDGE_RESULT PnpAdapterManager_GetAllInterfaces(PPNP_ADAPTER_MANAGER adapterMgr, DIGITALTWIN_INTERFACE_CLIENT_HANDLE** interfaces , int* count) {
-    int n = 0;
-
-    // Get the number of created interfaces
-    for (int i = 0; i < PnpAdapterCount; i++) {
-        PPNP_ADAPTER_TAG  pnpAdapter = adapterMgr->pnpAdapters[i];
-        
-        SINGLYLINKEDLIST_HANDLE pnpInterfaces = pnpAdapter->pnpInterfaceList;
-        LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
-        while (NULL != handle) {
-            handle = singlylinkedlist_get_next_item(handle);
-            n++;
-        }
-    }
-
-    // create an array of interface handles
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* pnpClientHandles = NULL;
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    if (NULL != adapterMgr)
     {
-        pnpClientHandles = calloc(n, sizeof(DIGITALTWIN_INTERFACE_CLIENT_HANDLE));
-        int x = 0;
-        for (int i = 0; i < PnpAdapterCount; i++) {
-            PPNP_ADAPTER_TAG  pnpAdapter = adapterMgr->pnpAdapters[i];
-
-            SINGLYLINKEDLIST_HANDLE pnpInterfaces = pnpAdapter->pnpInterfaceList;
-            Lock(pnpAdapter->InterfaceListLock);
-            LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
-            while (NULL != handle) {
-                PPNPADAPTER_INTERFACE_TAG adapterInterface = (DIGITALTWIN_INTERFACE_CLIENT_HANDLE) singlylinkedlist_item_get_value(handle);
-                pnpClientHandles[x] = PnpAdapterInterface_GetPnpInterfaceClient(adapterInterface);
-                handle = singlylinkedlist_get_next_item(handle);
-                x++;
-            }
-            Unlock(pnpAdapter->InterfaceListLock);
+        LogInfo("Publishing %d Azure Pnp Interface(s)", adapterMgr->NumInterfaces);
+        result = PnpBridge_RegisterInterfaces(adapterMgr->PnpInterfacesRegistrationList, adapterMgr->NumInterfaces);
+        if (result != DIGITALTWIN_CLIENT_OK)
+        {
+            LogError("Registration failed.");
+            goto exit;
         }
     }
 
-    *count = n;
-    *interfaces = pnpClientHandles;
-
-    return 0;
+exit:
+    return result;
 }
 
-void PnpAdapterManager_InvokeStartInterface(PPNP_ADAPTER_MANAGER adapterMgr) {
-    for (int i = 0; i < PnpAdapterCount; i++) {
-        PPNP_ADAPTER_TAG  pnpAdapter = adapterMgr->pnpAdapters[i];
-
-        SINGLYLINKEDLIST_HANDLE pnpInterfaces = pnpAdapter->pnpInterfaceList;
-        LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
-        while (NULL != handle) {
-            PPNPADAPTER_INTERFACE_TAG adapterInterface = (DIGITALTWIN_INTERFACE_CLIENT_HANDLE)singlylinkedlist_item_get_value(handle);
-            // Invoke the startInterface callback
-            int res = adapterInterface->params.StartInterface(adapterInterface);
-
-            // TODO: If failed then clear the interface
-            if (res < 0) {
-                LogError("startInterface adapter callback failed for interface %s, %d",
-                            adapterInterface->interfaceId, res);
-                // TODO: Mark for removal
-            }
-
-            handle = singlylinkedlist_get_next_item(handle);
-        }
-    }
-
-    // TODO: If any interfaces removed then republish it
-}
-
-bool PnpAdapterManager_IsInterfaceIdPublished(PPNP_ADAPTER_MANAGER adapterMgr, const char* interfaceId) {
-    for (int i = 0; i < PnpAdapterCount; i++) {
-        PPNP_ADAPTER_TAG  pnpAdapter = adapterMgr->pnpAdapters[i];
-
-        SINGLYLINKEDLIST_HANDLE pnpInterfaces = pnpAdapter->pnpInterfaceList;
-        Lock(pnpAdapter->InterfaceListLock);
-        LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
-        while (NULL != handle) {
-            PPNPADAPTER_INTERFACE_TAG adapterInterface = (DIGITALTWIN_INTERFACE_CLIENT_HANDLE)singlylinkedlist_item_get_value(handle);
-            if (0 == strcmp(adapterInterface->interfaceId, interfaceId)) {
-                return true;
-            }
-            handle = singlylinkedlist_get_next_item(handle);
-        }
-        Unlock(pnpAdapter->InterfaceListLock);
-    }
-
-    return false;
-}
-
-// TODO: Prevent duplicate interfaces
-void PnpAdapterManager_AddInterface(PPNP_ADAPTER_TAG adapter, PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface) {
-    LIST_ITEM_HANDLE handle = NULL;
-    Lock(adapter->InterfaceListLock);
-
-    handle = singlylinkedlist_add(adapter->pnpInterfaceList, pnpAdapterInterface);
-    Unlock(adapter->InterfaceListLock);
-
-    if (NULL != handle) {
-        PPNPADAPTER_INTERFACE_TAG interface = (PPNPADAPTER_INTERFACE_TAG)pnpAdapterInterface;
-        interface->adapterEntry = handle;
-    }
-    // Handle failure case when singlylinkedlist_add returns NULL
-}
-
-void 
-PnpAdapterManager_RemoveInterface(
-    PPNP_ADAPTER_TAG Adapter,
-    PNPADAPTER_INTERFACE_HANDLE PnpAdapterInterface
-    ) 
+DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_StartInterfaces(PPNP_ADAPTER_MANAGER adapterMgr)
 {
-    PPNPADAPTER_INTERFACE_TAG interface = (PPNPADAPTER_INTERFACE_TAG) PnpAdapterInterface;
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    if (NULL != adapterMgr)
+    {
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
 
-    Lock(Adapter->InterfaceListLock);
-    singlylinkedlist_remove(Adapter->pnpInterfaceList, interface->adapterEntry);
-    Unlock(Adapter->InterfaceListLock);
+        while (NULL != adapterListItem) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
+            while (NULL != interfaceHandleItem)
+            {
+                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
+                result = adapterHandle->adapter->adapter->startPnpInterface(adapterHandle, interfaceHandle);
+                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+            }
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        }
+    }
+    return result;
 }

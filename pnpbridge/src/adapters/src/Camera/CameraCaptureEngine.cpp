@@ -96,8 +96,7 @@ CameraCaptureEngine::TakePhoto(
     // type or the pipeline will fail.
     RETURN_IF_FAILED (spCaptureEngine->GetSource(&spCaptureSource));
 
-    // Preview sink - just adding a scope here to make the code easier
-    // to read.
+    // Preview sink
     {
         ComPtr<IMFMediaType>                        spSourceMediaType;
         ComPtr<IMFMediaType>                        spTargetMediaType;
@@ -114,8 +113,7 @@ CameraCaptureEngine::TakePhoto(
         RETURN_IF_FAILED (spPreviewSink->SetSampleCallback(dwStreamIndex, spSampleCallback.Get()));
     }
 
-    // Now the photo sink.  Again, new scope to make things easier to
-    // read.
+    // Photo sink
     {
         ComPtr<IMFMediaType>                        spSourceMediaType;
         ComPtr<IMFMediaType>                        spJpegMediaType;
@@ -138,7 +136,7 @@ CameraCaptureEngine::TakePhoto(
     RETURN_IF_FAILED (spCECallback->WaitForEvent(MF_CAPTURE_ENGINE_PREVIEW_STARTED, SHAREDCAMERA_DEFAULT_OPERATION_TIMEOUT_INMS));
     RETURN_IF_FAILED (spPreviewCallback->WaitForSample(SHAREDCAMERA_DEFAULT_OPERATION_TIMEOUT_INMS, &spPreviewSample));
 
-    // Now take a photo and get that from the callback.
+    // Take a photo and get that from the callback.
     RETURN_IF_FAILED (spCaptureEngine->TakePhoto());
     RETURN_IF_FAILED (spCECallback->WaitForEvent(MF_CAPTURE_ENGINE_PHOTO_TAKEN, SHAREDCAMERA_DEFAULT_OPERATION_TIMEOUT_INMS));
     RETURN_IF_FAILED (spPhotoCallback->WaitForSample(SHAREDCAMERA_DEFAULT_OPERATION_TIMEOUT_INMS, ppSample));
@@ -219,8 +217,8 @@ CameraCaptureEngine::GetDefaultCamera(
         cr = CM_Get_Device_Interface_List_Size(&cchInterfaceList, (GUID*)&guidCategory, nullptr, CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
         if (cr != CR_SUCCESS || cchInterfaceList == 0)
         {
-            // No Sensor Groups available, this is not an error, it just makes this
-            // test a no-op.  Leave.
+            // No sensor groups available, this is not an error, it just makes this
+            // test a no-op.
             return HRESULT_FROM_WIN32(ERROR_DEV_NOT_EXIST);
         }
 
@@ -236,7 +234,7 @@ CameraCaptureEngine::GetDefaultCamera(
     RETURN_HR_IF_NULL (E_UNEXPECTED, pwzInterfaceList.get());
     if (cchInterfaceList <= 1)
     {
-        // This is empty...leave.
+        // This is empty, leave
         return HRESULT_FROM_WIN32(ERROR_DEV_NOT_EXIST);
     }
 

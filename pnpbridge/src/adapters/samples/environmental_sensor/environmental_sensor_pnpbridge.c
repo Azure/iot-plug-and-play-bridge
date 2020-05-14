@@ -23,7 +23,10 @@ typedef struct _ENVIRONMENT_SENSOR {
     volatile bool ShuttingDown;
 } ENVIRONMENT_SENSOR, * PENVIRONMENT_SENSOR;
 
-int EnvironmentSensor_TelemetryWorker(void* context) {
+
+int EnvironmentSensor_TelemetryWorker(
+    void* context)
+{
     PENVIRONMENT_SENSOR device = (PENVIRONMENT_SENSOR)context;
 
     // Report telemetry every 5 minutes till we are asked to stop
@@ -41,101 +44,125 @@ int EnvironmentSensor_TelemetryWorker(void* context) {
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int EnvironmentSensor_StartInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
-    PENVIRONMENT_SENSOR device = PnpAdapterInterface_GetContext(pnpInterface);
+DIGITALTWIN_CLIENT_RESULT EnvironmentSensor_StartPnpInterface(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+    PENVIRONMENT_SENSOR device = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
 
     // Create a thread to periodically publish telemetry
     if (ThreadAPI_Create(&device->WorkerHandle, EnvironmentSensor_TelemetryWorker, device) != THREADAPI_OK) {
         LogError("ThreadAPI_Create failed");
-        return -1;
+        return DIGITALTWIN_CLIENT_ERROR;
     }
-
-
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int EnvironmentSensor_ReleaseInterface(PNPADAPTER_INTERFACE_HANDLE pnpInterface) {
-    PENVIRONMENT_SENSOR device = PnpAdapterInterface_GetContext(pnpInterface);
+DIGITALTWIN_CLIENT_RESULT EnvironmentSensor_StopPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    PENVIRONMENT_SENSOR device = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
 
     if (device) {
         device->ShuttingDown = true;
         ThreadAPI_Join(device->WorkerHandle, NULL);
+    }
+    return DIGITALTWIN_CLIENT_OK;
+}
+
+DIGITALTWIN_CLIENT_RESULT EnvironmentSensor_DestroyPnpInterface(
+    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+{
+    PENVIRONMENT_SENSOR device = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    if (device)
+    {
+        DigitalTwinSampleEnvironmentalSensor_Close(device->pnpinterfaceHandle);
         free(device);
+        PnpInterfaceHandleSetContext(PnpInterfaceHandle, NULL);
     }
 
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int
+
+
+DIGITALTWIN_CLIENT_RESULT
 EnvironmentSensor_CreatePnpInterface(
-    PNPADAPTER_CONTEXT AdapterHandle,
-    PNPMESSAGE Message
-)
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    const char* InterfaceId, 
+    const char* ComponentName, 
+    const JSON_Object* AdapterInterfaceConfig,
+    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
+    AZURE_UNREFERENCED_PARAMETER(AdapterInterfaceConfig);
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     PENVIRONMENT_SENSOR device = NULL;
-    const char* interfaceId = NULL;
-    PNPADPATER_INTERFACE_PARAMS interfaceParams = { 0 };
-    PNPADAPTER_INTERFACE_HANDLE pnpAdapterInterface;
-    int res = 0;
-    PNPMESSAGE_PROPERTIES* props = NULL;
-
-    interfaceId = PnpMessage_GetInterfaceId(Message);
-    props = PnpMessage_AccessProperties(Message);
 
     device = calloc(1, sizeof(ENVIRONMENT_SENSOR));
-    if (NULL == device) {
-        res = -1;
-        goto end;
-    }
+        if (NULL == device) {
+            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            goto exit;
+        }
+        device->ShuttingDown = false;
 
-    device->ShuttingDown = false;
-
-    // Create PNP interface using PNP device SDK
-    pnpInterfaceClient = DigitalTwinSampleEnvironmentalSensor_CreateInterface((char*)interfaceId, props->ComponentName);
+    pnpInterfaceClient = DigitalTwinSampleEnvironmentalSensor_CreateInterface(InterfaceId, ComponentName);
     if (NULL == pnpInterfaceClient) {
-        res = -1;
-        goto end;
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
     }
 
     device->pnpinterfaceHandle = pnpInterfaceClient;
 
-    // Create PnpBridge-PnpAdapter Interface
-    PNPADPATER_INTERFACE_PARAMS_INIT(&interfaceParams, AdapterHandle, pnpInterfaceClient);
+    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, device);
+    *PnpInterfaceClient = pnpInterfaceClient;
 
-    interfaceParams.StartInterface = EnvironmentSensor_StartInterface;
-    interfaceParams.ReleaseInterface = EnvironmentSensor_ReleaseInterface;
-    interfaceParams.InterfaceId = (char*)interfaceId;
-
-    res = PnpAdapterInterface_Create(&interfaceParams, &pnpAdapterInterface);
-    if (res < 0) {
-        goto end;
-    }
-
-    PnpAdapterInterface_SetContext(pnpAdapterInterface, device);
-
-    // Don't bind the interface for publishMode always. There will be a device
-    // arrived notification from the discovery adapter.
-    /*if (NULL != publishMode && stricmp(publishMode, "always") == 0) {
-        goto end;
-    }*/
-
-end:
-    return res;
+exit:
+    return result;
 }
 
-int EnvironmentSensor_Initialize(const char* adapterArgs) {
-    AZURE_UNREFERENCED_PARAMETER(adapterArgs);
+
+DIGITALTWIN_CLIENT_RESULT EnvironmentSensor_CreatePnpAdapter(
+    const JSON_Object* AdapterGlobalConfig,
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
+{
+    AZURE_UNREFERENCED_PARAMETER(AdapterGlobalConfig);
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     return DIGITALTWIN_CLIENT_OK;
 }
 
-int EnvironmentSensor_Shutdown() {
+DIGITALTWIN_CLIENT_RESULT EnvironmentSensor_DestroyPnpAdapter(
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
+{
+    AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     return DIGITALTWIN_CLIENT_OK;
 }
 
 PNP_ADAPTER EnvironmentSensorInterface = {
     .identity = "environment-sensor-sample-pnp-adapter",
-    .initialize = EnvironmentSensor_Initialize,
-    .shutdown = EnvironmentSensor_Shutdown,
+    .createAdapter = EnvironmentSensor_CreatePnpAdapter,
     .createPnpInterface = EnvironmentSensor_CreatePnpInterface,
+    .startPnpInterface = EnvironmentSensor_StartPnpInterface,
+    .stopPnpInterface = EnvironmentSensor_StopPnpInterface,
+    .destroyPnpInterface = EnvironmentSensor_DestroyPnpInterface,
+    .destroyAdapter = EnvironmentSensor_DestroyPnpAdapter,
 };
+
+int main(int argc, char *argv[])
+{
+    if (argc > 1)
+    {
+        LogInfo("Using configuration from specified file path: %s", argv[1]);
+        PnpBridge_Main((const char*)argv[1]);
+    }
+    else
+    {
+        LogInfo("Using default configuration location");
+        PnpBridge_Main((const char*)"config.json");
+    }
+    
+    return 0;
+}

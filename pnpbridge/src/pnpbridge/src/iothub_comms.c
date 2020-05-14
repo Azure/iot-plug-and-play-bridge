@@ -17,12 +17,7 @@
 #include "azure_prov_client/prov_transport_mqtt_client.h"
 #include "azure_prov_client/prov_security_factory.h"
 
-void
-IotComms_DigitalTwinClient_Destroy(
-    MX_IOT_HANDLE_TAG* IotHandle
-);
-
-PNPBRIDGE_RESULT
+DIGITALTWIN_CLIENT_RESULT
 IotComms_DigitalTwinClient_Initalize(
     MX_IOT_HANDLE_TAG* IotHandle
 );
@@ -95,7 +90,7 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
     SECURE_DEVICE_TYPE secureDeviceTypeForProvisioning;
     IOTHUB_SECURITY_TYPE secureDeviceTypeForIotHub;
 
-    TRY{
+    {
 
         if (AUTH_TYPE_SYMMETRIC_KEY == ConnectionParams->AuthParameters.AuthType) {
             secureDeviceTypeForProvisioning = SECURE_DEVICE_TYPE_SYMMETRIC_KEY;
@@ -107,14 +102,14 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
         }
         else {
             LogError("IotComms_InitializeIotHubViaProvisioning: Unknown AuthType");
-            LEAVE;
+            goto exit;
         }
 
         size_t customProvDataLength = strlen(pnpSample_CustomProvisioningData) + strlen(dcmModelId) + 1;
         customProvisioningData = calloc(1, customProvDataLength * sizeof(char));
         if (NULL == customProvisioningData) {
             LogError("Failed to allocate memory fo the customProvisiongData.");
-            LEAVE;
+            goto exit;
         }
 
         if (-1 == sprintf_s(customProvisioningData, customProvDataLength, pnpSample_CustomProvisioningData, dcmModelId)) {
@@ -193,7 +188,9 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubViaProvisioning(bool TraceOn, PCON
             }
         }
 
-    } FINALLY{
+    } 
+exit:
+    {
 
         if (NULL != customProvisioningData) {
             free(customProvisioningData);
@@ -248,26 +245,16 @@ IotComms_RegisterPnPInterfaces(
     MX_IOT_HANDLE_TAG* IotHandle,
     const char* ModelRepoId,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* Interfaces,
-    int InterfaceCount,
-    bool traceOn,
-    PCONNECTION_PARAMETERS connectionParams
+    int InterfaceCount
 )
 {
-    PNPBRIDGE_RESULT result;
+    DIGITALTWIN_CLIENT_RESULT result;
     DIGITALTWIN_CLIENT_RESULT pnpResult;
     PNP_REGISTRATION_CONTEXT callbackContext = { 0 };
     callbackContext.RegistrationStatus = APP_PNP_REGISTRATION_PENDING;
     callbackContext.Condition = Condition_Init();
     callbackContext.Lock = Lock_Init();
 
-    // DigitalTwinClient doesn't support incremental publishing of PnP Interface
-    // Inorder to workaround this we will destroy the DigitalTwinClient and recreate it
-    IotComms_DigitalTwinClient_Destroy(IotHandle);
-    result = IotComms_InitializeIotHandle(IotHandle, traceOn, connectionParams);
-    if (PNPBRIDGE_OK != result) {
-        LogError("IotComms_InitializeIotHandle failed\n");
-        goto end;
-    }
     IotComms_DigitalTwinClient_Initalize(IotHandle);
 
     if (!IotHandle->IsModule) {
@@ -277,11 +264,11 @@ IotComms_RegisterPnPInterfaces(
     }
     else {
         LogError("Module support is not present in public preview");
-        pnpResult = PNPBRIDGE_NOT_SUPPORTED;
+        pnpResult = DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
     }
 
     if (DIGITALTWIN_CLIENT_OK != pnpResult) {
-        result = PNPBRIDGE_FAILED;
+        result = DIGITALTWIN_CLIENT_ERROR;
         goto end;
     }
 
@@ -294,7 +281,7 @@ IotComms_RegisterPnPInterfaces(
         result = -1;
     }
     else {
-        result = PNPBRIDGE_OK;
+        result = DIGITALTWIN_CLIENT_OK;
     }
 
 end:
@@ -377,16 +364,16 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotDevice(bool TraceOn, PCONNECTION_PARA
     return NULL;
 }
 
-PNPBRIDGE_RESULT
+DIGITALTWIN_CLIENT_RESULT
 IotComms_InitializeIotDeviceHandle(
     MX_IOT_HANDLE_TAG* IotHandle,
     bool TraceOn,
     PCONNECTION_PARAMETERS ConnectionParams
 )
 {
-    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
 
-    TRY{
+    {
         // Mark this as device handle
         IotHandle->IsModule = false;
 
@@ -394,25 +381,23 @@ IotComms_InitializeIotDeviceHandle(
     IotHandle->u1.IotDevice.deviceHandle = IotComms_InitializeIotDevice(TraceOn, ConnectionParams);
     if (NULL == IotHandle->u1.IotDevice.deviceHandle) {
         LogError("IotComms_InitializeIotDevice failed\n");
-        result = PNPBRIDGE_FAILED;
-        LEAVE;
+        result = DIGITALTWIN_CLIENT_ERROR;
+        goto exit;
     }
 
     // We have completed initializing the pnp client
     IotHandle->DeviceClientInitialized = true;
-    } FINALLY{
-
     }
-
+exit:
     return result;
 }
 
-PNPBRIDGE_RESULT
+DIGITALTWIN_CLIENT_RESULT
 IotComms_DigitalTwinClient_Initalize(
     MX_IOT_HANDLE_TAG* IotHandle
 )
 {
-    PNPBRIDGE_RESULT result = PNPBRIDGE_OK;
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
 
     // Create PnpDeviceHandle
     if (!IotHandle->IsModule) {
@@ -420,14 +405,14 @@ IotComms_DigitalTwinClient_Initalize(
             IotHandle->u1.IotDevice.deviceHandle, &IotHandle->u1.IotDevice.PnpDeviceClientHandle))
         {
             LogError("DigitalTwin_DeviceClient_CreateFromDeviceHandle failed\n");
-            result = PNPBRIDGE_FAILED;
+            result = DIGITALTWIN_CLIENT_ERROR;
         }
     }
     else {
-        result = PNPBRIDGE_NOT_SUPPORTED;
+        result = DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
     }
 
-    IotHandle->DigitalTwinClientInitialized = (PNPBRIDGE_OK == result);
+    IotHandle->DigitalTwinClientInitialized = (DIGITALTWIN_CLIENT_OK == result);
 
     return result;
 }
@@ -449,10 +434,10 @@ IotComms_DigitalTwinClient_Destroy(
     IotHandle->DigitalTwinClientInitialized = false;
 }
 
-PNPBRIDGE_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams)
+DIGITALTWIN_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams)
 {
     if (ConnectionParams->ConnectionType == CONNECTION_TYPE_EDGE_MODULE) {
-        return PNPBRIDGE_NOT_SUPPORTED;
+        return DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
     }
     else {
         return IotComms_InitializeIotDeviceHandle(IotHandle, TraceOn, ConnectionParams);

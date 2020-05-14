@@ -20,10 +20,6 @@
 #include "umock_c/umock_c_prod.h"
 
 #include <digitaltwin_interface_client.h>
-
-#include <pnpbridge_memory.h>
-#include <pnpmessage_api.h>
-#include <discoveryadapter_api.h>
 #include <pnpadapter_api.h>
 
 #ifdef __cplusplus
@@ -40,7 +36,7 @@ IotHandle_GetPnpDeviceClient,
     _In_ MX_IOT_HANDLE, IotHandle
     );
 
-MOCKABLE_FUNCTION(, int, PnpBridge_Main);
+MOCKABLE_FUNCTION(, int, PnpBridge_Main, const char*, ConfigurationFilePath);
 
 MOCKABLE_FUNCTION(, void, PnpBridge_Stop);
 
