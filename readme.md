@@ -1,4 +1,4 @@
-# Azure IoT Plug and Play bridge
+# IoT Plug and Play bridge
 
 ## Introduction
 
