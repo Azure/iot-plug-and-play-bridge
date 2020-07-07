@@ -1,8 +1,8 @@
-# Modbus Adapter for PnP Bridge
-This a README for the Modbus adapter on PnPBridge
+# Modbus Adapter for IoT Plug and Play bridge
+This a README for the Modbus adapter on the IoT Plug and Play bridge
 
 ## Table of Contents
-- [Modbus Adapter for PnP Bridge](#modbus-adapter-for-pnp-bridge)
+- [Modbus Adapter for PnP Bridge](#modbus-adapter-for-iot-plug-and-play-bridge)
   - [Table of Contents](#table-of-contents)
   - [Adapter Configuration](#adapter-configuration)
     - [PnP Bridge Adapter Config](#pnp-bridge-adapter-config)
@@ -11,9 +11,9 @@ This a README for the Modbus adapter on PnPBridge
     - [Modbus](#modbus)
 
 ## Adapter Configuration
-The adapter configuration follows the format defined by [Modbus Gateway configruation interface](./schemas/modbusGateway.interface.json), an Azure PnP Interface. Follow the steps below to update `config.json` to add a Modbus device to your PnPBridge.
+The adapter configuration follows the format defined by [Modbus Gateway configruation interface](./schemas/modbusGateway.interface.json), an Azure Digital Twin (IoT Plug and Play) Interface. Follow the steps below to update `config.json` to add a Modbus device to IoT Plug and Play bridge.
 
-1. Open `config.json` for the PnPBridge.
+1. Open `config.json` for the IoT Plug and Play bridge.
 2. Add the following json payload to `pnp_bridge_interface_components`.
 3. Add any supported modbus interface configurations into the `pnp_bridge_adapter_global_configs` dictionary with a key that an interface component can use as `modbus_identity` under `pnp_bridge_adapter_config`. More information in the [PnP Bridge Adapter Global Configs](#pnp-bridge-adapter-global-configs) section.
 4. Modify `rtu` or `tcp` and `modbus_identity` parameters under `pnp_bridge_adapter_config` to match your Modbus device configuration. Refer to following sections for more detailed descriptions of each field in these `JSON` objects. "DL679" is the name of the interface configuration that the Modbus Adapter supports, and that the device corresponding to the interface component specifying it, uses to interact with the adapter.

@@ -22,7 +22,7 @@ To complete this quickstart you will need:
 * To successfully complete the Modbus section of the quickstart guide, you will need to connect a  [DL-303 Modbus Sensor](https://www.icpdas-usa.com/dl_303.html) (such as a simple CO2 sensor) to the device running the bridge. *[OPTIONAL]*
   
 ## Connecting a Simple Environmental Sensor
-The following section will cover the steps needed to connect a simple simulated [Environmental Sensor](https://github.com/Azure/IoTPlugandPlay/blob/master/samples/EnvironmentalSensor.interface.json) through the Azure IoT Plug and Play bridge up to Azure IoT Central. First an IoT Central application is created. Then the bridge is configured with a simple JSON. Finally, the bridge is started and data is visible in the display.
+The following section will cover the steps needed to connect a simple simulated [Environmental Sensor](https://github.com/Azure/IoTPlugandPlay/blob/master/samples/EnvironmentalSensor.interface.json) through the IoT Plug and Play bridge up to Azure IoT Central. First an IoT Central application is created. Then the bridge is configured with a simple JSON. Finally, the bridge is started and data is visible in the display.
 
 Although IoT Central is covered in this demo, you can also use an Azure IoT Hub in a similar fashion. Simply use the connection details from your hub in **pnp_bridge_parameters** referenced below.
 
@@ -121,7 +121,7 @@ After cloning the Azure PnP Bridge repo to your machine, open the "Developer Com
 >Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: https://github.com/msysgit/git/pull/110 . You can try the following command to resolve the issue: `git config --system core.longpaths true`
 
 
-### Build the Azure IoT Plug and Play bridge (Environemental Sensor) on Windows
+### Build the IoT Plug and Play bridge (Environmental Sensor) on Windows
 
 ```
 %REPO_DIR%\pnpbridge\> cd scripts\windows
@@ -130,7 +130,7 @@ After cloning the Azure PnP Bridge repo to your machine, open the "Developer Com
 ```
 
 ### Start the IoT Plug and Play bridge (Environmental Sensor) on Windows
- Start Azure IoT Plug and Play bridge sample for Environemental sensors by running it in a command prompt:
+ Start the IoT Plug and Play bridge sample for Environmental sensors by running it in a command prompt:
 
     ```
     %REPO_DIR%\pnpbridge\> cd cmake\pnpbridge_x86\src\adaptors\samples\environmental_sensor
@@ -142,7 +142,7 @@ The bridge will start to display informational messages indicating a successful 
 
 
 ## Connecting a Generic Sensor (Modbus Example) *[OPTIONAL]*
-The following section will cover the steps needed to connect a simple CO2 Modbus sensor through the Azure IoT Plug and Play bridge up to Azure IoT Central. First an IoT Central application is created. Then the bridge is configured with a simple JSON. Finally, the bridge is started and data is visible in the display.
+The following section will cover the steps needed to connect a simple CO2 Modbus sensor through the IoT Plug and Play bridge up to Azure IoT Central. First an IoT Central application is created. Then the bridge is configured with a simple JSON. Finally, the bridge is started and data is visible in the display.
 
 Although IoT Central is covered in this demo, you can also use an Azure IoT Hub in a similar fashion. Simply use the connection details from your hub in **pnp_bridge_parameters** referenced below.
 

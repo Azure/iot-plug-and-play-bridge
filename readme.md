@@ -2,13 +2,13 @@
 
 ## Introduction
 
-IoT Plug and Play bridge is the open source effort from Microsoft that connects the PC sensor and peripheral ecosystem to Azure. It builds on top of [Azure IoT Plug and Play](https://azure.microsoft.com/blog/iot-plug-and-play-is-now-available-in-preview/) so that with minimal to no code, developers can easily connect peripherals/sensors to Azure, remotely access their data, monitor them, and manage them. This allows developers to perform analytics and gain valuable insights on their IoT devices from either the edge or the cloud. The IoT Plug and Play bridge accomplishes this without requiring peripherals to have direct Azure connectivity, enabling them to use a Windows or Linux host as a gateway to Azure instead. Because of this, it is particularly well suited for connecting existing/constrained sensors to Azure.
+IoT Plug and Play bridge is the open source effort from Microsoft that connects the PC sensor and peripheral ecosystem to Azure. It builds on top of [IoT Plug and Play](https://azure.microsoft.com/blog/iot-plug-and-play-is-now-available-in-preview/) so that with minimal to no code, developers can easily connect peripherals/sensors to Azure, remotely access their data, monitor them, and manage them. This allows developers to perform analytics and gain valuable insights on their IoT devices from either the edge or the cloud. The IoT Plug and Play bridge accomplishes this without requiring peripherals to have direct Azure connectivity, enabling them to use a Windows or Linux host as a gateway to Azure instead. Because of this, it is particularly well suited for connecting existing/constrained sensors to Azure.
 
-IoT Plug and Play bridge can be deployed as a standalone executable on any IoT device, industrial PC, server, or gateway running Windows 10 or Linux. It can also be compiled into your application code. A simple configuration file tells the IoT Plug and Play bridge which sensors and peripherals should be exposed up to Azure. Once configured, the IoT Plug and Play bridge uses the [Azure IoT C SDK](https://github.com/Azure/azure-iot-sdk-c/tree/public-preview) to dynamically publish Azure IoT Plug and Play (PnP) interfaces for the specified sensors and peripherals up to Azure. Developers can then use existing Azure services and solution accelerators to receive data from and send commands to their sensors and peripherals.
+IoT Plug and Play bridge can be deployed as a standalone executable on any IoT device, industrial PC, server, or gateway running Windows 10 or Linux. It can also be compiled into your application code. A simple configuration file tells the IoT Plug and Play bridge which sensors and peripherals should be exposed up to Azure. Once configured, the IoT Plug and Play bridge uses the [Azure IoT Device C SDK](https://github.com/Azure/azure-iot-sdk-c/tree/public-preview) to dynamically publish IoT Plug and Play (PnP) interfaces for the specified sensors and peripherals up to Azure. Developers can then use existing Azure services and solution accelerators to receive data from and send commands to their sensors and peripherals.
 
 ## Peripherals and sensors supported by default
 
-IoT Plug and Play bridge supports the following types of peripherals by default. Developers can extend the Azure PnP Bridge to support additional peripherals via the instructions in the [IoT Plug and Play bridge documentation](./pnpbridge/ReadMe.md).
+IoT Plug and Play bridge supports the following types of peripherals by default. Developers can extend the IoT Plug and Play bridge to support additional peripherals via the instructions in the [IoT Plug and Play bridge documentation](./pnpbridge/ReadMe.md).
 
 :heavy_check_mark: feature available  :heavy_plus_sign: feature planned but not supported  :heavy_minus_sign: no support planned  **N/A** - Not Applicable
 
@@ -61,7 +61,7 @@ The following OS platforms and versions are supported:
 
 - **[OPTIONAL]**: [Azure IoT Edge](https://docs.microsoft.com/azure/iot-edge/) (can be used to help deploy, run, and manage software on the device).
 
-## Azure IoT Plug and Play bridge Architecture
+## IoT Plug and Play bridge Architecture
 
 ![Architecture](./pnpbridge/docs/Pictures/AzurePnPBridge.png)
 
