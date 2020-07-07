@@ -135,7 +135,7 @@ PnpBridge_RegisterInterfaces(
     DIGITALTWIN_CLIENT_RESULT result;
     PPNP_BRIDGE pnpBridge = g_PnpBridge;
     result = IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
-        pnpBridge->Configuration.ConnParams->DeviceCapabilityModelUri,
+        pnpBridge->Configuration.ConnParams->RootInterfaceModelId,
         interfaces,
         interfaceCount);
 

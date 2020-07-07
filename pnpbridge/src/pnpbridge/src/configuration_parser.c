@@ -46,9 +46,9 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
         }
 
         // Get device capability model URI
-        connParams->DeviceCapabilityModelUri = json_object_get_string(ConnectionParams, PNP_CONFIG_CONNECTION_DEVICE_CAPS_MODEL_URI);
-        if (NULL == connParams->DeviceCapabilityModelUri) {
-            LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DEVICE_CAPS_MODEL_URI);
+        connParams->RootInterfaceModelId = json_object_get_string(ConnectionParams, PNP_CONFIG_CONNECTION_ROOT_INTERFACE_MODEL_ID);
+        if (NULL == connParams->RootInterfaceModelId) {
+            LogError("%s is missing in config", PNP_CONFIG_CONNECTION_ROOT_INTERFACE_MODEL_ID);
             result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
             goto exit;
         }
@@ -98,7 +98,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                     goto exit;
                 }
 
-                dpsParams->DcmModelId = connParams->DeviceCapabilityModelUri;
+                dpsParams->DcmModelId = connParams->RootInterfaceModelId;
             }
         }
 
@@ -249,15 +249,8 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* Json
         for (size_t i = 0; i < json_array_get_count(devices); i++) {
             JSON_Object* device = json_array_get_object(devices, i);
 
-            // Every interface instance should specify an interface id, instance name and associated pnp adapter identity
+            // Every interface instance should specify a component name and associated pnp adapter identity
             {
-                const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_INTERFACE_ID);
-                if (NULL == interfaceId) {
-                    LogError("Device at index %zu is missing %s", i, PNP_CONFIG_INTERFACE_ID);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
-                    goto exit;
-                }
-
                 const char* interfaceName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
                 if (NULL == interfaceName) {
                     LogError("Device at index %zu is missing %s", i, PNP_CONFIG_COMPONENT_NAME);

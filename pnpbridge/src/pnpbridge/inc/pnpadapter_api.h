@@ -70,9 +70,7 @@ extern "C"
     *           made once for each component in the configuration file.
     *
     *
-    * @param    InterfaceId               Interface Id of the interface from the config file
-    *
-    * @param    ComponentName             Component name of the interface from the config file
+    * @param    ComponentName             Component name of the interface from the config file.
     *
     * @param    AdapterHandle             Pnp adapter handle that is associated with the interface.
     *                                     Adapter can call PnpAdapterHandleGetContext to get the adapter
@@ -93,7 +91,7 @@ extern "C"
     */
 
     typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_CREATE)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
-        const char* InterfaceId, const char* ComponentName, const JSON_Object* AdapterInterfaceConfig,
+        const char* ComponentName, const JSON_Object* AdapterInterfaceConfig,
         PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle, DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient);
 
     /*

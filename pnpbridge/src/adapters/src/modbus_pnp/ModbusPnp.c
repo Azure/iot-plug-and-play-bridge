@@ -834,7 +834,6 @@ DIGITALTWIN_CLIENT_RESULT Modbus_DestroyPnpInterface(
 DIGITALTWIN_CLIENT_RESULT
 Modbus_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    const char* InterfaceId,
     const char* ComponentName,
     const JSON_Object* AdapterInterfaceConfig,
     PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
@@ -1098,7 +1097,7 @@ Modbus_CreatePnpInterface(
     }
    
     // Call DigitalTwinClient Create and assign pnpInterfaceClient to deviceContext's pnpInterfaceClient
-    result = DigitalTwin_InterfaceClient_Create(InterfaceId, ComponentName, NULL, deviceContext, 
+    result = DigitalTwin_InterfaceClient_Create(ComponentName, NULL, deviceContext, 
                                                     &pnpInterfaceClient);
     if (DIGITALTWIN_CLIENT_OK != result) {
         LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");

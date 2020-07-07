@@ -90,7 +90,6 @@ DIGITALTWIN_CLIENT_RESULT EnvironmentSensor_DestroyPnpInterface(
 DIGITALTWIN_CLIENT_RESULT
 EnvironmentSensor_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    const char* InterfaceId, 
     const char* ComponentName, 
     const JSON_Object* AdapterInterfaceConfig,
     PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
@@ -109,7 +108,7 @@ EnvironmentSensor_CreatePnpInterface(
         }
         device->ShuttingDown = false;
 
-    pnpInterfaceClient = DigitalTwinSampleEnvironmentalSensor_CreateInterface(InterfaceId, ComponentName);
+    pnpInterfaceClient = DigitalTwinSampleEnvironmentalSensor_CreateInterface(ComponentName);
     if (NULL == pnpInterfaceClient) {
         result = DIGITALTWIN_CLIENT_ERROR;
         goto exit;

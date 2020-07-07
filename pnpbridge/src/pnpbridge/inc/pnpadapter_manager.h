@@ -38,7 +38,6 @@ extern "C"
     // Pnp interface structure
     typedef struct _PNPADAPTER_INTERFACE_TAG {
         void* context;
-        const char* interfaceId;
         const char* interfaceName;
         const char* adapterIdentity;
         DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;

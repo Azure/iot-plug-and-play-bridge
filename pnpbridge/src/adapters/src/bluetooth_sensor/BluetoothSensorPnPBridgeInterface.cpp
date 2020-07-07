@@ -74,7 +74,6 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_DestroyPnpInterface(
 
 DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
-    const char* interfaceId,
     const char* componentName,
     const JSON_Object* adapterInterfaceConfig,
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle,
@@ -112,7 +111,6 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
     try
     {
         newDeviceAdapter = BluetoothSensorDeviceAdapter::MakeUnique(
-            interfaceId,
             componentName,
             bluetoothAddress,
             interfaceDescriptor->second);

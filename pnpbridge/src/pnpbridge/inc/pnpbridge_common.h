@@ -86,7 +86,7 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_CONNECTION_DPS_GLOBAL_PROV_URI "global_prov_uri"
 #define PNP_CONFIG_CONNECTION_DPS_ID_SCOPE "id_scope" 
 #define PNP_CONFIG_CONNECTION_DPS_DEVICE_ID "device_id"
-#define PNP_CONFIG_CONNECTION_DEVICE_CAPS_MODEL_URI "device_capability_model_uri"
+#define PNP_CONFIG_CONNECTION_ROOT_INTERFACE_MODEL_ID "root_interface_model_id"
 
 #define PNP_CONFIG_CONNECTION_AUTH_PARAMETERS "auth_parameters"
 #define PNP_CONFIG_CONNECTION_AUTH_TYPE "auth_type"
@@ -97,7 +97,6 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_ADAPTER_GLOBAL "pnp_bridge_adapter_global_configs"
 #define PNP_CONFIG_DEVICES "pnp_bridge_interface_components"
 #define PNP_CONFIG_IDENTITY "identity"
-#define PNP_CONFIG_INTERFACE_ID "pnp_bridge_interface_id"
 #define PNP_CONFIG_COMPONENT_NAME "pnp_bridge_component_name"
 #define PNP_CONFIG_ADAPTER_ID "pnp_bridge_adapter_id"
 #define PNP_CONFIG_DEVICE_ADAPTER_CONFIG "pnp_bridge_adapter_config"

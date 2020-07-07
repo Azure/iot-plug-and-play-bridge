@@ -31,7 +31,6 @@ Once the PnP Bridge Adapter has been declared in the respective manifests, the c
   "pnp_bridge_interface_components": [
     {
       "_comment": "Component - Standard Video Camera connected to a PC, for now the first camera only.",
-          "pnp_bridge_interface_id": "urn:contoso:com:camera_pnp_adapter:1",
           "pnp_bridge_component_name": "CameraComponent",
           "pnp_bridge_adapter_id": "camera-pnp-adapter",
           "pnp_bridge_adapter_config": {

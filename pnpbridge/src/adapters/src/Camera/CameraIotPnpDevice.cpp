@@ -137,7 +137,7 @@ HRESULT CameraIotPnpDevice::ReportProperty(
                                                                 (void*)propertyName);
     if (result != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("DEVICE_INFO: Reporting property=<%s> failed, error=<%s>", propertyName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("DEVICE_INFO: Reporting property=<%s> failed, error=<%d>", propertyName, result);
     }
     else
     {
@@ -170,7 +170,7 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(
                                                             (void*)telemetryName);
     if (result != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%s>", telemetryName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%d>", telemetryName, result);
     }
     else
     {
@@ -198,7 +198,7 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(_In_ std::string& telemetryName, _In
                                                             (void*)telemetryName.c_str());
     if (result != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%s>", telemetryName.c_str(), MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%d>", telemetryName.c_str(), result);
     }
     else
     {

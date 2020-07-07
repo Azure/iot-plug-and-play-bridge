@@ -70,7 +70,7 @@ typedef struct _CONNECTION_PARAMETERS {
     } u1;
     AUTH_PARAMETERS AuthParameters;
     IOTDEVICE_CONNECTION_TYPE ConnectionType;
-    const char* DeviceCapabilityModelUri;
+    const char* RootInterfaceModelId;
 } CONNECTION_PARAMETERS, *PCONNECTION_PARAMETERS;
 
 typedef struct PNPBRIDGE_CONFIGURATION {

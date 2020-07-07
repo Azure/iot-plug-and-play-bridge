@@ -297,7 +297,6 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(PPNP_ADAPTER_MANAGE
 
         JSON_Object* device = json_array_get_object(devices, i);
         const char* adapterId = json_object_dotget_string(device, PNP_CONFIG_ADAPTER_ID);
-        const char* interfaceId = json_object_dotget_string(device, PNP_CONFIG_INTERFACE_ID);
         const char* interfaceName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
 
         JSON_Object* deviceAdapterArgs = json_object_dotget_object(device, PNP_CONFIG_DEVICE_ADAPTER_CONFIG);
@@ -313,10 +312,9 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(PPNP_ADAPTER_MANAGE
             {
                 DIGITALTWIN_INTERFACE_CLIENT_HANDLE digitalTwinInterfaceHandle;
 
-                interfaceHandle->interfaceId = interfaceId;
                 interfaceHandle->interfaceName = interfaceName;
                 interfaceHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
-                result = adapterHandle->adapter->adapter->createPnpInterface(adapterHandle, interfaceId, interfaceName, deviceAdapterArgs,
+                result = adapterHandle->adapter->adapter->createPnpInterface(adapterHandle, interfaceName, deviceAdapterArgs,
                                                                                 interfaceHandle, &digitalTwinInterfaceHandle);
                 if (result == DIGITALTWIN_CLIENT_OK)
                 {
@@ -336,7 +334,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(PPNP_ADAPTER_MANAGE
                 }
                 else
                 {
-                    LogInfo("Interface with ID: %s and instance name: %s failed.", interfaceId, interfaceName);
+                    LogInfo("Interface component creation with instance name: %s failed.", interfaceName);
                     free(interfaceHandle);
                     goto exit;
                 }

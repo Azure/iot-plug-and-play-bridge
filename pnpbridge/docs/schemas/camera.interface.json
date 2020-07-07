@@ -1,5 +1,5 @@
 {
-  "@id": "urn:microsoft:AMSDemoCameraInterface:1",
+  "@id": "dtmi:microsoft:AMSDemoCameraInterface;1",
   "@type": "Interface",
   "displayName": "demo camera interface",
   "description": "Provides functionality for an IP camera",
@@ -39,6 +39,6 @@
     }
   ],
   "@context": [
-    "http://azureiot.com/v1/contexts/IoTModel.json"
+    "dtmi:dtdl:context;2"
   ]
 }

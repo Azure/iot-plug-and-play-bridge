@@ -11,14 +11,12 @@
 
 // static
 std::unique_ptr<BluetoothSensorDeviceAdapter> BluetoothSensorDeviceAdapter::MakeUnique(
-    const std::string& interfaceId,
     const std::string& componentName,
     uint64_t bluetoothAddress,
     const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor)
 {
 #if defined(WIN32)
     return std::make_unique<BluetoothSensorDeviceAdapterWin>(
-        interfaceId,
         componentName,
         bluetoothAddress,
         interfaceDescriptor);
@@ -28,13 +26,11 @@ std::unique_ptr<BluetoothSensorDeviceAdapter> BluetoothSensorDeviceAdapter::Make
 }
 
 BluetoothSensorDeviceAdapterBase::BluetoothSensorDeviceAdapterBase(
-    const std::string& interfaceId,
     const std::string& componentName,
     const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor) :
     m_interfaceDescriptor(interfaceDescriptor)
 {
     auto result = DigitalTwin_InterfaceClient_Create(
-        interfaceId.c_str(),
         componentName.c_str(),
         OnInterfaceRegisteredCallback,
         this,
@@ -91,9 +87,8 @@ void BluetoothSensorDeviceAdapterBase::ReportSensorDataTelemetry(
 
         if (result != DIGITALTWIN_CLIENT_OK)
         {
-            LogError("Failed to report sensor data telemetry for %s: %s",
-                telemetryName.c_str(), MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT,
-                result));
+            LogError("Failed to report sensor data telemetry for %s: %d",
+                telemetryName.c_str(), result);
         }
     }
 }
@@ -114,8 +109,8 @@ void BluetoothSensorDeviceAdapterBase::OnInterfaceRegisteredCallback(
     }
     else
     {
-        LogError("Bluetooth sensor interface received failed: %s",
-            MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, interfaceStatus));
+        LogError("Bluetooth sensor interface received failed: %d",
+            interfaceStatus);
     }
 }
 
@@ -126,8 +121,8 @@ void BluetoothSensorDeviceAdapterBase::OnTelemetryCallback(
 {
     if (telemetryStatus != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("Telemetry callback reported error: %s",
-            MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, telemetryStatus));
+        LogError("Telemetry callback reported error: %d",
+            telemetryStatus);
     }
 }
 

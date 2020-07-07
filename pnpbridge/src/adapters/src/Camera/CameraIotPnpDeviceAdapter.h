@@ -14,7 +14,6 @@ class CameraIotPnpDeviceAdapter
 {
 public:
     static std::unique_ptr<CameraIotPnpDeviceAdapter> MakeUnique(
-        const std::string& interfaceId,
         const std::string& componentName,
         const std::string& cameraId,
         DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaceClient);

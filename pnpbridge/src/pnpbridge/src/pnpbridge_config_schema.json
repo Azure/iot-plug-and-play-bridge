@@ -57,7 +57,7 @@
 				"auth_parameters": {
 					"$ref": "#/definitions/auth_parameters_schema"
 				},
-				"device_capability_model_uri" :{
+				"root_interface_model_id" :{
 					"type": "string"
 				}
 			},
@@ -86,7 +86,7 @@
 					}
 				}
 			],
-			"required": ["connection_type", "device_capability_model_uri"]
+			"required": ["connection_type", "root_interface_model_id"]
 		},
 		"auth_parameters_schema" : {
 			"properties": {

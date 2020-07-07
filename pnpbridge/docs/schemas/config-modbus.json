@@ -3,7 +3,7 @@
   "pnp_bridge_connection_parameters": {
     "_comment_connection_type": "dps (symmetric key support only)/connectionstring",
       "connection_type" : "dps",
-      "device_capability_model_uri": "[To fill in]",
+      "root_interface_model_id": "[To fill in]",
       "auth_parameters" : {
         "auth_type" : "symmetric_key",
         "symmetric_key" : "[DEVICE KEY]"
@@ -19,8 +19,7 @@
   "pnp_bridge_interface_components": [
       {
         "_comment": "Component 1 - Modbus Device",
-        "pnp_bridge_interface_id": "urn:contoso:com:Co2Detector:1",
-        "pnp_bridge_component_name": "MyComponent1",
+        "pnp_bridge_component_name": "Co2Detector1",
         "pnp_bridge_adapter_id": "modbus-pnp-interface",
         "pnp_bridge_adapter_config": {
             "unit_id": 1,

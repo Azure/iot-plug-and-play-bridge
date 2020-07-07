@@ -63,7 +63,6 @@ DIGITALTWIN_CLIENT_RESULT Camera_DestroyPnpInterface(
 
 DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
-    const char* interfaceId,
     const char* componentName,
     const JSON_Object* adapterInterfaceConfig,
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle,
@@ -79,7 +78,6 @@ DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpInterface(
     std::string cameraIdStr(cameraId);
 
     auto newCameraDevice = CameraIotPnpDeviceAdapter::MakeUnique(
-        interfaceId,
         componentName,
         cameraIdStr,
         pnpInterfaceClient);

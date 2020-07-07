@@ -77,7 +77,6 @@ DIGITALTWIN_CLIENT_RESULT MqttPnp_DestroyPnpAdapter(
 DIGITALTWIN_CLIENT_RESULT
 MqttPnp_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    const char* InterfaceId,
     const char* ComponentName,
     const JSON_Object* AdapterInterfaceConfig,
     PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
@@ -136,14 +135,13 @@ MqttPnp_CreatePnpInterface(
 
     context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, adapterConfig);
 
-    result = DigitalTwin_InterfaceClient_Create(InterfaceId,
-                                               ComponentName,
-                                               nullptr,
-                                               context, 
-                                               &pnpInterfaceClient);
+    result = DigitalTwin_InterfaceClient_Create(ComponentName,
+                                                nullptr,
+                                                context, 
+                                                &pnpInterfaceClient);
     if (DIGITALTWIN_CLIENT_OK != result)
     {
-        LogError("mqtt-pnp: Error registering pnp interface %s", InterfaceId);
+        LogError("mqtt-pnp: Error registering pnp interface component %s", ComponentName);
         result = DIGITALTWIN_CLIENT_ERROR;
         goto exit;
     }
@@ -161,7 +159,7 @@ MqttPnp_CreatePnpInterface(
 
     if (DIGITALTWIN_CLIENT_OK != result)
     {
-        LogError("mqtt-pnp: Error binding property update callback for %s", InterfaceId);
+        LogError("mqtt-pnp: Error binding property update callback for %s", ComponentName);
         result = DIGITALTWIN_CLIENT_ERROR;
         goto exit;
     }
@@ -180,7 +178,7 @@ MqttPnp_CreatePnpInterface(
 
     if (DIGITALTWIN_CLIENT_OK != result)
     {
-        LogError("mqtt-pnp: Error binding commands callback for %s", InterfaceId);
+        LogError("mqtt-pnp: Error binding commands callback for %s", ComponentName);
         result = DIGITALTWIN_CLIENT_ERROR;
         goto exit;
     }

@@ -16,7 +16,6 @@ class BluetoothSensorDeviceAdapterBase :
 {
 public:
     BluetoothSensorDeviceAdapterBase(
-        const std::string& interfaceId,
         const std::string& componentName,
         const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor);
 

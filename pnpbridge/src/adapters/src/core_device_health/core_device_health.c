@@ -65,7 +65,7 @@ CoreDevice_OnDeviceNotification(
         sizeof((char*)coreDeviceHealth_DeviceStateActive), NULL, CoreDevice_SetActive, (void*)device);
         if (result != DIGITALTWIN_CLIENT_OK)
         {
-            LogError("CoreDevice_OnDeviceNotification: Reporting property=<%s> failed, error=<%s>", coreDeviceHealth_DeviceStateProperty, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+            LogError("CoreDevice_OnDeviceNotification: Reporting property=<%s> failed, error=<%d>", coreDeviceHealth_DeviceStateProperty, result);
         }
         else
         {
@@ -80,7 +80,7 @@ CoreDevice_OnDeviceNotification(
         strlen((char*)coreDeviceHealth_DeviceStateInactive), NULL, CoreDevice_SetInactive, (void*)device);
         if (result != DIGITALTWIN_CLIENT_OK)
         {
-            LogError("CoreDevice_OnDeviceNotification: Reporting property=<%s> failed, error=<%s>", coreDeviceHealth_DeviceStateProperty, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+            LogError("CoreDevice_OnDeviceNotification: Reporting property=<%s> failed, error=<%d>", coreDeviceHealth_DeviceStateProperty, result);
         }
         else
         {
@@ -316,7 +316,7 @@ static void CoreDevice_InterfaceRegisteredCallback(
     }
     else
     {
-        LogError("Core Device Health: Interface received failed, status=<%s>.", MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, dtInterfaceStatus));
+        LogError("Core Device Health: Interface received failed, status=<%d>.", dtInterfaceStatus);
     }
 }
 
@@ -451,7 +451,6 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_FindMatchingDeviceInstance(
 DIGITALTWIN_CLIENT_RESULT
 CoreDevice_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    const char* InterfaceId,
     const char* ComponentName,
     const JSON_Object* AdapterInterfaceConfig,
     PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
@@ -477,12 +476,12 @@ CoreDevice_CreatePnpInterface(
     }
 
     deviceContext->DeviceActive = false;
-    result = DigitalTwin_InterfaceClient_Create(InterfaceId, ComponentName,
+    result = DigitalTwin_InterfaceClient_Create(ComponentName,
                 CoreDevice_InterfaceRegisteredCallback, (void*)deviceContext, &pnpInterfaceClient);
 
     if (DIGITALTWIN_CLIENT_OK != result)
     {
-        LogError("Core Device Health: Error registering pnp interface %s", InterfaceId);
+        LogError("Core Device Health: Error registering pnp interface component %s", ComponentName);
         goto exit;
     }
     else if ((result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(
@@ -490,7 +489,7 @@ CoreDevice_CreatePnpInterface(
                                 CoreDevice_ProcessPropertyUpdate,
                                 (void*)&deviceContext)) != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("Core Device Health: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed. error=<%s>", MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("Core Device Health: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed. error=<%d>", result);
         goto exit;
     }
     else if ((result = DigitalTwin_InterfaceClient_SetCommandsCallback(
@@ -498,7 +497,7 @@ CoreDevice_CreatePnpInterface(
                                 CoreDevice_ProcessCommandUpdate,
                                 (void*)&deviceContext)) != DIGITALTWIN_CLIENT_OK)
     {
-        LogError("Core Device Health: DigitalTwin_InterfaceClient_SetCommandsCallback failed. error=<%s>", MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("Core Device Health: DigitalTwin_InterfaceClient_SetCommandsCallback failed. error=<%d>", result);
         goto exit;
     }
 

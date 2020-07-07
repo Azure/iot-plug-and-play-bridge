@@ -20,11 +20,10 @@ using namespace Microsoft::WRL::Wrappers;
 using namespace Microsoft::WRL;
 
 BluetoothSensorDeviceAdapterWin::BluetoothSensorDeviceAdapterWin(
-    const std::string& interfaceId,
     const std::string& componentName,
     uint64_t bluetoothAddress,
     const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor) :
-    BluetoothSensorDeviceAdapterBase(interfaceId, componentName, interfaceDescriptor),
+    BluetoothSensorDeviceAdapterBase(componentName, interfaceDescriptor),
     m_bluetoothAddress(bluetoothAddress),
     m_initialize(RO_INIT_MULTITHREADED)
 {

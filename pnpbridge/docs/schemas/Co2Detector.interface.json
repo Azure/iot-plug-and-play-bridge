@@ -1,5 +1,5 @@
 {
-  "@id": "urn:contoso:com:Co2Detector:1",
+  "@id": "dtmi:contoso:com:Co2Detector;1",
   "@type": "Interface",
   "displayName": "Co2Detector",
   "comment": [
@@ -58,5 +58,5 @@
       "responseSchema": "string"
     }
   ],
-  "@context": "http://azureiot.com/v1/contexts/IoTModel.json"
+  "@context": "dtmi:dtdl:context;2"
 } 

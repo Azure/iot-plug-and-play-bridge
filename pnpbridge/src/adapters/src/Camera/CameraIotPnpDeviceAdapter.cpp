@@ -9,7 +9,6 @@
 
 // static
 std::unique_ptr<CameraIotPnpDeviceAdapter> CameraIotPnpDeviceAdapter::MakeUnique(
-    const std::string& interfaceId,
     const std::string& componentName,
     const std::string& cameraId,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaceClient)
@@ -18,7 +17,6 @@ std::unique_ptr<CameraIotPnpDeviceAdapter> CameraIotPnpDeviceAdapter::MakeUnique
         cameraId);
 
     auto result = DigitalTwin_InterfaceClient_Create(
-        interfaceId.c_str(),
         componentName.c_str(),
         nullptr,
         newCameraDevice.get(),

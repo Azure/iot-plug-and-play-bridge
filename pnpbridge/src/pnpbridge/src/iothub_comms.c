@@ -19,7 +19,8 @@
 
 DIGITALTWIN_CLIENT_RESULT
 IotComms_DigitalTwinClient_Initalize(
-    MX_IOT_HANDLE_TAG* IotHandle
+    MX_IOT_HANDLE_TAG* IotHandle,
+    const char * DigitalTwinModelId
 );
 
 // State of DPS registration process.  We cannot proceed with DPS until we get into the state APP_DPS_REGISTRATION_SUCCEEDED.
@@ -209,33 +210,6 @@ exit:
 }
 #endif // ENABLE_IOT_CENTRAL
 
-// State of PnP registration process.  We cannot proceed with PnP until we get into the state APP_PNP_REGISTRATION_SUCCEEDED.
-typedef enum APP_PNP_REGISTRATION_STATUS_TAG
-{
-    APP_PNP_REGISTRATION_PENDING,
-    APP_PNP_REGISTRATION_SUCCEEDED,
-    APP_PNP_REGISTRATION_FAILED
-} APP_PNP_REGISTRATION_STATUS;
-
-typedef struct PNP_REGISTRATION_CONTEXT {
-    COND_HANDLE Condition;
-    LOCK_HANDLE Lock;
-    APP_PNP_REGISTRATION_STATUS RegistrationStatus;
-} PNP_REGISTRATION_CONTEXT, * PPNP_REGISTRATION_CONTEXT;
-
-// appPnpInterfacesRegistered is invoked when the interfaces have been registered or failed.
-void
-IotComms_PnPInterfaceRegisteredCallback(
-    DIGITALTWIN_CLIENT_RESULT pnpInterfaceStatus,
-    void* userContextCallback
-)
-{
-    PPNP_REGISTRATION_CONTEXT registrationContext = (PPNP_REGISTRATION_CONTEXT)userContextCallback;
-    registrationContext->RegistrationStatus = (pnpInterfaceStatus == DIGITALTWIN_CLIENT_OK) ? APP_PNP_REGISTRATION_SUCCEEDED : APP_PNP_REGISTRATION_FAILED;
-    Lock(registrationContext->Lock);
-    Condition_Post(registrationContext->Condition);
-    Unlock(registrationContext->Lock);
-}
 
 // Invokes PnP_DeviceClient_RegisterInterfacesAsync, which indicates to Azure IoT which PnP interfaces this device supports.
 // The PnP Handle *is not valid* until this operation has completed (as indicated by the callback appPnpInterfacesRegistered being invoked).
@@ -248,43 +222,23 @@ IotComms_RegisterPnPInterfaces(
     int InterfaceCount
 )
 {
-    DIGITALTWIN_CLIENT_RESULT result;
-    DIGITALTWIN_CLIENT_RESULT pnpResult;
-    PNP_REGISTRATION_CONTEXT callbackContext = { 0 };
-    callbackContext.RegistrationStatus = APP_PNP_REGISTRATION_PENDING;
-    callbackContext.Condition = Condition_Init();
-    callbackContext.Lock = Lock_Init();
+    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
 
-    IotComms_DigitalTwinClient_Initalize(IotHandle);
+    IotComms_DigitalTwinClient_Initalize(IotHandle, ModelRepoId);
 
     if (!IotHandle->IsModule) {
-        pnpResult = DigitalTwin_DeviceClient_RegisterInterfacesAsync(
-            IotHandle->u1.IotDevice.PnpDeviceClientHandle, ModelRepoId, Interfaces,
-            InterfaceCount, IotComms_PnPInterfaceRegisteredCallback, &callbackContext);
+        result = DigitalTwin_DeviceClient_RegisterInterfaces(
+            IotHandle->u1.IotDevice.PnpDeviceClientHandle, Interfaces,
+            InterfaceCount);
     }
     else {
         LogError("Module support is not present in public preview");
-        pnpResult = DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
+        result = DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
     }
 
-    if (DIGITALTWIN_CLIENT_OK != pnpResult) {
+    if (DIGITALTWIN_CLIENT_OK != result) {
         result = DIGITALTWIN_CLIENT_ERROR;
-        goto end;
     }
-
-    Lock(callbackContext.Lock);
-    Condition_Wait(callbackContext.Condition, callbackContext.Lock, 0);
-    Unlock(callbackContext.Lock);
-
-    if (callbackContext.RegistrationStatus != APP_PNP_REGISTRATION_SUCCEEDED) {
-        LogError("PnP has failed to register.\n");
-        result = -1;
-    }
-    else {
-        result = DIGITALTWIN_CLIENT_OK;
-    }
-
-end:
 
     return result;
 }
@@ -394,7 +348,8 @@ exit:
 
 DIGITALTWIN_CLIENT_RESULT
 IotComms_DigitalTwinClient_Initalize(
-    MX_IOT_HANDLE_TAG* IotHandle
+    MX_IOT_HANDLE_TAG* IotHandle,
+    const char * DigitalTwinModelId
 )
 {
     DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
@@ -402,7 +357,7 @@ IotComms_DigitalTwinClient_Initalize(
     // Create PnpDeviceHandle
     if (!IotHandle->IsModule) {
         if (DIGITALTWIN_CLIENT_OK != DigitalTwin_DeviceClient_CreateFromDeviceHandle(
-            IotHandle->u1.IotDevice.deviceHandle, &IotHandle->u1.IotDevice.PnpDeviceClientHandle))
+            IotHandle->u1.IotDevice.deviceHandle, DigitalTwinModelId, &IotHandle->u1.IotDevice.PnpDeviceClientHandle))
         {
             LogError("DigitalTwin_DeviceClient_CreateFromDeviceHandle failed\n");
             result = DIGITALTWIN_CLIENT_ERROR;

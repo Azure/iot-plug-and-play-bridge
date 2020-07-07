@@ -1564,7 +1564,6 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
 DIGITALTWIN_CLIENT_RESULT
 SerialPnp_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    const char* InterfaceId,
     const char* ComponentName,
     const JSON_Object* AdapterInterfaceConfig,
     PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
@@ -1680,7 +1679,7 @@ SerialPnp_CreatePnpInterface(
     // Create pnp interface
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
 
-    result = DigitalTwin_InterfaceClient_Create(InterfaceId, ComponentName, NULL, deviceContext, &pnpInterfaceClient);
+    result = DigitalTwin_InterfaceClient_Create(ComponentName, NULL, deviceContext, &pnpInterfaceClient);
     if (DIGITALTWIN_CLIENT_OK != result)
     {
         LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");

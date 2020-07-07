@@ -3,7 +3,7 @@
   "pnp_bridge_connection_parameters": {
       "connection_type" : "connection_string",
       "connection_string" : "[To fill in]",
-      "device_capability_model_uri": "[To fill in]",
+      "root_interface_model_id": "dtmi:com:example:RootPnpBridgeSampleDevice;1",
       "auth_parameters": {
           "auth_type": "symmetric_key",
           "symmetric_key": "[To fill in]"
@@ -18,8 +18,7 @@
   "pnp_bridge_interface_components": [
       {
           "_comment": "Component 1 - Modbus Device",
-          "pnp_bridge_interface_id": "urn:contoso:com:Co2Detector:1",
-          "pnp_bridge_component_name": "MyComponent1",
+          "pnp_bridge_component_name": "Co2Detector1",
           "pnp_bridge_adapter_id": "modbus-pnp-interface",
           "pnp_bridge_adapter_config": {
               "unit_id": 1,
@@ -33,8 +32,7 @@
       },
       {
           "_comment": "Component 2 - USB device",
-          "pnp_bridge_interface_id": "urn:contoso:com:coredevicehealth:1",
-          "pnp_bridge_component_name": "MyComponent2",
+          "pnp_bridge_component_name": "coredevicehealth1",
           "pnp_bridge_adapter_id": "core-device-health",
           "pnp_bridge_adapter_config": {
               "hardware_id": "USB\\VID_06CB&PID_00B3"
@@ -42,8 +40,7 @@
       },
       {
           "_comment": "Component 3 - MCU sensor hub which reports Azure IoT Pnp interfaces",
-          "pnp_bridge_interface_id": "urn:contoso:com:serialpnp:1",
-          "pnp_bridge_component_name": "MyComponent3",
+          "pnp_bridge_component_name": "serialpnp1",
           "pnp_bridge_adapter_id": "serial-pnp-interface",
           "pnp_bridge_adapter_config": {
               "com_port": "COM1",
@@ -54,8 +51,7 @@
       },
       {
           "_comment": "Component 4 - Standard Video Camera connected to a PC, for now the first camera only.",
-          "pnp_bridge_interface_id": "urn:contoso:com:camera_pnp_adapter:1",
-          "pnp_bridge_component_name": "MyComponent4",
+          "pnp_bridge_component_name": "cameracomponent",
           "pnp_bridge_adapter_id": "camera-pnp-adapter",
           "pnp_bridge_adapter_config": {
               "hardware_id": "UVC_Webcam_00"
@@ -63,8 +59,7 @@
       },
       {
           "_comment": "Component 5 - Ruuvi Instance 1",
-          "pnp_bridge_interface_id": "urn:contoso:com:ruuvi:1",
-          "pnp_bridge_component_name": "MyComponent5",
+          "pnp_bridge_component_name": "ruuvi1",
           "pnp_bridge_adapter_id": "bluetooth-sensor-pnp-adapter",
           "pnp_bridge_adapter_config": {
               "bluetooth_address": "267541100483322",
@@ -72,8 +67,7 @@
           }
       },
       {
-        "pnp_bridge_interface_id": "urn:contoso:com:mqtt-device:1",
-        "pnp_bridge_component_name": "Component6",
+        "pnp_bridge_component_name": "mqttdevice1",
         "pnp_bridge_adapter_id": "mqtt-pnp-interface",
         "pnp_bridge_adapter_config": {
             "mqtt_port": "1",

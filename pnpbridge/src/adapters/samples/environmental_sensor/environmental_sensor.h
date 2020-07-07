@@ -14,13 +14,10 @@ extern "C"
 #endif
 
     // Creates a new DIGITALTWIN_INTERFACE_CLIENT_HANDLE for this interface.
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateInterface(const char* interfaceId, const char* ComponentName);
+    DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinSampleEnvironmentalSensor_CreateInterface(const char* ComponentName);
 
     // Sends DigitalTwin telemetry messages about current environment
     DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_SendTelemetryMessagesAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle);
-
-    // Periodically checks to see if an asychronous command for running diagnostics has been queued, and process it if so.
-    DIGITALTWIN_CLIENT_RESULT DigitalTwinSampleEnvironmentalSensor_ProcessDiagnosticIfNecessaryAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle);
 
     // Closes down resources associated with device info interface.
     void DigitalTwinSampleEnvironmentalSensor_Close(DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceHandle);

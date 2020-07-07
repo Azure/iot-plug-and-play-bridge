@@ -20,7 +20,6 @@ public:
     // that have the given bluetooth address. This function will throw if it fails to create
     // the BluetoothSensorDeviceAdapter.
     static std::unique_ptr<BluetoothSensorDeviceAdapter> MakeUnique(
-        const std::string& interfaceId,
         const std::string& componentName,
         uint64_t bluetoothAddress,
         const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor);

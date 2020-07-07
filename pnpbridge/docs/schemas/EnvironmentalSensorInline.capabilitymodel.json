@@ -1,16 +1,16 @@
 {
-  "@id": "urn:YOUR_COMPANY_NAME:sample_device:1",
-  "@type": "CapabilityModel",
-  "displayName": "Environment Sensor Capability Model",
-  "implements": [
+  "@id": "dtmi:com:example:SampleDevice;1",
+  "@type": "Interface",
+  "displayName": "Environment Sensor Interface Model",
+  "contents": [
     {
-      "@type": "InterfaceInstance",
-      "name": "deviceinfo",
+      "@type": "Component",
+      "name": "deviceInformation",
       "schema": {
-        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:1",
+        "@id": "dtmi:azure:DeviceManagement:DeviceInformation;1",
         "@type": "Interface",
         "displayName": "Device Information",
-        "@context": "http://azureiot.com/v1/contexts/IoTModel.json",
+        "@context": "dtmi:dtdl:context;2",
         "contents": [
           {
               "@type": "Property",
@@ -74,13 +74,13 @@
       }
     },
     {
-      "@type": "InterfaceInstance",
-      "name": "sensor",
+      "@type": "Component",
+      "name": "environmentalSensor",
       "schema": {
-        "@id": "urn:YOUR_COMPANY_NAME:EnvironmentalSensor:1",
+        "@id": "dtmi:com:example:EnvironmentalSensor;1",
         "@type": "Interface",
         "displayName": "Environmental Sensor",
-        "@context": "http://azureiot.com/v1/contexts/IoTModel.json",
+        "@context": "dtmi:dtdl:context;2",
         "contents": [
           {
             "@type": "Property",
@@ -103,29 +103,29 @@
             "description": "The brightness level for the light on the device. Can be specified as 1 (high), 2 (medium), 3 (low)",
             "name": "brightness",
             "writable": true,
-            "schema": "long"
+            "schema": "integer"
           },
           {
             "@type": [
               "Telemetry",
-              "SemanticType/Temperature"
+              "Temperature"
             ],
             "description": "Current temperature on the device",
             "displayName": "Temperature",
             "name": "temp",
             "schema": "double",
-            "unit": "Units/Temperature/fahrenheit"
+            "unit": "degreeFahrenheit"
           },
           {
             "@type": [
               "Telemetry",
-              "SemanticType/Humidity"
+              "Humidity"
             ],
             "description": "Current humidity on the device",
             "displayName": "Humidity",
-            "name": "humid",
+            "name": "humidity",
             "schema": "double",
-            "unit": "Units/Humidity/percent"
+            "unit": "percentage"
           },
           {
             "@type": "Command",
@@ -134,7 +134,7 @@
             "commandType": "synchronous",
             "request": {
               "name": "interval",
-              "schema": "long"
+              "schema": "integer"
             },
             "response": {
               "name": "blinkResponse",
@@ -152,24 +152,16 @@
           {
             "@type": "Command",
             "name": "turnon",
-            "comment": "This Commands will turn-on the LED light on the device.",
-            "commandType": "synchronous"
+            "comment": "This Commands will turn-on the LED light on the device."
           },
           {
             "@type": "Command",
             "name": "turnoff",
-            "comment": "This Commands will turn-off the LED light on the device.",
-            "commandType": "synchronous"
-          },
-          {
-            "@type": "Command",
-            "name": "rundiagnostics",
-            "comment": "This command initiates a diagnostics run.  This will take time and is implemented as an asynchronous command",
-            "commandType": "asynchronous"
+            "comment": "This Commands will turn-off the LED light on the device."
           }
         ]
       }
     }
   ],
-  "@context": "http://azureiot.com/v1/contexts/IoTModel.json"
+  "@context": "dtmi:dtdl:context;2"
 }
