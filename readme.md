@@ -27,7 +27,7 @@ IoT Plug and Play bridge supports the following types of peripherals by default.
 
 [2] For peripherals controlled by MCUs that are accessed over serial ports:
 
-- Refer to the [SerialPnP documentation](./serialpnp/Readme.md) for information on how such devices should self-describe their interfaces to the PnP Bridge
+- Refer to the [SerialPnP documentation](./serialpnp/Readme.md) for information on how such devices should self-describe their interfaces to the IoT Plug and Play bridge
 
 ## Pre-Requisites
 
