@@ -1,6 +1,6 @@
 # Bluetooth Sensor Adapter
 
-The Bluetooth sensor adapter is a Azure PnP bridge adapter for Bluetooth enabled sensors. It is capable of listening for Bluetooth advertisements, parsing the payload via a user configured descriptor, and sending it to IoT Hub.
+The Bluetooth sensor adapter is an IoT Plug and Play bridge adapter for Bluetooth enabled sensors. It is capable of listening for Bluetooth advertisements, parsing the payload via a user configured descriptor, and sending it to IoT Hub.
 
 The adapter is flexible enough to work with the majority of off-the-shelf Bluetooth enabled sensors provided they meet these requirements:
 

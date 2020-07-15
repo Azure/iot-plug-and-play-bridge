@@ -3,25 +3,25 @@
 
 To get started with a simple example, view the [Quickstart](./quickstart.md).
 
-These instructions and samples assume basic familiarity with Azure Digital Twin and Azure IoT Plug and Play concepts.  To learn more background information, see [here](https://aka.ms/iotpnpdocs). This section describes the following:
+These instructions and samples assume basic familiarity with Azure Digital Twin and IoT Plug and Play concepts.  To learn more background information, see [here](https://aka.ms/iotpnpdocs). This section describes the following:
 
-* [IoT Plug and Play bridge Components](#IoT-Plug-and-Play-(PnP)-bridge-Components)
+* [IoT Plug and Play bridge Components](#IoT-Plug-and-Play-bridge-Components)
 * [Extending IoT Plug and Play bridge: Authoring new PnP Bridge Adapters](#Extending-IoT-Plug-and-Play-bridge-Authoring-new-PnP-bridge-Adapters)
-* [Building and Running the Azure IoT Plug and Play bridge](#Building-and-Running-the-Azure-IoT-Plug-and-Play-bridge)
+* [Building and Running the IoT Plug and Play bridge](#Building-and-Running-the-IoT-Plug-and-Play-bridge)
 * [Folder Structure](#Folder-Structure)
 * [Support](#Support)
 
-## IoT Plug and Play (PnP) bridge Components
+## IoT Plug and Play bridge Components
 
 ![A diagram that outlines the structure of the IoT Plug and Play bridge. It consists of an adaptor manager, and pnp bridge adaptors that bind devices/peripherals to Azure Digital Twin Interfaces.](/pnpbridge/docs/Pictures/AzurePnPBridgeComponents.png)
 
 ### PnP Bridge Adapters
 
-The IoT Plug and Play bridge supports a set of PnP Bridge Adapters for various types of devices. These adapters are statically manifested using an adapter manifest and used by the bridge’s PnP Bridge Adapter manager to elicit appropriate adapter functions. The adapter manager only initiates adapter creation for adapters that are required by the interface components defined in the configuration file. A corresponding PnP Bridge Adapter is elicited once for each interface component’s creation. The PnP Bridge Adapter sets up interface resources to create and acquire a digital twin interface handle and bind all the required interface functionality of the device with the digital twin. With information from the configuration file, the PnP Bridge Adapter establishes a communication channel or creates a device watcher to wait for such a channel to become available which when successfully completes enables the full device to digital twin communication through the Pnp bridge.
+The IoT Plug and Play bridge supports a set of PnP Bridge Adapters for various types of devices. These adapters are statically manifested using an adapter manifest and used by the IoT Plug and Play bridge’s PnP Bridge Adapter manager to elicit appropriate adapter functions. The adapter manager only initiates adapter creation for adapters that are required by the interface components defined in the configuration file. A corresponding PnP Bridge Adapter is elicited once for each interface component’s creation. The PnP Bridge Adapter sets up interface resources to create and acquire a digital twin interface handle and bind all the required interface functionality of the device with the digital twin. With information from the configuration file, the PnP Bridge Adapter establishes a communication channel or creates a device watcher to wait for such a channel to become available which when successfully completes enables the full device to digital twin communication through the IoT Plug and Play bridge.
 
 ### Configuration JSON
 
-The Pnp Bridge is supplied with a JSON based configuration file that generally specifies the following pieces of information:
+The IoT Plug and Play bridge is supplied with a JSON based configuration file that generally specifies the following pieces of information:
 
 * How to make a connection with Azure IoT, i.e. via connection strings, authentication parameters or     device provisioning information if the connection is made using DPS
 * The location of the device capability model that will be used by the Pnp Bridge (static and immutable for now) which defines capabilities of an IoT plug and play device
@@ -157,7 +157,7 @@ The IoT Plug and Play bridge establishes cloud connections and facilitates data 
 
 Each PnP Bridge Adapters is designed to specifically interact with certain types of devices based on how connections are made or how device side communication is established. However, even if the communication happens over some handshaking protocol, a PnP Bridge Adapters may have multiple ways of interpreting the data from a supported device. In such cases, an interface component in the configuration file that specifies this adapter to be its associated PnP Bridge Adapters, should also specify which “interface configuration” its adapter must use in order to parse the data coming from the device.
 
-The PnP Bridge Adapter interacts with the device using whichever communication protocol it supports and APIs provided by the underlying operating system (Windows, Linux or uses a platform abstraction layer) or vendor provided APIs for interaction with custom hardware/firmware. On the cloud side, the PnP Bridge Adapter uses APIs provided by the Azure IoT Pnp SDK to create digital twin interfaces and bind callback functions to report updates to telemetry, properties or commands.
+The PnP Bridge Adapter interacts with the device using whichever communication protocol it supports and APIs provided by the underlying operating system (Windows, Linux or uses a platform abstraction layer) or vendor provided APIs for interaction with custom hardware/firmware. On the cloud side, the PnP Bridge Adapter uses APIs provided by the Azure IoT Device C SDK to create digital twin interfaces and bind callback functions to report updates to telemetry, properties or commands.
 
 ### Create a PnP Bridge Adapter
 
@@ -220,7 +220,7 @@ Enable the adapters in Pnp Bridge by adding a reference to these adapters in ada
 
 The following [readme](./src/adapters/src/Camera/readme.md) provides details on a sample camera adapter that can be enabled with this preview.
 
-## Building and Running the Azure IoT Plug and Play bridge
+## Building and Running the IoT Plug and Play bridge
 
 | Platform | Supported |
 | :-----------: | :-----------: |
@@ -237,7 +237,7 @@ To complete this section, you need to install the following software on your loc
 
 ### Step 1: Get the required dependencies
 
-After cloning the Azure PnP Bridge repo to your machine, open the "Developer Command Prompt for VS 2017" and navigate to the directory of the cloned repo:
+After cloning the IoT Plug and Play bridge repo to your machine, open the "Developer Command Prompt for VS 2017" and navigate to the directory of the cloned repo:
 
 ```cmd
 %REPO_DIR%\> cd pnpbridge
@@ -320,7 +320,7 @@ In this example we further modified the configuration file.
 
 ### Step 4: Start the IoT Plug and Play bridge for Generic Sensors
 
-Start PnpBridge by running it in a command prompt.
+Start IoT Plug and Play bridge by running it in a command prompt.
 
   ```cmd
   %REPO_DIR%\pnpbridge\> cd cmake\pnpbridge_x86\src\pnpbridge\samples\console
@@ -330,13 +330,13 @@ Start PnpBridge by running it in a command prompt.
 
   > [!TIP] The path to the configuration file can also be passed to the bridge executable as a command line parameter.
   
-  > [!TIP] If you have either a built-in camera or a USB camera connected to your   PC running the PnpBridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, PnpBridge console output window will show the monitoring stats and the frame rate of the camera will be reported through Azure IoT PnP interface to Azure.
+  > [!TIP] If you have either a built-in camera or a USB camera connected to your PC running the IoT Plug and Play bridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, IoT Plug and Play bridge's console output window will show the monitoring stats and the frame rate of the camera will be reported through Azure IoT Plug and Play (Digital Twin) interface to Azure.
 
 ## Folder Structure
 
 ### /deps/azure-iot-sdk-c-pnp
 
-Git submodules that contains Azure IoT C PNP SDK code
+Git submodules that contains Azure IoT Device C SDK code
 
 ### /scripts
 
@@ -344,7 +344,7 @@ Build scripts
 
 ### /src/pnpbridge
 
-Source code for PnpBridge core
+Source code for IoT Plug and Play bridge core
 
 ### /src/adapters
 

@@ -1,5 +1,5 @@
 # SerialPnP
-Device-side module allowing for self-identification of Azure PnP interfaces
+Device-side module allowing for self-identification of IoT Plug and Play (Azure Digital Twin) interfaces
 over a serial connection.
 
 ### Description
