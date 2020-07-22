@@ -15,7 +15,7 @@
 
 InterfaceDescriptorMap g_interfaceDescriptorMap;
 
-DIGITALTWIN_CLIENT_RESULT BluetoothSensor_StartPnpInterface(
+IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
 {
@@ -33,12 +33,12 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_StartPnpInterface(
             pnpInterfaceHandle,
             e.what());
 
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT BluetoothSensor_StopPnpInterface(
+IOTHUB_CLIENT_RESULT BluetoothSensor_StopPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
 {
     LogInfo("Stopping PnP interface: %p", pnpInterfaceHandle);
@@ -55,12 +55,12 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_StopPnpInterface(
             pnpInterfaceHandle,
             e.what());
 
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT BluetoothSensor_DestroyPnpInterface(
+IOTHUB_CLIENT_RESULT BluetoothSensor_DestroyPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
 {
     LogInfo("Destroying PnP interface: %p", pnpInterfaceHandle);
@@ -69,10 +69,10 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_DestroyPnpInterface(
     delete static_cast<BluetoothSensorDeviceAdapter*>(PnpInterfaceHandleGetContext(
         pnpInterfaceHandle));
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
+IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
     const char* componentName,
     const JSON_Object* adapterInterfaceConfig,
@@ -88,7 +88,7 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
     if (!bluetoothAddressStr)
     {
         LogError("Failed to get bluetooth address from interface defined in config");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     const uint64_t bluetoothAddress = std::stoull(bluetoothAddressStr);
@@ -97,14 +97,14 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
     if (!identity)
     {
         LogError("Failed to get interface identity defined in config");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     const auto interfaceDescriptor = g_interfaceDescriptorMap.find(std::string(identity));
     if (interfaceDescriptor == g_interfaceDescriptorMap.end())
     {
         LogError("Could not find an interface identity for %s", identity);
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     std::unique_ptr<BluetoothSensorDeviceAdapter> newDeviceAdapter;
@@ -121,7 +121,7 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
             pnpInterfaceHandle,
             e.what());
 
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     *pnpInterfaceClient = newDeviceAdapter->GetPnpInterfaceClientHandle();
@@ -129,10 +129,10 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
     // PnP interface now owns the pointer
     newDeviceAdapter.release();
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpAdapter(
+IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpAdapter(
     const JSON_Object* adapterGlobalConfig,
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */) noexcept
 {
@@ -146,18 +146,18 @@ DIGITALTWIN_CLIENT_RESULT BluetoothSensor_CreatePnpAdapter(
     {
         LogError("Failed to create BLE sensor adapter: %s", e.what());
 
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT BluetoothSensor_DestroyPnpAdapter(
+IOTHUB_CLIENT_RESULT BluetoothSensor_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */) noexcept
 {
     LogInfo("Destroying the bluetooth sensor PnP adapter.");
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER BluetoothSensorPnpInterface = {

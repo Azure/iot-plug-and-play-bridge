@@ -57,10 +57,10 @@ int SerialPnp_UartReceiver(
         }
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(
+IOTHUB_CLIENT_RESULT SerialPnp_TxPacket(
     PSERIAL_DEVICE_CONTEXT serialDevice,
     byte* OutPacket,
     int Length)
@@ -83,7 +83,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(
     if (!SerialPnp_TxPacket)
     {
         LogError("Error out of memory");
-        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        return IOTHUB_CLIENT_ERROR;
     }
     txLength = 1;
     SerialPnp_TxPacket[0] = 0x5A; // Start of frame
@@ -110,7 +110,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(
         {
             // Write returned actual error and not just pending
             LogError("write failed: %d", error);
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
         else
         {
@@ -118,7 +118,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(
             {
                 error = GetLastError();
                 LogError("write failed: %d", error);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
         }
     }
@@ -133,10 +133,10 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(
     if (write_size != txLength)
     {
         LogError("Timeout while writing");
-        return DIGITALTWIN_CLIENT_ERROR_TIMEOUT;
+        return IOTHUB_CLIENT_INDEFINITE_TIME;
     }
     free(SerialPnp_TxPacket);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 const EventDefinition* SerialPnp_LookupEvent(
@@ -405,7 +405,7 @@ const CommandDefinition* SerialPnp_LookupCommand(
     return NULL;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_PropertyHandler(
+IOTHUB_CLIENT_RESULT SerialPnp_PropertyHandler(
     PSERIAL_DEVICE_CONTEXT serialDevice,
     const char* property,
     char* data)
@@ -415,7 +415,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_PropertyHandler(
 
     if (NULL == prop)
     {
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     // Otherwise serialize data
@@ -423,7 +423,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_PropertyHandler(
     byte* inputPayload = SerialPnp_StringSchemaToBinary(prop->DataSchema, input, &dataLength);
     if (!inputPayload)
     {
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     int nameLength = (int)strlen(property);
@@ -433,7 +433,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_PropertyHandler(
     {
         LogError("Error out of memory");
         free(inputPayload);
-        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = (byte)(txlength & 0xFF);
@@ -453,10 +453,10 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_PropertyHandler(
     free(inputPayload);
     free(txPacket);
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
+IOTHUB_CLIENT_RESULT SerialPnp_CommandHandler(
     PSERIAL_DEVICE_CONTEXT serialDevice,
     const char* command,
     char* data,
@@ -470,7 +470,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
     if (NULL == cmd)
     {
         Unlock(serialDevice->CommandLock);
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     // Otherwise serialize data
@@ -479,7 +479,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
     if (!inputPayload)
     {
         Unlock(serialDevice->CommandLock);
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     int nameLength = (int)strlen(command);
@@ -490,7 +490,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
         LogError("Error out of memory");
         free(inputPayload);
         Unlock(serialDevice->CommandLock);
-        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     txPacket[SERIALPNP_PACKET_PACKET_LENGTH_OFFSET] = (byte)(txlength & 0xFF);
@@ -505,13 +505,13 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
 
     LogInfo("Invoking command %s to %s", command, input);
 
-    if (DIGITALTWIN_CLIENT_OK != SerialPnp_TxPacket(serialDevice, txPacket, txlength))
+    if (IOTHUB_CLIENT_OK != SerialPnp_TxPacket(serialDevice, txPacket, txlength))
     {
         LogError("Error: command not sent to device.");
         free(inputPayload);
         free(txPacket);
         Unlock(serialDevice->CommandLock);
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     Lock(serialDevice->CommandResponseWaitLock);
@@ -522,7 +522,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
         free(txPacket);
         Unlock(serialDevice->CommandLock);
         Unlock(serialDevice->CommandResponseWaitLock);
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
     Unlock(serialDevice->CommandResponseWaitLock);
 
@@ -537,12 +537,12 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_CommandHandler(
     if (!stval)
     {
         Unlock(serialDevice->CommandLock);
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     *response = stval;
     Unlock(serialDevice->CommandLock);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 void SerialPnp_ParseDescriptor(
@@ -787,7 +787,7 @@ SINGLYLINKEDLIST_HANDLE SerialDeviceList = NULL;
 int SerialDeviceCount = 0;
 
 #ifdef WIN32
-DIGITALTWIN_CLIENT_RESULT SerialPnp_FindSerialDevices()
+IOTHUB_CLIENT_RESULT SerialPnp_FindSerialDevices()
 {
     CONFIGRET cmResult = CR_SUCCESS;
     char* deviceInterfaceList;
@@ -802,14 +802,14 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_FindSerialDevices()
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (CR_SUCCESS != cmResult)
     {
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     deviceInterfaceList = malloc(bufferSize * sizeof(char));
     if (!deviceInterfaceList)
     {
         LogError("Error out of memory");
-        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     cmResult = CM_Get_Device_Interface_ListA(
@@ -820,7 +820,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_FindSerialDevices()
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (CR_SUCCESS != cmResult)
     {
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     for (PCHAR currentDeviceInterface = deviceInterfaceList;
@@ -832,7 +832,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_FindSerialDevices()
         {
             LogError("Error out of memory");
             free(deviceInterfaceList);
-            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            return IOTHUB_CLIENT_ERROR;
         }
         serialDevs->InterfaceName = malloc((strlen(currentDeviceInterface) + 1) * sizeof(char));
         if (!serialDevs->InterfaceName)
@@ -840,14 +840,14 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_FindSerialDevices()
             LogError("Error out of memory");
             free(deviceInterfaceList);
             free(serialDevs);
-            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            return IOTHUB_CLIENT_ERROR;
         }
         strcpy_s(serialDevs->InterfaceName, strlen(currentDeviceInterface) + 1, currentDeviceInterface);
         singlylinkedlist_add(SerialDeviceList, serialDevs);
         SerialDeviceCount++;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 #endif
 
@@ -858,30 +858,30 @@ int SerialPnp_ParseInterfaceConfig(
     DWORD length;
     PSERIAL_DEVICE_CONTEXT deviceContext = context;
     int retries = SERIALPNP_RESET_OR_DESCRIPTOR_MAX_RETRIES;
-    while (DIGITALTWIN_CLIENT_OK != SerialPnp_ResetDevice(deviceContext))
+    while (IOTHUB_CLIENT_OK != SerialPnp_ResetDevice(deviceContext))
     {
         LogError("Error sending reset request. Retrying...");
         if (0 == --retries)
         {
             LogError("Error exceeded max number of reset request retries. ");
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
         ThreadAPI_Sleep(5000);
     }
     retries = SERIALPNP_RESET_OR_DESCRIPTOR_MAX_RETRIES;
-    while (DIGITALTWIN_CLIENT_OK != SerialPnp_DeviceDescriptorRequest(deviceContext, &desc, &length))
+    while (IOTHUB_CLIENT_OK != SerialPnp_DeviceDescriptorRequest(deviceContext, &desc, &length))
     {
         LogError("Descriptor response not received. Retrying...");
         if (0 == --retries)
         {
             LogError("Error exceeded max number of descriptor request retries. ");
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
         ThreadAPI_Sleep(5000);
     }
 
     SerialPnp_ParseDescriptor(deviceContext->InterfaceDefinitions, desc, length);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 #ifndef WIN32
@@ -925,7 +925,7 @@ int set_interface_attribs(
         LogError("error %d from tcsetattr", errno);
         return -1;
     }
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 void
@@ -949,12 +949,12 @@ set_blocking(
 }
 #endif 
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_OpenDevice(
+IOTHUB_CLIENT_RESULT SerialPnp_OpenDevice(
     const char* port,
     DWORD baudRate,
     PSERIAL_DEVICE_CONTEXT deviceContext)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
 #ifdef WIN32
     HANDLE hSerial = CreateFileA(port,
         GENERIC_READ | GENERIC_WRITE,
@@ -971,10 +971,10 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_OpenDevice(
         LogError("Failed to open com port %s, %x", port, error);
         if (error == ERROR_FILE_NOT_FOUND)
         {
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -1032,7 +1032,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_OpenDevice(
         {
             CloseHandle(deviceContext->osReader.hEvent);
         }
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 #else 
@@ -1043,7 +1043,7 @@ exit:
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(
+IOTHUB_CLIENT_RESULT SerialPnp_RxPacket(
     PSERIAL_DEVICE_CONTEXT serialDevice,
     byte** receivedPacket,
     DWORD* length,
@@ -1064,7 +1064,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(
             {
                 // Read returned actual error and not just pending
                 LogError("read failed: %d", error);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
             else
             {
@@ -1072,7 +1072,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(
                 {
                     error = GetLastError();
                     LogError("read failed: %d", error);
-                    return DIGITALTWIN_CLIENT_ERROR;
+                    return IOTHUB_CLIENT_ERROR;
                 }
             }
 
@@ -1115,7 +1115,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(
         if (serialDevice->RxBufferIndex >= MAX_BUFFER_SIZE)
         {
             LogError("Filled Rx buffer. Protocol is bad.");
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
 
         // Minimum packet length is 4, so once we are >= 4 begin checking
@@ -1130,7 +1130,7 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(
                 if (NULL == *receivedPacket)
                 {
                     LogError("Error out of memory");
-                    return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                    return IOTHUB_CLIENT_ERROR;
                 }
                 *length = serialDevice->RxBufferIndex;
                 memcpy(*receivedPacket, serialDevice->RxBuffer, serialDevice->RxBufferIndex);
@@ -1153,13 +1153,13 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(
             }
         }
     }
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_ResetDevice(
+IOTHUB_CLIENT_RESULT SerialPnp_ResetDevice(
     PSERIAL_DEVICE_CONTEXT serialDevice)
 {
-    DIGITALTWIN_CLIENT_RESULT error = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT error = IOTHUB_CLIENT_OK;
     // Prepare packet
     byte resetPacket[3] = { 0 }; // packet header
     byte* responsePacket = NULL;
@@ -1168,36 +1168,36 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_ResetDevice(
     resetPacket[SERIALPNP_PACKET_PACKET_TYPE_OFFSET] = SERIALPNP_PACKET_TYPE_RESET_REQUEST;
 
     // Send the new packet
-    if (DIGITALTWIN_CLIENT_OK != SerialPnp_TxPacket(serialDevice, resetPacket, 4))
+    if (IOTHUB_CLIENT_OK != SerialPnp_TxPacket(serialDevice, resetPacket, 4))
     {
         LogError("Error sending request packet");
-        error =  DIGITALTWIN_CLIENT_ERROR;
+        error =  IOTHUB_CLIENT_ERROR;
         goto exit;
     }
     LogInfo("Sent reset request");
 
     DWORD length;
-    if (DIGITALTWIN_CLIENT_OK != SerialPnp_RxPacket(serialDevice, &responsePacket, &length, 0x02))
+    if (IOTHUB_CLIENT_OK != SerialPnp_RxPacket(serialDevice, &responsePacket, &length, 0x02))
     {
         LogError("Error receiving response packet");
-        error = DIGITALTWIN_CLIENT_ERROR;
+        error = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
     if (NULL == responsePacket)
     {
         LogError("received NULL for response packet");
-        error = DIGITALTWIN_CLIENT_ERROR;
+        error = IOTHUB_CLIENT_ERROR;
     }
 
     if (SERIALPNP_PACKET_TYPE_RESET_RESPONSE != responsePacket[2])
     {
         LogError("Bad reset response");
-        error = DIGITALTWIN_CLIENT_ERROR;
+        error = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
-    if (DIGITALTWIN_CLIENT_OK == error)
+    if (IOTHUB_CLIENT_OK == error)
     {
         LogInfo("Receieved reset response");
     }
@@ -1210,7 +1210,7 @@ exit:
     return error;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(
+IOTHUB_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(
     PSERIAL_DEVICE_CONTEXT serialDevice,
     byte** desc,
     DWORD* length)
@@ -1222,18 +1222,18 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(
     txPacket[SERIALPNP_PACKET_PACKET_TYPE_OFFSET] = SERIALPNP_PACKET_TYPE_DESCRIPTOR_REQUEST;
 
     // Send the new packets
-    if (DIGITALTWIN_CLIENT_OK != SerialPnp_TxPacket(serialDevice, txPacket, 4))
+    if (IOTHUB_CLIENT_OK != SerialPnp_TxPacket(serialDevice, txPacket, 4))
     {
         LogError("Error sending request packet");
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
     LogInfo("Sent descriptor request");
 
-    if (DIGITALTWIN_CLIENT_OK != SerialPnp_RxPacket(serialDevice, desc, length, 0x04))
+    if (IOTHUB_CLIENT_OK != SerialPnp_RxPacket(serialDevice, desc, length, 0x04))
     {
         LogError("Error receiving response packet");
         free(*desc);
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     if (NULL == *desc)
@@ -1241,43 +1241,43 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(
         LogError("received NULL for response packet");
         free(*desc);
 
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     if (SERIALPNP_PACKET_TYPE_DESCRIPTOR_RESPONSE != (*desc)[2])
     {
         LogError("Bad descriptor response");
         free(*desc);
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     LogInfo("Receieved descriptor response, of length %d", *length);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 void SerialPnp_SendEventCallback(
-    DIGITALTWIN_CLIENT_RESULT pnpSendEventStatus,
+    IOTHUB_CLIENT_RESULT pnpSendEventStatus,
     void* userContextCallback)
 {
     LogInfo("SerialDataSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_SendEventAsync(
+IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface,
     char* eventName,
     char* data)
 {
-    DIGITALTWIN_CLIENT_RESULT pnpClientResult;
+    IOTHUB_CLIENT_RESULT pnpClientResult;
 
     if (pnpInterface == NULL)
     {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     char telemetryMessageData[512] = { 0 };
     sprintf(telemetryMessageData, "{\"%s\":%s}", eventName, data);
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), SerialPnp_SendEventCallback, (void*)eventName)) != DIGITALTWIN_CLIENT_OK)
+    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), SerialPnp_SendEventCallback, (void*)eventName)) != IOTHUB_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_SendEventAsync failed, result=%d\n", pnpClientResult);
     }
@@ -1307,7 +1307,7 @@ static void SerialPnp_PropertyUpdateHandler(
     const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
     void* userContextCallback)
 {
-    DIGITALTWIN_CLIENT_RESULT pnpClientResult;
+    IOTHUB_CLIENT_RESULT pnpClientResult;
     DIGITALTWIN_CLIENT_PROPERTY_RESPONSE propertyResponse;
     PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
     int propertyCount = 0;
@@ -1385,7 +1385,7 @@ SerialPnp_CommandUpdateHandler(
     
 }
 
-DIGITALTWIN_CLIENT_RESULT
+IOTHUB_CLIENT_RESULT
 SerialPnp_StartPnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
@@ -1395,15 +1395,15 @@ SerialPnp_StartPnpInterface(
     if (deviceContext == NULL)
     {
         LogError("Device context is null");
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     // Start telemetry thread
     if (ThreadAPI_Create(&deviceContext->TelemetryWorkerHandle, SerialPnp_UartReceiver, deviceContext) != THREADAPI_OK) {
         LogError("ThreadAPI_Create failed");
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 
@@ -1488,14 +1488,14 @@ void SerialPnp_FreePropertiesDefinition(
     }
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_StopPnpInterface(
+IOTHUB_CLIENT_RESULT SerialPnp_StopPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
 
     if (NULL == deviceContext)
     {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
 #ifdef WIN32
@@ -1518,16 +1518,16 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_StopPnpInterface(
     }
 #endif
     ThreadAPI_Join(deviceContext->TelemetryWorkerHandle, NULL);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
+IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
 
     if (NULL == deviceContext) {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     // Call DigitalTwin_InterfaceClient_Destroy.
@@ -1558,10 +1558,10 @@ DIGITALTWIN_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
 
     free(deviceContext);
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT
+IOTHUB_CLIENT_RESULT
 SerialPnp_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
@@ -1570,7 +1570,7 @@ SerialPnp_CreatePnpInterface(
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
 
     // Get device connection information
 
@@ -1591,7 +1591,7 @@ SerialPnp_CreatePnpInterface(
         if (NULL == port)
         {
             LogError("COM port parameter is missing in configuration");
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
     }
@@ -1600,7 +1600,7 @@ SerialPnp_CreatePnpInterface(
     if (NULL == baudRateParam)
     {
         LogError("Baud rate parameter is missing in configuration");
-        result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        result = IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
     }
 
@@ -1609,11 +1609,11 @@ SerialPnp_CreatePnpInterface(
     if (useComDeviceInterface)
     {
 #ifdef WIN32
-        if (SerialPnp_FindSerialDevices() != DIGITALTWIN_CLIENT_OK)
+        if (SerialPnp_FindSerialDevices() != IOTHUB_CLIENT_OK)
 #endif
         {
             LogError("Failed to get com port %s", port);
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
@@ -1621,7 +1621,7 @@ SerialPnp_CreatePnpInterface(
         if (NULL == item)
         {
             LogError("No serial device was found %s", port);
-            result = DIGITALTWIN_CLIENT_ERROR;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
 
@@ -1635,7 +1635,7 @@ SerialPnp_CreatePnpInterface(
     if (!deviceContext)
     {
         LogError("Error out of memory");
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
     memset(deviceContext, 0, sizeof(SERIAL_DEVICE_CONTEXT));
@@ -1661,7 +1661,7 @@ SerialPnp_CreatePnpInterface(
         {
             Lock_Deinit(deviceContext->CommandResponseWaitCondition);
         }
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
     deviceContext->PnpInterfaceHandle = NULL;
@@ -1680,10 +1680,10 @@ SerialPnp_CreatePnpInterface(
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
 
     result = DigitalTwin_InterfaceClient_Create(ComponentName, NULL, deviceContext, &pnpInterfaceClient);
-    if (DIGITALTWIN_CLIENT_OK != result)
+    if (IOTHUB_CLIENT_OK != result)
     {
         LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -1691,10 +1691,10 @@ SerialPnp_CreatePnpInterface(
         result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, 
                                                                           SerialPnp_PropertyUpdateHandler,
                                                                           (void*) deviceContext);
-        if (DIGITALTWIN_CLIENT_OK != result)
+        if (IOTHUB_CLIENT_OK != result)
         {
             LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
-            result = DIGITALTWIN_CLIENT_ERROR;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
     }
@@ -1703,10 +1703,10 @@ SerialPnp_CreatePnpInterface(
         result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient,
                                                                  SerialPnp_CommandUpdateHandler,
                                                                  (void*)deviceContext);
-        if (DIGITALTWIN_CLIENT_OK != result)
+        if (IOTHUB_CLIENT_OK != result)
         {
             LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
-            result = DIGITALTWIN_CLIENT_ERROR;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
     }
@@ -1717,7 +1717,7 @@ SerialPnp_CreatePnpInterface(
     PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
 
 exit:
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         SerialPnp_DestroyPnpInterface(BridgeInterfaceHandle);
     }
@@ -1725,20 +1725,20 @@ exit:
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_CreatePnpAdapter(
+IOTHUB_CLIENT_RESULT SerialPnp_CreatePnpAdapter(
     const JSON_Object* AdapterGlobalConfig,
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterGlobalConfig);
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT SerialPnp_DestroyPnpAdapter(
+IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER SerialPnpInterface = {

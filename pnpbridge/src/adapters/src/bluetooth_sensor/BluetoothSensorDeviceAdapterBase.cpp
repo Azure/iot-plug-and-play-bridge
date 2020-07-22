@@ -36,7 +36,7 @@ BluetoothSensorDeviceAdapterBase::BluetoothSensorDeviceAdapterBase(
         this,
         &m_handle);
 
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         throw std::runtime_error(
             ("Failed to create digital twin interface: " + std::to_string(result)).c_str());
@@ -47,7 +47,7 @@ BluetoothSensorDeviceAdapterBase::BluetoothSensorDeviceAdapterBase(
         OnPropertyCallback,
         this);
 
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         throw std::runtime_error(
             ("Failed to register for property callbacks: " + std::to_string(result)).c_str());
@@ -58,7 +58,7 @@ BluetoothSensorDeviceAdapterBase::BluetoothSensorDeviceAdapterBase(
         OnCommandCallback,
         this);
 
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         throw std::runtime_error(
             ("Failed to register for command callbacks: " + std::to_string(result)).c_str());
@@ -85,7 +85,7 @@ void BluetoothSensorDeviceAdapterBase::ReportSensorDataTelemetry(
             OnTelemetryCallback,
             static_cast<void*>(telemetryNameBuffer.data()));
 
-        if (result != DIGITALTWIN_CLIENT_OK)
+        if (result != IOTHUB_CLIENT_OK)
         {
             LogError("Failed to report sensor data telemetry for %s: %d",
                 telemetryName.c_str(), result);
@@ -100,10 +100,10 @@ DIGITALTWIN_INTERFACE_CLIENT_HANDLE BluetoothSensorDeviceAdapterBase::GetPnpInte
 
 // static
 void BluetoothSensorDeviceAdapterBase::OnInterfaceRegisteredCallback(
-    DIGITALTWIN_CLIENT_RESULT interfaceStatus,
+    IOTHUB_CLIENT_RESULT interfaceStatus,
     void* /* userInterfaceContext */)
 {
-    if (interfaceStatus == DIGITALTWIN_CLIENT_OK)
+    if (interfaceStatus == IOTHUB_CLIENT_OK)
     {
         LogInfo("Bluetooth sensor interface successfully registered.");
     }
@@ -116,10 +116,10 @@ void BluetoothSensorDeviceAdapterBase::OnInterfaceRegisteredCallback(
 
 // static
 void BluetoothSensorDeviceAdapterBase::OnTelemetryCallback(
-    DIGITALTWIN_CLIENT_RESULT telemetryStatus,
+    IOTHUB_CLIENT_RESULT telemetryStatus,
     void* /* userContextCallback */)
 {
-    if (telemetryStatus != DIGITALTWIN_CLIENT_OK)
+    if (telemetryStatus != IOTHUB_CLIENT_OK)
     {
         LogError("Telemetry callback reported error: %d",
             telemetryStatus);

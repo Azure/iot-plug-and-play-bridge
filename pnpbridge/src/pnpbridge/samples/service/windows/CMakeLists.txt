@@ -54,6 +54,7 @@ include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/digitaltwin_client/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/provisioning_client/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/samples/pnp/common)
 include_directories(${pnp_bridge_INC_FOLDER})
 
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/pal/windows)

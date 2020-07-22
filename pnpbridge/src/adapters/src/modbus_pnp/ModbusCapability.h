@@ -68,7 +68,7 @@ typedef struct CapabilityContext {
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE InterfaceClient;
 }CapabilityContext;
 
-DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(void* context);
+IOTHUB_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(void* context);
 void StopPollingTasks();
 
 void ModbusPnp_CommandHandler(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext, 

@@ -19,7 +19,7 @@
   "_comment_devices": "Array of devices for Azure Pnp interface should be published",
   "pnp_bridge_interface_components": [
       {
-          "_comment": "Environment Sensor Sample Device",
+          "_comment": "Environment Sensor Device Component",
           "pnp_bridge_component_name": "environmentalSensor",
           "pnp_bridge_adapter_id": "environment-sensor-sample-pnp-adapter",
           "pnp_bridge_adapter_config": {

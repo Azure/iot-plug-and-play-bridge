@@ -10,18 +10,14 @@
 #include "pnpbridgeh.h"
 #include <iothub_client.h>
 
-// Globals PNP bridge instance
-PPNP_BRIDGE g_PnpBridge = NULL;
-PNP_BRIDGE_STATE g_PnpBridgeState = PNP_BRIDGE_UNINITIALIZED;
-bool g_PnpBridgeShutdown = false;
 
-DIGITALTWIN_CLIENT_RESULT 
+IOTHUB_CLIENT_RESULT 
 PnpBridge_Initialize(
     PPNP_BRIDGE* PnpBridge,
     const char * ConfigFilePath
     ) 
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PPNP_BRIDGE pbridge = NULL;
     JSON_Value* config = NULL;
     bool lockAcquired = false;
@@ -33,21 +29,21 @@ PnpBridge_Initialize(
         pbridge = (PPNP_BRIDGE) calloc(1, sizeof(PNP_BRIDGE));
         if (NULL == pbridge) {
             LogError("Failed to allocate memory for PnpBridge global");
-            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
 
         pbridge->ExitCondition = Condition_Init();
         if (NULL == pbridge->ExitCondition) {
             LogError("Failed to init ExitCondition");
-            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
 
         pbridge->ExitLock = Lock_Init();
         if (NULL == pbridge->ExitLock) {
             LogError("Failed to init ExitLock lock");
-            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
         Lock(pbridge->ExitLock);
@@ -55,26 +51,16 @@ PnpBridge_Initialize(
 
         // Get the JSON VALUE of configuration file
         result = PnpBridgeConfig_GetJsonValueFromConfigFile(ConfigFilePath, &config);
-        if (DIGITALTWIN_CLIENT_OK != result) {
+        if (IOTHUB_CLIENT_OK != result) {
             LogError("Failed to retrieve the bridge configuration from specified file location.");
             goto exit;
         }
 
         // Check if config file has REQUIRED parameters
         result = PnpBridgeConfig_RetrieveConfiguration(config, &pbridge->Configuration);
-        if (DIGITALTWIN_CLIENT_OK != result) {
+        if (IOTHUB_CLIENT_OK != result) {
             LogError("Config file is invalid");
             goto exit;
-        }
-
-        // Connect to Iot Hub and create a PnP device client handle
-        {
-            result = IotComms_InitializeIotHandle(&pbridge->IotHandle, pbridge->Configuration.TraceOn, pbridge->Configuration.ConnParams);
-            if (DIGITALTWIN_CLIENT_OK != result) {
-                LogError("IotComms_InitializeIotHandle failed\n");
-                result = DIGITALTWIN_CLIENT_ERROR;
-                goto exit;
-            }
         }
 
         *PnpBridge = pbridge;
@@ -83,7 +69,7 @@ PnpBridge_Initialize(
     }
 exit:
     {
-        if (DIGITALTWIN_CLIENT_OK != result) {
+        if (IOTHUB_CLIENT_OK != result) {
             if (lockAcquired) {
                 Unlock(pbridge->ExitLock);
             }
@@ -92,6 +78,22 @@ exit:
         }
     }
    
+    return result;
+}
+
+IOTHUB_CLIENT_RESULT 
+PnpBridge_RegisterIoTHubHandle()
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+
+    result = IotComms_InitializeIotHandle(&g_PnpBridge->IotHandle, g_PnpBridge->Configuration.TraceOn, g_PnpBridge->Configuration.ConnParams);
+    if (IOTHUB_CLIENT_OK != result) {
+        LogError("IotComms_InitializeIotHandle failed\n");
+        result = IOTHUB_CLIENT_ERROR;
+        goto exit;
+    }
+
+exit:
     return result;
 }
 
@@ -126,68 +128,55 @@ PnpBridge_Release(
     }
 }
 
-DIGITALTWIN_CLIENT_RESULT
-PnpBridge_RegisterInterfaces(
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces,
-    unsigned int interfaceCount
-)
-{
-    DIGITALTWIN_CLIENT_RESULT result;
-    PPNP_BRIDGE pnpBridge = g_PnpBridge;
-    result = IotComms_RegisterPnPInterfaces(&pnpBridge->IotHandle,
-        pnpBridge->Configuration.ConnParams->RootInterfaceModelId,
-        interfaces,
-        interfaceCount);
-
-    return result;
-}
-
 int
 PnpBridge_Main(const char * ConfigurationFilePath)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PPNP_BRIDGE pnpBridge = NULL;
 
     {
             LogInfo("Starting Azure PnpBridge");
 
-            if (IoTHub_Init() != 0) {
-                LogError("IoTHub_Init failed\n");
-                result = DIGITALTWIN_CLIENT_ERROR;
-                goto exit;
-            }
-
             result = PnpBridge_Initialize(&pnpBridge, ConfigurationFilePath);
-            if (DIGITALTWIN_CLIENT_OK != result) {
+            if (IOTHUB_CLIENT_OK != result) {
                 LogError("PnpBridge_Initialize failed: %d", result);
                 goto exit;
             }
 
             g_PnpBridge = pnpBridge;
 
-            LogInfo("Connected to Azure IoT Hub");
+            LogInfo("Building Pnp Bridge Adapter Manager & Adapters");
 
             // Create all the adapters that are required by configured devices
             result = PnpAdapterManager_CreateManager(&pnpBridge->PnpMgr, pnpBridge->Configuration.JsonConfig);
-            if (DIGITALTWIN_CLIENT_OK != result) {
-                LogError("PnpAdapterManager_Create failed: %d", result);
+            if (IOTHUB_CLIENT_OK != result) {
+                LogError("PnpAdapterManager_CreateManager failed: %d", result);
                 goto exit;
             }
 
             result = PnpAdapterManager_CreateInterfaces(pnpBridge->PnpMgr, pnpBridge->Configuration.JsonConfig);
-            if (DIGITALTWIN_CLIENT_OK != result) {
+            if (IOTHUB_CLIENT_OK != result) {
                 LogError("PnpAdapterManager_CreateInterfaces failed: %d", result);
                 goto exit;
             }
 
-            result = PnPAdapterManager_RegisterInterfaces(pnpBridge->PnpMgr);
-            if (DIGITALTWIN_CLIENT_OK != result) {
-                LogError("PnPAdapterManager_RegisterInterfaces failed: %d", result);
+            result = PnpAdapterManager_BuildComponentsInModel(pnpBridge->PnpMgr);
+            if (IOTHUB_CLIENT_OK != result) {
+                LogError("PnpAdapterManager_BuildComponentsInModel failed: %d", result);
                 goto exit;
             }
 
+            result = PnpBridge_RegisterIoTHubHandle();
+            if (IOTHUB_CLIENT_OK != result) {
+                LogError("PnpAdapterManager_BuildComponentsInModel failed: %d", result);
+                goto exit;
+            }
+
+            LogInfo("Connected to Azure IoT Hub");
+
+
             result = PnpAdapterManager_StartInterfaces(pnpBridge->PnpMgr);
-            if (DIGITALTWIN_CLIENT_OK != result) {
+            if (IOTHUB_CLIENT_OK != result) {
                 LogError("PnpAdapterManager_StartInterfaces failed: %d", result);
                 goto exit;
             }
@@ -202,13 +191,11 @@ PnpBridge_Main(const char * ConfigurationFilePath)
     } 
 exit:
     {
-        // Destroy the DigitalTwinClient and recreate it
-        IotComms_DigitalTwinClient_Destroy(&pnpBridge->IotHandle);
-        g_PnpBridge = NULL;
 
         if (pnpBridge) {
             PnpBridge_Release(pnpBridge);
         }
+        g_PnpBridge = NULL;
     }
 
     return result;
@@ -251,7 +238,7 @@ PnpBridge_UploadToBlobAsync(
 
     if (!g_PnpBridge->IotHandle.DeviceClientInitialized)
     {
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     handle = g_PnpBridge->IotHandle.IsModule ? g_PnpBridge->IotHandle.u1.IotModule.moduleHandle :
@@ -261,7 +248,7 @@ PnpBridge_UploadToBlobAsync(
         (NULL != pbData && cbData == 0) ||
         NULL == iotHubClientFileUploadCallback)
     {
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     iotResult = IoTHubClient_UploadToBlobAsync(handle,
@@ -273,16 +260,16 @@ PnpBridge_UploadToBlobAsync(
     switch (iotResult)
     {
     case IOTHUB_CLIENT_OK:
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
         break;
     case IOTHUB_CLIENT_INVALID_ARG:
     case IOTHUB_CLIENT_INVALID_SIZE:
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
         break;
     case IOTHUB_CLIENT_INDEFINITE_TIME:
     case IOTHUB_CLIENT_ERROR:
     default:
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
         break;
     }
 }

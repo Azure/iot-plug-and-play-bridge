@@ -41,40 +41,40 @@ public:
     std::map<std::string, JSON_Value*>    s_AdapterConfigs;
 };
 
-DIGITALTWIN_CLIENT_RESULT MqttPnp_DestroyPnpInterface(
+IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
     printf("mqtt-pnp: destroying interface component\n");
     MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpInterfaceHandleGetContext(PnpInterfaceHandle));
     if (NULL == context)
     {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     DigitalTwin_InterfaceClient_Destroy((context->s_ProtocolHandler)->GetDigitalTwin());
     context->s_ConnectionManager.Disconnect();
     delete context;
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT MqttPnp_DestroyPnpAdapter(
+IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle
 )
 {
     MqttPnpAdapter* adapterContext = reinterpret_cast<MqttPnpAdapter*>(PnpAdapterHandleGetContext(AdapterHandle));
     if (adapterContext == NULL)
     {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     adapterContext->s_AdapterConfigs.clear();
 
     delete adapterContext;
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT
+IOTHUB_CLIENT_RESULT
 MqttPnp_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
@@ -82,7 +82,7 @@ MqttPnp_CreatePnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     JSON_Value* adapterConfig = NULL;
     std::map<std::string, JSON_Value*>::iterator mapItem;
@@ -90,7 +90,7 @@ MqttPnp_CreatePnpInterface(
     if (NULL!= AdapterInterfaceConfig)
     {
         LogError("Each component requiring the Mqtt adapter needs to specify local adapter args (pnp_bridge_adapter_config)");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
     const char* mqtt_server = json_object_get_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_SERVER);
     int mqtt_port = (int) json_object_get_number(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_PORT);
@@ -100,7 +100,7 @@ MqttPnp_CreatePnpInterface(
     MqttPnpAdapter* adapterContext = reinterpret_cast<MqttPnpAdapter*>(PnpAdapterHandleGetContext(AdapterHandle));
     if (adapterContext == NULL)
     {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     MqttPnpInstance* context = new MqttPnpInstance();
@@ -139,10 +139,10 @@ MqttPnp_CreatePnpInterface(
                                                 nullptr,
                                                 context, 
                                                 &pnpInterfaceClient);
-    if (DIGITALTWIN_CLIENT_OK != result)
+    if (IOTHUB_CLIENT_OK != result)
     {
         LogError("mqtt-pnp: Error registering pnp interface component %s", ComponentName);
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -157,10 +157,10 @@ MqttPnp_CreatePnpInterface(
         (void*)context
     );
 
-    if (DIGITALTWIN_CLIENT_OK != result)
+    if (IOTHUB_CLIENT_OK != result)
     {
         LogError("mqtt-pnp: Error binding property update callback for %s", ComponentName);
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -176,10 +176,10 @@ MqttPnp_CreatePnpInterface(
         (void*)context
     );
 
-    if (DIGITALTWIN_CLIENT_OK != result)
+    if (IOTHUB_CLIENT_OK != result)
     {
         LogError("mqtt-pnp: Error binding commands callback for %s", ComponentName);
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -188,7 +188,7 @@ MqttPnp_CreatePnpInterface(
     PnpInterfaceHandleSetContext(BridgeInterfaceHandle, context);
 
 exit:
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         MqttPnp_DestroyPnpInterface(BridgeInterfaceHandle);
     }
@@ -200,16 +200,16 @@ exit:
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT MqttPnp_CreatePnpAdapter(
+IOTHUB_CLIENT_RESULT MqttPnp_CreatePnpAdapter(
     const JSON_Object* AdapterGlobalConfig,
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     MqttPnpAdapter* adapterContext = new MqttPnpAdapter();
     if (AdapterGlobalConfig == NULL)
     {
         LogError("Mqtt adapter requires associated global parameters in config");
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -223,28 +223,28 @@ DIGITALTWIN_CLIENT_RESULT MqttPnp_CreatePnpAdapter(
 
     PnpAdapterHandleSetContext(AdapterHandle, (void*)adapterContext);
 exit:
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         result = MqttPnp_DestroyPnpAdapter(AdapterHandle);
     }
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT
+IOTHUB_CLIENT_RESULT
 MqttPnp_StartPnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     AZURE_UNREFERENCED_PARAMETER(PnpInterfaceHandle);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT MqttPnp_StopPnpInterface(
+IOTHUB_CLIENT_RESULT MqttPnp_StopPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(PnpInterfaceHandle);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER MqttPnpInterface = {

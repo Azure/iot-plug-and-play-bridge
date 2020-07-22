@@ -97,18 +97,18 @@ typedef struct PNPBRIDGE_CONFIGURATION {
 *
 * @param    Config              JSON_Value representing the root of the config file
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
-DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* Filename, JSON_Value** Config);
+IOTHUB_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* Filename, JSON_Value** Config);
 
 /**
 * @brief    PnpBridgeConfig_GetJsonValueFromString reads a PnpBridge JSON config from string.
 *
 * @param    ConfigString        String containing JSON config
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
-DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *ConfigString, JSON_Value** Config);
+IOTHUB_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *ConfigString, JSON_Value** Config);
 
 /**
 * @brief    PnpBridgeConfig_GetConnectionDetails parses the connection parameters from 
@@ -116,7 +116,7 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *Con
 *
 * @param    config            String containing JSON config
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
 PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* ConnectionParams);
 
@@ -126,10 +126,10 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
 *
 * @param    config   JSON value of the config file from parson
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
 MOCKABLE_FUNCTION(,
-DIGITALTWIN_CLIENT_RESULT,
+IOTHUB_CLIENT_RESULT,
 PnpBridgeConfig_RetrieveConfiguration,
     JSON_Value*, ConfigJson,
     PNPBRIDGE_CONFIGURATION*, BridgeConfig

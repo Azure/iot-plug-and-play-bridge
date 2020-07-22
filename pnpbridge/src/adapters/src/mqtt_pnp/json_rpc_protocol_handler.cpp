@@ -187,7 +187,7 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
     if (tname) {
         // Publish telemetry
         char *out = json_serialize_to_string(Parameters);
-        DIGITALTWIN_CLIENT_RESULT res = DIGITALTWIN_CLIENT_OK;
+        IOTHUB_CLIENT_RESULT res = IOTHUB_CLIENT_OK;
         const char* telemetryMessageFormat = "{\"%s\":%s}";
         size_t telemetryMessageLen = (strlen(tname) + strlen(out) + strlen(telemetryMessageFormat) + 1);
         char  * telemetryMessage = (char*) malloc(sizeof(char) * telemetryMessageLen);
@@ -200,7 +200,7 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
                                                                   reinterpret_cast<const unsigned char*> (telemetryMessage),
                                                                   telemetryMessageLen,
                                                                   nullptr,
-                                                                  nullptr)) != DIGITALTWIN_CLIENT_OK) {
+                                                                  nullptr)) != IOTHUB_CLIENT_OK) {
 
             LogError("mqtt-pnp: Error sending telemetry %s, result=%d", tname, res);
         } else {

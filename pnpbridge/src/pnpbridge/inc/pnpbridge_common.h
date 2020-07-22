@@ -41,14 +41,17 @@ extern "C"
 #include <iothub_client_options.h>
 #include <iothubtransportmqtt.h>
 
-#include <digitaltwin_device_client.h>
-#include <digitaltwin_interface_client.h>
-
 #include "parson.h"
+
+// PnP helper utilities.
+#include "pnp_device_client_helpers.h"
+#include "pnp_protocol_helpers.h"
 
 #include <assert.h>
 
 #define DIGITALTWIN_MODULE_CLIENT_HANDLE void*
+
+#define PNPBRIDGE_CLIENT_HANDLE void*
 
 #define PNPBRIDGE_RESULT_VALUES \
     PNPBRIDGE_OK, \
@@ -62,8 +65,9 @@ extern "C"
 
 MU_DEFINE_ENUM(PNPBRIDGE_RESULT, PNPBRIDGE_RESULT_VALUES);
 
-#define PNPBRIDGE_SUCCESS(Result) (Result == DIGITALTWIN_CLIENT_OK)
+#define PNPBRIDGE_SUCCESS(Result) (Result == IOTHUB_CLIENT_OK)
 #include "configuration_parser.h"
+#include "pnpadapter_manager.h"
 
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
 
@@ -125,8 +129,6 @@ typedef struct _MX_IOT_HANDLE_TAG {
             // connection to iot device
             IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle;
 
-            // Handle representing PnpDeviceClient
-            DIGITALTWIN_DEVICE_CLIENT_HANDLE PnpDeviceClientHandle;
         } IotDevice;
 
         struct IotModule {
@@ -144,11 +146,32 @@ typedef struct _MX_IOT_HANDLE_TAG {
     bool DigitalTwinClientInitialized;
 } MX_IOT_HANDLE_TAG;
 
-DIGITALTWIN_CLIENT_RESULT
-PnpBridge_RegisterInterfaces(
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces,
-    unsigned int interfaceCount
-);
+typedef enum PNP_BRIDGE_STATE {
+    PNP_BRIDGE_UNINITIALIZED,
+    PNP_BRIDGE_INITIALIZED,
+    PNP_BRIDGE_TEARING_DOWN,
+    PNP_BRIDGE_DESTROYED
+} PNP_BRIDGE_STATE;
+
+// Device aggregator context
+typedef struct _PNP_BRIDGE {
+    MX_IOT_HANDLE_TAG IotHandle;
+
+    PPNP_ADAPTER_MANAGER PnpMgr;
+
+    PNPBRIDGE_CONFIGURATION Configuration;
+
+    COND_HANDLE ExitCondition;
+
+    LOCK_HANDLE ExitLock;
+} PNP_BRIDGE, *PPNP_BRIDGE;
+
+
+void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
+// Globals PNP bridge instance
+PPNP_BRIDGE g_PnpBridge;
+PNP_BRIDGE_STATE g_PnpBridgeState;
+bool g_PnpBridgeShutdown;
 
 #ifdef __cplusplus
 }

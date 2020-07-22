@@ -60,7 +60,7 @@ bool ModbusRtu_CloseDevice(
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetReadRequest(
+IOTHUB_CLIENT_RESULT ModbusRtu_SetReadRequest(
     CapabilityType capabilityType,
     void* capability,
     uint8_t unitId)
@@ -75,7 +75,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetReadRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(telemetry->StartAddress, true, &(telemetry->ReadRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for telemetry \"%s\".", telemetry->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             telemetry->ReadRequest.RtuRequest.UnitID = unitId;
@@ -93,7 +93,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetReadRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, true, &(property->ReadRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             property->ReadRequest.RtuRequest.UnitID = unitId;
@@ -106,13 +106,13 @@ DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetReadRequest(
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetWriteRequest(
+IOTHUB_CLIENT_RESULT ModbusRtu_SetWriteRequest(
     CapabilityType capabilityType,
     void* capability,
     char* valueStr)
@@ -130,13 +130,13 @@ DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetWriteRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(command->StartAddress, false, &(command->WriteRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for command \"%s\".", command->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(command->DataType, command->WriteRequest.RtuRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, command->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             command->WriteRequest.RtuRequest.Payload.RegAddr_Hi = (modbusAddress >> 8) & 0xff;
@@ -153,13 +153,13 @@ DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetWriteRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, false, &(property->WriteRequest.RtuRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(property->DataType, property->WriteRequest.RtuRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, property->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             property->WriteRequest.RtuRequest.Payload.RegAddr_Hi = (modbusAddress >> 8) & 0xff;
@@ -171,10 +171,10 @@ DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetWriteRequest(
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 int ModbusRtu_SendRequest(

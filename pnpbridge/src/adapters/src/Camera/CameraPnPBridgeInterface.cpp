@@ -6,7 +6,7 @@
 #include "CameraPnPBridgeInterface.h"
 #include "CameraIotPnpDeviceAdapter.h"
 
-DIGITALTWIN_CLIENT_RESULT Camera_StartPnpInterface(
+IOTHUB_CLIENT_RESULT Camera_StartPnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
 {
@@ -18,14 +18,14 @@ DIGITALTWIN_CLIENT_RESULT Camera_StartPnpInterface(
     {
         if (cameraDevice->Start() != S_OK)
         {
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_StopPnpInterface(
+IOTHUB_CLIENT_RESULT Camera_StopPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
 {
     LogInfo("Stopping PnP interface: %p", pnpInterfaceHandle);
@@ -38,10 +38,10 @@ DIGITALTWIN_CLIENT_RESULT Camera_StopPnpInterface(
         cameraDevice->Stop();
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_DestroyPnpInterface(
+IOTHUB_CLIENT_RESULT Camera_DestroyPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
 {
     LogInfo("Destroying PnP interface: %p", pnpInterfaceHandle);
@@ -58,10 +58,10 @@ DIGITALTWIN_CLIENT_RESULT Camera_DestroyPnpInterface(
         delete cameraDevice;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpInterface(
+IOTHUB_CLIENT_RESULT Camera_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
     const char* componentName,
     const JSON_Object* adapterInterfaceConfig,
@@ -73,7 +73,7 @@ DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpInterface(
     if (!cameraId)
     {
         LogError("Failed to get camera hardware ID from interface defined in config");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
     std::string cameraIdStr(cameraId);
 
@@ -89,24 +89,24 @@ DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpInterface(
     // Interface context now owns object
     newCameraDevice.release();
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpAdapter(
+IOTHUB_CLIENT_RESULT Camera_CreatePnpAdapter(
     const JSON_Object* /* adapterGlobalConfig */,
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */) noexcept
 {
     LogInfo("Creating the camera PnP adapter.");
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_DestroyPnpAdapter(
+IOTHUB_CLIENT_RESULT Camera_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */) noexcept
 {
     LogInfo("Destroying the camera PnP adapter.");
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER CameraPnpInterface = {

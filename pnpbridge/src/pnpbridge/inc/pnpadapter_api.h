@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#pragma once
+
 #ifndef PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
 #define PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
 
@@ -39,9 +41,9 @@ extern "C"
     *
     * @param    AdapterHandle               Handle to the pnp adapter
     *
-    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
-    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_ADAPTER_CREATE) (const JSON_Object* AdapterGlobalConfig, 
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_ADAPTER_CREATE) (const JSON_Object* AdapterGlobalConfig, 
         PNPBRIDGE_ADAPTER_HANDLE AdapterHandle);
 
 
@@ -54,9 +56,9 @@ extern "C"
     *
     * @param    AdapterHandle              Handle to the pnp adapter
     *
-    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
-    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_ADAPTER_DESTOY)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle);
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_ADAPTER_DESTOY)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle);
 
 
     /*
@@ -85,14 +87,14 @@ extern "C"
     *
     * @param    PnpInterfaceHandle        Handle to Pnp interface
     *
-    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure. If this call fails the bridge
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure. If this call fails the bridge
     *           will consider it fatal and fail to start. If this call succeeds it is expected that 
     *           PnpInterfaceClient is set to a valid DIGITALTWIN_INTERFACE_CLIENT_HANDLE.
     */
 
-    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_CREATE)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_CREATE)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
         const char* ComponentName, const JSON_Object* AdapterInterfaceConfig,
-        PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle, DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient);
+        PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle);
 
     /*
     * @brief    PNPBRIDGE_INTERFACE_START starts the pnp interface after it has been registered with Azure Pnp.
@@ -101,10 +103,10 @@ extern "C"
     *
     * @param    PnpInterfaceHandle    Handle to Pnp interface
     *
-    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
 
-    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_START)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_START)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
         PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
 
     /*
@@ -115,9 +117,9 @@ extern "C"
     *
     * @param    PnpInterfaceHandle    Handle to Pnp interface
     *
-    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
-    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_STOP)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_STOP)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
 
     /*
     * @brief    PNPBRIDGE_INTERFACE_DESTROY cleans up the pnp interface context and calls 
@@ -127,9 +129,50 @@ extern "C"
     *
     * @param    PnpInterfaceHandle    Handle to Pnp interface
     *
-    * @returns  DIGITALTWIN_CLIENT_OK on success and other values on failure
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
-    typedef DIGITALTWIN_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_DESTROY)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_DESTROY)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
+
+
+    /*
+    * @brief    PNPBRIDGE_ADAPTER_PROPERTY_UPDATE calls the property update callback for
+    *           a certain adapter type based on the interface handle
+    *
+    *
+    * @param    PnpInterfaceHandle      Handle to Pnp interface
+    *
+    * @param    PropertyName            Name of property for which property updated callback needs to be called
+    *
+    * @param    PropertyValue           JSON_Value Property update
+    *
+    * @param    version                 Version
+    *
+    * @param    userContextCallback     User context callback
+    *
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
+    */
+    typedef void (*PNPBRIDGE_ADAPTER_PROPERTY_UPDATE)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle,
+        const char* PropertyName, JSON_Value* PropertyValue, int version, void* userContextCallback);
+    
+    /*
+    * @brief    PNPBRIDGE_ADAPTER_PROCESS_COMMAND calls the process command callback for
+    *           a certain adapter type based on the interface handle
+    *
+    *
+    * @param    PnpInterfaceHandle     Handle to Pnp interface
+    *
+    * @param    CommandName            Name of command which needs to be processed
+    *
+    * @param    CommandValue           JSON_Value Command root value
+    *
+    * @param    CommandResponse        The resonse to the command which the adapter allocates and populates
+    *
+    * @param    CommandResponseSize    Size of the command response buffer
+    *
+    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
+    */
+    typedef int (*PNPBRIDGE_ADAPTER_PROCESS_COMMAND)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle,
+        const char* CommandName, JSON_Value* CommandValue, unsigned char** CommandResponse, size_t* CommandResponseSize);
 
     /*
         PnpAdapter and Interface Methods
@@ -168,7 +211,7 @@ extern "C"
     /**
     * @brief    PnpInterfaceHandleSetContext sets context on an interface handle
 
-    * @param    InterfaceHandle          Handle to pnp adapter
+    * @param    InterfaceHandle          Handle to pnp interface
     *
     * @param    InterfaceContext         Interface context to set
     *
@@ -182,15 +225,29 @@ extern "C"
     );
 
     /**
-    * @brief    PnpInterfaceHandleGetContext gets adapter context from an adapter handle
+    * @brief    PnpInterfaceHandleGetContext gets interface context from an interface handle
 
-    * @param    AdapterHandle          Handle to pnp interface
+    * @param    InterfaceHandle        Handle to pnp interface
     *
     * @returns  void *                 Interface context
     */
     MOCKABLE_FUNCTION(,
         void*,
         PnpInterfaceHandleGetContext,
+        PNPBRIDGE_INTERFACE_HANDLE, InterfaceHandle
+    );
+
+    
+    /**
+    * @brief    PnpInterfaceHandleGetContext gets adapter context from an adapter handle
+
+    * @param    InterfaceHandle               Handle to pnp interface
+    *
+    * @returns  IOTHUB_DEVICE_CLIENT_HANDLE   IoTHub Device Client handle
+    */
+    MOCKABLE_FUNCTION(,
+        IOTHUB_DEVICE_CLIENT_HANDLE,
+        PnpInterfaceHandleGetIotHubDeviceClient,
         PNPBRIDGE_INTERFACE_HANDLE, InterfaceHandle
     );
 
@@ -208,6 +265,8 @@ extern "C"
         PNPBRIDGE_INTERFACE_STOP stopPnpInterface;
         PNPBRIDGE_INTERFACE_DESTROY destroyPnpInterface;
         PNPBRIDGE_ADAPTER_DESTOY destroyAdapter;
+        PNPBRIDGE_ADAPTER_PROPERTY_UPDATE processPropertyUpdate;
+        PNPBRIDGE_ADAPTER_PROCESS_COMMAND processCommand;
     } PNP_ADAPTER, * PPNP_ADAPTER;
 
 #ifdef __cplusplus

@@ -21,7 +21,7 @@ std::unique_ptr<CameraIotPnpDeviceAdapter> CameraIotPnpDeviceAdapter::MakeUnique
         nullptr,
         newCameraDevice.get(),
         interfaceClient);
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         throw std::exception("Failed to create digital twin interface");
     }
@@ -30,7 +30,7 @@ std::unique_ptr<CameraIotPnpDeviceAdapter> CameraIotPnpDeviceAdapter::MakeUnique
         *interfaceClient,
         CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate,
         static_cast<void*>(newCameraDevice.get()));
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         throw std::exception("Failed to set digital twin command callback");
     }
@@ -39,7 +39,7 @@ std::unique_ptr<CameraIotPnpDeviceAdapter> CameraIotPnpDeviceAdapter::MakeUnique
         *interfaceClient,
         CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate,
         static_cast<void*>(newCameraDevice.get()));
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         throw std::exception("Failed to set digital twin property callback");
     }

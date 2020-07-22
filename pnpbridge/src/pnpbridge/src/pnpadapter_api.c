@@ -30,9 +30,8 @@ void* PnpInterfaceHandleGetContext(PNPBRIDGE_INTERFACE_HANDLE InterfaceHandle)
     return (void*)interfaceContextTag->context;
 }
 
-DIGITALTWIN_DEVICE_CLIENT_HANDLE
-IotHandle_GetPnpDeviceClient(_In_ MX_IOT_HANDLE IotHandle)
+IOTHUB_DEVICE_CLIENT_HANDLE PnpInterfaceHandleGetIotHubDeviceClient(PNPBRIDGE_INTERFACE_HANDLE InterfaceHandle)
 {
-    MX_IOT_HANDLE_TAG* iotHandle = (MX_IOT_HANDLE_TAG*)IotHandle;
-    return iotHandle->u1.IotDevice.PnpDeviceClientHandle;
+    PPNPADAPTER_INTERFACE_TAG interfaceContextTag = (PPNPADAPTER_INTERFACE_TAG)InterfaceHandle;
+    return interfaceContextTag->deviceClient;
 }

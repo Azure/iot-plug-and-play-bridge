@@ -128,19 +128,19 @@ extern "C"
         SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
     } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
+    IOTHUB_CLIENT_RESULT SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
+    IOTHUB_CLIENT_RESULT SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
 
     void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
+    IOTHUB_CLIENT_RESULT SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length);
+    IOTHUB_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length);
 
     byte* SerialPnp_StringSchemaToBinary(Schema Schema, byte* data, int* length);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
+    IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
 
     // Serial Pnp Adapter Config
     #define PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT "com_port"

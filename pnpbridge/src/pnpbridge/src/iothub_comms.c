@@ -17,12 +17,6 @@
 #include "azure_prov_client/prov_transport_mqtt_client.h"
 #include "azure_prov_client/prov_security_factory.h"
 
-DIGITALTWIN_CLIENT_RESULT
-IotComms_DigitalTwinClient_Initalize(
-    MX_IOT_HANDLE_TAG* IotHandle,
-    const char * DigitalTwinModelId
-);
-
 // State of DPS registration process.  We cannot proceed with DPS until we get into the state APP_DPS_REGISTRATION_SUCCEEDED.
 typedef enum APP_DPS_REGISTRATION_STATUS_TAG
 {
@@ -211,59 +205,18 @@ exit:
 #endif // ENABLE_IOT_CENTRAL
 
 
-// Invokes PnP_DeviceClient_RegisterInterfacesAsync, which indicates to Azure IoT which PnP interfaces this device supports.
-// The PnP Handle *is not valid* until this operation has completed (as indicated by the callback appPnpInterfacesRegistered being invoked).
-// In this sample, we block indefinitely but production code should include a timeout.
-int
-IotComms_RegisterPnPInterfaces(
-    MX_IOT_HANDLE_TAG* IotHandle,
-    const char* ModelRepoId,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* Interfaces,
-    int InterfaceCount
-)
-{
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
-
-    IotComms_DigitalTwinClient_Initalize(IotHandle, ModelRepoId);
-
-    if (!IotHandle->IsModule) {
-        result = DigitalTwin_DeviceClient_RegisterInterfaces(
-            IotHandle->u1.IotDevice.PnpDeviceClientHandle, Interfaces,
-            InterfaceCount);
-    }
-    else {
-        LogError("Module support is not present in public preview");
-        result = DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
-    }
-
-    if (DIGITALTWIN_CLIENT_OK != result) {
-        result = DIGITALTWIN_CLIENT_ERROR;
-    }
-
-    return result;
-}
-
 // InitializeIotHubDeviceHandle initializes underlying IoTHub client, creates a device handle with the specified connection string,
 // and sets some options on this handle prior to beginning.
-IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubDeviceHandle(bool TraceOn, const char* ConnectionString)
+IOTHUB_DEVICE_HANDLE IotComms_InitializeIotHubDeviceHandle(bool TraceOn, const char* ConnectionString, const char* ModelId)
 {
     IOTHUB_DEVICE_HANDLE deviceHandle = NULL;
-    IOTHUB_CLIENT_RESULT iothubClientResult;
 
     // Get connection string from config
-    if ((deviceHandle = IoTHubDeviceClient_CreateFromConnectionString(ConnectionString, MQTT_Protocol)) == NULL)
+    if ((deviceHandle = PnPHelper_CreateDeviceClientHandle(ConnectionString, ModelId, TraceOn,
+            (IOTHUB_CLIENT_DEVICE_METHOD_CALLBACK_ASYNC) PnpAdapterManager_DeviceMethodCallback,
+            (IOTHUB_CLIENT_DEVICE_TWIN_CALLBACK) PnpAdapterManager_DeviceTwinCallback)) == NULL)
     {
-        LogError("Failed to create device handle\n");
-    }
-    else if ((iothubClientResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_LOG_TRACE, &TraceOn)) != IOTHUB_CLIENT_OK)
-    {
-        LogError("Failed to set option %s, error=%d\n", OPTION_LOG_TRACE, iothubClientResult);
-        IoTHubDeviceClient_Destroy(deviceHandle);
-        deviceHandle = NULL;
-    }
-
-    if (deviceHandle == NULL)
-    {
+        LogError("Failed to create IoT hub device handle\n");
         IoTHub_Deinit();
     }
 
@@ -291,7 +244,7 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotDevice(bool TraceOn, PCONNECTION_PARA
                 sprintf(connectionString, format, ConnectionParams->u1.ConnectionString, ConnectionParams->AuthParameters.u1.DeviceKey);
             }
 
-            handle = IotComms_InitializeIotHubDeviceHandle(TraceOn, connectionString);
+            handle = IotComms_InitializeIotHubDeviceHandle(TraceOn, connectionString, ConnectionParams->RootInterfaceModelId);
 
             if (NULL != format) {
                 free(connectionString);
@@ -318,25 +271,25 @@ IOTHUB_DEVICE_HANDLE IotComms_InitializeIotDevice(bool TraceOn, PCONNECTION_PARA
     return NULL;
 }
 
-DIGITALTWIN_CLIENT_RESULT
+IOTHUB_CLIENT_RESULT
 IotComms_InitializeIotDeviceHandle(
     MX_IOT_HANDLE_TAG* IotHandle,
     bool TraceOn,
     PCONNECTION_PARAMETERS ConnectionParams
 )
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
 
     {
         // Mark this as device handle
         IotHandle->IsModule = false;
 
-    // Connect to Iot Hub Device
-    IotHandle->u1.IotDevice.deviceHandle = IotComms_InitializeIotDevice(TraceOn, ConnectionParams);
-    if (NULL == IotHandle->u1.IotDevice.deviceHandle) {
-        LogError("IotComms_InitializeIotDevice failed\n");
-        result = DIGITALTWIN_CLIENT_ERROR;
-        goto exit;
+        // Connect to Iot Hub Device
+        IotHandle->u1.IotDevice.deviceHandle = IotComms_InitializeIotDevice(TraceOn, ConnectionParams);
+        if (NULL == IotHandle->u1.IotDevice.deviceHandle) {
+            LogError("IotComms_InitializeIotDevice failed\n");
+            result = IOTHUB_CLIENT_ERROR;
+            goto exit;
     }
 
     // We have completed initializing the pnp client
@@ -346,53 +299,11 @@ exit:
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT
-IotComms_DigitalTwinClient_Initalize(
-    MX_IOT_HANDLE_TAG* IotHandle,
-    const char * DigitalTwinModelId
-)
-{
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
 
-    // Create PnpDeviceHandle
-    if (!IotHandle->IsModule) {
-        if (DIGITALTWIN_CLIENT_OK != DigitalTwin_DeviceClient_CreateFromDeviceHandle(
-            IotHandle->u1.IotDevice.deviceHandle, DigitalTwinModelId, &IotHandle->u1.IotDevice.PnpDeviceClientHandle))
-        {
-            LogError("DigitalTwin_DeviceClient_CreateFromDeviceHandle failed\n");
-            result = DIGITALTWIN_CLIENT_ERROR;
-        }
-    }
-    else {
-        result = DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
-    }
-
-    IotHandle->DigitalTwinClientInitialized = (DIGITALTWIN_CLIENT_OK == result);
-
-    return result;
-}
-
-void
-IotComms_DigitalTwinClient_Destroy(
-    MX_IOT_HANDLE_TAG* IotHandle
-)
-{
-    if (NULL != IotHandle->u1.IotDevice.PnpDeviceClientHandle) {
-        if (!IotHandle->IsModule) {
-            DigitalTwin_DeviceClient_Destroy(IotHandle->u1.IotDevice.PnpDeviceClientHandle);
-        }
-        else {
-            LogError("Module support is not present in public preview");
-        }
-    }
-
-    IotHandle->DigitalTwinClientInitialized = false;
-}
-
-DIGITALTWIN_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams)
+IOTHUB_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams)
 {
     if (ConnectionParams->ConnectionType == CONNECTION_TYPE_EDGE_MODULE) {
-        return DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT;
+        return IOTHUB_CLIENT_ERROR;
     }
     else {
         return IotComms_InitializeIotDeviceHandle(IotHandle, TraceOn, ConnectionParams);

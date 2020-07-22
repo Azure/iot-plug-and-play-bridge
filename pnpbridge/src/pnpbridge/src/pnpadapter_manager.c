@@ -12,29 +12,34 @@ extern const int PnpAdapterCount;
 #include "pnpadapter_manager.h"
 #endif
 
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_ValidatePnpAdapter(PPNP_ADAPTER  pnpAdapter) {
+IOTHUB_CLIENT_RESULT PnpAdapterManager_ValidatePnpAdapter(
+    PPNP_ADAPTER  pnpAdapter)
+{
 
     if (NULL == pnpAdapter->identity) {
         LogError("PnpAdapter's Identity field is not initialized");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     if (NULL == pnpAdapter->createAdapter || NULL == pnpAdapter->createPnpInterface || NULL == pnpAdapter->startPnpInterface ||
         NULL == pnpAdapter->stopPnpInterface || NULL == pnpAdapter->destroyPnpInterface || NULL == pnpAdapter->destroyAdapter) {
         LogError("PnpAdapter's callbacks are not initialized");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_InitializeAdapter(PPNP_ADAPTER adapter, PPNP_ADAPTER_TAG adapterTag) {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+IOTHUB_CLIENT_RESULT PnpAdapterManager_InitializeAdapter(
+    PPNP_ADAPTER adapter,
+    PPNP_ADAPTER_TAG adapterTag)
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PPNP_ADAPTER_TAG adapterT = NULL;
 
     adapterT = calloc(1, sizeof(PNP_ADAPTER_TAG));
     if (NULL == adapterT) {
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -42,7 +47,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_InitializeAdapter(PPNP_ADAPTER adapt
     adapterT->InterfaceListLock = Lock_Init();
     adapterT->pnpInterfaceList = singlylinkedlist_create();
     if (NULL == adapterT->InterfaceListLock) {
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
     }
 
     adapterTag = adapterT;
@@ -50,7 +55,9 @@ exit:
     return result;
 }
 
-void PnpAdapterManager_ReleaseAdapterInterfaces(PPNP_ADAPTER_TAG adapterTag) {
+void PnpAdapterManager_ReleaseAdapterInterfaces(
+    PPNP_ADAPTER_TAG adapterTag)
+{
     if (NULL == adapterTag) {
         return;
     }
@@ -72,35 +79,40 @@ void PnpAdapterManager_ReleaseAdapterInterfaces(PPNP_ADAPTER_TAG adapterTag) {
     }
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(const char* adapterId, PPNP_ADAPTER* adapter)
+IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(
+    const char* adapterId,
+    PPNP_ADAPTER* adapter)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_INVALID_ARG;
     PPNP_ADAPTER pnpAdapter = NULL;
     for (int i = 0; i < PnpAdapterCount; i++) {
         pnpAdapter = PNP_ADAPTER_MANIFEST[i];
         if (0 == strcmp(pnpAdapter->identity, adapterId))
         {
             *adapter = pnpAdapter;
-            result = DIGITALTWIN_CLIENT_OK;
+            result = IOTHUB_CLIENT_OK;
         }
     }
 
     // Validate Pnp Adapter Methods
     result = PnpAdapterManager_ValidatePnpAdapter(pnpAdapter);
-    if (DIGITALTWIN_CLIENT_OK != result) {
+    if (IOTHUB_CLIENT_OK != result) {
         LogError("PnpAdapter structure is not initialized properly");
     }
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateAdapter(const char* adapterId, PPNP_ADAPTER_CONTEXT_TAG* adapterContext, JSON_Value* config)
+IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateAdapter(
+    const char* adapterId,
+    PPNP_ADAPTER_CONTEXT_TAG* adapterContext,
+    JSON_Value* config)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
 
     PPNP_ADAPTER_CONTEXT_TAG pnpAdapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)malloc(sizeof(PNP_ADAPTER_CONTEXT_TAG));
     if (pnpAdapterHandle == NULL)
     {
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         LogError("Couldn't allocate memory for PNP_ADAPTER_CONTEXT_TAG");
         goto exit;
     }
@@ -111,7 +123,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateAdapter(const char* adapterId,
     pnpAdapterHandle->adapter = (PPNP_ADAPTER_TAG)malloc(sizeof(PNP_ADAPTER_TAG));
     if (pnpAdapterHandle->adapter == NULL)
     {
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         LogError("Couldn't allocate memory for PNP_ADAPTER_TAG");
         goto exit;
     }
@@ -127,7 +139,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateAdapter(const char* adapterId,
     pnpAdapterHandle->adapter->InterfaceListLock = Lock_Init();
     pnpAdapterHandle->adapter->pnpInterfaceList = singlylinkedlist_create();
     if (NULL == pnpAdapterHandle->adapter->InterfaceListLock) {
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -149,7 +161,9 @@ exit:
     return result;
 }
 
-bool PnpAdapterManager_AdapterCreated(PPNP_ADAPTER_MANAGER adapterMgr, const char* adapterId)
+bool PnpAdapterManager_AdapterCreated(
+    PPNP_ADAPTER_MANAGER adapterMgr,
+    const char* adapterId)
 {
     LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
 
@@ -168,13 +182,16 @@ bool PnpAdapterManager_AdapterCreated(PPNP_ADAPTER_MANAGER adapterMgr, const cha
     return false;
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateManager(PPNP_ADAPTER_MANAGER* adapterMgr, JSON_Value* config) {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateManager(
+    PPNP_ADAPTER_MANAGER* adapterMgr,
+    JSON_Value* config)
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PPNP_ADAPTER_MANAGER adapterManager = NULL;
 
     adapterManager = (PPNP_ADAPTER_MANAGER)malloc(sizeof(PNP_ADAPTER_MANAGER));
     if (NULL == adapterManager) {
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -183,12 +200,9 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateManager(PPNP_ADAPTER_MANAGER* 
     JSON_Array* devices = Configuration_GetDevices(config);
     if (NULL == devices) {
         LogError("No configured devices in the pnpbridge config");
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
-
-    // Pre-allocate contiguous memory for maximum number of registerable devices
-    adapterManager->PnpInterfacesRegistrationList = calloc(json_array_get_count(devices), sizeof(DIGITALTWIN_INTERFACE_CLIENT_HANDLE));
 
     for (size_t i = 0; i < json_array_get_count(devices); i++) {
         JSON_Object* device = json_array_get_object(devices, i);
@@ -202,7 +216,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateManager(PPNP_ADAPTER_MANAGER* 
             PPNP_ADAPTER_CONTEXT_TAG pnpAdapterHandle = NULL;
 
             result = PnpAdapterManager_CreateAdapter(adapterId, &pnpAdapterHandle, config);
-            if (pnpAdapterHandle == NULL || result != DIGITALTWIN_CLIENT_OK)
+            if (pnpAdapterHandle == NULL || result != IOTHUB_CLIENT_OK)
             {
                 LogError("Adapter creation and initialization failed. Destroying all adapters previously created.");
                 goto exit;
@@ -225,7 +239,9 @@ exit:
     return result;
 }
 
-void PnpAdapterManager_ReleaseManager(PPNP_ADAPTER_MANAGER adapterMgr) {
+void PnpAdapterManager_ReleaseManager(
+    PPNP_ADAPTER_MANAGER adapterMgr)
+{
     if (NULL != adapterMgr)
     {
         LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
@@ -248,17 +264,16 @@ void PnpAdapterManager_ReleaseManager(PPNP_ADAPTER_MANAGER adapterMgr) {
         }
         singlylinkedlist_destroy(adapterMgr->PnpAdapterHandleList);
 
-        if (adapterMgr->PnpInterfacesRegistrationList)
-        {
-            free(adapterMgr->PnpInterfacesRegistrationList);
-        }
         free(adapterMgr);
     }
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(PPNP_ADAPTER_MANAGER adapterMgr, const char* adapterIdentity, PPNP_ADAPTER_CONTEXT_TAG* adapterContext)
+IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
+    PPNP_ADAPTER_MANAGER adapterMgr,
+    const char* adapterIdentity,
+    PPNP_ADAPTER_CONTEXT_TAG* adapterContext)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_INVALID_ARG;
     if (NULL != adapterMgr)
     {
         LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
@@ -270,7 +285,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(PPNP_ADAPTER_MANAGE
             if (!strcmp(adapterHandle->adapter->adapter->identity, adapterIdentity))
             {
                 *adapterContext = adapterHandle;
-                result = DIGITALTWIN_CLIENT_OK;
+                result = IOTHUB_CLIENT_OK;
                 break;
             }
 
@@ -282,14 +297,15 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(PPNP_ADAPTER_MANAGE
 
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(PPNP_ADAPTER_MANAGER adapterMgr, JSON_Value* config)
+IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
+    PPNP_ADAPTER_MANAGER adapterMgr, JSON_Value* config)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
 
     JSON_Array* devices = Configuration_GetDevices(config);
     if (NULL == devices) {
         LogError("No configured devices in the pnpbridge config");
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -304,33 +320,21 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(PPNP_ADAPTER_MANAGE
 
         result = PnpAdapterManager_GetAdapterHandle(adapterMgr, adapterId, &adapterHandle);
 
-        if (DIGITALTWIN_CLIENT_OK == result)
+        if (IOTHUB_CLIENT_OK == result)
         {
             PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)malloc(sizeof(PNPADAPTER_INTERFACE_TAG));
 
             if (interfaceHandle != NULL)
             {
-                DIGITALTWIN_INTERFACE_CLIENT_HANDLE digitalTwinInterfaceHandle;
 
                 interfaceHandle->interfaceName = interfaceName;
                 interfaceHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
                 result = adapterHandle->adapter->adapter->createPnpInterface(adapterHandle, interfaceName, deviceAdapterArgs,
-                                                                                interfaceHandle, &digitalTwinInterfaceHandle);
-                if (result == DIGITALTWIN_CLIENT_OK)
+                                                                                interfaceHandle);
+                if (result == IOTHUB_CLIENT_OK)
                 {
-                    if (digitalTwinInterfaceHandle != NULL)
-                    {
-                        interfaceHandle->pnpInterfaceClient = digitalTwinInterfaceHandle;
-                        singlylinkedlist_add(adapterHandle->adapter->pnpInterfaceList, interfaceHandle);
-                        adapterMgr->PnpInterfacesRegistrationList[adapterMgr->NumInterfaces] = digitalTwinInterfaceHandle;
-                        adapterMgr->NumInterfaces++;
-                    }
-                    else
-                    {
-                        LogError("The adapter returned from successful interface creation but interface client handle is invalid");
-                        result = DIGITALTWIN_CLIENT_ERROR;
-                        goto exit;
-                    }
+                    singlylinkedlist_add(adapterHandle->adapter->pnpInterfaceList, interfaceHandle);
+                    adapterMgr->NumInterfaces++;
                 }
                 else
                 {
@@ -341,7 +345,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(PPNP_ADAPTER_MANAGE
             }
             else
             {
-                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                result = IOTHUB_CLIENT_ERROR;
                 goto exit;
             }
         }
@@ -351,27 +355,10 @@ exit:
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT PnPAdapterManager_RegisterInterfaces(PPNP_ADAPTER_MANAGER adapterMgr)
+IOTHUB_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
+    PPNP_ADAPTER_MANAGER adapterMgr)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
-    if (NULL != adapterMgr)
-    {
-        LogInfo("Publishing %d Azure Pnp Interface(s)", adapterMgr->NumInterfaces);
-        result = PnpBridge_RegisterInterfaces(adapterMgr->PnpInterfacesRegistrationList, adapterMgr->NumInterfaces);
-        if (result != DIGITALTWIN_CLIENT_OK)
-        {
-            LogError("Registration failed.");
-            goto exit;
-        }
-    }
-
-exit:
-    return result;
-}
-
-DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_StartInterfaces(PPNP_ADAPTER_MANAGER adapterMgr)
-{
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     if (NULL != adapterMgr)
     {
         LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
@@ -384,6 +371,7 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_StartInterfaces(PPNP_ADAPTER_MANAGER
             while (NULL != interfaceHandleItem)
             {
                 PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
+                interfaceHandle->deviceClient = g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle;
                 result = adapterHandle->adapter->adapter->startPnpInterface(adapterHandle, interfaceHandle);
                 interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
             }
@@ -391,4 +379,170 @@ DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_StartInterfaces(PPNP_ADAPTER_MANAGER
         }
     }
     return result;
+}
+
+IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
+        PPNP_ADAPTER_MANAGER adapterMgr)
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    unsigned int componentNumber = 0;
+    if (NULL != adapterMgr)
+    {
+        adapterMgr->ComponentsInModel = malloc(adapterMgr->NumInterfaces * sizeof(char*));
+        if (NULL == adapterMgr->ComponentsInModel)
+        {
+            result = IOTHUB_CLIENT_ERROR;
+            goto exit;
+        }
+
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
+
+        while (NULL != adapterListItem) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
+            while (NULL != interfaceHandleItem)
+            {
+                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
+                mallocAndStrcpy_s((char**)&adapterMgr->ComponentsInModel[componentNumber++], interfaceHandle->interfaceName);
+                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+            }
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        }
+        if (componentNumber != adapterMgr->NumInterfaces)
+        {
+            result = IOTHUB_CLIENT_ERROR;
+            goto exit;
+        }
+    }
+exit:
+    if (result != IOTHUB_CLIENT_OK && adapterMgr != NULL && adapterMgr->ComponentsInModel != NULL)
+    {
+        for (unsigned int i = 0; i < adapterMgr->NumInterfaces; i++)
+        {
+            free(adapterMgr->ComponentsInModel[i]);
+        }
+        free (adapterMgr->ComponentsInModel);
+    }
+    return result;
+}
+
+int PnpAdapterManager_DeviceMethodCallback(
+    const char* methodName,
+    const unsigned char* payload,
+    size_t size,
+    unsigned char** response,
+    size_t* responseSize,
+    void* userContextCallback)
+{
+    const char *componentName;
+    size_t componentNameSize;
+    const char *pnpCommandName;
+    char* jsonStr = NULL;
+    JSON_Value* commandValue = NULL;
+    int result = PNP_STATUS_SUCCESS;
+    bool processCommandRouted = false;
+
+    // PnP APIs do not set userContextCallback for device method callbacks, ignore this
+    AZURE_UNREFERENCED_PARAMETER(userContextCallback);
+
+    // Parse the methodName into its PnP componentName and pnpCommandName.
+    PnPHelper_ParseCommandName(methodName, (const unsigned char**) (&componentName), &componentNameSize, &pnpCommandName);
+
+    // Parse the JSON of the payload request.
+    if ((jsonStr = PnPHelper_CopyPayloadToString(payload, size)) == NULL)
+    {
+        LogError("Unable to allocate twin buffer");
+        result = PNP_STATUS_INTERNAL_ERROR;
+    }
+    else if ((commandValue = json_parse_string(jsonStr)) == NULL)
+    {
+        LogError("Unable to parse twin JSON");
+        result = PNP_STATUS_INTERNAL_ERROR;
+    }
+    else
+    {
+        if (componentName != NULL)
+        {
+            LogInfo("Received PnP command for component=%.*s, command=%s", (int)componentNameSize, componentName, pnpCommandName);
+            if ((g_PnpBridge != NULL) && (PNP_BRIDGE_INITIALIZED == g_PnpBridgeState) && (g_PnpBridge->PnpMgr != NULL))
+            {
+                LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
+
+                while (NULL != adapterListItem && !processCommandRouted) {
+
+                    PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+                    LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
+                    while (NULL != interfaceHandleItem)
+                    {
+                        PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
+                        if (0 == strcmp(componentName, interfaceHandle->interfaceName))
+                        {
+                            result = adapterHandle->adapter->adapter->processCommand(interfaceHandle, pnpCommandName, commandValue, response, responseSize);
+                            processCommandRouted = true;
+                            break;
+                        }
+                        interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+                    }
+                    adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+void PnpAdapterManager_DeviceTwinCallback(
+    DEVICE_TWIN_UPDATE_STATE updateState,
+    const unsigned char* payload,
+    size_t size,
+    void* userContextCallback)
+{
+    // Invoke PnPHelper_ProcessTwinData to actualy process the data.  PnPHelper_ProcessTwinData uses a visitor pattern to parse
+    // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
+    if (PnPHelper_ProcessTwinData(updateState, payload, size, g_PnpBridge->PnpMgr->ComponentsInModel,
+            g_PnpBridge->PnpMgr->NumInterfaces, PnpAdapterManager_RoutePropertyCallback, userContextCallback) == false)
+    {
+        // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)
+        // there is no action we can take beyond logging.
+        LogError("Unable to process twin json. Ignoring any desired property update requests");
+    }
+}
+
+// PnpAdapterManager_RoutePropertyCallback is the callback function that the PnP helper layer invokes per property update.
+static void PnpAdapterManager_RoutePropertyCallback(
+    const char* componentName,
+    const char* propertyName,
+    JSON_Value* propertyValue,
+    int version,
+    void* userContextCallback)
+{
+    bool propertyUpdateRouted = false;
+
+    if ((g_PnpBridge != NULL) && (PNP_BRIDGE_INITIALIZED == g_PnpBridgeState) && (g_PnpBridge->PnpMgr != NULL))
+    {
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
+
+        while (NULL != adapterListItem && !propertyUpdateRouted) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
+            while (NULL != interfaceHandleItem)
+            {
+                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
+                if (0 == strcmp(componentName, interfaceHandle->interfaceName))
+                {
+                    adapterHandle->adapter->adapter->processPropertyUpdate(interfaceHandle, propertyName, propertyValue, version, userContextCallback);
+                    propertyUpdateRouted = true;
+                    break;
+                }
+                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+            }
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        }
+    }
 }

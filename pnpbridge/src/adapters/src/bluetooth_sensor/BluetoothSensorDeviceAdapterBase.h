@@ -28,11 +28,11 @@ protected:
 
 private:
     static void OnInterfaceRegisteredCallback(
-        DIGITALTWIN_CLIENT_RESULT interfaceStatus,
+        IOTHUB_CLIENT_RESULT interfaceStatus,
         _In_ void* userInterfaceContext);
 
     static void OnTelemetryCallback(
-        _In_ DIGITALTWIN_CLIENT_RESULT telemetryStatus,
+        _In_ IOTHUB_CLIENT_RESULT telemetryStatus,
         _In_ void* userContextCallback);
 
     static void OnPropertyCallback(

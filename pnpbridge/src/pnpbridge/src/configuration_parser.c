@@ -8,13 +8,13 @@ char* getcwd(char* buf, size_t size);
 PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* ConnectionParams)
 {
     PCONNECTION_PARAMETERS connParams = NULL;
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
 
     {
         connParams = (PCONNECTION_PARAMETERS)calloc(1, sizeof(CONNECTION_PARAMETERS));
         if (NULL == connParams) {
             LogError("Failed to allocate CONNECTION_PARAMETERS");
-            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
 
@@ -23,7 +23,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
             const char* connectionTypeStr = json_object_get_string(ConnectionParams, PNP_CONFIG_CONNECTION_TYPE);
             if (NULL == connectionTypeStr) {
                 LogError("%s is not specified in config", PNP_CONFIG_CONNECTION_TYPE);
-                result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                result = IOTHUB_CLIENT_INVALID_ARG;
                 goto exit;
             }
 
@@ -38,7 +38,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
             }
             else {
                 LogError("ConnectionType (%s) is not valid", connectionTypeStr);
-                result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                result = IOTHUB_CLIENT_INVALID_ARG;
                 goto exit;
             }
 
@@ -49,7 +49,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
         connParams->RootInterfaceModelId = json_object_get_string(ConnectionParams, PNP_CONFIG_CONNECTION_ROOT_INTERFACE_MODEL_ID);
         if (NULL == connParams->RootInterfaceModelId) {
             LogError("%s is missing in config", PNP_CONFIG_CONNECTION_ROOT_INTERFACE_MODEL_ID);
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
@@ -59,7 +59,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                 connParams->u1.ConnectionString = json_object_get_string(ConnectionParams, PNP_CONFIG_CONNECTION_TYPE_CONFIG_STRING);
                 if (NULL == connParams->u1.ConnectionString) {
                     LogError("%s is missing", PNP_CONFIG_CONNECTION_TYPE_CONFIG_STRING);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                    result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;
                 }
             }
@@ -71,7 +71,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                 JSON_Object* dpsSettings = json_object_get_object(ConnectionParams, PNP_CONFIG_CONNECTION_TYPE_CONFIG_DPS);
                 if (NULL == dpsSettings) {
                     LogError("%s are missing in config", PNP_CONFIG_CONNECTION_TYPE_CONFIG_DPS);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                    result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;
                 }
 
@@ -80,21 +80,21 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                 dpsParams->GlobalProvUri = json_object_get_string(dpsSettings, PNP_CONFIG_CONNECTION_DPS_GLOBAL_PROV_URI);
                 if (NULL == dpsParams->GlobalProvUri) {
                     LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DPS_GLOBAL_PROV_URI);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                    result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;
                 }
 
                 dpsParams->IdScope = json_object_get_string(dpsSettings, PNP_CONFIG_CONNECTION_DPS_ID_SCOPE);
                 if (NULL == dpsParams->IdScope) {
                     LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DPS_ID_SCOPE);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                    result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;
                 }
 
                 dpsParams->DeviceId = json_object_get_string(dpsSettings, PNP_CONFIG_CONNECTION_DPS_DEVICE_ID);
                 if (NULL == dpsParams->DeviceId) {
                     LogError("%s is missing in config", PNP_CONFIG_CONNECTION_DPS_DEVICE_ID);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                    result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;
                 }
 
@@ -108,14 +108,14 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
             JSON_Object* authParameters = json_object_get_object(ConnectionParams, PNP_CONFIG_CONNECTION_AUTH_PARAMETERS);
             if (NULL == authParameters) {
                 LogError("%s is missing in config", PNP_CONFIG_CONNECTION_AUTH_PARAMETERS);
-                result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                result = IOTHUB_CLIENT_INVALID_ARG;
                 goto exit;
             }
 
             const char* authType = json_object_get_string(authParameters, PNP_CONFIG_CONNECTION_AUTH_TYPE);
             if (NULL == authType) {
                 LogError("%s is not specified in config", PNP_CONFIG_CONNECTION_AUTH_TYPE);
-                result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                result = IOTHUB_CLIENT_INVALID_ARG;
                 goto exit;
             }
 
@@ -127,7 +127,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
             }
             else {
                 LogError("auth_type (%s) is not valid", authType);
-                result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                result = IOTHUB_CLIENT_INVALID_ARG;
                 goto exit;
             }
 
@@ -137,7 +137,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                     const char* deviceKey = json_object_get_string(authParameters, PNP_CONFIG_CONNECTION_AUTH_TYPE_DEVICE_SYMM_KEY);
                     if (NULL == deviceKey) {
                         LogError("%s is missing in config", PNP_CONFIG_CONNECTION_AUTH_TYPE_DEVICE_SYMM_KEY);
-                        result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                        result = IOTHUB_CLIENT_INVALID_ARG;
                         goto exit;
                     }
 
@@ -148,7 +148,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
     }
 exit:
     {
-        if (DIGITALTWIN_CLIENT_OK != result) {
+        if (IOTHUB_CLIENT_OK != result) {
             free(connParams);
             connParams = NULL;
         }
@@ -157,16 +157,16 @@ exit:
     return connParams;
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* filename, JSON_Value** config)
+IOTHUB_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* filename, JSON_Value** config)
 {
     if (NULL == filename) {
         LogError("filename is NULL");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     if (NULL == config) {
         LogError("config is NULL");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     // Check if file exists
@@ -183,7 +183,7 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char*
             if (NULL != workingDir) {
                 free(workingDir);
             }
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
     }
 
@@ -191,28 +191,28 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char*
     *config = json_parse_file(filename);
     if (*config == NULL) {
         LogError("Failed to parse the config file. Please validate the JSON file in a JSON vailidator");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* JsonConfig, PNPBRIDGE_CONFIGURATION* BridgeConfig)
+IOTHUB_CLIENT_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* JsonConfig, PNPBRIDGE_CONFIGURATION* BridgeConfig)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PCONNECTION_PARAMETERS connParams = NULL;
 
     // Check for mandatory parameters
     {
         if (NULL == JsonConfig) {
             LogError("JsonConfig is NULL");
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
         if (NULL == BridgeConfig) {
             LogError("BridgeConfig is NULL");
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
@@ -223,13 +223,13 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* Json
         JSON_Object* pnpBridgeConnectionParameters = json_object_get_object(jsonObject, PNP_CONFIG_CONNECTION_PARAMETERS);
         if (NULL == pnpBridgeConnectionParameters) {
             LogError("%s is missing", PNP_CONFIG_CONNECTION_PARAMETERS);
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
         connParams = PnpBridgeConfig_GetConnectionDetails(pnpBridgeConnectionParameters);
         if (NULL == connParams) {
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
@@ -242,7 +242,7 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* Json
         JSON_Array* devices = Configuration_GetDevices(JsonConfig);
         if (NULL == devices) {
             LogError("No configured devices in the pnpbridge config");
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
@@ -254,14 +254,14 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* Json
                 const char* interfaceName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
                 if (NULL == interfaceName) {
                     LogError("Device at index %zu is missing %s", i, PNP_CONFIG_COMPONENT_NAME);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                    result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;
                 }
 
                 const char* adapterId = json_object_dotget_string(device, PNP_CONFIG_ADAPTER_ID);
                 if (NULL == adapterId) {
                     LogError("Device at index %zu is missing %s", i, PNP_CONFIG_ADAPTER_ID);
-                    result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                    result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;
                 }
             }
@@ -284,20 +284,20 @@ exit:
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char* configString, JSON_Value** config)
+IOTHUB_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char* configString, JSON_Value** config)
 {
     if (NULL == configString || NULL == config) {
         LogError("PnpBridgeConfig_GetJsonValueFromString: Invalid parameters");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     *config = json_parse_string(configString);
     if (*config == NULL) {
         LogError("PnpBridgeConfig_GetJsonValueFromString: Failed to parse config string");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 JSON_Array* Configuration_GetDevices(JSON_Value* config) {

@@ -32,8 +32,9 @@ include_directories(../../deps/azure-iot-sdk-c-pnp/deps/parson)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/azure-macro-utils-c/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
-include_directories(../../deps/azure-iot-sdk-c-pnp/digitaltwin_client/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/samples/pnp/common)
+include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/samples/pnp/pnp_temperature_controller)
 
 include_directories(${pnp_bridge_INC_FOLDER})
 
@@ -67,7 +68,6 @@ set(pnp_bridge_common_libs
     prov_device_client
     prov_mqtt_transport
     utpm
-    digitaltwin_client
 )
 
 add_executable(${PROJECT_NAME}

@@ -14,8 +14,8 @@ extern "C"
 int ModbusRtu_GetHeaderSize(void);
 bool ModbusRtu_CloseDevice(HANDLE hDevice, LOCK_HANDLE lock);
 
-DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, uint8_t unitId);
-DIGITALTWIN_CLIENT_RESULT ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr);
+IOTHUB_CLIENT_RESULT ModbusRtu_SetReadRequest(CapabilityType capabilityType, void* capability, uint8_t unitId);
+IOTHUB_CLIENT_RESULT ModbusRtu_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr);
 int ModbusRtu_SendRequest(HANDLE handler, uint8_t *requestArr, uint32_t arrLen);
 int ModbusRtu_ReadResponse(HANDLE handler, uint8_t *response, uint32_t arrLen);
 

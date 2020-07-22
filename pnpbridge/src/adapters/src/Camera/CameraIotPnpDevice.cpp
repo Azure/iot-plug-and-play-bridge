@@ -121,7 +121,7 @@ HRESULT CameraIotPnpDevice::ReportProperty(
 {
     AutoLock lock(&m_lock);
 
-    DIGITALTWIN_CLIENT_RESULT result;
+    IOTHUB_CLIENT_RESULT result;
 
     AZURE_UNREFERENCED_PARAMETER(readOnly);
     AZURE_UNREFERENCED_PARAMETER(propertyDataLen);
@@ -135,7 +135,7 @@ HRESULT CameraIotPnpDevice::ReportProperty(
                                                                 nullptr,
                                                                 CameraIotPnpDevice_PropertyCallback,
                                                                 (void*)propertyName);
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         LogError("DEVICE_INFO: Reporting property=<%s> failed, error=<%d>", propertyName, result);
     }
@@ -154,7 +154,7 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(
 {
     AutoLock lock(&m_lock);
 
-    DIGITALTWIN_CLIENT_RESULT result;
+    IOTHUB_CLIENT_RESULT result;
 
     RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), m_PnpClientInterface);
 
@@ -168,7 +168,7 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(
                                                             strlen(telemetryMessage),
                                                             CameraIotPnpDevice_TelemetryCallback,
                                                             (void*)telemetryName);
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%d>", telemetryName, result);
     }
@@ -184,7 +184,7 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(_In_ std::string& telemetryName, _In
 {
     AutoLock lock(&m_lock);
 
-    DIGITALTWIN_CLIENT_RESULT result;
+    IOTHUB_CLIENT_RESULT result;
 
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), m_PnpClientInterface);
 
@@ -196,7 +196,7 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(_In_ std::string& telemetryName, _In
                                                             strlen(telemetryMessage),
                                                             CameraIotPnpDevice_TelemetryCallback,
                                                             (void*)telemetryName.c_str());
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%d>", telemetryName.c_str(), result);
     }
@@ -402,7 +402,7 @@ catch (std::exception e)
     return E_UNEXPECTED;
 }
 
-HRESULT             
+HRESULT
 CameraIotPnpDevice::TakePhotoOp(_Out_ std::string& strResponse) try
 {
     ComPtr<IStorageFile> spStorageFile;
@@ -462,7 +462,7 @@ catch (std::exception e)
 
 void __cdecl
 CameraIotPnpDevice::CameraIotPnpDevice_PropertyCallback(
-    _In_ DIGITALTWIN_CLIENT_RESULT pnpReportedStatus,
+    _In_ IOTHUB_CLIENT_RESULT pnpReportedStatus,
     _In_opt_ void* userContextCallback)
 {
     LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpReportedStatus, userContextCallback);
@@ -470,7 +470,7 @@ CameraIotPnpDevice::CameraIotPnpDevice_PropertyCallback(
 
 void __cdecl
 CameraIotPnpDevice::CameraIotPnpDevice_TelemetryCallback(
-    _In_ DIGITALTWIN_CLIENT_RESULT pnpTelemetryStatus,
+    _In_ IOTHUB_CLIENT_RESULT pnpTelemetryStatus,
     _In_opt_ void* userContextCallback)
 {
     UNREFERENCED_PARAMETER(pnpTelemetryStatus);

@@ -45,7 +45,7 @@ bool ModbusTcp_CloseDevice(
     return true;
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetReadRequest(
+IOTHUB_CLIENT_RESULT ModbusTcp_SetReadRequest(
     CapabilityType capabilityType,
     void* capability,
     uint8_t unitId)
@@ -60,7 +60,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetReadRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(telemetry->StartAddress, true, &(telemetry->ReadRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for telemetry \"%s\".", telemetry->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             telemetry->ReadRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -82,7 +82,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetReadRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, true, &(property->ReadRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             property->ReadRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -99,13 +99,13 @@ DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetReadRequest(
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetWriteRequest(
+IOTHUB_CLIENT_RESULT ModbusTcp_SetWriteRequest(
     CapabilityType capabilityType,
     void* capability,
     char* valueStr)
@@ -122,13 +122,13 @@ DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetWriteRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(command->StartAddress, false, &(command->WriteRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for command \"%s\".", command->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(command->DataType, command->WriteRequest.TcpRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, command->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             command->WriteRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -150,13 +150,13 @@ DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetWriteRequest(
             if (!ModbusConnectionHelper_GetFunctionCode(property->StartAddress, false, &(property->WriteRequest.TcpRequest.Payload.FunctionCode), &modbusAddress))
             {
                 LogError("Failed to get Modbus function code for property \"%s\".", property->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             if (!ModbusConnectionHelper_ConvertValueStrToUInt16(property->DataType, property->WriteRequest.TcpRequest.Payload.FunctionCode, valueStr, &binaryData))
             {
                 LogError("Failed to convert data \"%s\" to byte array command \"%s\".", valueStr, property->Name);
-                return DIGITALTWIN_CLIENT_ERROR;
+                return IOTHUB_CLIENT_ERROR;
             }
 
             property->WriteRequest.TcpRequest.MBAP.ProtocolID_Hi = 0x00;
@@ -172,10 +172,10 @@ DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetWriteRequest(
         }
         default:
             LogError("Modbus read if not supported for the capability.");
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 int ModbusTcp_SendRequest(

@@ -1,7 +1,7 @@
 #pragma once
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
+#include <pnpbridge.h>
 #pragma once
 
 #ifdef __cplusplus
@@ -31,7 +31,7 @@ extern "C"
     typedef struct _PNP_ADAPTER_MANAGER {
         unsigned int NumInterfaces;
         SINGLYLINKEDLIST_HANDLE PnpAdapterHandleList;
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfacesRegistrationList;
+        char ** ComponentsInModel;
     } PNP_ADAPTER_MANAGER, * PPNP_ADAPTER_MANAGER;
 
 
@@ -40,7 +40,7 @@ extern "C"
         void* context;
         const char* interfaceName;
         const char* adapterIdentity;
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
+        IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
     } PNPADAPTER_INTERFACE_TAG, * PPNPADAPTER_INTERFACE_TAG;
 
 
@@ -52,9 +52,9 @@ extern "C"
 
     * @param    adapter           Pointer to get back an initialized PPNP_ADAPTER_MANAGER
     *
-    * @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure
+    * @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure
     */
-    DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateManager(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateManager(
         PPNP_ADAPTER_MANAGER* adapter,
         JSON_Value* config);
 
@@ -88,24 +88,49 @@ extern "C"
 
     // PnpAdapterManager utility functions
 
-    DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(
         const char* adapterId,
         PPNP_ADAPTER* adapter);
-    DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateAdapter(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateAdapter(
         const char* adapterId,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext,
         JSON_Value* config);
-    DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
         PPNP_ADAPTER_MANAGER adapterMgr,
         JSON_Value* config);
-    DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
         PPNP_ADAPTER_MANAGER adapterMgr,
         const char* adapterIdentity,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext);
-    DIGITALTWIN_CLIENT_RESULT PnPAdapterManager_RegisterInterfaces(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
         PPNP_ADAPTER_MANAGER adapterMgr);
-    DIGITALTWIN_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
+
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
         PPNP_ADAPTER_MANAGER adapterMgr);
+
+    // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.
+    void PnpAdapterManager_DeviceTwinCallback(
+        DEVICE_TWIN_UPDATE_STATE updateState,
+        const unsigned char* payload,
+        size_t size,
+        void* userContextCallback);
+
+    // Device Method callback is invoked by IoT SDK when a device method arrives.
+    int PnpAdapterManager_DeviceMethodCallback(
+        const char* methodName,
+        const unsigned char* payload,
+        size_t size,
+        unsigned char** response,
+        size_t* responseSize,
+        void* userContextCallback);
+
+    // PnpAdapterManager_RoutePropertyCallback is the callback function that the PnP helper layer routes per property update.
+    static void PnpAdapterManager_RoutePropertyCallback(
+        const char* componentName,
+        const char* propertyName,
+        JSON_Value* propertyValue,
+        int version,
+        void* userContextCallback);
 
 #ifdef __cplusplus
 }

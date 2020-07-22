@@ -146,7 +146,7 @@ void ModbusPnp_PropertyHandler(
 #pragma region ReadOnlyProperty
 
 void ModbusPnp_ReportPropertyUpdatedCallback(
-    DIGITALTWIN_CLIENT_RESULT pnpReportedStatus,
+    IOTHUB_CLIENT_RESULT pnpReportedStatus,
     void* userContextCallback)
 {
     LogInfo("ModbusPnp_ReportPropertyUpdatedCallback called, result=%d, userContextCallback=%p", pnpReportedStatus, userContextCallback);
@@ -157,13 +157,13 @@ int ModbusPnp_ReportReadOnlyProperty(
     char* propertyName,
     char* data)
 {
-    DIGITALTWIN_CLIENT_RESULT pnpClientResult = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT pnpClientResult = IOTHUB_CLIENT_OK;
 
     if (pnpInterface == NULL) {
         return pnpClientResult;
     }
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(pnpInterface, propertyName, (unsigned char*)data, strlen(data), NULL, ModbusPnp_ReportPropertyUpdatedCallback, (void*)propertyName)) != DIGITALTWIN_CLIENT_OK)
+    if ((pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(pnpInterface, propertyName, (unsigned char*)data, strlen(data), NULL, ModbusPnp_ReportPropertyUpdatedCallback, (void*)propertyName)) != IOTHUB_CLIENT_OK)
     {
         LogError("PnP_InterfaceClient_ReportReadOnlyPropertyStatusAsync failed, result=%d\n", pnpClientResult);
     }
@@ -199,7 +199,7 @@ int ModbusPnp_PollingSingleProperty(
     LogInfo("Stopped polling task for property \"%s\".", property->Name);
     free(context);
     ThreadAPI_Exit(THREADAPI_OK);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 #pragma endregion
@@ -207,7 +207,7 @@ int ModbusPnp_PollingSingleProperty(
 #pragma region SendTelemetry
 
 void ModbusPnp_ReportTelemetryCallback(
-    DIGITALTWIN_CLIENT_RESULT pnpSendEventStatus,
+    IOTHUB_CLIENT_RESULT pnpSendEventStatus,
     void* userContextCallback)
 {
     LogInfo("ModbusPnp_ReportTelemetryCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
@@ -218,7 +218,7 @@ int ModbusPnp_ReportTelemetry(
     char* eventName,
     char* data)
 {
-    DIGITALTWIN_CLIENT_RESULT pnpClientResult = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT pnpClientResult = IOTHUB_CLIENT_OK;
 
     if (pnpInterface == NULL) {
         return pnpClientResult;
@@ -227,7 +227,7 @@ int ModbusPnp_ReportTelemetry(
     char telemetryMessageData[512] = {0};
     sprintf(telemetryMessageData, "{\"%s\":%s}", eventName, data);
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), ModbusPnp_ReportTelemetryCallback, (void*)eventName)) != DIGITALTWIN_CLIENT_OK)
+    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), ModbusPnp_ReportTelemetryCallback, (void*)eventName)) != IOTHUB_CLIENT_OK)
     {
         LogError("ModbusPnp_ReportTelemetry failed, result=%d\n", pnpClientResult);
     }
@@ -262,7 +262,7 @@ int ModbusPnp_PollingSingleTelemetry(
     LogInfo("Stopped polling task for telemetry \"%s\".", telemetry->Name);
     free(context);
     ThreadAPI_Exit(THREADAPI_OK);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 #pragma endregion
@@ -276,7 +276,7 @@ void StopPollingTasks()
     }
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
+IOTHUB_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
     void* context)
 {
     PMODBUS_DEVICE_CONTEXT deviceContext = (PMODBUS_DEVICE_CONTEXT)context;
@@ -296,7 +296,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
     {
         deviceContext->PollingTasks = calloc((telemetryCount + propertyCount), sizeof(THREAD_HANDLE));
         if (NULL == deviceContext->PollingTasks) {
-            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            return IOTHUB_CLIENT_ERROR;
         }
     }
 
@@ -371,5 +371,5 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
         }
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }

@@ -26,7 +26,7 @@ static const unsigned char coreDeviceHealth_DeviceStateActive[] = "true";
 static const unsigned char coreDeviceHealth_DeviceStateInactive[] = "false";
 
 void CoreDevice_SetActive(
-    DIGITALTWIN_CLIENT_RESULT pnpReportedStatus,
+    IOTHUB_CLIENT_RESULT pnpReportedStatus,
     void* userContextCallback)
 {
     LogInfo("CoreDevice_ReportPropertyUpdatedCallback called, result=%d, userContextCallback=%p", pnpReportedStatus, userContextCallback);
@@ -35,7 +35,7 @@ void CoreDevice_SetActive(
 }
 
 void CoreDevice_SetInactive(
-    DIGITALTWIN_CLIENT_RESULT pnpReportedStatus,
+    IOTHUB_CLIENT_RESULT pnpReportedStatus,
     void* userContextCallback)
 {
     LogInfo("CoreDevice_ReportPropertyUpdatedCallback called, result=%d, userContextCallback=%p", pnpReportedStatus, userContextCallback);
@@ -52,7 +52,7 @@ CoreDevice_OnDeviceNotification(
     _In_reads_bytes_(eventDataSize) PCM_NOTIFY_EVENT_DATA eventData,
     _In_ DWORD eventDataSize)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PCORE_DEVICE_TAG device = context;
 
     UNREFERENCED_PARAMETER(hNotify);
@@ -63,7 +63,7 @@ CoreDevice_OnDeviceNotification(
         CoreDevice_SendConnectionEventAsync(device->DigitalTwinInterface, "DeviceStatus", "Connected");
         result = DigitalTwin_InterfaceClient_ReportPropertyAsync(device->DigitalTwinInterface, coreDeviceHealth_DeviceStateProperty, coreDeviceHealth_DeviceStateActive,
         sizeof((char*)coreDeviceHealth_DeviceStateActive), NULL, CoreDevice_SetActive, (void*)device);
-        if (result != DIGITALTWIN_CLIENT_OK)
+        if (result != IOTHUB_CLIENT_OK)
         {
             LogError("CoreDevice_OnDeviceNotification: Reporting property=<%s> failed, error=<%d>", coreDeviceHealth_DeviceStateProperty, result);
         }
@@ -78,7 +78,7 @@ CoreDevice_OnDeviceNotification(
         CoreDevice_SendConnectionEventAsync(device->DigitalTwinInterface, "DeviceStatus", "Disconnected");
         result = DigitalTwin_InterfaceClient_ReportPropertyAsync(device->DigitalTwinInterface, coreDeviceHealth_DeviceStateProperty, coreDeviceHealth_DeviceStateInactive,
         strlen((char*)coreDeviceHealth_DeviceStateInactive), NULL, CoreDevice_SetInactive, (void*)device);
-        if (result != DIGITALTWIN_CLIENT_OK)
+        if (result != IOTHUB_CLIENT_OK)
         {
             LogError("CoreDevice_OnDeviceNotification: Reporting property=<%s> failed, error=<%d>", coreDeviceHealth_DeviceStateProperty, result);
         }
@@ -93,7 +93,7 @@ CoreDevice_OnDeviceNotification(
 
 void
 CoreDevice_EventCallbackSent(
-    DIGITALTWIN_CLIENT_RESULT pnpSendEventStatus,
+    IOTHUB_CLIENT_RESULT pnpSendEventStatus,
     void* userContextCallback)
 {
     LogInfo("CoreDevice_EventCallbackSent called, result=%d, userContextCallback=%p",
@@ -108,7 +108,7 @@ CoreDevice_SendConnectionEventAsync(
 {
     int result = 0;
     char msg[CONN_EVENT_SIZE] = { 0 };
-    DIGITALTWIN_CLIENT_RESULT dtResult;
+    IOTHUB_CLIENT_RESULT dtResult;
 
     sprintf_s(msg, CONN_EVENT_SIZE, CONN_FORMAT, EventName, EventData);
 
@@ -118,7 +118,7 @@ CoreDevice_SendConnectionEventAsync(
                     strlen(msg),
                     CoreDevice_EventCallbackSent,
                     (void*)EventName);
-    if (DIGITALTWIN_CLIENT_OK != dtResult) {
+    if (IOTHUB_CLIENT_OK != dtResult) {
         LogError("CoreDevice_SendEventAsync failed, result=%d\n", dtResult);
         result = -1;
     }
@@ -148,13 +148,13 @@ CoreDevice_DeviceNotification(
     return 0;
 }
 
-DIGITALTWIN_CLIENT_RESULT
+IOTHUB_CLIENT_RESULT
 CoreDevice_EnumerateDevices(
     _In_ GUID* InterfaceClassGuid,
     _Inout_ SINGLYLINKEDLIST_HANDLE SupportedInterfaces
 )
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     CONFIGRET cmret = CR_SUCCESS;
     ULONG cchInterfaceIds = 0;
     wchar_t* interfaceIds = NULL;
@@ -177,20 +177,20 @@ CoreDevice_EnumerateDevices(
     singlylinkedlist_add(SupportedInterfaces, interfaceIds);
 
     if (cmret == CR_FAILURE) {
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         LogInfo("CoreDevice_EnumerateDevices: CM_Get_Device_Interface_List failed");
     }
 
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT CoreDevice_DestroyPnpAdapter(
+IOTHUB_CLIENT_RESULT CoreDevice_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
     PCORE_DEVICE_ADAPTER_CONTEXT adapterContext = PnpAdapterHandleGetContext(AdapterHandle);
     if (adapterContext == NULL)
     {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     if (adapterContext->DeviceWatchers != NULL)
@@ -221,14 +221,14 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_DestroyPnpAdapter(
     }
 
     free (adapterContext);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT CoreDevice_CreatePnpAdapter(
+IOTHUB_CLIENT_RESULT CoreDevice_CreatePnpAdapter(
     const JSON_Object* AdapterGlobalConfig,
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     CM_NOTIFY_FILTER cmFilter;
     HCMNOTIFICATION notifyHandle = NULL;
     DWORD cmRet;
@@ -236,7 +236,7 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_CreatePnpAdapter(
     if (NULL == adapterContext)
     {
         LogError("CoreDevice_CreatePnpAdapter: Could not allocate memory for device context.");
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -246,14 +246,14 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_CreatePnpAdapter(
     if (NULL == adapterContext->DeviceWatchers || NULL == adapterContext->SupportedInterfaces)
     {
         LogError("CoreDevice_CreatePnpAdapter: Could not allocate device watcher or supported interfaces list");
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
     if (AdapterGlobalConfig == NULL)
     {
         LogError("CoreDevice_CreatePnpAdapter: Missing associated global parameters in config");
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -264,7 +264,7 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_CreatePnpAdapter(
         const char *interfaceClass = json_array_get_string(interfaceClasses, j);
         if (UuidFromStringA((RPC_CSTR)interfaceClass, &guid) != RPC_S_OK) {
             LogError("CoreDevice_CreatePnpAdapter: UuidFromStringA failed");
-            result = DIGITALTWIN_CLIENT_ERROR;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
 
@@ -282,7 +282,7 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_CreatePnpAdapter(
 
         if (cmRet != CR_SUCCESS) {
             LogError("CoreDevice_CreatePnpAdapter: CM_Register_Notification failed");
-            result = DIGITALTWIN_CLIENT_ERROR;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
 
@@ -294,7 +294,7 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_CreatePnpAdapter(
     PnpAdapterHandleSetContext(AdapterHandle, (void*)adapterContext);
 
 exit:
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         result = CoreDevice_DestroyPnpAdapter(AdapterHandle);
     }
@@ -302,15 +302,15 @@ exit:
 }
 
 static void CoreDevice_InterfaceRegisteredCallback(
-    DIGITALTWIN_CLIENT_RESULT dtInterfaceStatus,
+    IOTHUB_CLIENT_RESULT dtInterfaceStatus,
     void* userInterfaceContext)
 {
     UNREFERENCED_PARAMETER(userInterfaceContext);
-    if (dtInterfaceStatus == DIGITALTWIN_CLIENT_OK)
+    if (dtInterfaceStatus == IOTHUB_CLIENT_OK)
     {
         LogInfo("Core Device Health: Interface registered.");
     }
-    else if (dtInterfaceStatus == DIGITALTWIN_CLIENT_ERROR_INTERFACE_UNREGISTERING)
+    else if (dtInterfaceStatus == IOTHUB_CLIENT_ERROR)
     {
         LogInfo("Core Device Health: Interface received unregistering callback.");
     }
@@ -340,13 +340,13 @@ static void CoreDevice_ProcessCommandUpdate(
     LogInfo("CoreDevice_ProcessCommandUpdate called.");
 }
 
-DIGITALTWIN_CLIENT_RESULT CoreDevice_DestroyPnpInterface(
+IOTHUB_CLIENT_RESULT CoreDevice_DestroyPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
     PCORE_DEVICE_TAG deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
 
     if (NULL == deviceContext) {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     if (NULL != deviceContext->DigitalTwinInterface) {
@@ -363,10 +363,10 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_DestroyPnpInterface(
 
     free(deviceContext);
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT CoreDevice_FindMatchingDeviceInstance(
+IOTHUB_CLIENT_RESULT CoreDevice_FindMatchingDeviceInstance(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* HardwareId,
     char* SymbolicLink
@@ -384,7 +384,7 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_FindMatchingDeviceInstance(
     PCORE_DEVICE_ADAPTER_CONTEXT adapterContext = PnpAdapterHandleGetContext(AdapterHandle);
     if (adapterContext == NULL)
     {
-        return DIGITALTWIN_CLIENT_ERROR;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     if (adapterContext->SupportedInterfaces)
@@ -442,13 +442,13 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_FindMatchingDeviceInstance(
 
     if (symbolicLinkFound)
     {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
-    return DIGITALTWIN_CLIENT_ERROR;
+    return IOTHUB_CLIENT_ERROR;
 }
 
-DIGITALTWIN_CLIENT_RESULT
+IOTHUB_CLIENT_RESULT
 CoreDevice_CreatePnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
@@ -456,7 +456,7 @@ CoreDevice_CreatePnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     CM_NOTIFY_FILTER cmFilter;
     CONFIGRET cmResult;
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
@@ -464,7 +464,7 @@ CoreDevice_CreatePnpInterface(
     if (NULL == deviceContext)
     {
         LogError("Could not allocate memory for device context.");
-        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        return IOTHUB_CLIENT_ERROR;
     }
 
     const char* hardwareId = json_object_dotget_string(AdapterInterfaceConfig, DEVICE_INSTANCE_HARDWARE_ID);
@@ -472,14 +472,14 @@ CoreDevice_CreatePnpInterface(
     if (NULL == hardwareId)
     {
         LogError("Device adapter config needs to specify hardware ID for device.");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     deviceContext->DeviceActive = false;
     result = DigitalTwin_InterfaceClient_Create(ComponentName,
                 CoreDevice_InterfaceRegisteredCallback, (void*)deviceContext, &pnpInterfaceClient);
 
-    if (DIGITALTWIN_CLIENT_OK != result)
+    if (IOTHUB_CLIENT_OK != result)
     {
         LogError("Core Device Health: Error registering pnp interface component %s", ComponentName);
         goto exit;
@@ -487,7 +487,7 @@ CoreDevice_CreatePnpInterface(
     else if ((result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(
                                 pnpInterfaceClient,
                                 CoreDevice_ProcessPropertyUpdate,
-                                (void*)&deviceContext)) != DIGITALTWIN_CLIENT_OK)
+                                (void*)&deviceContext)) != IOTHUB_CLIENT_OK)
     {
         LogError("Core Device Health: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed. error=<%d>", result);
         goto exit;
@@ -495,7 +495,7 @@ CoreDevice_CreatePnpInterface(
     else if ((result = DigitalTwin_InterfaceClient_SetCommandsCallback(
                                 pnpInterfaceClient,
                                 CoreDevice_ProcessCommandUpdate,
-                                (void*)&deviceContext)) != DIGITALTWIN_CLIENT_OK)
+                                (void*)&deviceContext)) != IOTHUB_CLIENT_OK)
     {
         LogError("Core Device Health: DigitalTwin_InterfaceClient_SetCommandsCallback failed. error=<%d>", result);
         goto exit;
@@ -503,7 +503,7 @@ CoreDevice_CreatePnpInterface(
 
     result = CoreDevice_FindMatchingDeviceInstance(AdapterHandle, hardwareId, deviceContext->SymbolicLink);
 
-    if (DIGITALTWIN_CLIENT_OK != result)
+    if (IOTHUB_CLIENT_OK != result)
     {
         LogError("Core Device Health: Couldn't find device with hardware ID %s", hardwareId);
         goto exit;
@@ -524,7 +524,7 @@ CoreDevice_CreatePnpInterface(
     if (CR_SUCCESS != cmResult)
     {
         LogError("Core Device Health: CM_Register_Notification failed");
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -534,7 +534,7 @@ CoreDevice_CreatePnpInterface(
     PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
 
 exit:
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         CoreDevice_DestroyPnpInterface(BridgeInterfaceHandle);
     }
@@ -542,7 +542,7 @@ exit:
 
 }
 
-DIGITALTWIN_CLIENT_RESULT CoreDevice_StartPnpInterface(
+IOTHUB_CLIENT_RESULT CoreDevice_StartPnpInterface(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
@@ -550,14 +550,14 @@ DIGITALTWIN_CLIENT_RESULT CoreDevice_StartPnpInterface(
     PCORE_DEVICE_TAG device = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
     CoreDevice_SendConnectionEventAsync(device->DigitalTwinInterface, "DeviceStatus", "Connected");
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT CoreDevice_StopPnpInterface(
+IOTHUB_CLIENT_RESULT CoreDevice_StopPnpInterface(
     PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
 {
     UNREFERENCED_PARAMETER(PnpInterfaceHandle);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER CoreDeviceHealth = {

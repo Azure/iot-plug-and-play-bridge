@@ -38,8 +38,8 @@ public:
     virtual HRESULT             GetURIOp(_Out_ std::string& strResponse);
 
 
-    static void __cdecl         CameraIotPnpDevice_PropertyCallback(_In_ DIGITALTWIN_CLIENT_RESULT pnpReportedStatus, _In_opt_ void* userContextCallback);
-    static void __cdecl         CameraIotPnpDevice_TelemetryCallback(_In_ DIGITALTWIN_CLIENT_RESULT pnpTelemetryStatus, _In_opt_ void* userContextCallback);
+    static void __cdecl         CameraIotPnpDevice_PropertyCallback(_In_ IOTHUB_CLIENT_RESULT pnpReportedStatus, _In_opt_ void* userContextCallback);
+    static void __cdecl         CameraIotPnpDevice_TelemetryCallback(_In_ IOTHUB_CLIENT_RESULT pnpTelemetryStatus, _In_opt_ void* userContextCallback);
     static void __cdecl         CameraIotPnpDevice_BlobUploadCallback(IOTHUB_CLIENT_FILE_UPLOAD_RESULT result, void* userContextCallback);
 
     HRESULT                     UploadStorageFileToBlob(ABI::Windows::Storage::IStorageFile* pStorageFile);
