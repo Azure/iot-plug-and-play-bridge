@@ -21,8 +21,8 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_ValidatePnpAdapter(
         return IOTHUB_CLIENT_INVALID_ARG;
     }
 
-    if (NULL == pnpAdapter->createAdapter || NULL == pnpAdapter->createPnpInterface || NULL == pnpAdapter->startPnpInterface ||
-        NULL == pnpAdapter->stopPnpInterface || NULL == pnpAdapter->destroyPnpInterface || NULL == pnpAdapter->destroyAdapter) {
+    if (NULL == pnpAdapter->createAdapter || NULL == pnpAdapter->createPnpComponent || NULL == pnpAdapter->startPnpComponent ||
+        NULL == pnpAdapter->stopPnpComponent || NULL == pnpAdapter->destroyPnpComponent || NULL == pnpAdapter->destroyAdapter) {
         LogError("PnpAdapter's callbacks are not initialized");
         return IOTHUB_CLIENT_INVALID_ARG;
     }
@@ -68,8 +68,8 @@ void PnpAdapterManager_ReleaseAdapterInterfaces(
         LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
         while (NULL != handle) {
             PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(handle);
-            adapterTag->adapter->stopPnpInterface(interfaceHandle);
-            adapterTag->adapter->destroyPnpInterface(interfaceHandle);
+            adapterTag->adapter->stopPnpComponent(interfaceHandle);
+            adapterTag->adapter->destroyPnpComponent(interfaceHandle);
             handle = singlylinkedlist_get_next_item(handle);
         }
         Unlock(adapterTag->InterfaceListLock);
@@ -329,7 +329,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
 
                 interfaceHandle->interfaceName = interfaceName;
                 interfaceHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
-                result = adapterHandle->adapter->adapter->createPnpInterface(adapterHandle, interfaceName, deviceAdapterArgs,
+                result = adapterHandle->adapter->adapter->createPnpComponent(adapterHandle, interfaceName, deviceAdapterArgs,
                                                                                 interfaceHandle);
                 if (result == IOTHUB_CLIENT_OK)
                 {
@@ -372,7 +372,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
             {
                 PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
                 interfaceHandle->deviceClient = g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle;
-                result = adapterHandle->adapter->adapter->startPnpInterface(adapterHandle, interfaceHandle);
+                result = adapterHandle->adapter->adapter->startPnpComponent(adapterHandle, interfaceHandle);
                 interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
             }
             adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
@@ -428,6 +428,39 @@ exit:
     return result;
 }
 
+PPNPADAPTER_INTERFACE_TAG PnpAdapterManager_GetComponentHandleFromComponentName(const char * ComponentName)
+{
+    PPNPADAPTER_INTERFACE_TAG componentHandle = NULL;
+    bool componentFound = false;
+    if (NULL != ComponentName)
+    {
+        if ((g_PnpBridge != NULL) && (PNP_BRIDGE_INITIALIZED == g_PnpBridgeState) && (g_PnpBridge->PnpMgr != NULL))
+        {
+            LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
+
+            while (NULL != adapterListItem && !componentFound)
+            {
+                PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+                LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
+                while (NULL != interfaceHandleItem)
+                {
+                    PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
+                    if (0 == strcmp(ComponentName, interfaceHandle->interfaceName))
+                    {
+                        componentHandle = interfaceHandle;
+                        componentFound = true;
+                        break;
+                    }
+                    interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+                }
+                adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+            }
+        }
+    }
+    return componentHandle;
+}
+
 int PnpAdapterManager_DeviceMethodCallback(
     const char* methodName,
     const unsigned char* payload,
@@ -442,7 +475,6 @@ int PnpAdapterManager_DeviceMethodCallback(
     char* jsonStr = NULL;
     JSON_Value* commandValue = NULL;
     int result = PNP_STATUS_SUCCESS;
-    bool processCommandRouted = false;
 
     // PnP APIs do not set userContextCallback for device method callbacks, ignore this
     AZURE_UNREFERENCED_PARAMETER(userContextCallback);
@@ -466,28 +498,11 @@ int PnpAdapterManager_DeviceMethodCallback(
         if (componentName != NULL)
         {
             LogInfo("Received PnP command for component=%.*s, command=%s", (int)componentNameSize, componentName, pnpCommandName);
-            if ((g_PnpBridge != NULL) && (PNP_BRIDGE_INITIALIZED == g_PnpBridgeState) && (g_PnpBridge->PnpMgr != NULL))
+
+            PPNPADAPTER_INTERFACE_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
+            if (componentHandle != NULL)
             {
-                LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
-
-                while (NULL != adapterListItem && !processCommandRouted) {
-
-                    PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
-
-                    LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
-                    while (NULL != interfaceHandleItem)
-                    {
-                        PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
-                        if (0 == strcmp(componentName, interfaceHandle->interfaceName))
-                        {
-                            result = adapterHandle->adapter->adapter->processCommand(interfaceHandle, pnpCommandName, commandValue, response, responseSize);
-                            processCommandRouted = true;
-                            break;
-                        }
-                        interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
-                    }
-                    adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
-                }
+                result = componentHandle->processCommand(componentHandle, pnpCommandName, commandValue, response, responseSize);
             }
         }
     }
@@ -520,29 +535,15 @@ static void PnpAdapterManager_RoutePropertyCallback(
     int version,
     void* userContextCallback)
 {
-    bool propertyUpdateRouted = false;
 
-    if ((g_PnpBridge != NULL) && (PNP_BRIDGE_INITIALIZED == g_PnpBridgeState) && (g_PnpBridge->PnpMgr != NULL))
+    if (componentName != NULL && propertyName != NULL)
     {
-        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
+        LogInfo("Received PnP property update for component=%s, property=%s", componentName, propertyName);
 
-        while (NULL != adapterListItem && !propertyUpdateRouted) {
-
-            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
-
-            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
-            while (NULL != interfaceHandleItem)
-            {
-                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
-                if (0 == strcmp(componentName, interfaceHandle->interfaceName))
-                {
-                    adapterHandle->adapter->adapter->processPropertyUpdate(interfaceHandle, propertyName, propertyValue, version, userContextCallback);
-                    propertyUpdateRouted = true;
-                    break;
-                }
-                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
-            }
-            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        PPNPADAPTER_INTERFACE_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
+        if (componentHandle != NULL)
+        {
+            componentHandle->processPropertyUpdate(componentHandle, propertyName, propertyValue, version, userContextCallback);
         }
     }
 }

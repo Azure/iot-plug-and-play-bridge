@@ -340,10 +340,10 @@ static void CoreDevice_ProcessCommandUpdate(
     LogInfo("CoreDevice_ProcessCommandUpdate called.");
 }
 
-IOTHUB_CLIENT_RESULT CoreDevice_DestroyPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT CoreDevice_DestroyPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    PCORE_DEVICE_TAG deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PCORE_DEVICE_TAG deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
 
     if (NULL == deviceContext) {
         return IOTHUB_CLIENT_OK;
@@ -449,11 +449,11 @@ IOTHUB_CLIENT_RESULT CoreDevice_FindMatchingDeviceInstance(
 }
 
 IOTHUB_CLIENT_RESULT
-CoreDevice_CreatePnpInterface(
+CoreDevice_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
-    const JSON_Object* AdapterInterfaceConfig,
-    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    const JSON_Object* AdapterComponentConfig,
+    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
@@ -467,7 +467,7 @@ CoreDevice_CreatePnpInterface(
         return IOTHUB_CLIENT_ERROR;
     }
 
-    const char* hardwareId = json_object_dotget_string(AdapterInterfaceConfig, DEVICE_INSTANCE_HARDWARE_ID);
+    const char* hardwareId = json_object_dotget_string(AdapterComponentConfig, DEVICE_INSTANCE_HARDWARE_ID);
 
     if (NULL == hardwareId)
     {
@@ -531,41 +531,41 @@ CoreDevice_CreatePnpInterface(
     *PnpInterfaceClient = pnpInterfaceClient;
     deviceContext->DigitalTwinInterface = pnpInterfaceClient;
 
-    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
+    PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
 
 exit:
     if (result != IOTHUB_CLIENT_OK)
     {
-        CoreDevice_DestroyPnpInterface(BridgeInterfaceHandle);
+        CoreDevice_DestroyPnpComponent(BridgeComponentHandle);
     }
     return result;
 
 }
 
-IOTHUB_CLIENT_RESULT CoreDevice_StartPnpInterface(
+IOTHUB_CLIENT_RESULT CoreDevice_StartPnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     UNREFERENCED_PARAMETER(AdapterHandle);
-    PCORE_DEVICE_TAG device = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PCORE_DEVICE_TAG device = PnpComponentHandleGetContext(PnpComponentHandle);
     CoreDevice_SendConnectionEventAsync(device->DigitalTwinInterface, "DeviceStatus", "Connected");
 
     return IOTHUB_CLIENT_OK;
 }
 
-IOTHUB_CLIENT_RESULT CoreDevice_StopPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT CoreDevice_StopPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    UNREFERENCED_PARAMETER(PnpInterfaceHandle);
+    UNREFERENCED_PARAMETER(PnpComponentHandle);
     return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER CoreDeviceHealth = {
     .identity = "core-device-health",
     .createAdapter = CoreDevice_CreatePnpAdapter,
-    .createPnpInterface = CoreDevice_CreatePnpInterface,
-    .startPnpInterface = CoreDevice_StartPnpInterface,
-    .stopPnpInterface = CoreDevice_StopPnpInterface,
-    .destroyPnpInterface = CoreDevice_DestroyPnpInterface,
+    .createPnpComponent = CoreDevice_CreatePnpComponent,
+    .startPnpComponent = CoreDevice_StartPnpComponent,
+    .stopPnpComponent = CoreDevice_StopPnpComponent,
+    .destroyPnpComponent = CoreDevice_DestroyPnpComponent,
     .destroyAdapter = CoreDevice_DestroyPnpAdapter
 };

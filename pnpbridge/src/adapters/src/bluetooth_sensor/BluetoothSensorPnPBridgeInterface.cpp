@@ -15,14 +15,14 @@
 
 InterfaceDescriptorMap g_interfaceDescriptorMap;
 
-IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpInterface(
+IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
-    LogInfo("Starting PnP interface: %p", pnpInterfaceHandle);
+    LogInfo("Starting PnP interface: %p", PnpComponentHandle);
 
-    auto deviceAdapter = static_cast<BluetoothSensorDeviceAdapter*>(PnpInterfaceHandleGetContext(
-        pnpInterfaceHandle));
+    auto deviceAdapter = static_cast<BluetoothSensorDeviceAdapter*>(PnpComponentHandleGetContext(
+        PnpComponentHandle));
     try
     {
         deviceAdapter->StartTelemetryReporting();
@@ -30,7 +30,7 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpInterface(
     catch (std::exception& e)
     {
         LogError("Failed to start BLE sensor reporting for PnP interface %p: %s",
-            pnpInterfaceHandle,
+            PnpComponentHandle,
             e.what());
 
         return IOTHUB_CLIENT_ERROR;
@@ -38,13 +38,13 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpInterface(
     return IOTHUB_CLIENT_OK;
 }
 
-IOTHUB_CLIENT_RESULT BluetoothSensor_StopPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
+IOTHUB_CLIENT_RESULT BluetoothSensor_StopPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
-    LogInfo("Stopping PnP interface: %p", pnpInterfaceHandle);
+    LogInfo("Stopping PnP interface: %p", PnpComponentHandle);
 
-    auto deviceAdapter = static_cast<BluetoothSensorDeviceAdapter*>(PnpInterfaceHandleGetContext(
-        pnpInterfaceHandle));
+    auto deviceAdapter = static_cast<BluetoothSensorDeviceAdapter*>(PnpComponentHandleGetContext(
+        PnpComponentHandle));
     try
     {
         deviceAdapter->StopTelemetryReporting();
@@ -52,7 +52,7 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_StopPnpInterface(
     catch (std::exception& e)
     {
         LogError("Failed to stop BLE sensor reporting for PnP interface %p: %s",
-            pnpInterfaceHandle,
+            PnpComponentHandle,
             e.what());
 
         return IOTHUB_CLIENT_ERROR;
@@ -60,31 +60,31 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_StopPnpInterface(
     return IOTHUB_CLIENT_OK;
 }
 
-IOTHUB_CLIENT_RESULT BluetoothSensor_DestroyPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
+IOTHUB_CLIENT_RESULT BluetoothSensor_DestroyPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
-    LogInfo("Destroying PnP interface: %p", pnpInterfaceHandle);
+    LogInfo("Destroying PnP interface: %p", PnpComponentHandle);
 
-    DigitalTwin_InterfaceClient_Destroy(pnpInterfaceHandle);
-    delete static_cast<BluetoothSensorDeviceAdapter*>(PnpInterfaceHandleGetContext(
-        pnpInterfaceHandle));
+    DigitalTwin_InterfaceClient_Destroy(PnpComponentHandle);
+    delete static_cast<BluetoothSensorDeviceAdapter*>(PnpComponentHandleGetContext(
+        PnpComponentHandle));
 
     return IOTHUB_CLIENT_OK;
 }
 
-IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
+IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
     const char* componentName,
-    const JSON_Object* adapterInterfaceConfig,
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle,
+    const JSON_Object* AdapterComponentConfig,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* pnpInterfaceClient) noexcept
 {
-    LogInfo("Creating PnP interface: %p", pnpInterfaceHandle);
+    LogInfo("Creating PnP interface: %p", PnpComponentHandle);
 
     static constexpr char g_bluetoothAddressName[] = "bluetooth_address";
     static constexpr char g_bluetoothIdentityName[] = "blesensor_identity";
 
-    const auto bluetoothAddressStr = json_object_get_string(adapterInterfaceConfig, g_bluetoothAddressName);
+    const auto bluetoothAddressStr = json_object_get_string(AdapterComponentConfig, g_bluetoothAddressName);
     if (!bluetoothAddressStr)
     {
         LogError("Failed to get bluetooth address from interface defined in config");
@@ -93,7 +93,7 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
 
     const uint64_t bluetoothAddress = std::stoull(bluetoothAddressStr);
 
-    const auto identity = json_object_get_string(adapterInterfaceConfig, g_bluetoothIdentityName);
+    const auto identity = json_object_get_string(AdapterComponentConfig, g_bluetoothIdentityName);
     if (!identity)
     {
         LogError("Failed to get interface identity defined in config");
@@ -118,14 +118,14 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpInterface(
     catch (std::exception& e)
     {
         LogError("Failed to create BLE sensor device adapter for PnP interface %p: %s",
-            pnpInterfaceHandle,
+            PnpComponentHandle,
             e.what());
 
         return IOTHUB_CLIENT_ERROR;
     }
 
     *pnpInterfaceClient = newDeviceAdapter->GetPnpInterfaceClientHandle();
-    PnpInterfaceHandleSetContext(pnpInterfaceHandle, newDeviceAdapter.get());
+    PnpComponentHandleSetContext(PnpComponentHandle, newDeviceAdapter.get());
     // PnP interface now owns the pointer
     newDeviceAdapter.release();
 
@@ -163,9 +163,9 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_DestroyPnpAdapter(
 PNP_ADAPTER BluetoothSensorPnpInterface = {
     "bluetooth-sensor-pnp-adapter",      // identity
     BluetoothSensor_CreatePnpAdapter,    // createAdapter
-    BluetoothSensor_CreatePnpInterface,  // createPnpInterface
-    BluetoothSensor_StartPnpInterface,   // startPnpInterface
-    BluetoothSensor_StopPnpInterface,    // stopPnpInterface
-    BluetoothSensor_DestroyPnpInterface, // destroyPnpInterface
+    BluetoothSensor_CreatePnpComponent,  // createPnpComponent
+    BluetoothSensor_StartPnpComponent,   // startPnpComponent
+    BluetoothSensor_StopPnpComponent,    // stopPnpComponent
+    BluetoothSensor_DestroyPnpComponent, // destroyPnpComponent
     BluetoothSensor_DestroyPnpAdapter    // destroyAdapter
 };

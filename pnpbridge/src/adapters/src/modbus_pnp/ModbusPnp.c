@@ -634,15 +634,15 @@ void Modbus_CleanupPollingTasks(
 }
 
 IOTHUB_CLIENT_RESULT
-Modbus_StartPnpInterface(
+Modbus_StartPnpComponent(
     _In_ PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    _In_ PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
     if (deviceContext == NULL)
     {
-        LogError("Modbus_StartPnpInterface: Device context is null, cannot start interface.");
+        LogError("Modbus_StartPnpComponent: Device context is null, cannot start interface.");
         return IOTHUB_CLIENT_ERROR;
     }
     // Start polling all telemetry
@@ -770,25 +770,25 @@ IOTHUB_CLIENT_RESULT Modbus_RetrieveMatchingInterfaceConfig(
 }
 
 IOTHUB_CLIENT_RESULT Modbus_ParseDeviceConfig(
-    const JSON_Object* AdapterInterfaceConfig,
+    const JSON_Object* AdapterComponentConfig,
     PModbusDeviceConfig DeviceConfig)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
-    if (AdapterInterfaceConfig == NULL || DeviceConfig == NULL)
+    if (AdapterComponentConfig == NULL || DeviceConfig == NULL)
     {
         LogError("Modbus_ParseDeviceConfig: Invalid arguments.");
         return result;
     }
 
-    DeviceConfig->UnitId = (uint8_t)json_object_get_number(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_UNITID);
-    JSON_Object* rtuArgs = json_object_get_object(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_RTU);
+    DeviceConfig->UnitId = (uint8_t)json_object_get_number(AdapterComponentConfig, PNP_CONFIG_ADAPTER_INTERFACE_UNITID);
+    JSON_Object* rtuArgs = json_object_get_object(AdapterComponentConfig, PNP_CONFIG_ADAPTER_INTERFACE_RTU);
     if (NULL != rtuArgs && ModbusPnp_ParseRtuSettings(DeviceConfig, rtuArgs) != IOTHUB_CLIENT_OK) {
         LogError("Failed to parse RTU connection settings.");
         result =  IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
     }
 
-    JSON_Object* tcpArgs = json_object_get_object(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_TCP);
+    JSON_Object* tcpArgs = json_object_get_object(AdapterComponentConfig, PNP_CONFIG_ADAPTER_INTERFACE_TCP);
     if (NULL != tcpArgs && ModbusPnP_ParseTcpSettings(DeviceConfig, tcpArgs) != IOTHUB_CLIENT_OK) {
         LogError("Failed to parse RTU connection settings.");
         result = IOTHUB_CLIENT_INVALID_ARG;
@@ -804,10 +804,10 @@ exit:
     return result;
 }
 
-IOTHUB_CLIENT_RESULT Modbus_DestroyPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT Modbus_DestroyPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
 
     if (NULL == deviceContext) {
         return IOTHUB_CLIENT_OK;
@@ -832,11 +832,11 @@ IOTHUB_CLIENT_RESULT Modbus_DestroyPnpInterface(
 }
 
 IOTHUB_CLIENT_RESULT
-Modbus_CreatePnpInterface(
+Modbus_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
-    const JSON_Object* AdapterInterfaceConfig,
-    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    const JSON_Object* AdapterComponentConfig,
+    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
@@ -851,7 +851,7 @@ Modbus_CreatePnpInterface(
     // Populate interface config from adapter's supported interface definitions
 
     PMODBUS_ADAPTER_CONTEXT adapterContext = PnpAdapterHandleGetContext(AdapterHandle);
-    const char* modbusIdentity = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MODBUS_IDENTITY);
+    const char* modbusIdentity = json_object_dotget_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MODBUS_IDENTITY);
     result = Modbus_RetrieveMatchingInterfaceConfig(modbusIdentity, adapterContext->InterfaceDefinitions, deviceContext);
     if (IOTHUB_CLIENT_OK != result)
     {
@@ -878,7 +878,7 @@ Modbus_CreatePnpInterface(
         goto exit;
     }
     deviceConfig->ConnectionType = UNKOWN;
-    result = Modbus_ParseDeviceConfig(AdapterInterfaceConfig, deviceConfig);
+    result = Modbus_ParseDeviceConfig(AdapterComponentConfig, deviceConfig);
     if (result != IOTHUB_CLIENT_OK)
     {
         LogError("Could not parse device configuration for this modbus interface.");
@@ -1100,7 +1100,7 @@ Modbus_CreatePnpInterface(
     result = DigitalTwin_InterfaceClient_Create(ComponentName, NULL, deviceContext, 
                                                     &pnpInterfaceClient);
     if (IOTHUB_CLIENT_OK != result) {
-        LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");
+        LogError("Modbus_CreatePnpComponent: DigitalTwin_InterfaceClient_Create failed.");
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
@@ -1110,7 +1110,7 @@ Modbus_CreatePnpInterface(
                                                                             ModbusPnp_PropertyHandler, 
                                                                             (void*) deviceContext);
         if (IOTHUB_CLIENT_OK != result) {
-            LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
+            LogError("Modbus_CreatePnpComponent: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
             result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
@@ -1120,7 +1120,7 @@ Modbus_CreatePnpInterface(
         result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, 
                                                                     ModbusPnp_CommandHandler, (void*)deviceContext);
         if (IOTHUB_CLIENT_OK != result) {
-            LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_SetCommandsCallback failed.");
+            LogError("Modbus_CreatePnpComponent: DigitalTwin_InterfaceClient_SetCommandsCallback failed.");
             result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
@@ -1129,21 +1129,21 @@ Modbus_CreatePnpInterface(
     *PnpInterfaceClient = pnpInterfaceClient;
     deviceContext->pnpinterfaceHandle = pnpInterfaceClient;
 
-    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
+    PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
 
 exit:
     if (result != IOTHUB_CLIENT_OK)
     {
-        Modbus_DestroyPnpInterface(BridgeInterfaceHandle);
+        Modbus_DestroyPnpComponent(BridgeComponentHandle);
     }
 
     return result;
 }
 
-IOTHUB_CLIENT_RESULT Modbus_StopPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT Modbus_StopPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
     if (NULL == deviceContext) {
         return IOTHUB_CLIENT_OK;
     }
@@ -1168,9 +1168,9 @@ IOTHUB_CLIENT_RESULT Modbus_StopPnpInterface(
 PNP_ADAPTER ModbusPnpInterface = {
     .identity = "modbus-pnp-interface",
     .createAdapter = Modbus_CreatePnpAdapter,
-    .createPnpInterface = Modbus_CreatePnpInterface,
-    .startPnpInterface = Modbus_StartPnpInterface,
-    .stopPnpInterface = Modbus_StopPnpInterface,
-    .destroyPnpInterface = Modbus_DestroyPnpInterface,
+    .createPnpComponent = Modbus_CreatePnpComponent,
+    .startPnpComponent = Modbus_StartPnpComponent,
+    .stopPnpComponent = Modbus_StopPnpComponent,
+    .destroyPnpComponent = Modbus_DestroyPnpComponent,
     .destroyAdapter = Modbus_DestroyPnpAdapter
 };

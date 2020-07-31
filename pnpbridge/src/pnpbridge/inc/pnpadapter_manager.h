@@ -40,6 +40,8 @@ extern "C"
         void* context;
         const char* interfaceName;
         const char* adapterIdentity;
+        PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK processPropertyUpdate;
+        PNPBRIDGE_COMPONENT_METHOD_CALLBACK processCommand;
         IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
     } PNPADAPTER_INTERFACE_TAG, * PPNPADAPTER_INTERFACE_TAG;
 
@@ -76,8 +78,8 @@ extern "C"
     * @brief    PnpAdapterManager_ReleaseAdapterInterfaces calls each adapter's clean up methods to 
                 release pnp interfaces that were set up by them
     *
-    * @remarks  PnpAdapterManager_ReleaseAdapterInterfaces calls stopPnpInterface and
-                destroyPnpInterface on each created interface
+    * @remarks  PnpAdapterManager_ReleaseAdapterInterfaces calls stopPnpComponent and
+                destroyPnpComponent on each created interface
 
     * @param    adapter           Pointer to an initialized PPNP_ADAPTER_TAG
     *
@@ -107,6 +109,9 @@ extern "C"
 
     IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
         PPNP_ADAPTER_MANAGER adapterMgr);
+
+    PPNPADAPTER_INTERFACE_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
+        const char * ComponentName);
 
     // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.
     void PnpAdapterManager_DeviceTwinCallback(

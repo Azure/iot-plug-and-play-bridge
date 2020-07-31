@@ -169,10 +169,10 @@ The PnP Bridge Adapter interacts with the device using whichever communication p
         const char* identity;
 
         PNPBRIDGE_ADAPTER_CREATE createAdapter;
-        PNPBRIDGE_INTERFACE_CREATE createPnpInterface;
-        PNPBRIDGE_INTERFACE_START startPnpInterface;
-        PNPBRIDGE_INTERFACE_STOP stopPnpInterface;
-        PNPBRIDGE_INTERFACE_DESTROY destroyPnpInterface;
+        PNPBRIDGE_COMPONENT_CREATE createPnpComponent;
+        PNPBRIDGE_COMPONENT_START startPnpComponent;
+        PNPBRIDGE_COMPONENT_STOP stopPnpComponent;
+        PNPBRIDGE_COMPONENT_DESTROY destroyPnpComponent;
         PNPBRIDGE_ADAPTER_DESTOY destroyAdapter;
     } PNP_ADAPTER, * PPNP_ADAPTER;
 
@@ -183,15 +183,15 @@ The PnP Bridge Adapter interacts with the device using whichever communication p
 ### Brief description of the PnP Bridge Adapter interface
 
 1. `PNPBRIDGE_ADAPTER_CREATE` creates the adapter and sets up resources for generic interface management. Adapter may also rely on global adapter parameters for adapter creation. This is called once for a single adapter.
-2. `PNPBRIDGE_INTERFACE_CREATE` creates digital twin client interfaces and binds callback functions. The adapter starts initiating the communication channel (an active connection) to the device. The adapter may set up resources to start the flow telemetry but does not start reporting telemetry until `PNPBRIDGE_INTERFACE_START` is called. This call is made once for each interface component in the configuration file. 
-3. `PNPBRIDGE_INTERFACE_ START` is called to allow the PnP Bridge Adapter to start reporting telemetry from the device to the digital twin client. This call is made once for each interface component in the configuration file.
-4. `PNPBRIDGE_INTERFACE_STOP` stops the flow of telemetry. 
-5. `PNPBRIDGE_INTERFACE_DESTROY` destroys the digital twin client and associated interface resources. This call is made once for each interface component in the configuration file when the bridge tears down or when a fatal error occurs.
+2. `PNPBRIDGE_COMPONENT_CREATE` creates digital twin client interfaces and binds callback functions. The adapter starts initiating the communication channel (an active connection) to the device. The adapter may set up resources to start the flow telemetry but does not start reporting telemetry until `PNPBRIDGE_COMPONENT_START` is called. This call is made once for each interface component in the configuration file. 
+3. `PNPBRIDGE_COMPONENT_START` is called to allow the PnP Bridge Adapter to start reporting telemetry from the device to the digital twin client. This call is made once for each interface component in the configuration file.
+4. `PNPBRIDGE_COMPONENT_STOP` stops the flow of telemetry. 
+5. `PNPBRIDGE_COMPONENT_DESTROY` destroys the digital twin client and associated interface resources. This call is made once for each interface component in the configuration file when the bridge tears down or when a fatal error occurs.
 6. `PNPBRIDGE_ADAPTER_DESTROY` cleans up adapter resources.
 
 ### Bridge Core's Interaction with PnP Bridge Adapters
 
-When the bridge starts, the PnP Bridge Adapter manager looks through each interface component that is in the configuration file and calls `PNPBRIDGE_ADAPTER_CREATE` on the appropriate adapter. The adapter may utilize optional global adapter configuration parameters to set up resources to support the various “interface configurations”. For every device in the configuration file, the manager initiates interface creation by calling the corresponding PnP Bridge Adapter’s `PNPBRIDGE_INTERFACE_CREATE`. The adapter receives optional adapter configuration corresponding to the interface component and may use this information to set up connections with the device after create digital twin client interfaces and bind callback functions for property updates and commands. The establishment of device connections should not block the return of this callback after digital twin interface creation succeeds. This is such that the active device connection is made independent of the active interface client which the bridge expects to create. If a connection fails, this will imply the device is inactive and the adapter could choose to retry making this connection later. Once all the interface components specified in the configuration file are created the PnP Bridge Adapter manager curates and compiles the complete list of interfaces and registers them once with Azure IoT. Registration is an asynchronous and blocking call which on completion trigger a registration callback which is handled by the PnP Bridge Adapter after which it also starts handling property update and command callbacks from the cloud. The adapter manager then calls `PNPBRIDGE_INTERFACE_ START` on each component and the corresponding adapter start reporting telemetry to the digital twin client on the IoT Central / IoT Hub.
+When the bridge starts, the PnP Bridge Adapter manager looks through each interface component that is in the configuration file and calls `PNPBRIDGE_ADAPTER_CREATE` on the appropriate adapter. The adapter may utilize optional global adapter configuration parameters to set up resources to support the various “interface configurations”. For every device in the configuration file, the manager initiates interface creation by calling the corresponding PnP Bridge Adapter’s `PNPBRIDGE_COMPONENT_CREATE`. The adapter receives optional adapter configuration corresponding to the interface component and may use this information to set up connections with the device after create digital twin client interfaces and bind callback functions for property updates and commands. The establishment of device connections should not block the return of this callback after digital twin interface creation succeeds. This is such that the active device connection is made independent of the active interface client which the bridge expects to create. If a connection fails, this will imply the device is inactive and the adapter could choose to retry making this connection later. Once all the interface components specified in the configuration file are created the PnP Bridge Adapter manager curates and compiles the complete list of interfaces and registers them once with Azure IoT. Registration is an asynchronous and blocking call which on completion trigger a registration callback which is handled by the PnP Bridge Adapter after which it also starts handling property update and command callbacks from the cloud. The adapter manager then calls `PNPBRIDGE_INTERFACE_ START` on each component and the corresponding adapter start reporting telemetry to the digital twin client on the IoT Central / IoT Hub.
 
 ### General Guidelines to Design a New PnP Bridge Adapter:
 

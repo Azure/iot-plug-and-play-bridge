@@ -15,13 +15,29 @@ extern "C"
 {
 #endif
 
-    // Pnp interface handle
-    typedef void* PNPBRIDGE_INTERFACE_HANDLE;
-    typedef PNPBRIDGE_INTERFACE_HANDLE* PPNPBRIDGE_INTERFACE_HANDLE;
+    // Pnp component handle
+    typedef void* PNPBRIDGE_COMPONENT_HANDLE;
+    typedef PNPBRIDGE_COMPONENT_HANDLE* PPNPBRIDGE_COMPONENT_HANDLE;
 
     // Pnp adapter handle
     typedef void* PNPBRIDGE_ADAPTER_HANDLE;
     typedef PNPBRIDGE_ADAPTER_HANDLE* PPNPBRIDGE_ADAPTER_HANDLE;
+
+    // Process Command Callback
+    typedef int(*PNPBRIDGE_COMPONENT_METHOD_CALLBACK)(
+        PNPBRIDGE_COMPONENT_HANDLE componentHandle,
+        const char* CommandName,
+        JSON_Value* CommandValue,
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize);
+
+    // Process Property Update Callback
+    typedef void(*PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK)(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        const char* PropertyName,
+        JSON_Value* PropertyValue,
+        int version,
+        void* userContextCallback);
 
     /*
     * @brief    Create is the adapter callback which allocates and initializes the adapter 
@@ -62,117 +78,76 @@ extern "C"
 
 
     /*
-    * @brief    PNPBRIDGE_INTERFACE_CREATE callback is called to create a new azure pnp interface client
-    *           and bind all the interface callback functions with the digital twin client. The pnp adapter
-    *           should call DigitalTwin_InterfaceClient_Create to create the interface client and bind the
-    *           DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback and
-    *           DigitalTwin_InterfaceClient_SetCommandsCallback. The adapter must be ready to receive 
-    *           commands or property updates once it returns from this callback. The adapter should
-    *           wait until PNPBRIDGE_INTERFACE_START callback to start reporting telemetry. This call is
-    *           made once for each component in the configuration file.
+    * @brief    PNPBRIDGE_COMPONENT_CREATE callback is invoked by the pnp bridge to create and allocate 
+    *           device context, set up component resources to handle property update and command callbacks
+    *           from the cloud and bind the callback functions to process property updates and commands
+    *           for the associated component. After the internal creation of component resources in the
+    *           PNPBRIDGE_COMPONENT_CREATE callback, the pnp adapter should set device context on the component
+    *           handle by calling PnpComponentHandleSetContext, bind a callback to handle property updates on
+    *           the component by calling PnpComponentHandleSetPropertyUpdateCallback and bind a callback to
+    *           The adapter must be ready to receive commands or property updates once it returns 
+    *           from this callback. The adapter should wait until PNPBRIDGE_COMPONENT_START callback to
+    *           start reporting telemetry. PNPBRIDGE_COMPONENT_CREATE is invoked once for each component
+    *           in the configuration file.
     *
     *
-    * @param    ComponentName             Component name of the interface from the config file.
+    * @param    ComponentName             Unique name of the component from the configuration file
     *
-    * @param    AdapterHandle             Pnp adapter handle that is associated with the interface.
+    * @param    AdapterHandle             Pnp adapter handle that is associated with the component.
     *                                     Adapter can call PnpAdapterHandleGetContext to get the adapter
                                           context which it may have set previously
     *
     *
-    * @param    AdapterInterfaceConfig    Adapter config that is interface specific (pnp_bridge_adapter_config)
+    * @param    AdapterComponentConfig    Adapter config that is component specific (pnp_bridge_adapter_config)
                                           from the config file
     *
-    * @param    PnpInterfaceClient        DIGITALTWIN_INTERFACE_CLIENT_HANDLE populated from Pnp SDK's 
-                                          DigitalTwin_InterfaceClient_Create
-    *
-    * @param    PnpInterfaceHandle        Handle to Pnp interface
+    * @param    PnpComponentHandle        Handle to Pnp bridge component
     *
     * @returns  IOTHUB_CLIENT_OK on success and other values on failure. If this call fails the bridge
-    *           will consider it fatal and fail to start. If this call succeeds it is expected that 
-    *           PnpInterfaceClient is set to a valid DIGITALTWIN_INTERFACE_CLIENT_HANDLE.
+    *           will consider it fatal and fail to start.
     */
 
-    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_CREATE)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
-        const char* ComponentName, const JSON_Object* AdapterInterfaceConfig,
-        PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle);
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_COMPONENT_CREATE)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
+        const char* ComponentName, const JSON_Object* AdapterComponentConfig,
+        PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle);
 
     /*
-    * @brief    PNPBRIDGE_INTERFACE_START starts the pnp interface after it has been registered with Azure Pnp.
-    *           The pnp adapter should ensure that the interface starts reporting telmetry after this call is 
-    *           made and not before it. This call is made once for each component in the configuration file.
+    * @brief    PNPBRIDGE_COMPONENT_START callback is invoked for each component in the configuration
+    *           file after the IoT hub device client handle associated with the root interface of the
+    *           pnp bridge has been registered with IoT hub. The pnp adapter should ensure that the component
+    *           starts reporting telenetry after this call is made and not before it.
     *
-    * @param    PnpInterfaceHandle    Handle to Pnp interface
+    * @param    PnpComponentHandle    Handle to Pnp component
     *
     * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
 
-    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_START)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
-        PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_COMPONENT_START)(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle, 
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
 
     /*
-    * @brief    PNPBRIDGE_INTERFACE_STOP cleans up all telemetry resouces
-    *           that is associated with this interface. The interface should stop reporting telemetry but
+    * @brief    PNPBRIDGE_COMPONENT_STOP cleans up all telemetry resouces
+    *           that is associated with this component. The component should stop reporting telemetry but
     *           the pnp adpater should be able to handle property update and command callbacks after this
     *           call returns. This call is made once for each component in the configuration file.
     *
-    * @param    PnpInterfaceHandle    Handle to Pnp interface
+    * @param    PnpComponentHandle    Handle to Pnp component
     *
     * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
-    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_STOP)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_COMPONENT_STOP)(PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
 
     /*
-    * @brief    PNPBRIDGE_INTERFACE_DESTROY cleans up the pnp interface context and calls 
-    *           DigitalTwin_InterfaceClient_Destroy on the interface. This call is made once for each 
-    *           component in the configuration file.
+    * @brief    PNPBRIDGE_COMPONENT_DESTROY cleans up the pnp component's device context and other
+    *           resources managed by the adapter that was created during PNPBRIDGE_COMPONENT_CREATE
+    *           This call is made once for each component in the configuration file.
     *
     *
-    * @param    PnpInterfaceHandle    Handle to Pnp interface
-    *
-    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
-    */
-    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_INTERFACE_DESTROY)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle);
-
-
-    /*
-    * @brief    PNPBRIDGE_ADAPTER_PROPERTY_UPDATE calls the property update callback for
-    *           a certain adapter type based on the interface handle
-    *
-    *
-    * @param    PnpInterfaceHandle      Handle to Pnp interface
-    *
-    * @param    PropertyName            Name of property for which property updated callback needs to be called
-    *
-    * @param    PropertyValue           JSON_Value Property update
-    *
-    * @param    version                 Version
-    *
-    * @param    userContextCallback     User context callback
+    * @param    PnpComponentHandle    Handle to Pnp component
     *
     * @returns  IOTHUB_CLIENT_OK on success and other values on failure
     */
-    typedef void (*PNPBRIDGE_ADAPTER_PROPERTY_UPDATE)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle,
-        const char* PropertyName, JSON_Value* PropertyValue, int version, void* userContextCallback);
-    
-    /*
-    * @brief    PNPBRIDGE_ADAPTER_PROCESS_COMMAND calls the process command callback for
-    *           a certain adapter type based on the interface handle
-    *
-    *
-    * @param    PnpInterfaceHandle     Handle to Pnp interface
-    *
-    * @param    CommandName            Name of command which needs to be processed
-    *
-    * @param    CommandValue           JSON_Value Command root value
-    *
-    * @param    CommandResponse        The resonse to the command which the adapter allocates and populates
-    *
-    * @param    CommandResponseSize    Size of the command response buffer
-    *
-    * @returns  IOTHUB_CLIENT_OK on success and other values on failure
-    */
-    typedef int (*PNPBRIDGE_ADAPTER_PROCESS_COMMAND)(PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle,
-        const char* CommandName, JSON_Value* CommandValue, unsigned char** CommandResponse, size_t* CommandResponseSize);
+    typedef IOTHUB_CLIENT_RESULT(*PNPBRIDGE_COMPONENT_DESTROY)(PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
 
     /*
         PnpAdapter and Interface Methods
@@ -180,7 +155,7 @@ extern "C"
 
     /**
     * @brief    PnpAdapterHandleSetContext sets adapter context on an adapter handle. If a context was already set 
-    *           from a previous call to PnpAdapterHandleSetContext, the context set from the latest call will be retained
+    *           from a previous call to PnpAdapterHandleSetContext, the context set from the latest call is retained
 
     * @param    AdapterHandle          Handle to pnp adapter
     *
@@ -209,46 +184,79 @@ extern "C"
     );
 
     /**
-    * @brief    PnpInterfaceHandleSetContext sets context on an interface handle
+    * @brief    PnpComponentHandleSetContext sets device context on a component handle
 
-    * @param    InterfaceHandle          Handle to pnp interface
+    * @param    ComponentHandle          Handle to pnp component
     *
-    * @param    InterfaceContext         Interface context to set
+    * @param    ComponentDeviceContext   Component's device context to set
     *
-    * @returns  void  PnpInterfaceHandleSetContext will always overwrite the interface context
+    * @returns  void  PnpComponentHandleSetContext will always overwrite the device context
     */
     MOCKABLE_FUNCTION(,
         void,
-        PnpInterfaceHandleSetContext,
-        PNPBRIDGE_INTERFACE_HANDLE, InterfaceHandle,
-        void*, InterfaceContext
+        PnpComponentHandleSetContext,
+        PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle,
+        void*, ComponentDeviceContext
     );
 
     /**
-    * @brief    PnpInterfaceHandleGetContext gets interface context from an interface handle
+    * @brief    PnpComponentHandleGetContext gets device context from a component handle
 
-    * @param    InterfaceHandle        Handle to pnp interface
+    * @param    ComponentHandle        Handle to pnp component
     *
-    * @returns  void *                 Interface context
+    * @returns  void *                 Component's device context
     */
     MOCKABLE_FUNCTION(,
         void*,
-        PnpInterfaceHandleGetContext,
-        PNPBRIDGE_INTERFACE_HANDLE, InterfaceHandle
+        PnpComponentHandleGetContext,
+        PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle
     );
 
-    
     /**
-    * @brief    PnpInterfaceHandleGetContext gets adapter context from an adapter handle
+    * @brief    PnpComponentHandleSetPropertyUpdateCallback sets property update callback on the
+    *           component handle to manage cloud to device property updates per component
 
-    * @param    InterfaceHandle               Handle to pnp interface
+    * @param    ComponentHandle        Handle to pnp component
+    *
+    * @param    PropertyUpdateCallback Property update Callback
+    * 
+    * @returns  void   PnpComponentHandleSetPropertyUpdateCallback will always overwrite successfully
+    */
+    MOCKABLE_FUNCTION(,
+        void,
+        PnpComponentHandleSetPropertyUpdateCallback,
+        PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle,
+        PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK, PropertyUpdateCallback
+    );
+
+    /**
+    * @brief    PnpComponentHandleSetCommandCallback sets process command callback on the
+    *           component handle to manage cloud to device command updates per component
+
+    * @param    ComponentHandle        Handle to pnp component
+    *
+    * @param    CommandCallback        Process command callback
+    * 
+    * @returns  void   PnpComponentHandleSetCommandCallback will always overwrite successfully
+    */
+    MOCKABLE_FUNCTION(,
+        void,
+        PnpComponentHandleSetCommandCallback,
+        PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle,
+        PNPBRIDGE_COMPONENT_METHOD_CALLBACK, CommandCallback
+    );
+
+    /**
+    * @brief    PnpComponentHandleGetIotHubDeviceClient gets device client handle from the component handle
+
+    * @param    ComponentHandle               Handle to pnp component
     *
     * @returns  IOTHUB_DEVICE_CLIENT_HANDLE   IoTHub Device Client handle
     */
     MOCKABLE_FUNCTION(,
         IOTHUB_DEVICE_CLIENT_HANDLE,
-        PnpInterfaceHandleGetIotHubDeviceClient,
-        PNPBRIDGE_INTERFACE_HANDLE, InterfaceHandle
+        PnpComponentHandleGetIotHubDeviceClient,
+        PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle
     );
 
 
@@ -260,13 +268,11 @@ extern "C"
         const char* identity;
 
         PNPBRIDGE_ADAPTER_CREATE createAdapter;
-        PNPBRIDGE_INTERFACE_CREATE createPnpInterface;
-        PNPBRIDGE_INTERFACE_START startPnpInterface;
-        PNPBRIDGE_INTERFACE_STOP stopPnpInterface;
-        PNPBRIDGE_INTERFACE_DESTROY destroyPnpInterface;
+        PNPBRIDGE_COMPONENT_CREATE createPnpComponent;
+        PNPBRIDGE_COMPONENT_START startPnpComponent;
+        PNPBRIDGE_COMPONENT_STOP stopPnpComponent;
+        PNPBRIDGE_COMPONENT_DESTROY destroyPnpComponent;
         PNPBRIDGE_ADAPTER_DESTOY destroyAdapter;
-        PNPBRIDGE_ADAPTER_PROPERTY_UPDATE processPropertyUpdate;
-        PNPBRIDGE_ADAPTER_PROCESS_COMMAND processCommand;
     } PNP_ADAPTER, * PPNP_ADAPTER;
 
 #ifdef __cplusplus

@@ -41,11 +41,11 @@ public:
     std::map<std::string, JSON_Value*>    s_AdapterConfigs;
 };
 
-IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     printf("mqtt-pnp: destroying interface component\n");
-    MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpInterfaceHandleGetContext(PnpInterfaceHandle));
+    MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpComponentHandleGetContext(PnpComponentHandle));
     if (NULL == context)
     {
         return IOTHUB_CLIENT_OK;
@@ -75,11 +75,11 @@ IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpAdapter(
 }
 
 IOTHUB_CLIENT_RESULT
-MqttPnp_CreatePnpInterface(
+MqttPnp_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
-    const JSON_Object* AdapterInterfaceConfig,
-    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    const JSON_Object* AdapterComponentConfig,
+    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
@@ -87,15 +87,15 @@ MqttPnp_CreatePnpInterface(
     JSON_Value* adapterConfig = NULL;
     std::map<std::string, JSON_Value*>::iterator mapItem;
 
-    if (NULL!= AdapterInterfaceConfig)
+    if (NULL!= AdapterComponentConfig)
     {
         LogError("Each component requiring the Mqtt adapter needs to specify local adapter args (pnp_bridge_adapter_config)");
         return IOTHUB_CLIENT_INVALID_ARG;
     }
-    const char* mqtt_server = json_object_get_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_SERVER);
-    int mqtt_port = (int) json_object_get_number(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_PORT);
-    const char* protocol = json_object_get_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_PROTOCOL);
-    const char* mqttConfigId = json_object_get_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MQTT_SUPPORTED_CONFIG);
+    const char* mqtt_server = json_object_get_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_SERVER);
+    int mqtt_port = (int) json_object_get_number(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_PORT);
+    const char* protocol = json_object_get_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_PROTOCOL);
+    const char* mqttConfigId = json_object_get_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_SUPPORTED_CONFIG);
 
     MqttPnpAdapter* adapterContext = reinterpret_cast<MqttPnpAdapter*>(PnpAdapterHandleGetContext(AdapterHandle));
     if (adapterContext == NULL)
@@ -185,12 +185,12 @@ MqttPnp_CreatePnpInterface(
 
     *PnpInterfaceClient = pnpInterfaceClient;
     context->s_ProtocolHandler->AssignDigitalTwin(pnpInterfaceClient);
-    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, context);
+    PnpComponentHandleSetContext(BridgeComponentHandle, context);
 
 exit:
     if (result != IOTHUB_CLIENT_OK)
     {
-        MqttPnp_DestroyPnpInterface(BridgeInterfaceHandle);
+        MqttPnp_DestroyPnpComponent(BridgeComponentHandle);
     }
     else
     {
@@ -231,28 +231,28 @@ exit:
 }
 
 IOTHUB_CLIENT_RESULT
-MqttPnp_StartPnpInterface(
+MqttPnp_StartPnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    AZURE_UNREFERENCED_PARAMETER(PnpInterfaceHandle);
+    AZURE_UNREFERENCED_PARAMETER(PnpComponentHandle);
     return IOTHUB_CLIENT_OK;
 }
 
-IOTHUB_CLIENT_RESULT MqttPnp_StopPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT MqttPnp_StopPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    AZURE_UNREFERENCED_PARAMETER(PnpInterfaceHandle);
+    AZURE_UNREFERENCED_PARAMETER(PnpComponentHandle);
     return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER MqttPnpInterface = {
     "mqtt-pnp-interface",
     MqttPnp_CreatePnpAdapter,
-    MqttPnp_CreatePnpInterface,
-    MqttPnp_StartPnpInterface,
-    MqttPnp_StopPnpInterface,
-    MqttPnp_DestroyPnpInterface,
+    MqttPnp_CreatePnpComponent,
+    MqttPnp_StartPnpComponent,
+    MqttPnp_StopPnpComponent,
+    MqttPnp_DestroyPnpComponent,
     MqttPnp_DestroyPnpAdapter
 };

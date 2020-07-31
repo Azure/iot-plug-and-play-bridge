@@ -109,7 +109,7 @@ extern "C"
 
     typedef struct _SERIAL_DEVICE_CONTEXT {
         HANDLE hSerial;
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE PnpInterfaceHandle;
+        DIGITALTWIN_INTERFACE_CLIENT_HANDLE PnpComponentHandle;
 
         byte RxBuffer[MAX_BUFFER_SIZE]; // Temporary buffer that gets filled by the reading thread. TODO: maximum buffer size
         byte* pbMainBuffer;             // pointer used to pass buffers back to the main thread

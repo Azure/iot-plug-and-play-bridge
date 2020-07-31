@@ -7,10 +7,10 @@ Declare a PnP Adapter, also declared in CameraPnPBridgeInterface.cpp and impleme
 PNP_ADAPTER CameraPnpInterface = {
     "camera-pnp-adapter",         // identity
     Camera_CreatePnpAdapter,      // createAdapter
-    Camera_CreatePnpInterface,    // createPnpInterface
-    Camera_StartPnpInterface,     // startPnpInterface
-    Camera_StopPnpInterface,      // stopPnpInterface
-    Camera_DestroyPnpInterface,   // destroyPnpInterface
+    Camera_CreatePnpComponent,    // createPnpComponent
+    Camera_StartPnpComponent,     // startPnpComponent
+    Camera_StopPnpComponent,      // stopPnpComponent
+    Camera_DestroyPnpComponent,   // destroyPnpComponent
     Camera_DestroyPnpAdapter      // destroyAdapter
 };
 ```

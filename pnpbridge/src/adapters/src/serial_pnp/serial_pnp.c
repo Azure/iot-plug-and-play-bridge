@@ -321,7 +321,7 @@ void SerialPnp_UnsolicitedPacket(
         }
         LogInfo("%s: %s", ev->defintion.Name, rxstrdata);
 
-        SerialPnp_SendEventAsync(device->PnpInterfaceHandle, ev->defintion.Name, rxstrdata);
+        SerialPnp_SendEventAsync(device->PnpComponentHandle, ev->defintion.Name, rxstrdata);
 
         free(event_name);
         free(rxData);
@@ -1331,7 +1331,7 @@ static void SerialPnp_PropertyUpdateHandler(
             propertyResponse.statusCode = 200;
             propertyResponse.statusDescription = "Property Updated Successfully";
 
-            pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(deviceContext->PnpInterfaceHandle, dtClientPropertyUpdate->propertyName, 
+            pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(deviceContext->PnpComponentHandle, dtClientPropertyUpdate->propertyName, 
                                     dtClientPropertyUpdate->propertyDesired, dtClientPropertyUpdate->propertyDesiredLen, &propertyResponse, NULL, NULL);
         }
     }
@@ -1386,12 +1386,12 @@ SerialPnp_CommandUpdateHandler(
 }
 
 IOTHUB_CLIENT_RESULT
-SerialPnp_StartPnpInterface(
+SerialPnp_StartPnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
     if (deviceContext == NULL)
     {
         LogError("Device context is null");
@@ -1488,10 +1488,10 @@ void SerialPnp_FreePropertiesDefinition(
     }
 }
 
-IOTHUB_CLIENT_RESULT SerialPnp_StopPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT SerialPnp_StopPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
 
     if (NULL == deviceContext)
     {
@@ -1521,10 +1521,10 @@ IOTHUB_CLIENT_RESULT SerialPnp_StopPnpInterface(
     return IOTHUB_CLIENT_OK;
 }
 
-IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    PSERIAL_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
 
     if (NULL == deviceContext) {
         return IOTHUB_CLIENT_OK;
@@ -1534,7 +1534,7 @@ IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
     // This will block if there are any active callbacks in this interface, and then
     // mark the underlying handle such that no future callbacks shall come to it
 
-    DigitalTwin_InterfaceClient_Destroy(deviceContext->PnpInterfaceHandle);
+    DigitalTwin_InterfaceClient_Destroy(deviceContext->PnpComponentHandle);
 
     if (deviceContext->InterfaceDefinitions)
     {
@@ -1562,11 +1562,11 @@ IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpInterface(
 }
 
 IOTHUB_CLIENT_RESULT
-SerialPnp_CreatePnpInterface(
+SerialPnp_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
-    const JSON_Object* AdapterInterfaceConfig,
-    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
+    const JSON_Object* AdapterComponentConfig,
+    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle,
     DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
@@ -1579,7 +1579,7 @@ SerialPnp_CreatePnpInterface(
     const char* baudRateParam;
     bool useComDeviceInterface = false;
 
-    useComDevInterfaceStr = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_SERIALPNP_USEDEFAULT);
+    useComDevInterfaceStr = json_object_dotget_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_SERIALPNP_USEDEFAULT);
     if ((NULL != useComDevInterfaceStr) && (0 == strcmp(useComDevInterfaceStr, "true")))
     {
         useComDeviceInterface = true;
@@ -1587,7 +1587,7 @@ SerialPnp_CreatePnpInterface(
 
     if (!useComDeviceInterface)
     {
-        port = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT);
+        port = json_object_dotget_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT);
         if (NULL == port)
         {
             LogError("COM port parameter is missing in configuration");
@@ -1596,7 +1596,7 @@ SerialPnp_CreatePnpInterface(
         }
     }
 
-    baudRateParam = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_SERIALPNP_BAUDRATE);
+    baudRateParam = json_object_dotget_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_SERIALPNP_BAUDRATE);
     if (NULL == baudRateParam)
     {
         LogError("Baud rate parameter is missing in configuration");
@@ -1664,7 +1664,7 @@ SerialPnp_CreatePnpInterface(
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
-    deviceContext->PnpInterfaceHandle = NULL;
+    deviceContext->PnpComponentHandle = NULL;
     deviceContext->InterfaceDefinitions = singlylinkedlist_create();
 
     // Open device and store handle in device context
@@ -1682,7 +1682,7 @@ SerialPnp_CreatePnpInterface(
     result = DigitalTwin_InterfaceClient_Create(ComponentName, NULL, deviceContext, &pnpInterfaceClient);
     if (IOTHUB_CLIENT_OK != result)
     {
-        LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");
+        LogError("SerialPnp_CreatePnpComponent: DigitalTwin_InterfaceClient_Create failed.");
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
@@ -1693,7 +1693,7 @@ SerialPnp_CreatePnpInterface(
                                                                           (void*) deviceContext);
         if (IOTHUB_CLIENT_OK != result)
         {
-            LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
+            LogError("SerialPnp_CreatePnpComponent: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
             result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
@@ -1705,21 +1705,21 @@ SerialPnp_CreatePnpInterface(
                                                                  (void*)deviceContext);
         if (IOTHUB_CLIENT_OK != result)
         {
-            LogError("SerialPnp_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
+            LogError("SerialPnp_CreatePnpComponent: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
             result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
     }
 
     // Save the PnpAdapterInterface in device context
-    deviceContext->PnpInterfaceHandle = pnpInterfaceClient;
+    deviceContext->PnpComponentHandle = pnpInterfaceClient;
     *PnpInterfaceClient = pnpInterfaceClient;
-    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
+    PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
 
 exit:
     if (result != IOTHUB_CLIENT_OK)
     {
-        SerialPnp_DestroyPnpInterface(BridgeInterfaceHandle);
+        SerialPnp_DestroyPnpComponent(BridgeComponentHandle);
     }
 
     return result;
@@ -1744,10 +1744,10 @@ IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpAdapter(
 PNP_ADAPTER SerialPnpInterface = {
     .identity = "serial-pnp-interface",
     .createAdapter = SerialPnp_CreatePnpAdapter,
-    .createPnpInterface = SerialPnp_CreatePnpInterface,
-    .startPnpInterface = SerialPnp_StartPnpInterface,
-    .stopPnpInterface = SerialPnp_StopPnpInterface,
-    .destroyPnpInterface = SerialPnp_DestroyPnpInterface,
+    .createPnpComponent = SerialPnp_CreatePnpComponent,
+    .startPnpComponent = SerialPnp_StartPnpComponent,
+    .stopPnpComponent = SerialPnp_StopPnpComponent,
+    .destroyPnpComponent = SerialPnp_DestroyPnpComponent,
     .destroyAdapter = SerialPnp_DestroyPnpAdapter
 };
 

@@ -33,6 +33,18 @@ set(pnp_bridge_h_core_files
     ./inc/pnpbridgeh.h
 )
 
+# Pnp Common Helper C Files
+set(pnp_helper_c_core_files
+    ./common/pnp_device_client_helpers.c
+    ./common/pnp_protocol_helpers.c
+)
+
+# Pnp Common Helper headers
+set(pnp_helper_h_core_files
+    ./common/pnp_device_client_helpers.h
+    ./common/pnp_protocol_helpers.h
+)
+
 # set(install_staticlibs
     # ${PROJECT_NAME}
 # )
@@ -51,6 +63,7 @@ add_definitions(-DPNP_LOGGING_ENABLED)
 # )
 
 set(pnp_bridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
+set(pnp_bridge_common_pnp_inc ${CMAKE_CURRENT_LIST_DIR}/../pnpbridge/common CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
 
 include_directories(inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/deps/parson)
@@ -60,8 +73,8 @@ include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/digitaltwin_client/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/provisioning_client/inc)
-include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/samples/pnp/common)
 include_directories(${pnp_bridge_INC_FOLDER})
+include_directories(${pnp_bridge_common_pnp_inc})
 
 if(WIN32)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/pal/windows)
@@ -69,7 +82,7 @@ endif()
 
 set(pnp_bridge_common_libs
     aziotsharedutil
-    iothub_client 
+    iothub_client
     iothub_client_http_transport
     iothub_client_amqp_transport
     iothub_client_amqp_ws_transport
@@ -94,11 +107,15 @@ endif()
 add_library(${PROJECT_NAME} STATIC 
     ${pnp_bridge_c_core_files}
     ${pnp_bridge_h_core_files}
+    ${pnp_helper_c_core_files}
+    ${pnp_helper_h_core_files}
 )
 
 #add_executable(${PROJECT_NAME}
 #    ${pnp_bridge_c_core_files}
 #    ${pnp_bridge_h_core_files}
+#    ${pnp_helper_c_core_files}
+#    ${pnp_helper_h_core_files}
 #)
 
 add_subdirectory(tests)
