@@ -15,7 +15,7 @@
       }
   },
   "pnp_bridge_debug_trace": false,
-  "pnp_brudge_config_source": "local",
+  "pnp_bridge_config_source": "local",
   "pnp_bridge_interface_components": [
       {
         "_comment": "Component 1 - Modbus Device",

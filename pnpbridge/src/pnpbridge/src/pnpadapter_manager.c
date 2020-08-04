@@ -480,10 +480,10 @@ int PnpAdapterManager_DeviceMethodCallback(
     AZURE_UNREFERENCED_PARAMETER(userContextCallback);
 
     // Parse the methodName into its PnP componentName and pnpCommandName.
-    PnPHelper_ParseCommandName(methodName, (const unsigned char**) (&componentName), &componentNameSize, &pnpCommandName);
+    PnP_ParseCommandName(methodName, (const unsigned char**) (&componentName), &componentNameSize, &pnpCommandName);
 
     // Parse the JSON of the payload request.
-    if ((jsonStr = PnPHelper_CopyPayloadToString(payload, size)) == NULL)
+    if ((jsonStr = PnP_CopyPayloadToString(payload, size)) == NULL)
     {
         LogError("Unable to allocate twin buffer");
         result = PNP_STATUS_INTERNAL_ERROR;
@@ -516,9 +516,9 @@ void PnpAdapterManager_DeviceTwinCallback(
     size_t size,
     void* userContextCallback)
 {
-    // Invoke PnPHelper_ProcessTwinData to actualy process the data.  PnPHelper_ProcessTwinData uses a visitor pattern to parse
+    // Invoke PnP_ProcessTwinData to actualy process the data.  PnP_ProcessTwinData uses a visitor pattern to parse
     // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
-    if (PnPHelper_ProcessTwinData(updateState, payload, size, g_PnpBridge->PnpMgr->ComponentsInModel,
+    if (PnP_ProcessTwinData(updateState, payload, size, g_PnpBridge->PnpMgr->ComponentsInModel,
             g_PnpBridge->PnpMgr->NumInterfaces, PnpAdapterManager_RoutePropertyCallback, userContextCallback) == false)
     {
         // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)

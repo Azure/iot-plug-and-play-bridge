@@ -168,7 +168,7 @@ PnpBridge_Main(const char * ConfigurationFilePath)
 
             result = PnpBridge_RegisterIoTHubHandle();
             if (IOTHUB_CLIENT_OK != result) {
-                LogError("PnpAdapterManager_BuildComponentsInModel failed: %d", result);
+                LogError("PnpBridge_RegisterIoTHubHandle failed: %d", result);
                 goto exit;
             }
 
@@ -191,8 +191,9 @@ PnpBridge_Main(const char * ConfigurationFilePath)
     } 
 exit:
     {
-
-        if (pnpBridge) {
+        if (pnpBridge)
+        {
+            IotComms_DeinitializeIotHandle(&pnpBridge->IotHandle, pnpBridge->Configuration.ConnParams);
             PnpBridge_Release(pnpBridge);
         }
         g_PnpBridge = NULL;
@@ -216,8 +217,6 @@ PnpBridge_Stop()
             Condition_Post(g_PnpBridge->ExitCondition);
             Unlock(g_PnpBridge->ExitLock);
         }
-
-        IoTHub_Deinit();
     }
 }
 

@@ -52,6 +52,10 @@ if(${use_edge_modules})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_EDGE_MODULES")
 endif()
 
+#Enable DPS Provisioning
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_PROV_MODULE_FULL")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_PROV_MODULE_FULL")
+
 include (CTest)
 
 if (MSVC)

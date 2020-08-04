@@ -9,6 +9,7 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
 #include "parson.h"
+#include <iothub_device_client.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -184,7 +185,7 @@ extern "C"
     );
 
     /**
-    * @brief    PnpComponentHandleSetContext sets device context on a component handle
+    * @brief    PnpComponentHandleSetContext sets context on a component handle
 
     * @param    ComponentHandle          Handle to pnp component
     *
@@ -200,7 +201,7 @@ extern "C"
     );
 
     /**
-    * @brief    PnpComponentHandleGetContext gets device context from a component handle
+    * @brief    PnpComponentHandleGetContext gets context from a component handle
 
     * @param    ComponentHandle        Handle to pnp component
     *
@@ -214,7 +215,9 @@ extern "C"
 
     /**
     * @brief    PnpComponentHandleSetPropertyUpdateCallback sets property update callback on the
-    *           component handle to manage cloud to device property updates per component
+    *           component handle to manage cloud to device property updates per component.
+    *           PnpComponentHandleSetPropertyUpdateCallback should be called from a 
+    *           PNPBRIDGE_COMPONENT_CREATE callback
 
     * @param    ComponentHandle        Handle to pnp component
     *
@@ -231,7 +234,9 @@ extern "C"
 
     /**
     * @brief    PnpComponentHandleSetCommandCallback sets process command callback on the
-    *           component handle to manage cloud to device command updates per component
+    *           component handle to manage cloud to device command updates per component.
+    *           PnpComponentHandleSetCommandCallback should be called from a 
+    *           PNPBRIDGE_COMPONENT_CREATE callback
 
     * @param    ComponentHandle        Handle to pnp component
     *

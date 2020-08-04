@@ -35,14 +35,16 @@ set(pnp_bridge_h_core_files
 
 # Pnp Common Helper C Files
 set(pnp_helper_c_core_files
-    ./common/pnp_device_client_helpers.c
-    ./common/pnp_protocol_helpers.c
+    ./common/pnp_device_client_ll.c
+    ./common/pnp_dps_ll.c
+    ./common/pnp_protocol.c
 )
 
 # Pnp Common Helper headers
 set(pnp_helper_h_core_files
-    ./common/pnp_device_client_helpers.h
-    ./common/pnp_protocol_helpers.h
+    ./common/pnp_device_client_ll.h
+    ./common/pnp_dps_ll.h
+    ./common/pnp_protocol.h
 )
 
 # set(install_staticlibs

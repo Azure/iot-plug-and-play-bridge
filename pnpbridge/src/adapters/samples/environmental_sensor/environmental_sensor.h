@@ -9,9 +9,10 @@
 
 #include "environmental_sensor_pnpbridge.h"
 
-// PnP helper utilities.
-#include "pnp_device_client_helpers.h"
-#include "pnp_protocol_helpers.h"
+// PnP utility headers
+#include "pnp_device_client_ll.h"
+#include "pnp_dps_ll.h"
+#include "pnp_protocol.h"
 
 //
 // Application state associated with the particular component. In particular it contains 

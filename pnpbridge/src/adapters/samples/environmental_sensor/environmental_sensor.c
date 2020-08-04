@@ -233,7 +233,7 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
             EnvironmentalSensor->SensorState->customerName[PropertyValueLen] = 0;
             LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: CustomerName sucessfully updated...");
 
-            if ((jsonToSend = PnPHelper_CreateReportedPropertyWithStatus(EnvironmentalSensor->SensorState->componentName, PropertyName, PropertyValueString, 
+            if ((jsonToSend = PnP_CreateReportedPropertyWithStatus(EnvironmentalSensor->SensorState->componentName, PropertyName, PropertyValueString, 
                                                                         PNP_STATUS_SUCCESS, g_environmentalSensorPropertyResponseDescription, version)) == NULL)
             {
                 LogError("Unable to build reported property response");
@@ -302,7 +302,7 @@ static void SampleEnvironmentalSensor_BrightnessCallback(
         {
             LogError("Unable to create target brightness string for reporting result");
         }
-        else if ((jsonToSend = PnPHelper_CreateReportedPropertyWithStatus(EnvironmentalSensor->SensorState->componentName,
+        else if ((jsonToSend = PnP_CreateReportedPropertyWithStatus(EnvironmentalSensor->SensorState->componentName,
                     PropertyName, targetBrightnessString, PNP_STATUS_SUCCESS, g_environmentalSensorPropertyResponseDescription,
                     version)) == NULL)
         {
@@ -338,7 +338,7 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_ReportDeviceStateAsync(
     IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
     STRING_HANDLE jsonToSend = NULL;
 
-    if ((jsonToSend = PnPHelper_CreateReportedProperty(ComponentName, sampleDeviceStateProperty, (const char*) sampleDeviceStateData)) == NULL)
+    if ((jsonToSend = PnP_CreateReportedProperty(ComponentName, sampleDeviceStateProperty, (const char*) sampleDeviceStateData)) == NULL)
     {
         LogError("Unable to build reported property response for propertyName=%s, propertyValue=%s", sampleDeviceStateProperty, sampleDeviceStateData);
     }
@@ -463,9 +463,9 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_SendTelemetryMessagesAsync(
             currentTemperature, SampleEnvironmentalSensor_HumidityTelemetry, currentHumidity);
 
 
-    if ((messageHandle = PnPHelper_CreateTelemetryMessageHandle(EnvironmentalSensor->SensorState->componentName, currentMessage)) == NULL)
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(EnvironmentalSensor->SensorState->componentName, currentMessage)) == NULL)
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: PnPHelper_CreateTelemetryMessageHandle failed.");
+        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: PnP_CreateTelemetryMessageHandle failed.");
     }
     else if ((result = IoTHubDeviceClient_SendEventAsync(EnvironmentalSensor->DeviceClient, messageHandle,
             SampleEnvironmentalSensor_TelemetryCallback, EnvironmentalSensor)) != IOTHUB_CLIENT_OK)

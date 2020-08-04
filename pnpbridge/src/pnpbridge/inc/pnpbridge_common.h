@@ -44,8 +44,9 @@ extern "C"
 #include "parson.h"
 
 // PnP helper utilities.
-#include "pnp_device_client_helpers.h"
-#include "pnp_protocol_helpers.h"
+#include "pnp_device_client_ll.h"
+#include "pnp_dps_ll.h"
+#include "pnp_protocol.h"
 
 #include <assert.h>
 
@@ -143,7 +144,6 @@ typedef struct _MX_IOT_HANDLE_TAG {
     // Change this to enum
     bool IsModule;
     bool DeviceClientInitialized;
-    bool DigitalTwinClientInitialized;
 } MX_IOT_HANDLE_TAG;
 
 typedef enum PNP_BRIDGE_STATE {
