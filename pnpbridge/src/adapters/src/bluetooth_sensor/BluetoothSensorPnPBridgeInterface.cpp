@@ -11,6 +11,7 @@
 
 #include "InterfaceDescriptor.h"
 #include "BluetoothSensorDeviceAdapter.h"
+#include "BluetoothSensorDeviceAdapterBase.h"
 #include "BluetoothSensorPnPBridgeInterface.h"
 
 InterfaceDescriptorMap g_interfaceDescriptorMap;
@@ -23,6 +24,10 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpComponent(
 
     auto deviceAdapter = static_cast<BluetoothSensorDeviceAdapter*>(PnpComponentHandleGetContext(
         PnpComponentHandle));
+    
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    deviceAdapter->SetIotHubDeviceClientHandle(deviceHandle);
+
     try
     {
         deviceAdapter->StartTelemetryReporting();
@@ -65,7 +70,6 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_DestroyPnpComponent(
 {
     LogInfo("Destroying PnP interface: %p", PnpComponentHandle);
 
-    DigitalTwin_InterfaceClient_Destroy(PnpComponentHandle);
     delete static_cast<BluetoothSensorDeviceAdapter*>(PnpComponentHandleGetContext(
         PnpComponentHandle));
 
@@ -76,13 +80,19 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
     const char* componentName,
     const JSON_Object* AdapterComponentConfig,
-    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* pnpInterfaceClient) noexcept
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
     LogInfo("Creating PnP interface: %p", PnpComponentHandle);
 
     static constexpr char g_bluetoothAddressName[] = "bluetooth_address";
     static constexpr char g_bluetoothIdentityName[] = "blesensor_identity";
+
+    if (strlen(componentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
+    {
+        LogError("ComponentName=%s is too long.  Maximum length is=%d", componentName, PNP_MAXIMUM_COMPONENT_LENGTH);
+        PnpComponentHandle = NULL;
+        return IOTHUB_CLIENT_INVALID_ARG;
+    }
 
     const auto bluetoothAddressStr = json_object_get_string(AdapterComponentConfig, g_bluetoothAddressName);
     if (!bluetoothAddressStr)
@@ -124,8 +134,10 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
 
-    *pnpInterfaceClient = newDeviceAdapter->GetPnpInterfaceClientHandle();
     PnpComponentHandleSetContext(PnpComponentHandle, newDeviceAdapter.get());
+    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, BluetoothSensorDeviceAdapterBase::OnPropertyCallback);
+    PnpComponentHandleSetCommandCallback(PnpComponentHandle, BluetoothSensorDeviceAdapterBase::OnCommandCallback);
+
     // PnP interface now owns the pointer
     newDeviceAdapter.release();
 

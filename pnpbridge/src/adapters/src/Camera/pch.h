@@ -41,8 +41,6 @@ using namespace Microsoft::WRL::Wrappers;
 #include <iothubtransportmqtt.h>
 
 // IOT PnP Headers
-#include <digitaltwin_device_client.h>
-#include <digitaltwin_interface_client.h>
 #include <azure_c_shared_utility/lock.h>
 #include "azure_c_shared_utility/condition.h"
 #include "azure_c_shared_utility/xlogging.h"

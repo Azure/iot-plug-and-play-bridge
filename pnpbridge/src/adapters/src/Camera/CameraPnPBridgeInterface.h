@@ -9,21 +9,6 @@ extern "C"
 
 #include <PnpBridge.h>
 
-void CameraPnpCallback_TakePhoto(
-    _In_ const DIGITALTWIN_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
-    _In_ DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
-    _In_ void* userContextCallback);
-
-void CameraPnpCallback_TakeVideo(
-    _In_ const DIGITALTWIN_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
-    _In_ DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
-    _In_ void* userContextCallback);
-
-void CameraPnpCallback_GetURI(
-    _In_ const DIGITALTWIN_CLIENT_COMMAND_REQUEST* pnpClientCommandContext,
-    _In_ DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
-    _In_ void* userContextCallback);
-
 extern PNP_ADAPTER CameraPnpInterface;
 
 #ifdef __cplusplus

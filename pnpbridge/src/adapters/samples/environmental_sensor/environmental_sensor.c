@@ -85,7 +85,6 @@ static int SampleEnvironmentalSensor_SetCommandResponse(
         LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Response Data is empty");
         *CommandResponseSize = 0;
         return PNP_STATUS_INTERNAL_ERROR;
-        
     }
 
     *CommandResponseSize = strlen((char*)ResponseData);

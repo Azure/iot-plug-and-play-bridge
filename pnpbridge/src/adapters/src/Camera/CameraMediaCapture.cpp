@@ -259,11 +259,6 @@ HRESULT CameraMediaCaptureFrameReader::InitMediaCapture(std::wstring& deviceId)
     return hr;
 }
 
-void CameraMediaCaptureFrameReader::SetDTHandle(DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface)
-{
-    m_PnpClientInterface = hPnpClientInterface;
-}
-
 HRESULT CameraMediaCaptureFrameReader::StartFrameReader()
 {
     HRESULT hr = S_OK;

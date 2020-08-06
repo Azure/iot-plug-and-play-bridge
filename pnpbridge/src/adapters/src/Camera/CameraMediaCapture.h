@@ -34,8 +34,6 @@ public:
     virtual HRESULT InitMediaCapture(std::wstring& deviceId);
     HRESULT StartFrameReader();
 
-    void SetDTHandle(DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface);
-
 private:
     LOCK_HANDLE            m_frameReaderLock;
     EventRegistrationToken m_token;
@@ -45,6 +43,4 @@ private:
     
     HRESULT FrameArrivedHandler(ABI::Windows::Media::Capture::Frames::IMediaFrameReader* pFrameReader, 
         ABI::Windows::Media::Capture::Frames::IMediaFrameArrivedEventArgs*);
-
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE m_PnpClientInterface; 
 };

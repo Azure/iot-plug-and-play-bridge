@@ -14,6 +14,10 @@ IOTHUB_CLIENT_RESULT Camera_StartPnpComponent(
 
     const auto cameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(
         PnpComponentHandleGetContext(PnpComponentHandle));
+
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    cameraDevice->SetIotHubDeviceClientHandle(deviceHandle);
+
     if (cameraDevice)
     {
         if (cameraDevice->Start() != S_OK)
@@ -46,8 +50,6 @@ IOTHUB_CLIENT_RESULT Camera_DestroyPnpComponent(
 {
     LogInfo("Destroying PnP interface: %p", PnpComponentHandle);
 
-    DigitalTwin_InterfaceClient_Destroy(PnpComponentHandle);
-
     auto cameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(
         PnpComponentHandleGetContext(PnpComponentHandle));
     if (cameraDevice)
@@ -65,8 +67,7 @@ IOTHUB_CLIENT_RESULT Camera_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
     const char* componentName,
     const JSON_Object* AdapterComponentConfig,
-    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* pnpInterfaceClient) noexcept
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
     static constexpr char g_cameraIdentityName[] = "hardware_id";
     const auto cameraId = json_object_get_string(AdapterComponentConfig, g_cameraIdentityName);
@@ -79,12 +80,13 @@ IOTHUB_CLIENT_RESULT Camera_CreatePnpComponent(
 
     auto newCameraDevice = CameraIotPnpDeviceAdapter::MakeUnique(
         componentName,
-        cameraIdStr,
-        pnpInterfaceClient);
+        cameraIdStr);
 
     PnpComponentHandleSetContext(
         PnpComponentHandle,
         static_cast<void*>(newCameraDevice.get()));
+    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate);
+    PnpComponentHandleSetCommandCallback(PnpComponentHandle, CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate);
 
     // Interface context now owns object
     newCameraDevice.release();

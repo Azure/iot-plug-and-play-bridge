@@ -36,5 +36,6 @@ public:
     // previously started.
     virtual void StopTelemetryReporting() = 0;
 
-    virtual DIGITALTWIN_INTERFACE_CLIENT_HANDLE GetPnpInterfaceClientHandle() = 0;
+    virtual void SetIotHubDeviceClientHandle(IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle) = 0;
+
 };

@@ -7,8 +7,8 @@
 #include <pnpbridge_common.h>
 #include <pnpbridge.h>
 
-NetworkCameraIotPnpDevice::NetworkCameraIotPnpDevice(std::wstring& deviceName)
-    : CameraIotPnpDevice(deviceName)
+NetworkCameraIotPnpDevice::NetworkCameraIotPnpDevice(std::wstring& deviceName, std::string& componentName)
+    : CameraIotPnpDevice(deviceName, componentName)
 {
 }
 
@@ -16,9 +16,9 @@ NetworkCameraIotPnpDevice::~NetworkCameraIotPnpDevice()
 {
 }
 
-HRESULT NetworkCameraIotPnpDevice::Initialize(_In_ DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface) try
+HRESULT NetworkCameraIotPnpDevice::Initialize() try
 {
-    CameraIotPnpDevice::Initialize(hPnpClientInterface);
+    CameraIotPnpDevice::Initialize();
 
     HRESULT hr = S_OK;
     ULONG cb = 0;
