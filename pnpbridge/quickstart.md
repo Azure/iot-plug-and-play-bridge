@@ -139,7 +139,7 @@ Later, you use Azure IoT explorer to view the device when it connects to your Io
 If you haven't already downloaded the sample model files:
 
 1. Create a folder called models on your local machine.
-1. Right-click [Environmental Sensor](./docs/schemas/EnvironmentalSensorInline.capabilitymodel.json) and save the JSON file to the models folder.
+1. Right-click [Environmental Sensor](https://raw.githubusercontent.com/Azure/AzurePnPBridgePreview/pprupdatesforddtlv2/pnpbridge/docs/schemas/EnvironmentalSensorInline.capabilitymodel.json) and save the JSON file to the models folder.
 ### Download the code 
 After cloning the IoT Plug and Play bridge repo to your machine, open an administrative cmd prompt and navigate to the directory of the cloned repo:
 ```
