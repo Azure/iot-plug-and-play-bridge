@@ -1,4 +1,5 @@
 # IoT Plug and Play bridge
+>Note: This branch of the bridge makes use of [DTDL v1](https://github.com/Azure/opendigitaltwins-dtdl/tree/master/DTDL/v1-preview). To use [DTDL v2](https://github.com/Azure/opendigitaltwins-dtdl) which [Azure Digital Twins](https://azure.microsoft.com/services/digital-twins/) and the [IoT Plug and Play Public preview refresh](https://docs.microsoft.com/azure/iot-pnp/overview-iot-plug-and-play-preview-updates) use please see the [DTDL v2 branch of IoT Plug and Play bridge](https://github.com/Azure/AzurePnPBridgePreview/tree/pprupdatesforddtlv2)
 
 ## Introduction
 
