@@ -23,7 +23,7 @@ The IoT Plug and Play bridge supports a set of PnP Bridge Adapters for various t
 
 The IoT Plug and Play bridge is supplied with a JSON based configuration file that generally specifies the following pieces of information:
 
-* How to make a connection with Azure IoT, i.e. via connection strings, authentication parameters or     device provisioning information if the connection is made using DPS
+* How to make a connection with Azure IoT, i.e. via connection strings, authentication parameters or device provisioning information if the connection is made using DPS
 * The location of the device capability model that will be used by the Pnp Bridge (static and immutable for now) which defines capabilities of an IoT plug and play device
 * A list of interface components (aka devices) and the following information regarding each component:
 * The interface id and component name
@@ -34,8 +34,7 @@ For example, a bluetooth sensor interface component could be configured like thi
 
 ```JSON
   {
-        "_comment": "Interface Component BLE sensor",
-        "pnp_bridge_interface_id": "urn:contoso:com:blesensor:1",
+        "_comment": "Component BLE sensor",
         "pnp_bridge_component_name": "blesensor1",
         "pnp_bridge_adapter_id": "bluetooth-sensor-pnp-adapter",
         "pnp_bridge_adapter_config": {
@@ -119,7 +118,6 @@ Here's an example output of an interface component that uses the core device hea
 ```JSON
 {
       "_comment": "USB device",
-      "pnp_bridge_interface_id": "urn:contoso:com:coredevicehealth:1",
       "pnp_bridge_component_name": "USBDevice",
       "pnp_bridge_adapter_id": "core-device-health",
       "pnp_bridge_adapter_config": {
@@ -128,7 +126,7 @@ Here's an example output of an interface component that uses the core device hea
 }
 ```
 
-Since this interface conponent has specified its hardware ID, the core device health adapter will look through all interfaces with interface classes it supports and connect to the matching hardware ID if or when it finds it. The global adapter parameters for the core device health adapter looks like this:
+Since this interface component has specified its hardware ID, the core device health adapter will look through all interfaces with interface classes it supports and connect to the matching hardware ID if or when it finds it. The global adapter parameters for the core device health adapter looks like this:
 
 ```JSON
 {
@@ -214,7 +212,7 @@ Enable the adapters in Pnp Bridge by adding a reference to these adapters in ada
     }
   ```
 
->[!NOTE] PnP Bridge Adapter callbacks are invoked in a sequential fashion. An adapter shouldn't block a callback since this will prevent the Bridge Core from making forward progress.
+>Note: PnP Bridge Adapter callbacks are invoked in a sequential fashion. An adapter shouldn't block a callback since this will prevent the Bridge Core from making forward progress.
 
 ### Sample Camera Adapter
 
@@ -245,7 +243,7 @@ After cloning the IoT Plug and Play bridge repo to your machine, open the "Devel
 %REPO_DIR%\pnpbridge\> git submodule update --init --recursive
 ```
 
->[!NOTE] If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
+>Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
 
 ### Step 2: Build the Azure IoT Plug and Play bridge (on Windows)
 
@@ -285,7 +283,7 @@ Modify the folowing parameters under **pnp_bridge_connection_parameters** node i
       "connection_parameters": {
         "connection_type" : "connection_string",
         "connection_string" : "[To fill in]",
-        "device_capability_model_uri": "[To fill in]",
+        "root_interface_model_id": "[To fill in]",
         "auth_parameters": {
             "auth_type": "symmetric_key",
             "symmetric_key": "[To fill in]"
@@ -300,7 +298,7 @@ Modify the folowing parameters under **pnp_bridge_connection_parameters** node i
   {
       "connection_parameters": {
         "connection_type" : "dps",
-        "device_capability_model_uri": "[To fill in]",
+        "root_interface_model_id": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
@@ -314,8 +312,6 @@ Modify the folowing parameters under **pnp_bridge_connection_parameters** node i
   }
   ```
 
-  > Note: Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/azure/iot-central/core/concepts-connectivity) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "CapabilityModelId" that is listed for your device's Device Capability Model in Azure IoT Central.
-
 In this example we further modified the configuration file.
 
 ### Step 4: Start the IoT Plug and Play bridge for Generic Sensors
@@ -328,9 +324,9 @@ Start IoT Plug and Play bridge by running it in a command prompt.
   %REPO_DIR%\pnpbridge\cmake\pnpbridge_x86\src\pnpbridge\samples\console>    Debug\pnpbridge_bin.exe
   ```
 
-  > [!TIP] The path to the configuration file can also be passed to the bridge executable as a command line parameter.
+  > Tip: The path to the configuration file can also be passed to the bridge executable as a command line parameter.
   
-  > [!TIP] If you have either a built-in camera or a USB camera connected to your PC running the IoT Plug and Play bridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, IoT Plug and Play bridge's console output window will show the monitoring stats and the frame rate of the camera will be reported through Azure IoT Plug and Play (Digital Twin) interface to Azure.
+  > Tip: If you have either a built-in camera or a USB camera connected to your PC running the IoT Plug and Play bridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, IoT Plug and Play bridge's console output window will show the monitoring stats and the frame rate of the camera will be reported through Azure IoT Plug and Play (Digital Twin) interface to Azure.
 
 ## Folder Structure
 
