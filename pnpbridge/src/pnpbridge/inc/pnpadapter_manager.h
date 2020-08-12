@@ -109,6 +109,15 @@ extern "C"
 
     IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
         PPNP_ADAPTER_MANAGER adapterMgr);
+    
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_StopComponents(
+        PPNP_ADAPTER_MANAGER adapterMgr);
+    
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_DestroyComponents(
+        PPNP_ADAPTER_MANAGER adapterMgr);
+    
+    void PnpAdapterManager_ReleaseComponentsInModel(
+        PPNP_ADAPTER_MANAGER adapterMgr);
 
     PPNPADAPTER_INTERFACE_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
         const char * ComponentName);

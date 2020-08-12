@@ -68,15 +68,69 @@ void PnpAdapterManager_ReleaseAdapterInterfaces(
         LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
         while (NULL != handle) {
             PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(handle);
-            adapterTag->adapter->stopPnpComponent(interfaceHandle);
             adapterTag->adapter->destroyPnpComponent(interfaceHandle);
             handle = singlylinkedlist_get_next_item(handle);
         }
         Unlock(adapterTag->InterfaceListLock);
 
+        // This call to singlylinkedlist_destroy will free all resources 
+        // associated with the list identified by the handle argument,
+        // therefore each component's resources allocated during creation
+        // will be destroyed after this call returns
         singlylinkedlist_destroy(adapterTag->pnpInterfaceList);
         Lock_Deinit(adapterTag->InterfaceListLock);
     }
+}
+
+IOTHUB_CLIENT_RESULT PnpAdapterManager_StopComponents(
+        PPNP_ADAPTER_MANAGER adapterMgr)
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    if (NULL != adapterMgr)
+    {
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
+
+        while (NULL != adapterListItem) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
+            while (NULL != interfaceHandleItem)
+            {
+                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
+                result = adapterHandle->adapter->adapter->stopPnpComponent(interfaceHandle);
+                if (result != IOTHUB_CLIENT_OK)
+                {
+                    LogError("PnpAdapterManager_StopComponents: Failed to stop component %s", interfaceHandle->interfaceName);
+                }
+                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+            }
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        }
+    }
+
+    return result;
+}
+
+IOTHUB_CLIENT_RESULT PnpAdapterManager_DestroyComponents(
+        PPNP_ADAPTER_MANAGER adapterMgr)
+{
+    if (NULL != adapterMgr)
+    {
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
+
+        while (NULL != adapterListItem) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+            if (adapterHandle->adapter)
+            {
+                // Destroy Components owned by each adapter
+                PnpAdapterManager_ReleaseAdapterInterfaces(adapterHandle->adapter);
+            }
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        }
+    }
+    return IOTHUB_CLIENT_OK;
 }
 
 IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(
@@ -218,7 +272,8 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateManager(
             result = PnpAdapterManager_CreateAdapter(adapterId, &pnpAdapterHandle, config);
             if (pnpAdapterHandle == NULL || result != IOTHUB_CLIENT_OK)
             {
-                LogError("Adapter creation and initialization failed. Destroying all adapters previously created.");
+                LogError("Adapter creation and initialization of a required adapter failed.");
+                LogError("Destroying all adapters previously created.");
                 goto exit;
             }
 
@@ -246,24 +301,30 @@ void PnpAdapterManager_ReleaseManager(
     {
         LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(adapterMgr->PnpAdapterHandleList);
 
+        // Free adapter resources
         while (NULL != adapterListItem) {
 
             PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
             if (adapterHandle->adapter)
             {
-                // Clean up adapter interfaces
-                PnpAdapterManager_ReleaseAdapterInterfaces(adapterHandle->adapter);
-
                 // Clean up adapter's context
                 adapterHandle->adapter->adapter->destroyAdapter(adapterHandle);
-
                 free(adapterHandle->adapter);
             }
 
             adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
         }
+
+        // This call to singlylinkedlist_destroy will free all resources 
+        // associated with the list identified by the handle argument,
+        // therefore each adapter handle allocated during creation
+        // will be destroyed after this call returns
         singlylinkedlist_destroy(adapterMgr->PnpAdapterHandleList);
 
+        // Free components in model
+        PnpAdapterManager_ReleaseComponentsInModel(adapterMgr);
+
+        // Free adapter manager
         free(adapterMgr);
     }
 }
@@ -381,6 +442,19 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
     return result;
 }
 
+void PnpAdapterManager_ReleaseComponentsInModel(
+        PPNP_ADAPTER_MANAGER adapterMgr)
+{
+    if (adapterMgr != NULL && adapterMgr->ComponentsInModel != NULL)
+    {
+        for (unsigned int i = 0; i < adapterMgr->NumInterfaces; i++)
+        {
+            free(adapterMgr->ComponentsInModel[i]);
+        }
+        free (adapterMgr->ComponentsInModel);
+    }
+}
+
 IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
         PPNP_ADAPTER_MANAGER adapterMgr)
 {
@@ -417,13 +491,9 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
         }
     }
 exit:
-    if (result != IOTHUB_CLIENT_OK && adapterMgr != NULL && adapterMgr->ComponentsInModel != NULL)
+    if (result != IOTHUB_CLIENT_OK)
     {
-        for (unsigned int i = 0; i < adapterMgr->NumInterfaces; i++)
-        {
-            free(adapterMgr->ComponentsInModel[i]);
-        }
-        free (adapterMgr->ComponentsInModel);
+        PnpAdapterManager_ReleaseComponentsInModel(adapterMgr);
     }
     return result;
 }

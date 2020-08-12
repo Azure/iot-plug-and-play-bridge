@@ -86,9 +86,26 @@ PnpBridge_RegisterIoTHubHandle()
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
 
-    result = IotComms_InitializeIotHandle(&g_PnpBridge->IotHandle, g_PnpBridge->Configuration.TraceOn, g_PnpBridge->Configuration.ConnParams);
+    result = IotComms_InitializeIotHandle(&g_PnpBridge->IotHandle,
+        g_PnpBridge->Configuration.TraceOn, g_PnpBridge->Configuration.ConnParams);
     if (IOTHUB_CLIENT_OK != result) {
-        LogError("IotComms_InitializeIotHandle failed\n");
+        LogError("IotComms_InitializeIotHandle failed.");
+        result = IOTHUB_CLIENT_ERROR;
+        goto exit;
+    }
+
+exit:
+    return result;
+}
+
+IOTHUB_CLIENT_RESULT 
+PnpBridge_UnregisterIoTHubHandle()
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+
+    result = IotComms_DeinitializeIotHandle(&g_PnpBridge->IotHandle, g_PnpBridge->Configuration.ConnParams);
+    if (IOTHUB_CLIENT_OK != result) {
+        LogError("IotComms_DeinitializeIotHandle failed.");
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
@@ -110,7 +127,11 @@ PnpBridge_Release(
 
     g_PnpBridgeState = PNP_BRIDGE_DESTROYED;
 
-    if (pnpBridge->PnpMgr) {
+    if (pnpBridge->PnpMgr)
+    {
+        // Free resources used by components
+        PnpAdapterManager_DestroyComponents(pnpBridge->PnpMgr);
+        // Free resources used by adapters and adapter manager
         PnpAdapterManager_ReleaseManager(pnpBridge->PnpMgr);
         pnpBridge->PnpMgr = NULL;
     }
@@ -193,7 +214,8 @@ exit:
     {
         if (pnpBridge)
         {
-            IotComms_DeinitializeIotHandle(&pnpBridge->IotHandle, pnpBridge->Configuration.ConnParams);
+            PnpAdapterManager_StopComponents(pnpBridge->PnpMgr);
+            PnpBridge_UnregisterIoTHubHandle();
             PnpBridge_Release(pnpBridge);
         }
         g_PnpBridge = NULL;
