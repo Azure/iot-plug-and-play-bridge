@@ -67,7 +67,6 @@ set(pnp_bridge_common_libs
     prov_device_client
     prov_mqtt_transport
     utpm
-    digitaltwin_client
 )
 
 target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})

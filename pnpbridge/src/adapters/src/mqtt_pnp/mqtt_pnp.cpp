@@ -1,11 +1,20 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#pragma once
+#include <assert.h>
+#include <stdexcept>
+#include <map>
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <list>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
+
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/platform.h"
@@ -13,33 +22,21 @@
 #include "azure_c_shared_utility/threadapi.h"
 #include "parson.h"
 
-#include <assert.h>
-
-#include <stdexcept>
-#include <map>
-#include <atomic>
-#include <mutex>
-#include <thread>
-#include <list>
-
-#include <pnpbridge.h>
-
-#include "mqtt_pnp.hpp"
-#include "mqtt_protocol_handler.hpp"
-#include "mqtt_manager.hpp"
-#include "json_rpc.hpp"
 #include "json_rpc_protocol_handler.hpp"
-
-class MqttPnpInstance {
-public:
-    MqttConnectionManager   s_ConnectionManager;
-    MqttProtocolHandler*    s_ProtocolHandler;
-};
+#include "mqtt_pnp.hpp"
 
 class MqttPnpAdapter {
 public:
     std::map<std::string, JSON_Value*>    s_AdapterConfigs;
 };
+
+MqttPnpInstance::MqttPnpInstance(
+    const std::string& componentName):
+    s_ComponentName(componentName),
+    s_ProtocolHandler(nullptr)
+{
+
+}
 
 IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpComponent(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
@@ -50,8 +47,6 @@ IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpComponent(
     {
         return IOTHUB_CLIENT_OK;
     }
-
-    DigitalTwin_InterfaceClient_Destroy((context->s_ProtocolHandler)->GetDigitalTwin());
     context->s_ConnectionManager.Disconnect();
     delete context;
 
@@ -79,15 +74,19 @@ MqttPnp_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
     const JSON_Object* AdapterComponentConfig,
-    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     JSON_Value* adapterConfig = NULL;
     std::map<std::string, JSON_Value*>::iterator mapItem;
 
-    if (NULL!= AdapterComponentConfig)
+    if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
+    {
+        LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
+        PnpComponentHandle = NULL;
+        return IOTHUB_CLIENT_INVALID_ARG;
+    }
+
+    if (NULL == AdapterComponentConfig)
     {
         LogError("Each component requiring the Mqtt adapter needs to specify local adapter args (pnp_bridge_adapter_config)");
         return IOTHUB_CLIENT_INVALID_ARG;
@@ -103,7 +102,7 @@ MqttPnp_CreatePnpComponent(
         return IOTHUB_CLIENT_OK;
     }
 
-    MqttPnpInstance* context = new MqttPnpInstance();
+    MqttPnpInstance* context = new MqttPnpInstance(ComponentName);
     LogInfo("mqtt-pnp: connecting to server %s:%d", mqtt_server, mqtt_port);
 
     try {
@@ -116,7 +115,7 @@ MqttPnp_CreatePnpComponent(
 
     if (strcmp(protocol, "json_rpc") == 0)
     {
-        context->s_ProtocolHandler = (new JsonRpcProtocolHandler());
+        context->s_ProtocolHandler = (new JsonRpcProtocolHandler(ComponentName));
     }
     else
     {
@@ -135,69 +134,11 @@ MqttPnp_CreatePnpComponent(
 
     context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, adapterConfig);
 
-    result = DigitalTwin_InterfaceClient_Create(ComponentName,
-                                                nullptr,
-                                                context, 
-                                                &pnpInterfaceClient);
-    if (IOTHUB_CLIENT_OK != result)
-    {
-        LogError("mqtt-pnp: Error registering pnp interface component %s", ComponentName);
-        result = IOTHUB_CLIENT_ERROR;
-        goto exit;
-    }
+    PnpComponentHandleSetContext(PnpComponentHandle, context);
+    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, JsonRpcProtocolHandler::OnPnpPropertyCallback);
+    PnpComponentHandleSetCommandCallback(PnpComponentHandle, JsonRpcProtocolHandler::OnPnpCommandCallback);
 
-    result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient,
-        [](
-            const DIGITALTWIN_CLIENT_PROPERTY_UPDATE*   /*dtClientPropertyUpdate*/,
-            void*                                       /*userContextCallback*/
-        )
-        {
-            return;
-        },
-        (void*)context
-    );
-
-    if (IOTHUB_CLIENT_OK != result)
-    {
-        LogError("mqtt-pnp: Error binding property update callback for %s", ComponentName);
-        result = IOTHUB_CLIENT_ERROR;
-        goto exit;
-    }
-
-    result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient,
-        [](
-            const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   dtClientCommandContext,
-            DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        dtClientCommandResponseContext,
-            void*                                       userContextCallback
-        )
-        {
-            static_cast<MqttPnpInstance*>(userContextCallback)->s_ProtocolHandler->OnPnpMethodCall(dtClientCommandContext, dtClientCommandResponseContext);
-        },
-        (void*)context
-    );
-
-    if (IOTHUB_CLIENT_OK != result)
-    {
-        LogError("mqtt-pnp: Error binding commands callback for %s", ComponentName);
-        result = IOTHUB_CLIENT_ERROR;
-        goto exit;
-    }
-
-    *PnpInterfaceClient = pnpInterfaceClient;
-    context->s_ProtocolHandler->AssignDigitalTwin(pnpInterfaceClient);
-    PnpComponentHandleSetContext(BridgeComponentHandle, context);
-
-exit:
-    if (result != IOTHUB_CLIENT_OK)
-    {
-        MqttPnp_DestroyPnpComponent(BridgeComponentHandle);
-    }
-    else
-    {
-        printf("mqtt-pnp: digital twin interface created and bound\n");
-    }
-
-    return result;
+    return IOTHUB_CLIENT_OK;
 }
 
 IOTHUB_CLIENT_RESULT MqttPnp_CreatePnpAdapter(
@@ -236,7 +177,18 @@ MqttPnp_StartPnpComponent(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    AZURE_UNREFERENCED_PARAMETER(PnpComponentHandle);
+
+    LogInfo("Starting the PnP interface: %p", PnpComponentHandle);
+
+    MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpComponentHandleGetContext(PnpComponentHandle));
+
+    if (context)
+    {
+        IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+        context->s_ProtocolHandler->SetIotHubDeviceClientHandle(deviceHandle);
+        context->s_ProtocolHandler->StartTelemetry();
+    }
+
     return IOTHUB_CLIENT_OK;
 }
 

@@ -1,5 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#pragma once
+
+#include "mqtt_protocol_handler.hpp"
+#include <pnpbridge.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,9 +14,13 @@ extern PNP_ADAPTER          MqttPnpInterface;
 }
 #endif
 
-class MqttPnp {
-
-
+class MqttPnpInstance {
+public:
+    MqttPnpInstance(
+        const std::string& componentName);
+    MqttConnectionManager   s_ConnectionManager;
+    MqttProtocolHandler* s_ProtocolHandler;
+    std::string s_ComponentName;
 };
 
 // MQTT Adapter Config

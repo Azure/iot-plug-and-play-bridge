@@ -1,3 +1,5 @@
+#pragma once
+#include "mqtt_protocol_handler.hpp"
 class MqttConnectionManager {
 public:
     void

@@ -1,10 +1,11 @@
+#pragma once
+
 #include "parson.h"
 #include <stdexcept>
 #include <map>
 #include <mutex>
 #include <string>
 #include <cstring>
-
 #include "json_rpc.hpp"
 
 JsonRpc::JsonRpc(

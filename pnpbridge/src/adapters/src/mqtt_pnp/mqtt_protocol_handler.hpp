@@ -1,3 +1,5 @@
+#pragma once
+#include "pnpbridge.h"
 class MqttProtocolHandler {
 public:
     virtual
@@ -17,19 +19,10 @@ public:
     ) = 0;
 
     virtual
-    void
-    OnPnpMethodCall(
-        const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   CommandRequest,
-        DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        CommandResponse
-    ) = 0;
+    void SetIotHubDeviceClientHandle(
+        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle) = 0;
 
     virtual
-    void
-    AssignDigitalTwin(
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE DtHandle
-    ) = 0;
+    void StartTelemetry() = 0;
 
-    virtual
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE
-    GetDigitalTwin() = 0;
 };
