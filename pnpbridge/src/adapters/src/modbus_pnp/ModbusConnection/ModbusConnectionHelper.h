@@ -3,8 +3,7 @@
 extern "C"
 {
 #endif
-
-#include <digitaltwin_interface_client.h>
+#include <iothub_device_client.h>
 #include "../ModbusEnum.h"
 
 #define MODBUS_EXCEPTION_CODE 0x80

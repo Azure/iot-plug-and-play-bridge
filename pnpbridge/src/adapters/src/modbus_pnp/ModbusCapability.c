@@ -37,53 +37,64 @@ const ModbusCommand* ModbusPnp_LookupCommand(
     return NULL;
 }
 
-void 
+int 
 ModbusPnp_CommandHandler(
-    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext,
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext,
-    void* userContextCallback
-    )
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
-    PMODBUS_DEVICE_CONTEXT modbusDevice = (PMODBUS_DEVICE_CONTEXT) userContextCallback;
-    const ModbusCommand* command = ModbusPnp_LookupCommand(modbusDevice->InterfaceConfig, dtClientCommandContext->commandName);
+    PMODBUS_DEVICE_CONTEXT modbusDevice = PnpComponentHandleGetContext(PnpComponentHandle);
+
+    const ModbusCommand* command = ModbusPnp_LookupCommand(modbusDevice->InterfaceConfig, CommandName);
 
     if (command == NULL)
     {
-        return;
+        return PNP_STATUS_NOT_FOUND;
     }
 
     uint8_t resultedData[MODBUS_RESPONSE_MAX_LENGTH];
     memset(resultedData, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
 
     CapabilityContext* capContext = calloc(1, sizeof(CapabilityContext));
-    if (!capContext)
+    if (NULL == capContext)
     {
-        LogError("Could not allocate memory for modbus capability context.");
-        return;
+        LogError("Modbus Adapter: Could not allocate memory for modbus capability context.");
+        return PNP_STATUS_INTERNAL_ERROR;
     }
+
     capContext->capability = (ModbusCommand*)command;
     capContext->hDevice = modbusDevice->hDevice;
     capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
     capContext->hLock = modbusDevice->hConnectionLock;
-    capContext->InterfaceClient = modbusDevice->pnpinterfaceHandle;
+    capContext->componentName = modbusDevice->ComponentName;
 
-    int resultLength = ModbusPnp_WriteToCapability(capContext, Command, (char*)dtClientCommandContext->requestData, resultedData);
+    char * CommandValueString = (char*) json_value_get_string(CommandValue);
+    if ( NULL == CommandValueString)
+    {
+        LogError("Modbus Adapter: Command Value String is invalid.");
+        return PNP_STATUS_INTERNAL_ERROR;
+    }
+
+    int resultLength = ModbusPnp_WriteToCapability(capContext, Command, CommandValueString, resultedData);
 
     if (0 < resultLength) 
     {
-        dtClientCommandResponseContext->responseData = calloc(resultLength + 1, sizeof(char));
-        if (!dtClientCommandResponseContext->responseData)
+        *CommandResponseSize = strlen((char*)resultedData);
+        memset(CommandResponse, 0, sizeof(*CommandResponse));
+
+        // Allocate a copy of the response data to return to the invoker. Caller will free this.
+        if (mallocAndStrcpy_s((char**)CommandResponse, (char*)resultedData) != 0)
         {
-            LogError("Could not allocate memory for modbus command response context.");
+            LogError("Modbus Adapter: Unable to allocate response data");
             free(capContext);
-            return;
+            return PNP_STATUS_INTERNAL_ERROR;
         }
-        memcpy((void*)dtClientCommandResponseContext->responseData, resultedData, resultLength);
-        dtClientCommandResponseContext->responseDataLen = resultLength;
     }
 
     free(capContext);
-    return;
+    return PNP_STATUS_SUCCESS;
 }
 #pragma endregion
 
@@ -109,15 +120,23 @@ const ModbusProperty* ModbusPnp_LookupProperty(
 }
 
 void ModbusPnp_PropertyHandler(
-    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* PropertyName,
+    JSON_Value* PropertyValue,
+    int version,
     void* userContextCallback)
 {
-    PMODBUS_DEVICE_CONTEXT modbusDevice = (PMODBUS_DEVICE_CONTEXT)userContextCallback;
-    const ModbusProperty* property = ModbusPnp_LookupProperty(modbusDevice->InterfaceConfig, dtClientPropertyUpdate->propertyName);
+    UNREFERENCED_PARAMETER(version);
+    PMODBUS_DEVICE_CONTEXT modbusDevice = PnpComponentHandleGetContext(PnpComponentHandle);
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient = (IOTHUB_DEVICE_CLIENT_HANDLE)userContextCallback;
+
+    const ModbusProperty* property = ModbusPnp_LookupProperty(modbusDevice->InterfaceConfig, PropertyName);
 
     if (property == NULL) {
         return;
     }
+
+    char * PropertyValueString = (char*) json_value_get_string(PropertyValue);
 
     uint8_t resultedData[MODBUS_RESPONSE_MAX_LENGTH];
     memset(resultedData, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
@@ -132,11 +151,12 @@ void ModbusPnp_PropertyHandler(
     capContext->hDevice = modbusDevice->hDevice;
     capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
     capContext->hLock= modbusDevice->hConnectionLock;
-    capContext->InterfaceClient = modbusDevice->pnpinterfaceHandle;
-    
-    if ((char*)dtClientPropertyUpdate->propertyDesired)
+    capContext->deviceClient = deviceClient;
+    capContext->componentName = modbusDevice->ComponentName;
+
+    if (PropertyValueString)
     {
-        ModbusPnp_WriteToCapability(capContext, Property, (char*)dtClientPropertyUpdate->propertyDesired, resultedData);
+        ModbusPnp_WriteToCapability(capContext, Property, PropertyValueString, resultedData);
     }
 
     free(capContext);
@@ -146,34 +166,59 @@ void ModbusPnp_PropertyHandler(
 #pragma region ReadOnlyProperty
 
 void ModbusPnp_ReportPropertyUpdatedCallback(
-    IOTHUB_CLIENT_RESULT pnpReportedStatus,
+    int pnpReportedStatus,
     void* userContextCallback)
 {
-    LogInfo("ModbusPnp_ReportPropertyUpdatedCallback called, result=%d, userContextCallback=%p", pnpReportedStatus, userContextCallback);
+    LogInfo("ModbusPnp_ReportPropertyUpdatedCallback called, result=%d, property name=%s", pnpReportedStatus, (const char*) userContextCallback);
 }
 
-int ModbusPnp_ReportReadOnlyProperty(
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface,
-    char* propertyName,
-    char* data)
+IOTHUB_CLIENT_RESULT 
+ModbusPnp_ReportReadOnlyProperty(
+    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    const char * ComponentName,
+    const char* PropertyName,
+    const char* PropertyValue)
 {
-    IOTHUB_CLIENT_RESULT pnpClientResult = IOTHUB_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
 
-    if (pnpInterface == NULL) {
-        return pnpClientResult;
+    if (DeviceClient == NULL) {
+        return iothubClientResult;
     }
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(pnpInterface, propertyName, (unsigned char*)data, strlen(data), NULL, ModbusPnp_ReportPropertyUpdatedCallback, (void*)propertyName)) != IOTHUB_CLIENT_OK)
+    STRING_HANDLE jsonToSend = NULL;
+
+    if ((jsonToSend = PnP_CreateReportedProperty(ComponentName, PropertyName, PropertyValue)) == NULL)
     {
-        LogError("PnP_InterfaceClient_ReportReadOnlyPropertyStatusAsync failed, result=%d\n", pnpClientResult);
+        LogError("Unable to build reported property response for propertyName=%s, propertyValue=%s", PropertyName, PropertyValue);
+    }
+    else
+    {
+        const char* jsonToSendStr = STRING_c_str(jsonToSend);
+        size_t jsonToSendStrLen = strlen(jsonToSendStr);
+
+        if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(DeviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+            ModbusPnp_ReportPropertyUpdatedCallback, (void*)PropertyName)) != IOTHUB_CLIENT_OK)
+        {
+            LogError("Modbus Adapter: Unable to send reported state for property=%s, error=%d",
+                                PropertyName, iothubClientResult);
+        }
+        else
+        {
+            LogInfo("Modbus Adapter: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
+                        PropertyName, PropertyValue);
+        }
+
+        STRING_delete(jsonToSend);
     }
 
-    return pnpClientResult;
+    return iothubClientResult;
 }
 
-int ModbusPnp_PollingSingleProperty(
+int
+ModbusPnp_PollingSingleProperty(
     void *param)
 {
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     CapabilityContext* context = param;
     ModbusProperty* property = context->capability;
     LogInfo("Start polling task for property \"%s\".", property->Name);
@@ -187,8 +232,9 @@ int ModbusPnp_PollingSingleProperty(
     while (ModbusPnP_ContinueReadTasks)
     {
         int resultLen = ModbusPnp_ReadCapability(context, Property, resultedData);
-        if (resultLen > 0) {
-            ModbusPnp_ReportReadOnlyProperty(context->InterfaceClient, (char*)property->Name, (char*)resultedData);
+        if (resultLen > 0)
+        {
+            result = ModbusPnp_ReportReadOnlyProperty(context->deviceClient, context->componentName, property->Name, (const char*) resultedData);
         }
 
         Condition_Wait(StopPolling, lock, property->DefaultFrequency);
@@ -199,7 +245,7 @@ int ModbusPnp_PollingSingleProperty(
     LogInfo("Stopped polling task for property \"%s\".", property->Name);
     free(context);
     ThreadAPI_Exit(THREADAPI_OK);
-    return IOTHUB_CLIENT_OK;
+    return result;
 }
 
 #pragma endregion
@@ -207,37 +253,48 @@ int ModbusPnp_PollingSingleProperty(
 #pragma region SendTelemetry
 
 void ModbusPnp_ReportTelemetryCallback(
-    IOTHUB_CLIENT_RESULT pnpSendEventStatus,
+    IOTHUB_CLIENT_CONFIRMATION_RESULT pnpSendEventStatus,
     void* userContextCallback)
 {
-    LogInfo("ModbusPnp_ReportTelemetryCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
+    LogInfo("ModbusPnp_ReportTelemetryCallback called, result=%d, telemetry name=%s", pnpSendEventStatus, (const char*) userContextCallback);
 }
 
-int ModbusPnp_ReportTelemetry(
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface,
-    char* eventName,
-    char* data)
+IOTHUB_CLIENT_RESULT
+ModbusPnp_ReportTelemetry(
+    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    const char * ComponentName,
+    const char* TelemetryName,
+    const char* TelemetryValue)
 {
-    IOTHUB_CLIENT_RESULT pnpClientResult = IOTHUB_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
 
-    if (pnpInterface == NULL) {
-        return pnpClientResult;
+    if (DeviceClient == NULL) {
+        return result;
     }
 
     char telemetryMessageData[512] = {0};
-    sprintf(telemetryMessageData, "{\"%s\":%s}", eventName, data);
+    sprintf(telemetryMessageData, "{\"%s\":%s}", TelemetryName, TelemetryValue);
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), ModbusPnp_ReportTelemetryCallback, (void*)eventName)) != IOTHUB_CLIENT_OK)
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(ComponentName, (const char*) telemetryMessageData)) == NULL)
     {
-        LogError("ModbusPnp_ReportTelemetry failed, result=%d\n", pnpClientResult);
+        LogError("Modbus Adapter: PnP_CreateTelemetryMessageHandle failed.");
+    }
+    else if ((result = IoTHubDeviceClient_SendEventAsync(DeviceClient, messageHandle,
+            ModbusPnp_ReportTelemetryCallback, (void*) TelemetryName)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("Modbus Adapter: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
     }
 
-    return pnpClientResult;
+    IoTHubMessage_Destroy(messageHandle);
+
+    return result;
 }
 
 int ModbusPnp_PollingSingleTelemetry(
     void *param)
 {
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     CapabilityContext* context = param;
     ModbusTelemetry* telemetry = context->capability;
     LogInfo("Start polling task for telemetry \"%s\".", telemetry->Name);
@@ -250,8 +307,10 @@ int ModbusPnp_PollingSingleTelemetry(
     {
         memset(resultedData, 0x00, MODBUS_RESPONSE_MAX_LENGTH);
         int resultLen = ModbusPnp_ReadCapability(context, Telemetry, resultedData);
+
         if (resultLen > 0) {
-            ModbusPnp_ReportTelemetry(context->InterfaceClient, (char*)telemetry->Name, (char*)resultedData);
+            result = ModbusPnp_ReportTelemetry(context->deviceClient, (const char*) context->componentName,
+                (const char*) telemetry->Name, (const char*) resultedData);
         }
 
         Condition_Wait(StopPolling, lock, telemetry->DefaultFrequency);
@@ -262,7 +321,7 @@ int ModbusPnp_PollingSingleTelemetry(
     LogInfo("Stopped polling task for telemetry \"%s\".", telemetry->Name);
     free(context);
     ThreadAPI_Exit(THREADAPI_OK);
-    return IOTHUB_CLIENT_OK;
+    return result;
 }
 
 #pragma endregion
@@ -325,7 +384,8 @@ IOTHUB_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
         pollingPayload->capability = (void*)telemetry;
         pollingPayload->hLock = deviceContext->hConnectionLock;
         pollingPayload->connectionType = deviceContext->DeviceConfig->ConnectionType;
-        pollingPayload->InterfaceClient = deviceContext->pnpinterfaceHandle;
+        pollingPayload->deviceClient = deviceContext->DeviceClient;
+        pollingPayload->componentName = deviceContext->ComponentName;
 
         if (ThreadAPI_Create(&(deviceContext->PollingTasks[i]), ModbusPnp_PollingSingleTelemetry, (void*)pollingPayload) != THREADAPI_OK)
         {
@@ -359,7 +419,8 @@ IOTHUB_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
         pollingPayload->capability = (void*)property;
         pollingPayload->hLock = deviceContext->hConnectionLock;
         pollingPayload->connectionType = deviceContext->DeviceConfig->ConnectionType;
-        pollingPayload->InterfaceClient = deviceContext->pnpinterfaceHandle;
+        pollingPayload->deviceClient = deviceContext->DeviceClient;
+        pollingPayload->componentName = deviceContext->ComponentName;
 
         if (ThreadAPI_Create(&(deviceContext->PollingTasks[telemetryCount + i]), ModbusPnp_PollingSingleProperty, (void*)pollingPayload) != THREADAPI_OK)
         {

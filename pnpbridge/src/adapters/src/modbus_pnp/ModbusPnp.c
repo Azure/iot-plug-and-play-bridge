@@ -645,6 +645,9 @@ Modbus_StartPnpComponent(
         LogError("Modbus_StartPnpComponent: Device context is null, cannot start interface.");
         return IOTHUB_CLIENT_ERROR;
     }
+
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    deviceContext->DeviceClient = deviceHandle;
     // Start polling all telemetry
     return ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
 }
@@ -813,17 +816,17 @@ IOTHUB_CLIENT_RESULT Modbus_DestroyPnpComponent(
         return IOTHUB_CLIENT_OK;
     }
 
-    // Call DigitalTwin_InterfaceClient_Destroy.
-    // This will block if there are any active callbacks in this interface, and then
-    // mark the underlying handle such that no future callbacks shall come to it
-
-    DigitalTwin_InterfaceClient_Destroy(deviceContext->pnpinterfaceHandle);
-
-    if (deviceContext->DeviceConfig)
+    if (NULL != deviceContext->DeviceConfig)
     {
         free(deviceContext->DeviceConfig);
     }
-    if (deviceContext)
+
+    if (NULL != deviceContext->ComponentName)
+    {
+        free(deviceContext->ComponentName);
+    }
+
+    if (NULL != deviceContext)
     {
         free(deviceContext);
     }
@@ -836,17 +839,26 @@ Modbus_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
     const JSON_Object* AdapterComponentConfig,
-    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
+    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
     PMODBUS_DEVICE_CONTEXT deviceContext = calloc(1, sizeof(MODBUS_DEVICE_CONTEXT));
-    if (!deviceContext)
+    if (NULL == deviceContext)
     {
         LogError("Could not allocate memory for device context.");
-        return IOTHUB_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
+        goto exit;
     }
+
+    if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
+    {
+        LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
+        result = IOTHUB_CLIENT_INVALID_ARG;
+        goto exit;
+    }
+
+    // Allocate and copy component name into device context
+    mallocAndStrcpy_s((char**)&deviceContext->ComponentName, ComponentName);
 
     // Populate interface config from adapter's supported interface definitions
 
@@ -990,7 +1002,7 @@ Modbus_CreatePnpComponent(
     // Construct a property table
     if (NULL != deviceContext->InterfaceConfig->Properties)
     {
-        DIGITALTWIN_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
+        MODBUS_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
         char** propertyNames = NULL;
         SINGLYLINKEDLIST_HANDLE propertyList = deviceContext->InterfaceConfig->Properties;
         propertyCount = ModbusPnp_GetListCount(deviceContext->InterfaceConfig->Properties);
@@ -1027,7 +1039,7 @@ Modbus_CreatePnpComponent(
                 goto exit;
             }
 
-            propertyUpdateTable = calloc(1, sizeof(DIGITALTWIN_PROPERTY_UPDATE_CALLBACK*) * readWritePropertyCount);
+            propertyUpdateTable = calloc(1, sizeof(MODBUS_PROPERTY_UPDATE_CALLBACK*) * readWritePropertyCount);
             if (NULL == propertyUpdateTable) {
                 result = IOTHUB_CLIENT_ERROR;
                 goto exit;
@@ -1057,7 +1069,7 @@ Modbus_CreatePnpComponent(
     if (NULL != deviceContext->InterfaceConfig->Commands)
     {
         char** commandNames = NULL;
-        DIGITALTWIN_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
+        MODBUS_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
         SINGLYLINKEDLIST_HANDLE commandList = deviceContext->InterfaceConfig->Commands;
         commandCount = ModbusPnp_GetListCount(commandList);
 
@@ -1069,7 +1081,7 @@ Modbus_CreatePnpComponent(
                 goto exit;
             }
 
-            commandUpdateTable = calloc(1, sizeof(DIGITALTWIN_COMMAND_EXECUTE_CALLBACK*) * commandCount);
+            commandUpdateTable = calloc(1, sizeof(MODBUS_COMMAND_EXECUTE_CALLBACK*) * commandCount);
             if (NULL == commandUpdateTable) {
                 result = IOTHUB_CLIENT_ERROR;
                 goto exit;
@@ -1095,41 +1107,10 @@ Modbus_CreatePnpComponent(
             }
         }
     }
-   
-    // Call DigitalTwinClient Create and assign pnpInterfaceClient to deviceContext's pnpInterfaceClient
-    result = DigitalTwin_InterfaceClient_Create(ComponentName, NULL, deviceContext, 
-                                                    &pnpInterfaceClient);
-    if (IOTHUB_CLIENT_OK != result) {
-        LogError("Modbus_CreatePnpComponent: DigitalTwin_InterfaceClient_Create failed.");
-        result = IOTHUB_CLIENT_ERROR;
-        goto exit;
-    }
-
-    if (propertyCount > 0) {
-        result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, 
-                                                                            ModbusPnp_PropertyHandler, 
-                                                                            (void*) deviceContext);
-        if (IOTHUB_CLIENT_OK != result) {
-            LogError("Modbus_CreatePnpComponent: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
-            result = IOTHUB_CLIENT_ERROR;
-            goto exit;
-        }
-    }
-
-    if (commandCount > 0) {
-        result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, 
-                                                                    ModbusPnp_CommandHandler, (void*)deviceContext);
-        if (IOTHUB_CLIENT_OK != result) {
-            LogError("Modbus_CreatePnpComponent: DigitalTwin_InterfaceClient_SetCommandsCallback failed.");
-            result = IOTHUB_CLIENT_ERROR;
-            goto exit;
-        }
-    }
-
-    *PnpInterfaceClient = pnpInterfaceClient;
-    deviceContext->pnpinterfaceHandle = pnpInterfaceClient;
 
     PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ModbusPnp_PropertyHandler);
+    PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ModbusPnp_CommandHandler);
 
 exit:
     if (result != IOTHUB_CLIENT_OK)

@@ -88,12 +88,13 @@ typedef int SOCKET;
     typedef struct _MODBUS_DEVICE_CONTEXT {
         HANDLE hDevice;
         LOCK_HANDLE hConnectionLock;
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpinterfaceHandle;
+        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
         THREAD_HANDLE ModbusDeviceWorker;
 
         PModbusDeviceConfig DeviceConfig;
         PModbusInterfaceConfig InterfaceConfig;
         THREAD_HANDLE* PollingTasks;
+        char * ComponentName;
     } MODBUS_DEVICE_CONTEXT, *PMODBUS_DEVICE_CONTEXT;
 
     typedef struct _MODBUS_ADAPTER_CONTEXT {
@@ -101,6 +102,20 @@ typedef int SOCKET;
     } MODBUS_ADAPTER_CONTEXT, * PMODBUS_ADAPTER_CONTEXT;
 
     int ModbusPnp_GetListCount(SINGLYLINKEDLIST_HANDLE list);
+
+    typedef int(*MODBUS_COMMAND_EXECUTE_CALLBACK)(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        const char* CommandName,
+        JSON_Value* CommandValue,
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize);
+
+    typedef void(*MODBUS_PROPERTY_UPDATE_CALLBACK)(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        const char* PropertyName,
+        JSON_Value* PropertyValue,
+        int version,
+        void* userContextCallback);
 
     // Modbus Adapter Config
     #define PNP_CONFIG_ADAPTER_MODBUS_IDENTITY "modbus_identity"

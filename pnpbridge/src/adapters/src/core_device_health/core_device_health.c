@@ -534,7 +534,6 @@ CoreDevice_CreatePnpComponent(
     if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
     {
         LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
-        BridgeComponentHandle = NULL;
         result = IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
     }
@@ -544,7 +543,6 @@ CoreDevice_CreatePnpComponent(
     if (NULL == hardwareId)
     {
         LogError("Device adapter config needs to specify hardware ID for device.");
-        BridgeComponentHandle = NULL;
         result = IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
     }
