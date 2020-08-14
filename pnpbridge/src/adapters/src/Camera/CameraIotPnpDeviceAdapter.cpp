@@ -113,11 +113,11 @@ void CameraIotPnpDeviceAdapter::Stop()
 }
 
 int CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate(
-    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-    _In_ const char* CommandName,
-    _In_ JSON_Value* CommandValue,
-    _Out_ unsigned char** CommandResponse,
-    _Out_ size_t* CommandResponseSize)
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
     AZURE_UNREFERENCED_PARAMETER(CommandValue);
     auto CameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(PnpComponentHandleGetContext(PnpComponentHandle));
@@ -154,11 +154,11 @@ int CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate(
 
 // static
 void CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate(
-    _In_ PNPBRIDGE_COMPONENT_HANDLE /* PnpComponentHandle */,
-    _In_ const char* /* PropertyName */,
-    _In_ JSON_Value* /* PropertyValue */,
-    _In_ int /* version */,
-    _In_ void* /* userContextCallback */)
+    PNPBRIDGE_COMPONENT_HANDLE /* PnpComponentHandle */,
+    const char* /* PropertyName */,
+    JSON_Value* /* PropertyValue */,
+    int /* version */,
+    void* /* userContextCallback */)
 {
     // no-op
 }
@@ -169,6 +169,12 @@ int CameraIotPnpDeviceAdapter::TakePhoto(
 {
     int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
+
+    if (m_hasStartedReporting)
+    {
+        m_cameraDevice->StartTelemetryWorker();
+    }
+
     if (S_OK == m_cameraDevice->TakePhotoOp(strResponse))
     {
         mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
@@ -181,11 +187,6 @@ int CameraIotPnpDeviceAdapter::TakePhoto(
         result = PNP_STATUS_INTERNAL_ERROR;
     }
 
-    if (m_hasStartedReporting)
-    {
-        m_cameraDevice->StartTelemetryWorker();
-    }
-
     return result;
 }
 
@@ -195,6 +196,12 @@ int CameraIotPnpDeviceAdapter::TakeVideo(
 {
     int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
+
+    if (m_hasStartedReporting)
+    {
+        m_cameraDevice->StartTelemetryWorker();
+    }
+
     if (S_OK == m_cameraDevice->TakeVideoOp(10000, strResponse))
     {
         mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
@@ -202,7 +209,7 @@ int CameraIotPnpDeviceAdapter::TakeVideo(
     }
     else
     {
-        LogError("Error taking photo");
+        LogError("Error taking video");
         *CommandResponseSize = 0;
         result = PNP_STATUS_INTERNAL_ERROR;
     }
