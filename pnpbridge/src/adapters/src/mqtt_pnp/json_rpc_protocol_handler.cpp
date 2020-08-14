@@ -1,5 +1,3 @@
-#pragma once
-
 #include <stdexcept>
 #include <map>
 #include <atomic>

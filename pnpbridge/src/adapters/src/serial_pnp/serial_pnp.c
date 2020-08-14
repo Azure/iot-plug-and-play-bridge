@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
 #include <pnpbridge.h>
 
 #include "azure_c_shared_utility/azure_base32.h"
@@ -321,7 +320,7 @@ void SerialPnp_UnsolicitedPacket(
         }
         LogInfo("%s: %s", ev->defintion.Name, rxstrdata);
 
-        SerialPnp_SendEventAsync(device->PnpComponentHandle, ev->defintion.Name, rxstrdata);
+        SerialPnp_SendEventAsync(device, ev->defintion.Name, rxstrdata);
 
         free(event_name);
         free(rxData);
@@ -1256,33 +1255,37 @@ IOTHUB_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(
 }
 
 void SerialPnp_SendEventCallback(
-    IOTHUB_CLIENT_RESULT pnpSendEventStatus,
+    IOTHUB_CLIENT_CONFIRMATION_RESULT pnpSendEventStatus,
     void* userContextCallback)
 {
-    LogInfo("SerialDataSendEventCallback called, result=%d, userContextCallback=%p", pnpSendEventStatus, userContextCallback);
+    LogInfo("SerialDataSendEventCallback called, result=%d, telemetry=%s", pnpSendEventStatus, (char*) userContextCallback);
 }
 
 IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface,
-    char* eventName,
-    char* data)
+    PSERIAL_DEVICE_CONTEXT DeviceContext,
+    char* TelemetryName,
+    char* TelemetryData)
 {
-    IOTHUB_CLIENT_RESULT pnpClientResult;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
 
-    if (pnpInterface == NULL)
-    {
-        return IOTHUB_CLIENT_OK;
-    }
 
     char telemetryMessageData[512] = { 0 };
-    sprintf(telemetryMessageData, "{\"%s\":%s}", eventName, data);
+    sprintf(telemetryMessageData, "{\"%s\":%s}", TelemetryName, TelemetryData);
 
-    if ((pnpClientResult = DigitalTwin_InterfaceClient_SendTelemetryAsync(pnpInterface, (unsigned char*)telemetryMessageData, strlen(telemetryMessageData), SerialPnp_SendEventCallback, (void*)eventName)) != IOTHUB_CLIENT_OK)
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(DeviceContext->ComponentName, telemetryMessageData)) == NULL)
     {
-        LogError("PnP_InterfaceClient_SendEventAsync failed, result=%d\n", pnpClientResult);
+        LogError("Serial Pnp Adapter: PnP_CreateTelemetryMessageHandle failed.");
+    }
+    else if ((result = IoTHubDeviceClient_SendEventAsync(DeviceContext->DeviceClient, messageHandle,
+            SerialPnp_SendEventCallback, (void*)TelemetryName)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("Serial Pnp Adapter: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
     }
 
-    return pnpClientResult;
+    IoTHubMessage_Destroy(messageHandle);
+
+    return result;
 }
 
 int SerialPnp_GetListCount(
@@ -1304,12 +1307,20 @@ int SerialPnp_GetListCount(
 }
 
 static void SerialPnp_PropertyUpdateHandler(
-    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* PropertyName,
+    JSON_Value* PropertyValue,
+    int version,
     void* userContextCallback)
 {
-    IOTHUB_CLIENT_RESULT pnpClientResult;
-    DIGITALTWIN_CLIENT_PROPERTY_RESPONSE propertyResponse;
-    PSERIAL_DEVICE_CONTEXT deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
+    AZURE_UNREFERENCED_PARAMETER(version);
+    IOTHUB_CLIENT_RESULT iothubClientResult;
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient = (IOTHUB_DEVICE_CLIENT_HANDLE)userContextCallback;
+    STRING_HANDLE jsonToSend = NULL;
+    const char * PropertyValueString = json_value_get_string(PropertyValue);
+    size_t PropertyValueLen = strlen(PropertyValueString);
+
     int propertyCount = 0;
 
     if (NULL != deviceContext)
@@ -1319,70 +1330,89 @@ static void SerialPnp_PropertyUpdateHandler(
 
         propertyCount = SerialPnp_GetListCount(interfaceDef->Properties);
 
-        if (dtClientPropertyUpdate->propertyDesired && propertyCount > 0)
+        if ((PropertyName != NULL) && (PropertyValueString != NULL) && (propertyCount > 0))
         {
-            LogInfo("Processed property.  propertyUpdated = %.*s",
-                (int)dtClientPropertyUpdate->propertyDesiredLen, dtClientPropertyUpdate->propertyDesired);
 
-            SerialPnp_PropertyHandler(deviceContext, dtClientPropertyUpdate->propertyName, (char*)dtClientPropertyUpdate->propertyDesired);
+            LogInfo("Serial Pnp Adapter: Processed property. PropertyUpdated = %.*s", (int)PropertyValueLen, PropertyValueString);
 
-            propertyResponse.version = 1;
-            propertyResponse.responseVersion = dtClientPropertyUpdate->desiredVersion;
-            propertyResponse.statusCode = 200;
-            propertyResponse.statusDescription = "Property Updated Successfully";
+            SerialPnp_PropertyHandler(deviceContext, PropertyName, (char*) PropertyValueString);
 
-            pnpClientResult = DigitalTwin_InterfaceClient_ReportPropertyAsync(deviceContext->PnpComponentHandle, dtClientPropertyUpdate->propertyName, 
-                                    dtClientPropertyUpdate->propertyDesired, dtClientPropertyUpdate->propertyDesiredLen, &propertyResponse, NULL, NULL);
+            if ((jsonToSend = PnP_CreateReportedProperty(deviceContext->ComponentName, PropertyName, PropertyValueString)) == NULL)
+            {
+                LogError("Serial Pnp Adapter: Unable to build reported property response for propertyName=%s, propertyValue=%s",
+                    PropertyName, PropertyValueString);
+            }
+            else
+            {
+                const char* jsonToSendStr = STRING_c_str(jsonToSend);
+                size_t jsonToSendStrLen = strlen(jsonToSendStr);
+
+                if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(deviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                    NULL, NULL)) != IOTHUB_CLIENT_OK)
+                {
+                    LogError("Serial Pnp Adapter: Unable to send reported state for property=%s, error=%d",
+                        PropertyName, iothubClientResult);
+                }
+                else
+                {
+                    LogInfo("Serial Pnp Adapter: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
+                        PropertyName, PropertyValueString);
+                }
+
+                STRING_delete(jsonToSend);
+            }
         }
     }
 }
 
 // SerialPnp_SetCommandResponse is a helper that fills out a PNP_CLIENT_COMMAND_RESPONSE
-static void SerialPnp_SetCommandResponse(
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext,
-    const char* responseData,
-    int status)
+static int SerialPnp_SetCommandResponse(
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize,
+    const char* ResponseData)
 {
-    size_t responseLen = strlen(responseData);
-    memset(pnpClientCommandResponseContext, 0, sizeof(*pnpClientCommandResponseContext));
-    pnpClientCommandResponseContext->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
+    int result = PNP_STATUS_SUCCESS;
+    if (ResponseData == NULL)
+    {
+        LogError("Serial Pnp Adapter: Response Data is empty");
+        *CommandResponseSize = 0;
+        return result;
+    }
 
-    // Allocate a copy of the response data to return to the invoker. The pnp layer that invoked command handler
-    // takes responsibility for freeing this data.
-    if ((pnpClientCommandResponseContext->responseData = malloc(responseLen + 1)) == NULL)
+    *CommandResponseSize = strlen((char*)ResponseData);
+    memset(CommandResponse, 0, sizeof(*CommandResponse));
+
+    // Allocate a copy of the response data to return to the invoker. Caller will free this.
+    if (mallocAndStrcpy_s((char**)CommandResponse, (char*)ResponseData) != 0)
     {
         LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to allocate response data");
-        pnpClientCommandResponseContext->status = 500;
+        result = PNP_STATUS_INTERNAL_ERROR;
     }
-    else
-    {
-        pnpClientCommandResponseContext->responseData = (unsigned char*)responseData;
-        pnpClientCommandResponseContext->responseDataLen = responseLen;
-        pnpClientCommandResponseContext->status = status;
-    }
+
+    return result;
 }
 
-void 
+int 
 SerialPnp_CommandUpdateHandler(
-    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext,
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext,
-    void* userContextCallback)
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
-    PSERIAL_DEVICE_CONTEXT deviceContext;
-
-    deviceContext = (PSERIAL_DEVICE_CONTEXT)userContextCallback;
+    PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
     LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
     const InterfaceDefinition* interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
     int commandCount = SerialPnp_GetListCount(interfaceDef->Commands);
 
-
     char* response = NULL;
-    if (commandCount > 0)
+    char* requestData = (char*) json_value_get_string(CommandValue);
+    if ((commandCount > 0) && (requestData != NULL))
     {
-        SerialPnp_CommandHandler(deviceContext, dtClientCommandContext->commandName, (char*)dtClientCommandContext->requestData, &response);
-        SerialPnp_SetCommandResponse(dtClientCommandResponseContext, response, 200);
+        SerialPnp_CommandHandler(deviceContext, CommandName, (char*)requestData, &response);
+        return SerialPnp_SetCommandResponse(CommandResponse, CommandResponseSize, response);
     }
-    
+    return PNP_STATUS_NOT_FOUND;
 }
 
 IOTHUB_CLIENT_RESULT
@@ -1392,11 +1422,14 @@ SerialPnp_StartPnpComponent(
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
-    if (deviceContext == NULL)
+    if (NULL == deviceContext)
     {
-        LogError("Device context is null");
+        LogError("Device context is null, unable to start component");
         return IOTHUB_CLIENT_ERROR;
     }
+
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    deviceContext->DeviceClient = deviceHandle;
 
     // Start telemetry thread
     if (ThreadAPI_Create(&deviceContext->TelemetryWorkerHandle, SerialPnp_UartReceiver, deviceContext) != THREADAPI_OK) {
@@ -1530,12 +1563,6 @@ IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpComponent(
         return IOTHUB_CLIENT_OK;
     }
 
-    // Call DigitalTwin_InterfaceClient_Destroy.
-    // This will block if there are any active callbacks in this interface, and then
-    // mark the underlying handle such that no future callbacks shall come to it
-
-    DigitalTwin_InterfaceClient_Destroy(deviceContext->PnpComponentHandle);
-
     if (deviceContext->InterfaceDefinitions)
     {
         LIST_ITEM_HANDLE interfaceItem = singlylinkedlist_get_head_item(deviceContext->InterfaceDefinitions);
@@ -1556,6 +1583,11 @@ IOTHUB_CLIENT_RESULT SerialPnp_DestroyPnpComponent(
         singlylinkedlist_destroy(deviceContext->InterfaceDefinitions);
     }
 
+    if(deviceContext->ComponentName)
+    {
+        free(deviceContext->ComponentName);
+    }
+
     free(deviceContext);
 
     return IOTHUB_CLIENT_OK;
@@ -1566,11 +1598,17 @@ SerialPnp_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
     const char* ComponentName,
     const JSON_Object* AdapterComponentConfig,
-    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
+    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+
+    if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
+    {
+        LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
+        result = IOTHUB_CLIENT_INVALID_ARG;
+        goto exit;
+    }
 
     // Get device connection information
 
@@ -1632,13 +1670,14 @@ SerialPnp_CreatePnpComponent(
     LogInfo("Opening com port %s", useComDeviceInterface ? seriaDevice->InterfaceName : port);
 
     PSERIAL_DEVICE_CONTEXT deviceContext = malloc(sizeof(SERIAL_DEVICE_CONTEXT));
-    if (!deviceContext)
+    if (NULL == deviceContext)
     {
         LogError("Error out of memory");
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
     memset(deviceContext, 0, sizeof(SERIAL_DEVICE_CONTEXT));
+    mallocAndStrcpy_s((char**)&deviceContext->ComponentName, ComponentName);
     deviceContext->RxBufferIndex = 0;
     deviceContext->RxEscaped = false;
 
@@ -1664,7 +1703,6 @@ SerialPnp_CreatePnpComponent(
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
-    deviceContext->PnpComponentHandle = NULL;
     deviceContext->InterfaceDefinitions = singlylinkedlist_create();
 
     // Open device and store handle in device context
@@ -1675,46 +1713,10 @@ SerialPnp_CreatePnpComponent(
     {
         LogError("ThreadAPI_Create failed");
     }
-    
-    // Create pnp interface
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient = NULL;
 
-    result = DigitalTwin_InterfaceClient_Create(ComponentName, NULL, deviceContext, &pnpInterfaceClient);
-    if (IOTHUB_CLIENT_OK != result)
-    {
-        LogError("SerialPnp_CreatePnpComponent: DigitalTwin_InterfaceClient_Create failed.");
-        result = IOTHUB_CLIENT_ERROR;
-        goto exit;
-    }
-
-    {
-        result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, 
-                                                                          SerialPnp_PropertyUpdateHandler,
-                                                                          (void*) deviceContext);
-        if (IOTHUB_CLIENT_OK != result)
-        {
-            LogError("SerialPnp_CreatePnpComponent: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
-            result = IOTHUB_CLIENT_ERROR;
-            goto exit;
-        }
-    }
-
-    {
-        result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient,
-                                                                 SerialPnp_CommandUpdateHandler,
-                                                                 (void*)deviceContext);
-        if (IOTHUB_CLIENT_OK != result)
-        {
-            LogError("SerialPnp_CreatePnpComponent: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
-            result = IOTHUB_CLIENT_ERROR;
-            goto exit;
-        }
-    }
-
-    // Save the PnpAdapterInterface in device context
-    deviceContext->PnpComponentHandle = pnpInterfaceClient;
-    *PnpInterfaceClient = pnpInterfaceClient;
     PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, SerialPnp_PropertyUpdateHandler);
+    PnpComponentHandleSetCommandCallback(BridgeComponentHandle, SerialPnp_CommandUpdateHandler);
 
 exit:
     if (result != IOTHUB_CLIENT_OK)

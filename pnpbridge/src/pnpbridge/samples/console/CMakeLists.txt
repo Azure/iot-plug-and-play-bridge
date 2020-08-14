@@ -41,13 +41,13 @@ add_definitions(-DPNP_LOGGING_ENABLED)
 set(pnp_bridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
 
 include_directories(inc)
-include_directories(../../../../deps/azure-iot-sdk-c-pnp/deps/parson)
-include_directories(../../../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
+include_directories(common)
+include_directories(../../deps/azure-iot-sdk-c-pnp/deps/parson)
+include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/azure-macro-utils-c/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
-include_directories(../../../../deps/azure-iot-sdk-c-pnp/digitaltwin_client/inc)
-include_directories(../../../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
-include_directories(../../../../deps/azure-iot-sdk-c-pnp/provisioning_client/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/iothub_client/inc)
+include_directories(../../deps/azure-iot-sdk-c-pnp/provisioning_client/inc)
 include_directories(${pnp_bridge_INC_FOLDER})
 
 if(WIN32)
@@ -72,7 +72,6 @@ set(pnp_bridge_common_libs
     utpm
     pnpbridge
     pnpbridge_adapters
-    digitaltwin_client
     pnpbridge_modbus
     pnpbridge_mqtt
     pnpbridge_serial

@@ -14,6 +14,12 @@ IOTHUB_CLIENT_RESULT Camera_StartPnpComponent(
 
     const auto cameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(
         PnpComponentHandleGetContext(PnpComponentHandle));
+    
+    if (!cameraDevice)
+    {
+        LogError("Device context is null, unable to start component");
+        return IOTHUB_CLIENT_ERROR;
+    }
 
     IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
     cameraDevice->SetIotHubDeviceClientHandle(deviceHandle);

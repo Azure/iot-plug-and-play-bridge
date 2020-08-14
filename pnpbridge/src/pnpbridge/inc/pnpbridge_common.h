@@ -50,8 +50,6 @@ extern "C"
 
 #include <assert.h>
 
-#define DIGITALTWIN_MODULE_CLIENT_HANDLE void*
-
 #define PNPBRIDGE_CLIENT_HANDLE void*
 
 #define PNPBRIDGE_RESULT_VALUES \
@@ -136,8 +134,6 @@ typedef struct _MX_IOT_HANDLE_TAG {
             // connection to iot device
             IOTHUB_MODULE_CLIENT_HANDLE moduleHandle;
 
-            // Handle representing PnpDeviceClient
-            DIGITALTWIN_MODULE_CLIENT_HANDLE pnpModuleClientHandle;
         } IotModule;
     } u1;
 
@@ -168,10 +164,6 @@ typedef struct _PNP_BRIDGE {
 
 
 void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
-// Globals PNP bridge instance
-PPNP_BRIDGE g_PnpBridge;
-PNP_BRIDGE_STATE g_PnpBridgeState;
-bool g_PnpBridgeShutdown;
 
 #ifdef __cplusplus
 }

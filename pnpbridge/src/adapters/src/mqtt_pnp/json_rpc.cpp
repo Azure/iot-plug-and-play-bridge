@@ -1,5 +1,3 @@
-#pragma once
-
 #include "parson.h"
 #include <stdexcept>
 #include <map>

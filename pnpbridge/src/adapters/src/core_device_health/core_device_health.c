@@ -596,6 +596,11 @@ IOTHUB_CLIENT_RESULT CoreDevice_StartPnpComponent(
 {
     UNREFERENCED_PARAMETER(AdapterHandle);
     PCORE_DEVICE_TAG device = PnpComponentHandleGetContext(PnpComponentHandle);
+    if (NULL == device)
+    {
+        LogError("Device context is null, unable to start component");
+        return IOTHUB_CLIENT_ERROR;
+    }
     IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
     device->DeviceClient = deviceHandle;
     device->TelemetryStarted = true;

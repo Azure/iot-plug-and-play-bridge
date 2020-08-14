@@ -10,6 +10,10 @@
 #include "pnpbridgeh.h"
 #include <iothub_client.h>
 
+// Globals PNP bridge instance
+PPNP_BRIDGE g_PnpBridge = NULL;
+PNP_BRIDGE_STATE g_PnpBridgeState = PNP_BRIDGE_UNINITIALIZED;
+bool g_PnpBridgeShutdown = false;
 
 IOTHUB_CLIENT_RESULT 
 PnpBridge_Initialize(

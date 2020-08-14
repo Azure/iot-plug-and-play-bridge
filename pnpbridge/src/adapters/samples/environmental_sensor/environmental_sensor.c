@@ -70,7 +70,7 @@ static const char sampleEnvironmentalSensorPropertyBrightness[] = "brightness";
 static const char g_environmentalSensorPropertyResponseDescription[] = "success";
 
 // Format of the body when responding to a targetTemperature 
-static const char g_environmentalSensorBrightnessResponseFormat[] = "%.2f";
+static const char g_environmentalSensorBrightnessResponseFormat[] = "%.2d";
 
 
 // SampleEnvironmentalSensor_SetCommandResponse is a helper that fills out a command request
@@ -208,9 +208,8 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
 {
     IOTHUB_CLIENT_RESULT iothubClientResult;
     STRING_HANDLE jsonToSend = NULL;
-    size_t PropertyValueLen = json_value_get_string_len(PropertyValue);
     const char * PropertyValueString = json_value_get_string(PropertyValue);
-
+    size_t PropertyValueLen = strlen(PropertyValueString);
 
     LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: CustomerName property invoked...");
     LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: CustomerName data=<%.*s>", (int)PropertyValueLen, PropertyValueString);
@@ -403,6 +402,9 @@ void SampleEnvironmentalSensor_ProcessPropertyUpdate(
     JSON_Value* PropertyValue,
     int version)
 {
+    const char * PropertyValueString = json_value_get_string(PropertyValue);
+    size_t PropertyValueLen = strlen(PropertyValueString);
+
     if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
     {
         SampleEnvironmentalSensor_CustomerNameCallback(EnvironmentalSensor, DeviceClient, PropertyName, PropertyValue, version);
@@ -414,7 +416,7 @@ void SampleEnvironmentalSensor_ProcessPropertyUpdate(
     else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
     {
         LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Property name <%s>, last reported value=<%.*s>",
-            PropertyName, (int)json_value_get_string_len(PropertyValue), json_value_get_string(PropertyValue));
+            PropertyName, (int)PropertyValueLen, PropertyValueString);
     }
     else
     {

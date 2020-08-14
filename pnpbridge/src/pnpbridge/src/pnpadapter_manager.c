@@ -7,6 +7,9 @@
 
 extern PPNP_ADAPTER PNP_ADAPTER_MANIFEST[];
 extern const int PnpAdapterCount;
+extern PPNP_BRIDGE g_PnpBridge;
+extern PNP_BRIDGE_STATE g_PnpBridgeState;
+extern bool g_PnpBridgeShutdown;
 
 #ifdef USE_EDGE_MODULES
 #include "pnpadapter_manager.h"
@@ -588,7 +591,7 @@ void PnpAdapterManager_DeviceTwinCallback(
 {
     // Invoke PnP_ProcessTwinData to actualy process the data.  PnP_ProcessTwinData uses a visitor pattern to parse
     // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
-    if (PnP_ProcessTwinData(updateState, payload, size, g_PnpBridge->PnpMgr->ComponentsInModel,
+    if (PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
             g_PnpBridge->PnpMgr->NumInterfaces, PnpAdapterManager_RoutePropertyCallback, userContextCallback) == false)
     {
         // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)

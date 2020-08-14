@@ -15,6 +15,10 @@
 #include "iothub_message.h"
 #include "parson.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 // 
 // Status codes for PnP, closely mapping to HTTP status.
 //
@@ -81,5 +85,9 @@ bool PnP_ProcessTwinData(DEVICE_TWIN_UPDATE_STATE updateState, const unsigned ch
 // a new copy of the data with a NULL terminator.  The JSON parser this sample uses, parson, only operates over NULL terminated strings.
 //
 char* PnP_CopyPayloadToString(const unsigned char* payload, size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PNP_PROTOCOL_H */
