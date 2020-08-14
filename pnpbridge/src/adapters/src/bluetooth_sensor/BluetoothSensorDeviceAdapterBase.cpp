@@ -110,22 +110,22 @@ void BluetoothSensorDeviceAdapterBase::OnTelemetryCallback(
 
 // static
 void BluetoothSensorDeviceAdapterBase::OnPropertyCallback(
-    _In_ PNPBRIDGE_COMPONENT_HANDLE /*PnpComponentHandle*/,
-    _In_ const char* /* PropertyName */,
-    _In_ JSON_Value* /* PropertyValue */,
-    _In_ int /* version */,
-    _In_ void* /* userContextCallback */)
+    PNPBRIDGE_COMPONENT_HANDLE /*PnpComponentHandle*/,
+    const char* /* PropertyName */,
+    JSON_Value* /* PropertyValue */,
+    int /* version */,
+    void* /* userContextCallback */)
 {
     // No properties are supportedon BT sensors, no-op
 }
 
 // static
 int BluetoothSensorDeviceAdapterBase::OnCommandCallback(
-    _In_ PNPBRIDGE_COMPONENT_HANDLE /* PnpComponentHandle */,
-    _In_ const char* /* CommandName */,
-    _In_ JSON_Value* /* CommandValue */,
-    _Out_ unsigned char** /* CommandResponse */,
-    _Out_ size_t* /* CommandResponseSize */)
+    PNPBRIDGE_COMPONENT_HANDLE /* PnpComponentHandle */,
+    const char* /* CommandName */,
+    JSON_Value* /* CommandValue */,
+    unsigned char** /* CommandResponse */,
+    size_t* /* CommandResponseSize */)
 {
     // No commands are supported on BT sensors
     return PNP_STATUS_SUCCESS;

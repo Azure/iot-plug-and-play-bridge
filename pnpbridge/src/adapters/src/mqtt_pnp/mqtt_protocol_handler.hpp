@@ -23,6 +23,23 @@ public:
         IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle) = 0;
 
     virtual
+    void OnPnpPropertyCallback(
+        const char* PropertyName,
+        JSON_Value* PropertyValue,
+        int version,
+        void* userContextCallback
+    ) = 0;
+
+    virtual 
+    int OnPnpCommandCallback(
+        const char* CommandName,
+        JSON_Value* CommandValue,
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize
+    ) = 0;
+
+
+    virtual
     void StartTelemetry() = 0;
 
 };

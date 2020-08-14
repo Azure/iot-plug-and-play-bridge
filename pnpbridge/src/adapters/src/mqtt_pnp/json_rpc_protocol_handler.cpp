@@ -12,7 +12,6 @@
 #include "azure_c_shared_utility/lock.h"
 
 #include "json_rpc_protocol_handler.hpp"
-#include "mqtt_pnp.hpp"
 
 class JsonRpcCallContext {
 public:
@@ -94,82 +93,69 @@ JsonRpcProtocolHandler::Initialize(
 }
 
 void JsonRpcProtocolHandler::OnPnpPropertyCallback(
-    _In_ PNPBRIDGE_COMPONENT_HANDLE /* PnpComponentHandle */,
-    _In_ const char* /* PropertyName */,
-    _In_ JSON_Value* /* PropertyValue */,
-    _In_ int /* version */,
-    _In_ void* /* userContextCallback */)
+    const char* /* PropertyName */,
+    JSON_Value* /* PropertyValue */,
+    int /* version */,
+    void* /* userContextCallback */)
 {
     // no-op
 }
 
 int JsonRpcProtocolHandler::OnPnpCommandCallback(
-    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-    _In_ const char* CommandName,
-    _In_ JSON_Value* CommandValue,
-    _Out_ unsigned char** CommandResponse,
-    _Out_ size_t* CommandResponseSize)
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
     int result = PNP_STATUS_SUCCESS;
     const char* json_method = nullptr;
     const char* tx_topic = nullptr;
     const char* commandValueString = nullptr;
 
-    MqttPnpInstance* pnpComponent = static_cast<MqttPnpInstance*>(PnpComponentHandleGetContext(PnpComponentHandle));
-    if (pnpComponent != NULL)
+
+    if ((commandValueString = json_value_get_string(CommandValue)) == NULL)
     {
-        if ((commandValueString = json_value_get_string(CommandValue)) == NULL)
-        {
-            LogError("Component %s: Cannot retrieve JSON string for command", pnpComponent->s_ComponentName.c_str());
-            result = PNP_STATUS_BAD_FORMAT;
-        }
-
-        printf("Incoming call to %s with %s\n", CommandName, commandValueString);
-
-        std::map<std::string, std::pair<std::string, std::string>> commandMap = static_cast<JsonRpcProtocolHandler*> 
-             (pnpComponent->s_ProtocolHandler)->GetCommands();
-
-        JsonRpc* jsonRpcCall = static_cast<JsonRpcProtocolHandler*>(pnpComponent->s_ProtocolHandler)->GetJsonRpc();
-
-        MqttConnectionManager * connectionMgr = static_cast<JsonRpcProtocolHandler*>
-            (pnpComponent->s_ProtocolHandler)->GetConnectionManager();
-
-        auto iterator = commandMap.find(CommandName);
-        if (iterator != commandMap.end()) {
-            json_method = iterator->second.first.c_str();
-            tx_topic = iterator->second.second.c_str();
-        }
-
-        JsonRpcCallContext call;
-        int * responseStatus = &result;
-        call.CommandResponse = CommandResponse;
-        call.CommandResponseSize = CommandResponseSize;
-        call.CommandResponseStatus = responseStatus;
-        const char* call_str = jsonRpcCall->RpcCall(json_method, CommandValue, &call);
-
-        printf("Generated JSON %s\n", call_str);
-
-
-        // Create event
-        call.Condition = Condition_Init();
-        call.Lock = Lock_Init();
-
-        // Send appropriate command over json rpc, return success
-        printf("Publishing command call on %s : %s\n", tx_topic, call_str);
-        connectionMgr->Publish(tx_topic, call_str, strlen(call_str));
-        json_free_serialized_string((char*) call_str);
-
-        printf("Waiting for response\n");
-        Lock(call.Lock);
-        Condition_Wait(call.Condition, call.Lock, 0);
-        Unlock(call.Lock);
-
-        printf("Response length %d, %s\n", (int) *CommandResponseSize, *CommandResponse);
-        Condition_Deinit(call.Condition);
-        Lock_Deinit(call.Lock);
-
-        result = *responseStatus;
+        LogError("Component %s: Cannot retrieve JSON string for command", s_ComponentName.c_str());
+        result = PNP_STATUS_BAD_FORMAT;
     }
+
+    printf("Incoming call to %s with %s\n", CommandName, commandValueString);
+
+    auto iterator = s_Commands.find(CommandName);
+    if (iterator != s_Commands.end()) {
+        json_method = iterator->second.first.c_str();
+        tx_topic = iterator->second.second.c_str();
+    }
+
+    JsonRpcCallContext call;
+    int * responseStatus = &result;
+    call.CommandResponse = CommandResponse;
+    call.CommandResponseSize = CommandResponseSize;
+    call.CommandResponseStatus = responseStatus;
+    const char* call_str = s_JsonRpc->RpcCall(json_method, CommandValue, &call);
+
+    printf("Generated JSON %s\n", call_str);
+
+
+    // Create event
+    call.Condition = Condition_Init();
+    call.Lock = Lock_Init();
+
+    // Send appropriate command over json rpc, return success
+    printf("Publishing command call on %s : %s\n", tx_topic, call_str);
+    s_ConnectionManager->Publish(tx_topic, call_str, strlen(call_str));
+    json_free_serialized_string((char*) call_str);
+
+    printf("Waiting for response\n");
+    Lock(call.Lock);
+    Condition_Wait(call.Condition, call.Lock, 0);
+    Unlock(call.Lock);
+
+    printf("Response length %d, %s\n", (int) *CommandResponseSize, *CommandResponse);
+    Condition_Deinit(call.Condition);
+    Lock_Deinit(call.Lock);
+
+    result = *responseStatus;
 
     return result;
 }

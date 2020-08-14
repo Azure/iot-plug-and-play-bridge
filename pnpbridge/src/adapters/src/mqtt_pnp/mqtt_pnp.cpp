@@ -68,6 +68,40 @@ IOTHUB_CLIENT_RESULT MqttPnp_DestroyPnpAdapter(
     return IOTHUB_CLIENT_OK;
 }
 
+static void
+MqttPnp_OnPnpPropertyCallback(
+    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    _In_ const char* PropertyName,
+    _In_ JSON_Value* PropertyValue,
+    _In_ int version,
+    _In_ void* userContextCallback
+)
+{
+    MqttPnpInstance* pnpComponent = static_cast<MqttPnpInstance*>(PnpComponentHandleGetContext(PnpComponentHandle));
+    if (pnpComponent != NULL)
+    {
+        return pnpComponent->s_ProtocolHandler->OnPnpPropertyCallback(PropertyName, PropertyValue, version, userContextCallback);
+    }
+}
+
+static int
+MqttPnp_OnPnpCommandCallback(
+    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    _In_ const char* CommandName,
+    _In_ JSON_Value* CommandValue,
+    _Out_ unsigned char** CommandResponse,
+    _Out_ size_t* CommandResponseSize
+)
+{
+    MqttPnpInstance* pnpComponent = static_cast<MqttPnpInstance*>(PnpComponentHandleGetContext(PnpComponentHandle));
+    if (pnpComponent != NULL)
+    {
+        return pnpComponent->s_ProtocolHandler->OnPnpCommandCallback(CommandName, CommandValue, CommandResponse, CommandResponseSize);
+    }
+    
+    return PNP_STATUS_SUCCESS;
+}
+
 IOTHUB_CLIENT_RESULT
 MqttPnp_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
@@ -134,8 +168,8 @@ MqttPnp_CreatePnpComponent(
     context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, adapterConfig);
 
     PnpComponentHandleSetContext(PnpComponentHandle, context);
-    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, JsonRpcProtocolHandler::OnPnpPropertyCallback);
-    PnpComponentHandleSetCommandCallback(PnpComponentHandle, JsonRpcProtocolHandler::OnPnpCommandCallback);
+    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, MqttPnp_OnPnpPropertyCallback);
+    PnpComponentHandleSetCommandCallback(PnpComponentHandle, MqttPnp_OnPnpCommandCallback);
 
     return IOTHUB_CLIENT_OK;
 }

@@ -21,22 +21,20 @@ public:
         JSON_Value*             ProtocolHandlerConfig
     );
 
-    static void
+    void
     OnPnpPropertyCallback(
-        _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-        _In_ const char* PropertyName,
-        _In_ JSON_Value* PropertyValue,
-        _In_ int version,
-        _In_ void* userContextCallback
+        const char* PropertyName,
+        JSON_Value* PropertyValue,
+        int version,
+        void* userContextCallback
     );
 
-    static int
+    int
     OnPnpCommandCallback(
-        _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-        _In_ const char* CommandName,
-        _In_ JSON_Value* CommandValue,
-        _Out_ unsigned char** CommandResponse,
-        _Out_ size_t* CommandResponseSize
+        const char* CommandName,
+        JSON_Value* CommandValue,
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize
     );
 
     void
@@ -46,10 +44,6 @@ public:
 
     void 
     StartTelemetry();
-
-    MqttConnectionManager* GetConnectionManager() { return s_ConnectionManager; }
-    std::map<std::string, std::pair<std::string, std::string>> GetCommands() { return s_Commands; }
-    JsonRpc* GetJsonRpc() { return s_JsonRpc; }
 
 private:
     MqttConnectionManager*              s_ConnectionManager = nullptr;
