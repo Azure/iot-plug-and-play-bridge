@@ -3,8 +3,8 @@
 
 #pragma once
 
-#ifndef PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
-#define PNPBRIDGE_PNP_ADAPTER_INTERFACE_H
+#ifndef PNPADAPTER_API_H
+#define PNPADAPTER_API_H
 
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
@@ -284,4 +284,4 @@ extern "C"
 }
 #endif
 
-#endif /* PNPBRIDGE_PNP_ADAPTER_INTERFACE_H */
+#endif /* PNPADAPTER_API_H */

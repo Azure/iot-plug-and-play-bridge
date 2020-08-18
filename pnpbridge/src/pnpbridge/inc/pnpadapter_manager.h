@@ -1,8 +1,7 @@
-#pragma once
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#include <pnpbridge.h>
 #pragma once
+#include <pnpbridge.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -10,17 +9,20 @@ extern "C"
 #endif
 
     // PnpAdapterManger's representation of a PNPADPTER and its configuration
-    typedef struct _PNP_ADAPTER_TAG {
+    typedef struct _PNP_ADAPTER_TAG
+    {
+        // Pnp Adapter with bound interfaces
         PPNP_ADAPTER adapter;
 
-        // List of pnp interfaces created under this adapter
-        SINGLYLINKEDLIST_HANDLE pnpInterfaceList;
+        // List of pnp components created under this adapter
+        SINGLYLINKEDLIST_HANDLE PnpComponentList;
 
-        // Lock to protect pnpInterfaceList modification
-        LOCK_HANDLE InterfaceListLock;
+        // Lock to protect PnpComponentList modification
+        LOCK_HANDLE ComponentListLock;
+
     } PNP_ADAPTER_TAG, * PPNP_ADAPTER_TAG;
 
-    // Structure uses to share context between adapter manager and adapter interface
+    // Structure used to share context between adapter manager and adapter interface
     typedef struct _PNP_ADAPTER_CONTEXT_TAG {
         PPNPBRIDGE_ADAPTER_HANDLE context;
         PPNP_ADAPTER_TAG adapter;
@@ -29,21 +31,21 @@ extern "C"
 
     // Structure used for an instance of Pnp Adapter Manager
     typedef struct _PNP_ADAPTER_MANAGER {
-        unsigned int NumInterfaces;
+        unsigned int NumComponents;
         SINGLYLINKEDLIST_HANDLE PnpAdapterHandleList;
         char ** ComponentsInModel;
     } PNP_ADAPTER_MANAGER, * PPNP_ADAPTER_MANAGER;
 
 
     // Pnp interface structure
-    typedef struct _PNPADAPTER_INTERFACE_TAG {
+    typedef struct _ {
         void* context;
-        const char* interfaceName;
+        const char* componentName;
         const char* adapterIdentity;
         PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK processPropertyUpdate;
         PNPBRIDGE_COMPONENT_METHOD_CALLBACK processCommand;
         IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
-    } PNPADAPTER_INTERFACE_TAG, * PPNPADAPTER_INTERFACE_TAG;
+    } PNPADAPTER_COMPONENT_TAG, * PPNPADAPTER_COMPONENT_TAG;
 
 
     /**
@@ -75,17 +77,17 @@ extern "C"
 
 
     /**
-    * @brief    PnpAdapterManager_ReleaseAdapterInterfaces calls each adapter's clean up methods to 
+    * @brief    PnpAdapterManager_ReleaseAdapterComponents calls each adapter's clean up methods to 
                 release pnp interfaces that were set up by them
     *
-    * @remarks  PnpAdapterManager_ReleaseAdapterInterfaces calls stopPnpComponent and
+    * @remarks  PnpAdapterManager_ReleaseAdapterComponents calls stopPnpComponent and
                 destroyPnpComponent on each created interface
 
     * @param    adapter           Pointer to an initialized PPNP_ADAPTER_TAG
     *
     * @returns  VOID
     */
-    void PnpAdapterManager_ReleaseAdapterInterfaces(
+    void PnpAdapterManager_ReleaseAdapterComponents(
         PPNP_ADAPTER_TAG adapterTag);
 
     // PnpAdapterManager utility functions
@@ -97,14 +99,14 @@ extern "C"
         const char* adapterId,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext,
         JSON_Value* config);
-    IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
         PPNP_ADAPTER_MANAGER adapterMgr,
         JSON_Value* config);
     IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
         PPNP_ADAPTER_MANAGER adapterMgr,
         const char* adapterIdentity,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext);
-    IOTHUB_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_StartComponents(
         PPNP_ADAPTER_MANAGER adapterMgr);
 
     IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
@@ -119,7 +121,7 @@ extern "C"
     void PnpAdapterManager_ReleaseComponentsInModel(
         PPNP_ADAPTER_MANAGER adapterMgr);
 
-    PPNPADAPTER_INTERFACE_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
+    PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
         const char * ComponentName);
 
     // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.

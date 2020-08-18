@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #include "ModbusTCPConnection.h"
 
 // Timeout interval for waiting for socket readiness

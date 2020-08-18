@@ -30,20 +30,19 @@ set(pnp_bridge_h_core_files
     ./inc/pnpadapter_manager.h
     ./inc/pnpbridge.h
     ./inc/pnpbridge_common.h
-    ./inc/pnpbridgeh.h
 )
 
 # Pnp Common Helper C Files
 set(pnp_helper_c_core_files
-    ./common/pnp_device_client_ll.c
-    ./common/pnp_dps_ll.c
+    ./common/pnp_device_client.c
+    ./common/pnp_dps.c
     ./common/pnp_protocol.c
 )
 
 # Pnp Common Helper headers
 set(pnp_helper_h_core_files
-    ./common/pnp_device_client_ll.h
-    ./common/pnp_dps_ll.h
+    ./common/pnp_device_client.h
+    ./common/pnp_dps.h
     ./common/pnp_protocol.h
 )
 

@@ -47,7 +47,7 @@ typedef struct _DPS_PARAMETERS {
     const char* GlobalProvUri;
     const char* IdScope;
     const char* DeviceId;
-    const char* DcmModelId;
+    const char* RootInterfaceModelId;
 } DPS_PARAMETERS;
 
 // Transport used to connect with IoTHub Device/Module

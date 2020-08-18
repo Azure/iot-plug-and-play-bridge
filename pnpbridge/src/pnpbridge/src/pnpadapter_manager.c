@@ -47,9 +47,9 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_InitializeAdapter(
     }
 
     adapterT->adapter = adapter;
-    adapterT->InterfaceListLock = Lock_Init();
-    adapterT->pnpInterfaceList = singlylinkedlist_create();
-    if (NULL == adapterT->InterfaceListLock) {
+    adapterT->ComponentListLock = Lock_Init();
+    adapterT->PnpComponentList = singlylinkedlist_create();
+    if (NULL == adapterT->ComponentListLock) {
         result = IOTHUB_CLIENT_ERROR;
     }
 
@@ -58,30 +58,30 @@ exit:
     return result;
 }
 
-void PnpAdapterManager_ReleaseAdapterInterfaces(
+void PnpAdapterManager_ReleaseAdapterComponents(
     PPNP_ADAPTER_TAG adapterTag)
 {
     if (NULL == adapterTag) {
         return;
     }
 
-    if (NULL != adapterTag->pnpInterfaceList) {
-        SINGLYLINKEDLIST_HANDLE pnpInterfaces = adapterTag->pnpInterfaceList;
-        Lock(adapterTag->InterfaceListLock);
+    if (NULL != adapterTag->PnpComponentList) {
+        SINGLYLINKEDLIST_HANDLE pnpInterfaces = adapterTag->PnpComponentList;
+        Lock(adapterTag->ComponentListLock);
         LIST_ITEM_HANDLE handle = singlylinkedlist_get_head_item(pnpInterfaces);
         while (NULL != handle) {
-            PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(handle);
-            adapterTag->adapter->destroyPnpComponent(interfaceHandle);
+            PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(handle);
+            adapterTag->adapter->destroyPnpComponent(componentHandle);
             handle = singlylinkedlist_get_next_item(handle);
         }
-        Unlock(adapterTag->InterfaceListLock);
+        Unlock(adapterTag->ComponentListLock);
 
         // This call to singlylinkedlist_destroy will free all resources 
         // associated with the list identified by the handle argument,
         // therefore each component's resources allocated during creation
         // will be destroyed after this call returns
-        singlylinkedlist_destroy(adapterTag->pnpInterfaceList);
-        Lock_Deinit(adapterTag->InterfaceListLock);
+        singlylinkedlist_destroy(adapterTag->PnpComponentList);
+        Lock_Deinit(adapterTag->ComponentListLock);
     }
 }
 
@@ -97,16 +97,16 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_StopComponents(
 
             PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
 
-            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
-            while (NULL != interfaceHandleItem)
+            LIST_ITEM_HANDLE componentHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->PnpComponentList);
+            while (NULL != componentHandleItem)
             {
-                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
-                result = adapterHandle->adapter->adapter->stopPnpComponent(interfaceHandle);
+                PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
+                result = adapterHandle->adapter->adapter->stopPnpComponent(componentHandle);
                 if (result != IOTHUB_CLIENT_OK)
                 {
-                    LogError("PnpAdapterManager_StopComponents: Failed to stop component %s", interfaceHandle->interfaceName);
+                    LogError("PnpAdapterManager_StopComponents: Failed to stop component %s", componentHandle->componentName);
                 }
-                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+                componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
             }
             adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
         }
@@ -128,7 +128,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_DestroyComponents(
             if (adapterHandle->adapter)
             {
                 // Destroy Components owned by each adapter
-                PnpAdapterManager_ReleaseAdapterInterfaces(adapterHandle->adapter);
+                PnpAdapterManager_ReleaseAdapterComponents(adapterHandle->adapter);
             }
             adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
         }
@@ -193,9 +193,9 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateAdapter(
     }
 
     pnpAdapterHandle->adapter->adapter = pnpAdapter;
-    pnpAdapterHandle->adapter->InterfaceListLock = Lock_Init();
-    pnpAdapterHandle->adapter->pnpInterfaceList = singlylinkedlist_create();
-    if (NULL == pnpAdapterHandle->adapter->InterfaceListLock) {
+    pnpAdapterHandle->adapter->ComponentListLock = Lock_Init();
+    pnpAdapterHandle->adapter->PnpComponentList = singlylinkedlist_create();
+    if (NULL == pnpAdapterHandle->adapter->ComponentListLock) {
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
@@ -252,7 +252,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateManager(
         goto exit;
     }
 
-    adapterManager->NumInterfaces = 0;
+    adapterManager->NumComponents = 0;
     adapterManager->PnpAdapterHandleList = singlylinkedlist_create();
     JSON_Array* devices = Configuration_GetDevices(config);
     if (NULL == devices) {
@@ -361,7 +361,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
 
 }
 
-IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
+IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
     PPNP_ADAPTER_MANAGER adapterMgr, JSON_Value* config)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
@@ -377,7 +377,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
 
         JSON_Object* device = json_array_get_object(devices, i);
         const char* adapterId = json_object_dotget_string(device, PNP_CONFIG_ADAPTER_ID);
-        const char* interfaceName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
+        const char* componentName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
 
         JSON_Object* deviceAdapterArgs = json_object_dotget_object(device, PNP_CONFIG_DEVICE_ADAPTER_CONFIG);
         PPNP_ADAPTER_CONTEXT_TAG adapterHandle = NULL;
@@ -386,24 +386,24 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateInterfaces(
 
         if (IOTHUB_CLIENT_OK == result)
         {
-            PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)malloc(sizeof(PNPADAPTER_INTERFACE_TAG));
+            PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)malloc(sizeof(PNPADAPTER_COMPONENT_TAG));
 
-            if (interfaceHandle != NULL)
+            if (componentHandle != NULL)
             {
 
-                interfaceHandle->interfaceName = interfaceName;
-                interfaceHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
-                result = adapterHandle->adapter->adapter->createPnpComponent(adapterHandle, interfaceName, deviceAdapterArgs,
-                                                                                interfaceHandle);
-                if (result == IOTHUB_CLIENT_OK)
+                componentHandle->componentName = componentName;
+                componentHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
+                result = adapterHandle->adapter->adapter->createPnpComponent(adapterHandle, componentName, deviceAdapterArgs,
+                                                                                componentHandle);
+                if (PNPBRIDGE_SUCCESS(result))
                 {
-                    singlylinkedlist_add(adapterHandle->adapter->pnpInterfaceList, interfaceHandle);
-                    adapterMgr->NumInterfaces++;
+                    singlylinkedlist_add(adapterHandle->adapter->PnpComponentList, componentHandle);
+                    adapterMgr->NumComponents++;
                 }
                 else
                 {
-                    LogInfo("Interface component creation with instance name: %s failed.", interfaceName);
-                    free(interfaceHandle);
+                    LogInfo("Interface component creation with instance name: %s failed.", componentName);
+                    free(componentHandle);
                     goto exit;
                 }
             }
@@ -419,7 +419,7 @@ exit:
     return result;
 }
 
-IOTHUB_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
+IOTHUB_CLIENT_RESULT PnpAdapterManager_StartComponents(
     PPNP_ADAPTER_MANAGER adapterMgr)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
@@ -431,13 +431,13 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_StartInterfaces(
 
             PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
 
-            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
-            while (NULL != interfaceHandleItem)
+            LIST_ITEM_HANDLE componentHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->PnpComponentList);
+            while (NULL != componentHandleItem)
             {
-                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
-                interfaceHandle->deviceClient = g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle;
-                result = adapterHandle->adapter->adapter->startPnpComponent(adapterHandle, interfaceHandle);
-                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+                PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
+                componentHandle->deviceClient = g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle;
+                result = adapterHandle->adapter->adapter->startPnpComponent(adapterHandle, componentHandle);
+                componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
             }
             adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
         }
@@ -450,7 +450,7 @@ void PnpAdapterManager_ReleaseComponentsInModel(
 {
     if (adapterMgr != NULL && adapterMgr->ComponentsInModel != NULL)
     {
-        for (unsigned int i = 0; i < adapterMgr->NumInterfaces; i++)
+        for (unsigned int i = 0; i < adapterMgr->NumComponents; i++)
         {
             free(adapterMgr->ComponentsInModel[i]);
         }
@@ -465,7 +465,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
     unsigned int componentNumber = 0;
     if (NULL != adapterMgr)
     {
-        adapterMgr->ComponentsInModel = malloc(adapterMgr->NumInterfaces * sizeof(char*));
+        adapterMgr->ComponentsInModel = malloc(adapterMgr->NumComponents * sizeof(char*));
         if (NULL == adapterMgr->ComponentsInModel)
         {
             result = IOTHUB_CLIENT_ERROR;
@@ -478,16 +478,16 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildComponentsInModel(
 
             PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
 
-            LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
-            while (NULL != interfaceHandleItem)
+            LIST_ITEM_HANDLE componentHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->PnpComponentList);
+            while (NULL != componentHandleItem)
             {
-                PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
-                mallocAndStrcpy_s((char**)&adapterMgr->ComponentsInModel[componentNumber++], interfaceHandle->interfaceName);
-                interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+                PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
+                mallocAndStrcpy_s((char**)&adapterMgr->ComponentsInModel[componentNumber++], componentHandle->componentName);
+                componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
             }
             adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
         }
-        if (componentNumber != adapterMgr->NumInterfaces)
+        if (componentNumber != adapterMgr->NumComponents)
         {
             result = IOTHUB_CLIENT_ERROR;
             goto exit;
@@ -501,9 +501,9 @@ exit:
     return result;
 }
 
-PPNPADAPTER_INTERFACE_TAG PnpAdapterManager_GetComponentHandleFromComponentName(const char * ComponentName)
+PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(const char * ComponentName)
 {
-    PPNPADAPTER_INTERFACE_TAG componentHandle = NULL;
+    PPNPADAPTER_COMPONENT_TAG componentHandle = NULL;
     bool componentFound = false;
     if (NULL != ComponentName)
     {
@@ -515,17 +515,17 @@ PPNPADAPTER_INTERFACE_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
             {
                 PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
 
-                LIST_ITEM_HANDLE interfaceHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->pnpInterfaceList);
-                while (NULL != interfaceHandleItem)
+                LIST_ITEM_HANDLE componentHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->PnpComponentList);
+                while (NULL != componentHandleItem)
                 {
-                    PPNPADAPTER_INTERFACE_TAG interfaceHandle = (PPNPADAPTER_INTERFACE_TAG)singlylinkedlist_item_get_value(interfaceHandleItem);
-                    if (0 == strcmp(ComponentName, interfaceHandle->interfaceName))
+                    PPNPADAPTER_COMPONENT_TAG componentHandleIterator = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
+                    if (0 == strcmp(ComponentName, componentHandleIterator->componentName))
                     {
-                        componentHandle = interfaceHandle;
+                        componentHandle = componentHandleIterator;
                         componentFound = true;
                         break;
                     }
-                    interfaceHandleItem = singlylinkedlist_get_next_item(interfaceHandleItem);
+                    componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
                 }
                 adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
             }
@@ -572,7 +572,7 @@ int PnpAdapterManager_DeviceMethodCallback(
         {
             LogInfo("Received PnP command for component=%.*s, command=%s", (int)componentNameSize, componentName, pnpCommandName);
 
-            PPNPADAPTER_INTERFACE_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
+            PPNPADAPTER_COMPONENT_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
             if (componentHandle != NULL)
             {
                 result = componentHandle->processCommand(componentHandle, pnpCommandName, commandValue, response, responseSize);
@@ -592,7 +592,7 @@ void PnpAdapterManager_DeviceTwinCallback(
     // Invoke PnP_ProcessTwinData to actualy process the data.  PnP_ProcessTwinData uses a visitor pattern to parse
     // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
     if (PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
-            g_PnpBridge->PnpMgr->NumInterfaces, PnpAdapterManager_RoutePropertyCallback, userContextCallback) == false)
+            g_PnpBridge->PnpMgr->NumComponents, PnpAdapterManager_RoutePropertyCallback, userContextCallback) == false)
     {
         // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)
         // there is no action we can take beyond logging.
@@ -613,7 +613,7 @@ static void PnpAdapterManager_RoutePropertyCallback(
     {
         LogInfo("Received PnP property update for component=%s, property=%s", componentName, propertyName);
 
-        PPNPADAPTER_INTERFACE_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
+        PPNPADAPTER_COMPONENT_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
         if (componentHandle != NULL)
         {
             componentHandle->processPropertyUpdate(componentHandle, propertyName, propertyValue, version, userContextCallback);

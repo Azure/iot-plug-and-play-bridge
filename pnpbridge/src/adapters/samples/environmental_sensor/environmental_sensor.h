@@ -10,8 +10,8 @@
 #include "environmental_sensor_pnpbridge.h"
 
 // PnP utility headers
-#include "pnp_device_client_ll.h"
-#include "pnp_dps_ll.h"
+#include "pnp_device_client.h"
+#include "pnp_dps.h"
 #include "pnp_protocol.h"
 
 //

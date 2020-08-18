@@ -359,7 +359,7 @@ static void CoreDevice_InterfaceRegisteredCallback(
     void* userInterfaceContext)
 {
     UNREFERENCED_PARAMETER(userInterfaceContext);
-    if (dtInterfaceStatus == IOTHUB_CLIENT_OK)
+    if (PNPBRIDGE_SUCCESS(dtInterfaceStatus))
     {
         LogInfo("Core Device Health: Interface registered.");
     }

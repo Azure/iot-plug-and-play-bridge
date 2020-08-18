@@ -188,7 +188,7 @@ static void SampleEnvironmentalSensor_PropertyCallback(
     int ReportedStatus,
     void* UserContextCallback)
 {
-    if (ReportedStatus == IOTHUB_CLIENT_OK)
+    if (PNPBRIDGE_SUCCESS(ReportedStatus))
     {
         LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Updating property=<%s> succeeded", (const char*)UserContextCallback);
     }

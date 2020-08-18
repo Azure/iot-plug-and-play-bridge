@@ -98,7 +98,7 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
                     goto exit;
                 }
 
-                dpsParams->DcmModelId = connParams->RootInterfaceModelId;
+                dpsParams->RootInterfaceModelId = connParams->RootInterfaceModelId;
             }
         }
 
@@ -251,8 +251,8 @@ IOTHUB_CLIENT_RESULT PnpBridgeConfig_RetrieveConfiguration(JSON_Value* JsonConfi
 
             // Every interface instance should specify a component name and associated pnp adapter identity
             {
-                const char* interfaceName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
-                if (NULL == interfaceName) {
+                const char* componentName = json_object_dotget_string(device, PNP_CONFIG_COMPONENT_NAME);
+                if (NULL == componentName) {
                     LogError("Device at index %zu is missing %s", i, PNP_CONFIG_COMPONENT_NAME);
                     result = IOTHUB_CLIENT_INVALID_ARG;
                     goto exit;

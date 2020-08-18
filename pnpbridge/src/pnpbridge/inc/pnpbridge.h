@@ -22,8 +22,8 @@
 #include "umock_c/umock_c_prod.h"
 
 // PnP helper utilities.
-#include "pnp_device_client_ll.h"
-#include "pnp_dps_ll.h"
+#include "pnp_device_client.h"
+#include "pnp_dps.h"
 #include "pnp_protocol.h"
 
 #include "pnpadapter_api.h"

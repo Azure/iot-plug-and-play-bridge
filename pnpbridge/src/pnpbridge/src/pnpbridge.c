@@ -7,7 +7,6 @@
 #include "pnpadapter_manager.h"
 #include "iothub_comms.h"
 
-#include "pnpbridgeh.h"
 #include <iothub_client.h>
 
 // Globals PNP bridge instance
@@ -179,9 +178,9 @@ PnpBridge_Main(const char * ConfigurationFilePath)
                 goto exit;
             }
 
-            result = PnpAdapterManager_CreateInterfaces(pnpBridge->PnpMgr, pnpBridge->Configuration.JsonConfig);
+            result = PnpAdapterManager_CreateComponents(pnpBridge->PnpMgr, pnpBridge->Configuration.JsonConfig);
             if (IOTHUB_CLIENT_OK != result) {
-                LogError("PnpAdapterManager_CreateInterfaces failed: %d", result);
+                LogError("PnpAdapterManager_CreateComponents failed: %d", result);
                 goto exit;
             }
 
@@ -200,9 +199,9 @@ PnpBridge_Main(const char * ConfigurationFilePath)
             LogInfo("Connected to Azure IoT Hub");
 
 
-            result = PnpAdapterManager_StartInterfaces(pnpBridge->PnpMgr);
+            result = PnpAdapterManager_StartComponents(pnpBridge->PnpMgr);
             if (IOTHUB_CLIENT_OK != result) {
-                LogError("PnpAdapterManager_StartInterfaces failed: %d", result);
+                LogError("PnpAdapterManager_StartComponents failed: %d", result);
                 goto exit;
             }
 

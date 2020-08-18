@@ -4,8 +4,8 @@
 
 #include <string>
 
-////
-//// Functions to convert between string and wstring
-////
+//
+// Functions to convert between string and wstring
+//
 std::wstring str2wstr(const std::string& str);
 std::string wstr2str(const std::wstring& wstr);

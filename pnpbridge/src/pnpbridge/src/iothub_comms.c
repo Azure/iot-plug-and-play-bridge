@@ -7,7 +7,7 @@
 
 #include "iothub_comms.h"
 
-// IoT Central requires DPS.  Include required header and constants
+// IoT Central requires DPS. Include required header and constants
 #include "azure_prov_client/iothub_security_factory.h"
 #include "azure_prov_client/prov_device_client.h"
 #include "azure_prov_client/prov_transport_mqtt_client.h"
