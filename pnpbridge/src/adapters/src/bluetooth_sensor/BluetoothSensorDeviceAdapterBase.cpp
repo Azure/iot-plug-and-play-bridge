@@ -116,7 +116,7 @@ void BluetoothSensorDeviceAdapterBase::OnPropertyCallback(
     int /* version */,
     void* /* userContextCallback */)
 {
-    // No properties are supportedon BT sensors, no-op
+    // No properties are supported on BT sensors, no-op
 }
 
 // static

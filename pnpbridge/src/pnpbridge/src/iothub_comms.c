@@ -13,6 +13,8 @@
 #include "azure_prov_client/prov_transport_mqtt_client.h"
 #include "azure_prov_client/prov_security_factory.h"
 
+static const char* ConnectionParameterUserAgentString = "PnpBridgeUserAgentString";
+
 IOTHUB_DEVICE_HANDLE IotComms_CreateIotDeviceHandle(bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams)
 {
     IOTHUB_DEVICE_HANDLE iotHubDeviceHandle = NULL;
@@ -20,6 +22,8 @@ IOTHUB_DEVICE_HANDLE IotComms_CreateIotDeviceHandle(bool TraceOn, PCONNECTION_PA
     ConnectionParams->PnpDeviceConfiguration.deviceTwinCallback = (IOTHUB_CLIENT_DEVICE_TWIN_CALLBACK) PnpAdapterManager_DeviceTwinCallback;
     ConnectionParams->PnpDeviceConfiguration.enableTracing = TraceOn;
     ConnectionParams->PnpDeviceConfiguration.modelId = ConnectionParams->RootInterfaceModelId;
+    ConnectionParams->PnpDeviceConfiguration.UserAgentString = ConnectionParameterUserAgentString;
+
     if (ConnectionParams != NULL)
     {
         if (ConnectionParams->ConnectionType == CONNECTION_TYPE_CONNECTION_STRING)

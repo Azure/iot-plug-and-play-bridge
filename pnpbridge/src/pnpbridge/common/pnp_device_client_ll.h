@@ -43,7 +43,7 @@ typedef struct PNP_DEVICE_CONFIGURATION_TAG
 #endif
     } u;
     // ModelId of this PnP device
-    const char* modelId;
+    const char * modelId;
     // Whether more verbose tracing is enabled for the IoT Hub client
     bool enableTracing;
     // Callback for IoT Hub device methods, which is the mechanism PnP commands use.  If PnP commands
@@ -52,6 +52,8 @@ typedef struct PNP_DEVICE_CONFIGURATION_TAG
     // Callback for IoT Hub device twin notifications, which is the mechanism PnP properties from service use.
     // If PnP properties are not configured by the server, this should be NULL to conserve memory and bandwidth.
     IOTHUB_CLIENT_DEVICE_TWIN_CALLBACK deviceTwinCallback;
+    // User Agent String: User/Solution defined product identifuier sent to IoT Hub service
+    const char * UserAgentString;
 } PNP_DEVICE_CONFIGURATION;
 
 //
