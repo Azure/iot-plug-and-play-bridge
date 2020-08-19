@@ -5,17 +5,19 @@
 	"type": "object",
 	"properties": {
 		"pnp_bridge_connection_parameters": {
-			"$ref": "#/definitions/pnp_bridge_parameters_schema"
+			"$ref": "#/definitions/pnp_bridge_connection_parameters_schema"
 		},
-		"config_source" : { "enum" : ["local", "cloud"] },
-		"pnp_bridge_interface_instances" : {
+		"pnp_bridge_interface_components" : {
 			"type": "array",
 			"items": {
-				"$ref": "#/definitions/pnp_bridge_interface_instances_schema"
+				"$ref": "#/definitions/pnp_bridge_interface_components_schema"
 			}
 		},
 		"pnp_bridge_adapter_global_configs" : {
-			"$ref": "#/definitions/pnp_bridge_adapter_global_configs_schema"
+			"type": "object",
+			"items": {
+				"$ref": "#/definitions/pnp_bridge_adapter_global_configs_schema"
+			}
 		}
 	},
 	"oneOf": [
@@ -23,7 +25,7 @@
 		   "properties": {
 			   "pnp_bridge_config_source": { "enum": ["local"] }
 			},
-		    "required": ["pnp_bridge_interface_instances"]
+		    "required": ["pnp_bridge_interface_components"]
 		},
 		{
 			"properties": {
@@ -31,21 +33,13 @@
 			},
 			"dependencies" : {
 				"pnp_bridge_config_source": {
-					"not": { "required": ["pnp_bridge_interface_instances"] }
+					"not": { "required": ["pnp_bridge_interface_components"] }
 				}
 			}
 		}
 	],
 	"definitions": {
-		"pnp_bridge_parameters_schema": {
-			"properties": {
-				"connection_parameters": {
-					"$ref": "#/definitions/connection_parameters_schema"
-				}
-			},
-			"required": ["connection_parameters"]
-		},
-		"connection_parameters_schema" : {
+		"pnp_bridge_connection_parameters_schema" : {
 			"properties": {
 				"connection_type": { 
 					"enum": [
@@ -128,39 +122,22 @@
 				"device_id"
 			]
 		},
-		"pnp_bridge_interface_instances_schema" : {
+		"pnp_bridge_interface_components_schema" : {
 			"properties": {
-				"interface_id": { 
-					"type": "string"
-				},
-				"interface_name": { 
+				"pnp_bridge_component_name": { 
 					"type": "string"
 				},
 				"pnp_bridge_adapter_id": { 
 					"type": "string"
 				}
 			},
-			"required": ["interface_id", "interface_name", "pnp_bridge_adapter_id"]
+			"required": ["pnp_bridge_component_name", "pnp_bridge_adapter_id"]
 		},
 		"pnp_bridge_adapter_global_configs_schema" : {
+			"type": "object",
 			"properties": {
-				"parameters": { 
-					"type" : "array",
-					"items": {
-						"properties": {
-							"identity": { 
-								"type" : "string"
-							}
-						},
-						"required": [
-							"identity"
-						]
-					}
-				}
-			},
-			"required": [
-				"parameters"
-			]
+				"type": "object"
+			  }
 		}
 	},
 	"required": ["pnp_bridge_connection_parameters", "pnp_bridge_config_source"]

@@ -31,7 +31,7 @@
       {
         "@type": "Component",
         "name": "mqttdevice1",
-        "schema": "dtmi:contoso:com:mqtt-device;1"
+        "schema": "dtmi:contoso:com:mqttdevice;1"
       }
     ],
     "@context": "dtmi:dtdl:context;2"

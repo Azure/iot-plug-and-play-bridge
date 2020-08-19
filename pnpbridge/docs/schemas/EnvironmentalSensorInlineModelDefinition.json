@@ -59,7 +59,6 @@
               "name": "totalStorage",
               "displayName": "Total storage",
               "schema": "long",
-              "displayUnit": "kilobytes",
               "comment": "Total available storage on the device in kilobytes. Ex. 2048000 kilobytes."
           },
           {
@@ -67,7 +66,6 @@
               "name": "totalMemory",
               "displayName": "Total memory",
               "schema": "long",
-              "displayUnit": "kilobytes",
               "comment": "Total available memory on the device in kilobytes. Ex. 256000 kilobytes."
           }
         ]
@@ -119,13 +117,13 @@
           {
             "@type": [
               "Telemetry",
-              "Humidity"
+              "RelativeHumidity"
             ],
             "description": "Current humidity on the device",
             "displayName": "Humidity",
             "name": "humidity",
             "schema": "double",
-            "unit": "percentage"
+            "unit": "percent"
           },
           {
             "@type": "Command",

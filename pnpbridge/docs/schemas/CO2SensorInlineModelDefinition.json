@@ -55,19 +55,25 @@
               "comment": "Name of the manufacturer of the processor on the device. Ex. Intel."
           },
           {
-              "@type": "Property",
+              "@type": [
+                "Property",
+                "DataSize"
+              ],
               "name": "totalStorage",
               "displayName": "Total storage",
               "schema": "long",
-              "displayUnit": "kilobytes",
+              "unit": "kibibyte",
               "comment": "Total available storage on the device in kilobytes. Ex. 2048000 kilobytes."
           },
           {
-              "@type": "Property",
+              "@type": [
+                "Property",
+                "DataSize"
+              ],
               "name": "totalMemory",
               "displayName": "Total memory",
               "schema": "long",
-              "displayUnit": "kilobytes",
+              "unit": "kibibyte",
               "comment": "Total available memory on the device in kilobytes. Ex. 256000 kilobytes."
           }
         ]
@@ -80,24 +86,23 @@
         "@context": "dtmi:dtdl:context;2",
         "@id": "dtmi:contoso:com:Co2Detector;1",
         "@type": "Interface",
-        "comment": [
-          "The device interface for a sample CO₂ detector device. ",
-          "In private preview, it is used to as the reference for the sample interfaceConfig.json."
-        ],
+        "comment": "The device interface for a sample CO₂ detector device. ",
         "contents": [
           {
             "@type": "Telemetry",
-            "comment": "Carbon Dioxide (CO₂) concentration level",
+            "comment": "Carbon Dioxide (CO₂) concentration level in ppm",
             "name": "co2",
-            "schema": "integer",
-            "displayUnit": "ppm"
+            "schema": "integer"
           },
           {
-            "@type": "Telemetry",
+            "@type": [
+              "Telemetry",
+              "Temperature"
+            ],
             "comment": "Room temperature in Celsius.",
             "name": "temperature",
             "schema": "float",
-            "displayUnit": "°C"
+            "unit": "degreeCelsius"
           },
           {
             "@type": "Property",
@@ -129,11 +134,19 @@
           },
           {
             "@type": "Command",
-            "name": "clearAlarm_co2",
+            "name": "clearAlarm",
             "comment": "Set payload to TRUE to Clear CO2 alarm.",
             "commandType": "synchronous",
-            "requestSchema": "boolean",
-            "responseSchema": "string"
+            "request": {
+              "name": "clearAlarm_co2",
+              "displayName": "Clear Alarm",
+              "description": "Clears alarm if true",
+              "schema": "boolean"
+            },
+            "response": {
+                "name": "alarmResponse",
+                "schema": "string"
+            }
           }
         ],
         "displayName": "Co2Detector"

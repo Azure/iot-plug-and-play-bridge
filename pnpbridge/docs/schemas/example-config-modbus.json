@@ -1,5 +1,5 @@
 {
-  "$schema" : "../../../pnpbridge/src/pnpbridge_config_schema.json",
+  "$schema" : "../../src/pnpbridge/src/pnpbridge_config_schema.json",
   "pnp_bridge_connection_parameters": {
     "_comment_connection_type": "dps (symmetric key support only)/connectionstring",
       "connection_type" : "dps",
