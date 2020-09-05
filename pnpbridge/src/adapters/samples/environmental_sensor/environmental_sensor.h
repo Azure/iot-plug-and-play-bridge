@@ -21,7 +21,7 @@
 //
 typedef struct ENVIRONMENTAL_SENSOR_STATE_TAG
 {
-    char componentName[PNP_MAXIMUM_COMPONENT_LENGTH + 1];
+    char * componentName;
     int brightness;
     char* customerName;
     int numTimesBlinkCommandCalled;
