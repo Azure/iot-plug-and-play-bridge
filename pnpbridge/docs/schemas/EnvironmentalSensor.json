@@ -1,0 +1,86 @@
+{
+    "@context": "dtmi:dtdl:context;2",
+    "@id": "dtmi:com:example:PnpBridgeEnvironmentalSensor;1",
+    "@type": "Interface",
+    "displayName": "Environmental Sensor",
+    "description": "Reports current temperature and provides desired temperature control.",
+    "contents": [
+        {
+            "@type": "Property",
+            "displayName": "Device State",
+            "description": "The state of the device. Two states online/offline are available.",
+            "name": "state",
+            "schema": "boolean"
+        },
+        {
+            "@type": "Property",
+            "displayName": "Customer Name",
+            "description": "The name of the customer currently operating the device.",
+            "name": "name",
+            "schema": "string",
+            "writable": true
+        },
+        {
+            "@type": "Property",
+            "displayName": "Brightness Level",
+            "description": "The brightness level for the light on the device. Can be specified as 1 (high), 2 (medium), 3 (low)",
+            "name": "brightness",
+            "writable": true,
+            "schema": "integer"
+        },
+        {
+            "@type": [
+                "Telemetry",
+                "Temperature"
+            ],
+            "description": "Current temperature on the device",
+            "displayName": "Temperature",
+            "name": "temp",
+            "schema": "double",
+            "unit": "degreeFahrenheit"
+        },
+        {
+            "@type": [
+                "Telemetry",
+                "RelativeHumidity"
+            ],
+            "description": "Current humidity on the device",
+            "displayName": "Humidity",
+            "name": "humidity",
+            "schema": "double",
+            "unit": "percent"
+        },
+        {
+            "@type": "Command",
+            "description": "This command will begin blinking the LED for given time interval.",
+            "name": "blink",
+            "commandType": "synchronous",
+            "request": {
+                "name": "interval",
+                "schema": "integer"
+            },
+            "response": {
+                "name": "blinkResponse",
+                "schema": {
+                    "@type": "Object",
+                    "fields": [
+                        {
+                            "name": "description",
+                            "schema": "string"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "@type": "Command",
+            "name": "turnon",
+            "comment": "This Commands will turn-on the LED light on the device."
+        },
+        {
+            "@type": "Command",
+            "name": "turnoff",
+            "comment": "This Commands will turn-off the LED light on the device."
+        }
+    ]
+}
