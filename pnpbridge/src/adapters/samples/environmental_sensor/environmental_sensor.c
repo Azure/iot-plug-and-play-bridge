@@ -73,7 +73,7 @@ static const char g_environmentalSensorPropertyResponseDescription[] = "success"
 static const char g_environmentalSensorBrightnessResponseFormat[] = "%.2d";
 
 
-// SampleEnvironmentalSensor_SetCommandResponse is a helper that fills out a command request
+// SampleEnvironmentalSensor_SetCommandResponse is a helper that fills out a command response
 static int SampleEnvironmentalSensor_SetCommandResponse(
     unsigned char** CommandResponse,
     size_t* CommandResponseSize,
@@ -111,19 +111,22 @@ static int SampleEnvironmentalSensor_BlinkCallback(
     size_t* CommandResponseSize)
 {
     int result = PNP_STATUS_SUCCESS;
-    const char * BlinkRequest;
+    int BlinkInterval = 0;
 
     LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Blink command invoked. It has been invoked %d times previously", EnvironmentalSensor->SensorState->numTimesBlinkCommandCalled);
-    
-    if ((BlinkRequest = json_value_get_string(CommandValue)) == NULL)
+
+    if (json_value_get_type(CommandValue) != JSONNumber)
     {
-        LogError("Cannot retrieve JSON string for command");
+        LogError("Cannot retrieve blink interval for blink command");
         result = PNP_STATUS_BAD_FORMAT;
     }
     else
     {
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Blink data=<%.*s>", (int)strlen(BlinkRequest), BlinkRequest);
+        BlinkInterval = (int)json_value_get_number(CommandValue);
+        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Blinking with interval=%d second(s)", BlinkInterval);
         EnvironmentalSensor->SensorState->numTimesBlinkCommandCalled++;
+        EnvironmentalSensor->SensorState->blinkInterval = BlinkInterval;
+
         result = SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_BlinkResponse);
     }
 
@@ -138,19 +141,12 @@ static int SampleEnvironmentalSensor_TurnOnLightCallback(
     size_t* CommandResponseSize)
 {
     int result = PNP_STATUS_SUCCESS;
-    const char * TurnOnLightRequest;
     AZURE_UNREFERENCED_PARAMETER(EnvironmentalSensor);
+    AZURE_UNREFERENCED_PARAMETER(CommandValue);
     LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Turn on light command invoked");
-    if ((TurnOnLightRequest = json_value_get_string(CommandValue)) == NULL)
-    {
-        LogError("Cannot retrieve JSON string for command");
-        result = PNP_STATUS_BAD_FORMAT;
-    }
-    else
-    {
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Turn on light data=<%.*s>", (int)strlen(TurnOnLightRequest), TurnOnLightRequest);
-        result = SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_TurnOnLightResponse);
-    }
+
+    result = SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_TurnOnLightResponse);
+
 
     return result;
 }
@@ -163,20 +159,12 @@ static int SampleEnvironmentalSensor_TurnOffLightCallback(
     size_t* CommandResponseSize)
 {
     int result = PNP_STATUS_SUCCESS;
-    const char * TurnOffLightRequest;
     AZURE_UNREFERENCED_PARAMETER(EnvironmentalSensor);
+    AZURE_UNREFERENCED_PARAMETER(CommandValue);
     LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Turn off light command invoked");
 
-    if ((TurnOffLightRequest = json_value_get_string(CommandValue)) == NULL)
-    {
-        LogError("Cannot retrieve JSON string for command");
-        result = PNP_STATUS_BAD_FORMAT;
-    }
-    else
-    {
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Turn off light data=<%.*s>", (int)strlen(TurnOffLightRequest), TurnOffLightRequest);
-        result = SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_TurnOffLightResponse);
-    }
+    result = SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_TurnOffLightResponse);
+
 
     return result;
 }
@@ -395,8 +383,6 @@ void SampleEnvironmentalSensor_ProcessPropertyUpdate(
     JSON_Value* PropertyValue,
     int version)
 {
-    const char * PropertyValueString = json_value_get_string(PropertyValue);
-    size_t PropertyValueLen = strlen(PropertyValueString);
 
     if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
     {
@@ -408,6 +394,9 @@ void SampleEnvironmentalSensor_ProcessPropertyUpdate(
     }
     else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
     {
+        const char * PropertyValueString = json_value_get_string(PropertyValue);
+        size_t PropertyValueLen = strlen(PropertyValueString);
+
         LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Property name <%s>, last reported value=<%.*s>",
             PropertyName, (int)PropertyValueLen, PropertyValueString);
     }

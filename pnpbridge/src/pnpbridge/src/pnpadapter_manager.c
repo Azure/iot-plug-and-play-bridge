@@ -501,7 +501,7 @@ exit:
     return result;
 }
 
-PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(const char * ComponentName)
+PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(const char * ComponentName, size_t ComponentNameSize)
 {
     PPNPADAPTER_COMPONENT_TAG componentHandle = NULL;
     bool componentFound = false;
@@ -519,7 +519,7 @@ PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
                 while (NULL != componentHandleItem)
                 {
                     PPNPADAPTER_COMPONENT_TAG componentHandleIterator = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
-                    if (0 == strcmp(ComponentName, componentHandleIterator->componentName))
+                    if (0 == strncmp(ComponentName, componentHandleIterator->componentName, ComponentNameSize))
                     {
                         componentHandle = componentHandleIterator;
                         componentFound = true;
@@ -572,7 +572,7 @@ int PnpAdapterManager_DeviceMethodCallback(
         {
             LogInfo("Received PnP command for component=%.*s, command=%s", (int)componentNameSize, componentName, pnpCommandName);
 
-            PPNPADAPTER_COMPONENT_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
+            PPNPADAPTER_COMPONENT_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName, componentNameSize);
             if (componentHandle != NULL)
             {
                 result = componentHandle->processCommand(componentHandle, pnpCommandName, commandValue, response, responseSize);
@@ -613,7 +613,7 @@ static void PnpAdapterManager_RoutePropertyCallback(
     {
         LogInfo("Received PnP property update for component=%s, property=%s", componentName, propertyName);
 
-        PPNPADAPTER_COMPONENT_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName);
+        PPNPADAPTER_COMPONENT_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName, strlen(componentName));
         if (componentHandle != NULL)
         {
             componentHandle->processPropertyUpdate(componentHandle, propertyName, propertyValue, version, userContextCallback);

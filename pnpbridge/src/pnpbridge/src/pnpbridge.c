@@ -122,7 +122,7 @@ PnpBridge_Release(
     PPNP_BRIDGE pnpBridge
     )
 {
-    LogInfo("Cleaning DeviceAggregator resources");
+    LogInfo("Cleaning Pnp Bridge resources");
 
     assert((PNP_BRIDGE_UNINITIALIZED == g_PnpBridgeState) ||
            (PNP_BRIDGE_INITIALIZED == g_PnpBridgeState) ||

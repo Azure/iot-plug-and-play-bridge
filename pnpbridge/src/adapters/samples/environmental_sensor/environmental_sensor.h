@@ -25,6 +25,7 @@ typedef struct ENVIRONMENTAL_SENSOR_STATE_TAG
     int brightness;
     char* customerName;
     int numTimesBlinkCommandCalled;
+    int blinkInterval;
 } ENVIRONMENTAL_SENSOR_STATE, * PENVIRONMENTAL_SENSOR_STATE;
 
 typedef struct _ENVIRONMENT_SENSOR {

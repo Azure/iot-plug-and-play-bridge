@@ -122,7 +122,8 @@ extern "C"
         PPNP_ADAPTER_MANAGER adapterMgr);
 
     PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
-        const char * ComponentName);
+        const char * ComponentName,
+        size_t ComponentNameSize);
 
     // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.
     void PnpAdapterManager_DeviceTwinCallback(
