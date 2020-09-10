@@ -188,7 +188,7 @@ static void SampleEnvironmentalSensor_PropertyCallback(
     int ReportedStatus,
     void* UserContextCallback)
 {
-    LogInfo("PropertyCallback called, result=%d, property name=%s", pnpReportedStatus, (const char*) userContextCallback);
+    LogInfo("PropertyCallback called, result=%d, property name=%s", ReportedStatus, (const char*)UserContextCallback);
 }
 
 // Processes a property update, which the server initiated, for customer name.
