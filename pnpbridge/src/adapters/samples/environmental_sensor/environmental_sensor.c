@@ -188,14 +188,7 @@ static void SampleEnvironmentalSensor_PropertyCallback(
     int ReportedStatus,
     void* UserContextCallback)
 {
-    if (PNPBRIDGE_SUCCESS(ReportedStatus))
-    {
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Updating property=<%s> succeeded", (const char*)UserContextCallback);
-    }
-    else
-    {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Updating property property=<%s> failed, error=<%d>", (const char*)UserContextCallback, ReportedStatus);
-    }
+    LogInfo("PropertyCallback called, result=%d, property name=%s", pnpReportedStatus, (const char*) userContextCallback);
 }
 
 // Processes a property update, which the server initiated, for customer name.
