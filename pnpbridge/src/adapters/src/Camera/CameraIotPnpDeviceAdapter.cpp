@@ -23,7 +23,8 @@ CameraIotPnpDeviceAdapter::CameraIotPnpDeviceAdapter(
     const std::string& cameraId,
     const std::string& componentName) :
     m_cameraId(cameraId),
-    m_componentName(componentName)
+    m_componentName(componentName),
+    m_deviceClient(nullptr)
 {
 }
 
@@ -49,7 +50,7 @@ void CameraIotPnpDeviceAdapter::OnCameraArrivalRemoval()
     std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
     if (m_cameraDiscovery->GetUniqueIdByCameraId(m_cameraId, cameraName) == S_OK && !m_cameraDevice)
     {
-        LogError("Camera device has arrived, starting telemetry");
+        LogInfo("Camera device has arrived");
 
         // For now, assume:
         //   - IP camera IDs begin with "uuid"
@@ -66,35 +67,33 @@ void CameraIotPnpDeviceAdapter::OnCameraArrivalRemoval()
 
         if (m_cameraDevice->Initialize() == S_OK)
         {
-            if (m_hasStartedReporting)
-            {
-                m_cameraDevice->StartTelemetryWorker();
-            }
+            LogInfo("Camera device with camera name %s initialized successfully", (const char*) cameraName.c_str());
         }
         else
         {
-            m_cameraDevice = nullptr;
+            LogInfo("Camera device with camera name %s has already been initialized", (const char*) cameraName.c_str());
         }
     }
     else if (m_cameraDiscovery->GetUniqueIdByCameraId(m_cameraId, cameraName) != S_OK && m_cameraDevice)
     {
-        LogError("Camera device has been removed, stopping telemetry");
+        LogInfo("Camera device has been removed, stopping telemetry");
 
         m_cameraDevice->StopTelemetryWorker();
         m_cameraDevice->Shutdown();
         m_cameraDevice.reset();
+    }
+    else if (m_cameraDiscovery->GetUniqueIdByCameraId(m_cameraId, cameraName) == S_OK && m_cameraDevice && m_hasStartedReporting)
+    {
+        LogInfo("Camera device has started, starting telemetry");
+        m_cameraDevice->SetIotHubDeviceClientHandle(m_deviceClient);
+        m_cameraDevice->StartTelemetryWorker();
     }
 }
 
 HRESULT CameraIotPnpDeviceAdapter::Start()
 {
     m_hasStartedReporting = true;
-
-    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
-    if (m_cameraDevice)
-    {
-        return m_cameraDevice->StartTelemetryWorker();
-    }
+    OnCameraArrivalRemoval();
     return S_OK;
 }
 
@@ -170,15 +169,19 @@ int CameraIotPnpDeviceAdapter::TakePhoto(
     int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
 
-    if (m_hasStartedReporting)
+    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
+    if (m_cameraDevice)
     {
-        m_cameraDevice->StartTelemetryWorker();
-    }
+        if (m_hasStartedReporting)
+        {
+            m_cameraDevice->StartTelemetryWorker();
+        }
 
-    if (S_OK == m_cameraDevice->TakePhotoOp(strResponse))
-    {
-        mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
-        *CommandResponseSize = strlen(strResponse.c_str());
+        if (S_OK == m_cameraDevice->TakePhotoOp(strResponse))
+        {
+            mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
+            *CommandResponseSize = strlen(strResponse.c_str());
+        }
     }
     else
     {
@@ -197,15 +200,19 @@ int CameraIotPnpDeviceAdapter::TakeVideo(
     int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
 
-    if (m_hasStartedReporting)
+    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
+    if (m_cameraDevice)
     {
-        m_cameraDevice->StartTelemetryWorker();
-    }
+        if (m_hasStartedReporting)
+        {
+            m_cameraDevice->StartTelemetryWorker();
+        }
 
-    if (S_OK == m_cameraDevice->TakeVideoOp(10000, strResponse))
-    {
-        mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
-        *CommandResponseSize = strlen(strResponse.c_str());
+        if (S_OK == m_cameraDevice->TakeVideoOp(10000, strResponse))
+        {
+            mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
+            *CommandResponseSize = strlen(strResponse.c_str());
+        }
     }
     else
     {
@@ -224,7 +231,9 @@ int CameraIotPnpDeviceAdapter::GetURI(
 
     int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
-    if (S_OK == m_cameraDevice->GetURIOp(strResponse))
+
+    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
+    if (m_cameraDevice && (S_OK == m_cameraDevice->GetURIOp(strResponse)))
     {
         mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
         *CommandResponseSize = strlen(strResponse.c_str());
@@ -243,5 +252,4 @@ void CameraIotPnpDeviceAdapter::SetIotHubDeviceClientHandle(
     IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle)
 {
     m_deviceClient = DeviceClientHandle;
-    m_cameraDevice->SetIotHubDeviceClientHandle(DeviceClientHandle);
 }
