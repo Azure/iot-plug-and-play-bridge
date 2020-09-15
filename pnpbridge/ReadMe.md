@@ -245,7 +245,7 @@ After cloning the IoT Plug and Play bridge repo to your machine, open the "Devel
 %REPO_DIR%\pnpbridge\> git submodule update --init --recursive
 ```
 
->[!NOTE] If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
+>[!NOTE] If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command as Administrator to resolve the issue: `git config --system core.longpaths true`
 
 ### Step 2: Build the Azure IoT Plug and Play bridge (on Windows)
 
