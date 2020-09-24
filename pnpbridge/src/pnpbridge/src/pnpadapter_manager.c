@@ -208,7 +208,8 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateAdapter(
         LogInfo("Adapter with identity %s does not have any associated global parameters. Proceeding with adapter creation.", adapterId);
     }
     result = pnpAdapterHandle->adapter->adapter->createAdapter(pnpAdapterHandle->adapterGlobalConfig, pnpAdapterHandle);
-    if (!PNPBRIDGE_SUCCESS(result)) {
+    if (!PNPBRIDGE_SUCCESS(result))
+    {
         LogError("Adapter %s'couldn't be created.", adapterId);
         goto exit;
     }
@@ -289,8 +290,10 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateManager(
     *adapterMgr = adapterManager;
 
 exit:
-    if (!PNPBRIDGE_SUCCESS(result)) {
-        if (NULL != adapterManager) {
+    if (!PNPBRIDGE_SUCCESS(result))
+    {
+        if (NULL != adapterManager)
+        {
             PnpAdapterManager_ReleaseManager(adapterManager);
         }
     }

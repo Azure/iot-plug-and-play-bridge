@@ -22,7 +22,7 @@
 #endif
 
 int ModbusPnp_GetListCount(
-    SINGLYLINKEDLIST_HANDLE list) 
+    SINGLYLINKEDLIST_HANDLE list)
 {
     if (NULL == list) {
         return 0;

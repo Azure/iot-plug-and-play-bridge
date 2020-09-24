@@ -157,7 +157,8 @@ MqttConnectionManager::Connect(
 
     // Start worker thread
     s_RunWorker = true;
-    s_WorkerThread = std::thread([&](){
+    s_WorkerThread = std::thread([&]()
+    {
         while (s_RunWorker) {
             mqtt_client_dowork(s_MqttClientHandle);
         }
@@ -232,11 +233,10 @@ MqttConnectionManager::Disconnect()
         s_RunWorker = false;
     }
     mqtt_client_disconnect(s_MqttClientHandle,
-                           [](void* Context){
+                           [](void* Context)
+                            {
                                 auto mcm = static_cast<MqttConnectionManager*>(Context);
-                                xio_close(mcm->s_XioHandle,
-                                          [](void* /*Context*/){ },
-                                          Context);
+                                xio_close(mcm->s_XioHandle, [](void* /*Context*/) { }, Context);
                             },
                             this);
 

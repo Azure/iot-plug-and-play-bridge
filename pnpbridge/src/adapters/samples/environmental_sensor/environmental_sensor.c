@@ -3,9 +3,7 @@
 
 // Implements a sample interface that integrates with an environmental sensor (for reporting 
 // temperature and humidity over time). It also has basic commands and properties it can process,
-// such as setting brightness of a light and blinking LEDs. Because this sample is designed
-// to be run anywhere, all of the sameple data and command processing is expressed simply with 
-// random numbers and LogInfo() calls.
+// such as setting brightness of a light and blinking LEDs.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,16 +16,14 @@
 #include "azure_c_shared_utility/const_defines.h"
 
 //
-// Telemetry names for this interface.
+// Telemetry names for this interface
 //
 static const char* SampleEnvironmentalSensor_TemperatureTelemetry = "temp";
 static const char* SampleEnvironmentalSensor_HumidityTelemetry = "humidity";
 
-
 //
-// Property names and data for read-only properties for this interface.
+// Environmental sensor's read-only property, device state indiciating whether its online or not
 //
-// sampleDeviceState* represents the environmental sensor's read-only property, whether its online or not.
 static const char sampleDeviceStateProperty[] = "state";
 static const unsigned char sampleDeviceStateData[] = "true";
 static const int sampleDeviceStateDataLen = sizeof(sampleDeviceStateData) - 1;
@@ -48,7 +44,7 @@ static const int commandStatusNotPresent = 404;
 static const int commandStatusFailure = 500;
 
 //
-// What we respond to various commands with. Must be valid JSON.
+// Response to various commands [Must be valid JSON]
 //
 static const unsigned char sampleEnviromentalSensor_BlinkResponse[] = "{ \"status\": 12, \"description\": \"leds blinking\" }";
 static const unsigned char sampleEnviromentalSensor_TurnOnLightResponse[] = "{ \"status\": 1, \"description\": \"light on\" }";
@@ -59,14 +55,15 @@ static const unsigned char sampleEnviromentalSensor_OutOfMemory[] = "\"Out of me
 static const unsigned char sampleEnviromentalSensor_NotImplemented[] = "\"Requested command not implemented on this interface\"";
 
 //
-// Property names that are updatebale from the server application/operator.
+// Property names that are updatable from the server application/operator
 //
-
 static const char sampleEnvironmentalSensorPropertyCustomerName[] = "name";
 static const char sampleEnvironmentalSensorPropertyBrightness[] = "brightness";
 
+//
 // Response description is an optional, human readable message including more information
-// about the setting of the property.
+// about the setting of the property
+//
 static const char g_environmentalSensorPropertyResponseDescription[] = "success";
 
 // Format of the body when responding to a targetTemperature 
@@ -82,7 +79,7 @@ static int SampleEnvironmentalSensor_SetCommandResponse(
     int result = PNP_STATUS_SUCCESS;
     if (ResponseData == NULL)
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Response Data is empty");
+        LogError("Environmental Sensor Adapter:: Response Data is empty");
         *CommandResponseSize = 0;
         return PNP_STATUS_INTERNAL_ERROR;
     }
@@ -93,7 +90,7 @@ static int SampleEnvironmentalSensor_SetCommandResponse(
     // Allocate a copy of the response data to return to the invoker. Caller will free this.
     if (mallocAndStrcpy_s((char**)CommandResponse, (char*)ResponseData) != 0)
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to allocate response data");
+        LogError("Environmental Sensor Adapter:: Unable to allocate response data");
         result = PNP_STATUS_INTERNAL_ERROR;
     }
 
@@ -113,7 +110,7 @@ static int SampleEnvironmentalSensor_BlinkCallback(
     int result = PNP_STATUS_SUCCESS;
     int BlinkInterval = 0;
 
-    LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Blink command invoked. It has been invoked %d times previously", EnvironmentalSensor->SensorState->numTimesBlinkCommandCalled);
+    LogInfo("Environmental Sensor Adapter:: Blink command invoked. It has been invoked %d times previously", EnvironmentalSensor->SensorState->numTimesBlinkCommandCalled);
 
     if (json_value_get_type(CommandValue) != JSONNumber)
     {
@@ -123,7 +120,7 @@ static int SampleEnvironmentalSensor_BlinkCallback(
     else
     {
         BlinkInterval = (int)json_value_get_number(CommandValue);
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Blinking with interval=%d second(s)", BlinkInterval);
+        LogInfo("Environmental Sensor Adapter:: Blinking with interval=%d second(s)", BlinkInterval);
         EnvironmentalSensor->SensorState->numTimesBlinkCommandCalled++;
         EnvironmentalSensor->SensorState->blinkInterval = BlinkInterval;
 
@@ -143,7 +140,7 @@ static int SampleEnvironmentalSensor_TurnOnLightCallback(
     int result = PNP_STATUS_SUCCESS;
     AZURE_UNREFERENCED_PARAMETER(EnvironmentalSensor);
     AZURE_UNREFERENCED_PARAMETER(CommandValue);
-    LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Turn on light command invoked");
+    LogInfo("Environmental Sensor Adapter:: Turn on light command invoked");
 
     result = SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_TurnOnLightResponse);
 
@@ -161,7 +158,7 @@ static int SampleEnvironmentalSensor_TurnOffLightCallback(
     int result = PNP_STATUS_SUCCESS;
     AZURE_UNREFERENCED_PARAMETER(EnvironmentalSensor);
     AZURE_UNREFERENCED_PARAMETER(CommandValue);
-    LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Turn off light command invoked");
+    LogInfo("Environmental Sensor Adapter:: Turn off light command invoked");
 
     result = SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_TurnOffLightResponse);
 
@@ -192,8 +189,8 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
     const char * PropertyValueString = json_value_get_string(PropertyValue);
     size_t PropertyValueLen = strlen(PropertyValueString);
 
-    LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: CustomerName property invoked...");
-    LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: CustomerName data=<%.*s>", (int)PropertyValueLen, PropertyValueString);
+    LogInfo("Environmental Sensor Adapter:: CustomerName property invoked...");
+    LogInfo("Environmental Sensor Adapter:: CustomerName data=<%.*s>", (int)PropertyValueLen, PropertyValueString);
 
     if (EnvironmentalSensor->SensorState != NULL)
     {
@@ -204,13 +201,13 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
 
         if ((EnvironmentalSensor->SensorState->customerName = (char*)malloc(PropertyValueLen + 1)) == NULL)
         {
-            LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Out of memory updating CustomerName...");
+            LogError("Environmental Sensor Adapter:: Out of memory updating CustomerName...");
         }
         else
         {
             strncpy(EnvironmentalSensor->SensorState->customerName, (char*) PropertyValueString, PropertyValueLen);
             EnvironmentalSensor->SensorState->customerName[PropertyValueLen] = 0;
-            LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: CustomerName sucessfully updated...");
+            LogInfo("Environmental Sensor Adapter:: CustomerName sucessfully updated...");
 
             if ((jsonToSend = PnP_CreateReportedPropertyWithStatus(EnvironmentalSensor->SensorState->componentName, PropertyName, PropertyValueString, 
                                                                         PNP_STATUS_SUCCESS, g_environmentalSensorPropertyResponseDescription, version)) == NULL)
@@ -226,11 +223,11 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
                                             SampleEnvironmentalSensor_PropertyCallback,
                                             (void*) EnvironmentalSensor->SensorState->customerName)) != IOTHUB_CLIENT_OK)
                 {
-                    LogError("ENVIRONMENTAL_SENSOR_INTERFACE: IoTHubDeviceClient_SendReportedState for customer name failed, error=%d", iothubClientResult);
+                    LogError("Environmental Sensor Adapter:: IoTHubDeviceClient_SendReportedState for customer name failed, error=%d", iothubClientResult);
                 }
                 else
                 {
-                    LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Successfully queued Property update for CustomerName for component=%s", EnvironmentalSensor->SensorState->componentName);
+                    LogInfo("Environmental Sensor Adapter:: Successfully queued Property update for CustomerName for component=%s", EnvironmentalSensor->SensorState->componentName);
                 }
 
                 STRING_delete(jsonToSend);
@@ -263,7 +260,7 @@ static void SampleEnvironmentalSensor_BrightnessCallback(
     STRING_HANDLE jsonToSend = NULL;
     char targetBrightnessString[32];
 
-    LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Brightness property invoked...");
+    LogInfo("Environmental Sensor Adapter:: Brightness property invoked...");
 
     if (json_value_get_type(PropertyValue) != JSONNumber)
     {
@@ -296,11 +293,11 @@ static void SampleEnvironmentalSensor_BrightnessCallback(
                                         SampleEnvironmentalSensor_PropertyCallback,
                                         (void*) &EnvironmentalSensor->SensorState->brightness)) != IOTHUB_CLIENT_OK)
             {
-                LogError("ENVIRONMENTAL_SENSOR_INTERFACE: IoTHubDeviceClient_SendReportedState for brightness failed, error=%d", iothubClientResult);
+                LogError("Environmental Sensor Adapter:: IoTHubDeviceClient_SendReportedState for brightness failed, error=%d", iothubClientResult);
             }
             else
             {
-                LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Successfully queued Property update for Brightness for component=%s", EnvironmentalSensor->SensorState->componentName);
+                LogInfo("Environmental Sensor Adapter:: Successfully queued Property update for Brightness for component=%s", EnvironmentalSensor->SensorState->componentName);
             }
 
             STRING_delete(jsonToSend);
@@ -329,12 +326,12 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_ReportDeviceStateAsync(
         if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(DeviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
             SampleEnvironmentalSensor_PropertyCallback, (void*)sampleDeviceStateProperty)) != IOTHUB_CLIENT_OK)
         {
-            LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Unable to send reported state for property=%s, error=%d",
+            LogError("Environmental Sensor Adapter:: Unable to send reported state for property=%s, error=%d",
                                 sampleDeviceStateProperty, iothubClientResult);
         }
         else
         {
-            LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
+            LogInfo("Environmental Sensor Adapter:: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
                         sampleDeviceStateProperty, sampleDeviceStateData);
         }
 
@@ -369,7 +366,7 @@ int SampleEnvironmentalSensor_ProcessCommandUpdate(
     else
     {
         // If the command is not implemented by this interface, by convention we return a 404 error to server.
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Command name <%s> is not associated with this interface", CommandName);
+        LogError("Environmental Sensor Adapter:: Command name <%s> is not associated with this interface", CommandName);
         return SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_NotImplemented);
     }
 }
@@ -397,13 +394,13 @@ void SampleEnvironmentalSensor_ProcessPropertyUpdate(
         const char * PropertyValueString = json_value_get_string(PropertyValue);
         size_t PropertyValueLen = strlen(PropertyValueString);
 
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Property name <%s>, last reported value=<%.*s>",
+        LogInfo("Environmental Sensor Adapter:: Property name <%s>, last reported value=<%.*s>",
             PropertyName, (int)PropertyValueLen, PropertyValueString);
     }
     else
     {
         // If the property is not implemented by this interface, presently we only record a log message but do not have a mechanism to report back to the service
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Property name <%s> is not associated with this interface", PropertyName);
+        LogError("Environmental Sensor Adapter:: Property name <%s> is not associated with this interface", PropertyName);
     }
 }
 
@@ -419,11 +416,11 @@ static void SampleEnvironmentalSensor_TelemetryCallback(
     PENVIRONMENT_SENSOR device = (PENVIRONMENT_SENSOR) UserContextCallback;
     if (TelemetryStatus == IOTHUB_CLIENT_CONFIRMATION_OK)
     {
-        LogInfo("ENVIRONMENTAL_SENSOR_INTERFACE: Successfully delivered telemetry message for <%s>", (const char*)device->SensorState->componentName);
+        LogInfo("Environmental Sensor Adapter:: Successfully delivered telemetry message for <%s>", (const char*)device->SensorState->componentName);
     }
     else
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: Failed delivered telemetry message for <%s>, error=<%d>", (const char*)device->SensorState->componentName, TelemetryStatus);
+        LogError("Environmental Sensor Adapter:: Failed delivered telemetry message for <%s>, error=<%d>", (const char*)device->SensorState->componentName, TelemetryStatus);
     }
 }
 
@@ -448,12 +445,12 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_SendTelemetryMessagesAsync(
 
     if ((messageHandle = PnP_CreateTelemetryMessageHandle(EnvironmentalSensor->SensorState->componentName, currentMessage)) == NULL)
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: PnP_CreateTelemetryMessageHandle failed.");
+        LogError("Environmental Sensor Adapter:: PnP_CreateTelemetryMessageHandle failed.");
     }
     else if ((result = IoTHubDeviceClient_SendEventAsync(EnvironmentalSensor->DeviceClient, messageHandle,
             SampleEnvironmentalSensor_TelemetryCallback, EnvironmentalSensor)) != IOTHUB_CLIENT_OK)
     {
-        LogError("ENVIRONMENTAL_SENSOR_INTERFACE: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
+        LogError("Environmental Sensor Adapter:: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
     }
 
     IoTHubMessage_Destroy(messageHandle);
