@@ -1,7 +1,7 @@
 
 # Building, Deploying, and Extending the IoT Plug and Play bridge
 
-To get started with a simple example, view the [Reference Documentation](www.aka.ms/iot-pnp-bridge-docs).
+To get started with a simple example, view the [Reference Documentation](https://www.aka.ms/iot-pnp-bridge-docs).
 
 These instructions and samples assume basic familiarity with Azure Digital Twin and IoT Plug and Play concepts.  To learn more background information, see [here](https://aka.ms/iotpnpdocs). This section describes the following:
 
