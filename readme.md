@@ -10,7 +10,7 @@ IoT Plug and Play bridge can be deployed as a standalone executable on any IoT d
 
 ## Get Started - Documentation
 
-To get started with a simple example and learn about IoT Plug and Play bridge, view the [Reference Documentation](www.aka.ms/iot-pnp-bridge-docs). Follow [pnpbridge\Readme.md](./pnpbridge/ReadMe.md) to get started on building, deploying and extending the IoT Plug and Play bridge. 
+To get started with a simple example and learn about IoT Plug and Play bridge, view the [Reference Documentation](https://www.aka.ms/iot-pnp-bridge-docs). Follow [pnpbridge\Readme.md](./pnpbridge/ReadMe.md) to get started on building, deploying and extending the IoT Plug and Play bridge. 
 
 ## Peripherals and sensors supported by default
 
