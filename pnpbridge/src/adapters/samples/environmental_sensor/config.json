@@ -3,7 +3,7 @@
   "pnp_bridge_connection_parameters": {
     "connection_type" : "connection_string",
     "connection_string" : "[To fill in]",
-    "device_capability_model_uri": "[To fill in]",
+    "root_interface_model_id": "dtmi:com:example:SampleDevice;1",
     "auth_parameters": {
         "auth_type": "symmetric_key",
         "symmetric_key": "[To fill in]"
@@ -19,9 +19,8 @@
   "_comment_devices": "Array of devices for Azure Pnp interface should be published",
   "pnp_bridge_interface_components": [
       {
-          "_comment": "Environment Sensor Sample Device",
-          "pnp_bridge_interface_id": "urn:contoso:com:EnvironmentalSensor:1",
-          "pnp_bridge_component_name": "MyComponent",
+          "_comment": "Environment Sensor Device Component",
+          "pnp_bridge_component_name": "environmentalSensor",
           "pnp_bridge_adapter_id": "environment-sensor-sample-pnp-adapter",
           "pnp_bridge_adapter_config": {
               "sensor_id": "10"

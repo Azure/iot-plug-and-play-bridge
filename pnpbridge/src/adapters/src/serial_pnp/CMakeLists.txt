@@ -1,5 +1,5 @@
-#Copyright (c) Microsoft. All rights reserved.
-#Licensed under the MIT license. See LICENSE file in the project root for full license information.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 cmake_minimum_required(VERSION 2.8.11)
 #this is CMakeLists for pnp_bridge
@@ -23,6 +23,7 @@ set(pnpbridge_adapters_h_files
 add_definitions("-D_UNICODE") 
 
 set(pnpbridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/../../pnpbridge/inc CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
+set(pnp_bridge_common_pnp_inc ${CMAKE_CURRENT_LIST_DIR}/../pnpbridge/common CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
 
 include_directories(../inc)
 include_directories(../../../deps/azure-iot-sdk-c-pnp/deps/parson)
@@ -32,6 +33,7 @@ include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/umock-c/inc)
 include_directories(../../../deps/azure-iot-sdk-c-pnp/pnp_client/inc)
 
 include_directories(${pnpbridge_INC_FOLDER})
+include_directories(${pnp_bridge_common_pnp_inc})
 
 IF(WIN32)
     #windows needs this define
@@ -63,7 +65,6 @@ set(pnp_bridge_common_libs
     prov_device_client
     prov_mqtt_transport
     utpm
-    digitaltwin_client
 )
 
 target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})

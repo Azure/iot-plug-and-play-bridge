@@ -11,14 +11,12 @@
 
 // static
 std::unique_ptr<BluetoothSensorDeviceAdapter> BluetoothSensorDeviceAdapter::MakeUnique(
-    const std::string& interfaceId,
     const std::string& componentName,
     uint64_t bluetoothAddress,
     const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor)
 {
 #if defined(WIN32)
     return std::make_unique<BluetoothSensorDeviceAdapterWin>(
-        interfaceId,
         componentName,
         bluetoothAddress,
         interfaceDescriptor);
@@ -27,54 +25,31 @@ std::unique_ptr<BluetoothSensorDeviceAdapter> BluetoothSensorDeviceAdapter::Make
 #endif
 }
 
+void BluetoothSensorDeviceAdapterBase::SetIotHubDeviceClientHandle(
+    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle)
+{
+    m_deviceClient = DeviceClientHandle;
+}
+
 BluetoothSensorDeviceAdapterBase::BluetoothSensorDeviceAdapterBase(
-    const std::string& interfaceId,
     const std::string& componentName,
     const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor) :
-    m_interfaceDescriptor(interfaceDescriptor)
+    m_interfaceDescriptor(interfaceDescriptor),
+    m_componentName(componentName)
 {
-    auto result = DigitalTwin_InterfaceClient_Create(
-        interfaceId.c_str(),
-        componentName.c_str(),
-        OnInterfaceRegisteredCallback,
-        this,
-        &m_handle);
 
-    if (result != DIGITALTWIN_CLIENT_OK)
-    {
-        throw std::runtime_error(
-            ("Failed to create digital twin interface: " + std::to_string(result)).c_str());
-    }
-
-    result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(
-        m_handle,
-        OnPropertyCallback,
-        this);
-
-    if (result != DIGITALTWIN_CLIENT_OK)
-    {
-        throw std::runtime_error(
-            ("Failed to register for property callbacks: " + std::to_string(result)).c_str());
-    }
-
-    result = DigitalTwin_InterfaceClient_SetCommandsCallback(
-        m_handle,
-        OnCommandCallback,
-        this);
-
-    if (result != DIGITALTWIN_CLIENT_OK)
-    {
-        throw std::runtime_error(
-            ("Failed to register for command callbacks: " + std::to_string(result)).c_str());
-    }
 }
 
 void BluetoothSensorDeviceAdapterBase::ReportSensorDataTelemetry(
     const std::vector<unsigned char>& payload)
 {
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+
     auto parsedSensorData = m_interfaceDescriptor->GetPayloadParser()->ParsePayload(payload);
     for (const auto& sensorData : parsedSensorData)
     {
+        IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
+
         auto telemetryName = sensorData.first;
         auto telemetryMessage = sensorData.second;
         char telemetryPayload[512] = { 0 };
@@ -83,69 +58,75 @@ void BluetoothSensorDeviceAdapterBase::ReportSensorDataTelemetry(
 
         std::vector<char> telemetryNameBuffer(
             telemetryName.c_str(), telemetryName.c_str() + telemetryName.size() + 1);
-        auto result = DigitalTwin_InterfaceClient_SendTelemetryAsync(GetPnpInterfaceClientHandle(),
-            reinterpret_cast<unsigned char*>(telemetryPayload),
-            strlen(telemetryPayload),
-            OnTelemetryCallback,
-            static_cast<void*>(telemetryNameBuffer.data()));
 
-        if (result != DIGITALTWIN_CLIENT_OK)
+        if ((messageHandle = PnP_CreateTelemetryMessageHandle(m_componentName.c_str(), telemetryPayload)) == NULL)
         {
-            LogError("Failed to report sensor data telemetry for %s: %s",
-                telemetryName.c_str(), MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT,
-                result));
+            LogError("Bluetooth Sensor Component %s: PnP_CreateTelemetryMessageHandle failed.", m_componentName.c_str());
         }
-    }
-}
+        else if ((result = IoTHubDeviceClient_SendEventAsync(m_deviceClient, messageHandle,
+                OnTelemetryCallback, static_cast<void*>(telemetryNameBuffer.data()))) != IOTHUB_CLIENT_OK)
+        {
+            LogError("Bluetooth Sensor Component %s: Failed to report sensor data telemetry %s, error=%d",
+                m_componentName.c_str(), telemetryName.c_str(), result);
+        }
 
-DIGITALTWIN_INTERFACE_CLIENT_HANDLE BluetoothSensorDeviceAdapterBase::GetPnpInterfaceClientHandle()
-{
-    return m_handle;
+        IoTHubMessage_Destroy(messageHandle);
+
+    }
 }
 
 // static
 void BluetoothSensorDeviceAdapterBase::OnInterfaceRegisteredCallback(
-    DIGITALTWIN_CLIENT_RESULT interfaceStatus,
+    IOTHUB_CLIENT_RESULT interfaceStatus,
     void* /* userInterfaceContext */)
 {
-    if (interfaceStatus == DIGITALTWIN_CLIENT_OK)
+    if (PNPBRIDGE_SUCCESS(interfaceStatus))
     {
         LogInfo("Bluetooth sensor interface successfully registered.");
     }
     else
     {
-        LogError("Bluetooth sensor interface received failed: %s",
-            MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, interfaceStatus));
+        LogError("Bluetooth sensor interface received failed: %d",
+            interfaceStatus);
     }
 }
 
 // static
 void BluetoothSensorDeviceAdapterBase::OnTelemetryCallback(
-    DIGITALTWIN_CLIENT_RESULT telemetryStatus,
-    void* /* userContextCallback */)
+    IOTHUB_CLIENT_CONFIRMATION_RESULT telemetryStatus,
+    void* userContextCallback)
 {
-    if (telemetryStatus != DIGITALTWIN_CLIENT_OK)
+    if (telemetryStatus != IOTHUB_CLIENT_OK)
     {
-        LogError("Telemetry callback reported error: %s",
-            MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, telemetryStatus));
+        LogError("Bluetooth Sensor Component: Telemetry callback reported error: %d",
+            telemetryStatus);
+    }
+    else
+    {
+        LogInfo("Bluetooth Sensor Component: Telemetry %s was reported correctly",
+            (char*)userContextCallback);
     }
 }
 
 // static
 void BluetoothSensorDeviceAdapterBase::OnPropertyCallback(
-    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* /* clientPropertyUpdate */,
-    void* /* userInterfaceContext */)
+    PNPBRIDGE_COMPONENT_HANDLE /*PnpComponentHandle*/,
+    const char* /* PropertyName */,
+    JSON_Value* /* PropertyValue */,
+    int /* version */,
+    void* /* userContextCallback */)
 {
-    // No properties are supportedon BT sensors, no-op
+    // No properties are supported on BT sensors, no-op
 }
 
 // static
-void BluetoothSensorDeviceAdapterBase::OnCommandCallback(
-    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* /* commandRequest */,
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* commandResponse,
-    void* /* userInterfaceContext */)
+int BluetoothSensorDeviceAdapterBase::OnCommandCallback(
+    PNPBRIDGE_COMPONENT_HANDLE /* PnpComponentHandle */,
+    const char* /* CommandName */,
+    JSON_Value* /* CommandValue */,
+    unsigned char** /* CommandResponse */,
+    size_t* /* CommandResponseSize */)
 {
-    // No commands are supported on BT sensors, return 501 not found response
-    commandResponse->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
-    commandResponse->status = 501;
+    // No commands are supported on BT sensors
+    return PNP_STATUS_SUCCESS;
 }

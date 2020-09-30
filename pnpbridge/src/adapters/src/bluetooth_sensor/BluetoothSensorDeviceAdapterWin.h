@@ -19,7 +19,6 @@ class BluetoothSensorDeviceAdapterWin :
 {
 public:
     BluetoothSensorDeviceAdapterWin(
-        const std::string& interfaceId,
         const std::string& componentName,
         uint64_t bluetoothAddress,
         const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor);

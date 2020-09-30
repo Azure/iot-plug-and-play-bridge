@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #pragma once
 
 #include "pch.h"
@@ -34,8 +35,6 @@ public:
     virtual HRESULT InitMediaCapture(std::wstring& deviceId);
     HRESULT StartFrameReader();
 
-    void SetDTHandle(DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface);
-
 private:
     LOCK_HANDLE            m_frameReaderLock;
     EventRegistrationToken m_token;
@@ -45,6 +44,4 @@ private:
     
     HRESULT FrameArrivedHandler(ABI::Windows::Media::Capture::Frames::IMediaFrameReader* pFrameReader, 
         ABI::Windows::Media::Capture::Frames::IMediaFrameArrivedEventArgs*);
-
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE m_PnpClientInterface; 
 };

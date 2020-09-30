@@ -1,10 +1,12 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #pragma once
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#include <digitaltwin_interface_client.h>
+#include <iothub_device_client.h>
 #include "../ModbusEnum.h"
 
 #define MODBUS_EXCEPTION_CODE 0x80

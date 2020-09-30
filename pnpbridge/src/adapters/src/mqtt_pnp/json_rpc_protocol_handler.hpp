@@ -1,5 +1,14 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#pragma once
+#include "mqtt_manager.hpp"
+#include "json_rpc.hpp"
+
 class JsonRpcProtocolHandler : public MqttProtocolHandler {
 public:
+
+    JsonRpcProtocolHandler(
+        const std::string& ComponentName);
     void
     OnReceive(
         const char*     Topic,
@@ -14,20 +23,29 @@ public:
         JSON_Value*             ProtocolHandlerConfig
     );
 
-    // TODO: Handle command input
     void
-    OnPnpMethodCall(
-        const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   CommandRequest,
-        DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        CommandResponse
+    OnPnpPropertyCallback(
+        const char* PropertyName,
+        JSON_Value* PropertyValue,
+        int version,
+        void* userContextCallback
+    );
+
+    int
+    OnPnpCommandCallback(
+        const char* CommandName,
+        JSON_Value* CommandValue,
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize
     );
 
     void
-    AssignDigitalTwin(
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE DtHandle
+    SetIotHubDeviceClientHandle(
+        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle
     );
 
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE
-    GetDigitalTwin();
+    void 
+    StartTelemetry();
 
 private:
     MqttConnectionManager*              s_ConnectionManager = nullptr;
@@ -36,7 +54,9 @@ private:
     std::map<std::string, std::pair<std::string, std::string>>
                                         s_Commands;
     JsonRpc*                            s_JsonRpc = nullptr;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE s_DtInterface = nullptr;
+    std::string                         s_ComponentName;
+    IOTHUB_DEVICE_CLIENT_HANDLE         s_DeviceClient;
+    bool                                s_TelemetryStarted;
 
     static
     void

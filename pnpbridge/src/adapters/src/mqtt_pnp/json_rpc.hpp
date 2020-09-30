@@ -1,3 +1,8 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+#pragma once
+
 #define JSONRPC_ERROR_PARSE_ERROR       -32700
 #define JSONRPC_ERROR_INVALID_REQUEST   -32600
 #define JSONRPC_ERROR_METHOD_NOT_FOUND  -32601

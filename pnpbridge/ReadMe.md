@@ -1,7 +1,7 @@
 
 # Building, Deploying, and Extending the IoT Plug and Play bridge
 
-To get started with a simple example, view the [Quickstart](./quickstart.md).
+To get started with a simple example, view the [Reference Documentation](https://www.aka.ms/iot-pnp-bridge-docs).
 
 These instructions and samples assume basic familiarity with Azure Digital Twin and IoT Plug and Play concepts.  To learn more background information, see [here](https://aka.ms/iotpnpdocs). This section describes the following:
 
@@ -23,7 +23,7 @@ The IoT Plug and Play bridge supports a set of PnP Bridge Adapters for various t
 
 The IoT Plug and Play bridge is supplied with a JSON based configuration file that generally specifies the following pieces of information:
 
-* How to make a connection with Azure IoT, i.e. via connection strings, authentication parameters or     device provisioning information if the connection is made using DPS
+* How to make a connection with Azure IoT, i.e. via connection strings, authentication parameters or device provisioning information if the connection is made using DPS
 * The location of the device capability model that will be used by the Pnp Bridge (static and immutable for now) which defines capabilities of an IoT plug and play device
 * A list of interface components (aka devices) and the following information regarding each component:
 * The interface id and component name
@@ -34,8 +34,7 @@ For example, a bluetooth sensor interface component could be configured like thi
 
 ```JSON
   {
-        "_comment": "Interface Component BLE sensor",
-        "pnp_bridge_interface_id": "urn:contoso:com:blesensor:1",
+        "_comment": "Component BLE sensor",
         "pnp_bridge_component_name": "blesensor1",
         "pnp_bridge_adapter_id": "bluetooth-sensor-pnp-adapter",
         "pnp_bridge_adapter_config": {
@@ -107,7 +106,7 @@ For example the Bluetooth Sensor PnP Bridge Adapter has a dictionary (name : int
 
 There are currently 6 PnP Bridge Adapters supported by the Pnp Bridge:
 
-* Core Device Health Adapter: Connects devices with a specific hardware ID based on a list of adapter-supported device interface classes
+* [Core Device Health Adapter](./docs/coredevicehealth_adapter.md): Connects devices with a specific hardware ID based on a list of adapter-supported device interface classes
 * [Camera Adapter](./src/adapters/src/Camera/readme.md): Connects cameras on Windows
 * [SerialPnp Adapter](./../serialpnp/Readme.md): Connects devices that can communicate over the SerialPnp Protocol.
 * [Modbus Adapter](./docs/modbus_adapters.md): Connects sensors connected via Modbus
@@ -119,7 +118,6 @@ Here's an example output of an interface component that uses the core device hea
 ```JSON
 {
       "_comment": "USB device",
-      "pnp_bridge_interface_id": "urn:contoso:com:coredevicehealth:1",
       "pnp_bridge_component_name": "USBDevice",
       "pnp_bridge_adapter_id": "core-device-health",
       "pnp_bridge_adapter_config": {
@@ -128,7 +126,7 @@ Here's an example output of an interface component that uses the core device hea
 }
 ```
 
-Since this interface conponent has specified its hardware ID, the core device health adapter will look through all interfaces with interface classes it supports and connect to the matching hardware ID if or when it finds it. The global adapter parameters for the core device health adapter looks like this:
+Since this interface component has specified its hardware ID, the core device health adapter will look through all interfaces with interface classes it supports and connect to the matching hardware ID if or when it finds it. The global adapter parameters for the core device health adapter looks like this:
 
 ```JSON
 {
@@ -169,10 +167,10 @@ The PnP Bridge Adapter interacts with the device using whichever communication p
         const char* identity;
 
         PNPBRIDGE_ADAPTER_CREATE createAdapter;
-        PNPBRIDGE_INTERFACE_CREATE createPnpInterface;
-        PNPBRIDGE_INTERFACE_START startPnpInterface;
-        PNPBRIDGE_INTERFACE_STOP stopPnpInterface;
-        PNPBRIDGE_INTERFACE_DESTROY destroyPnpInterface;
+        PNPBRIDGE_COMPONENT_CREATE createPnpComponent;
+        PNPBRIDGE_COMPONENT_START startPnpComponent;
+        PNPBRIDGE_COMPONENT_STOP stopPnpComponent;
+        PNPBRIDGE_COMPONENT_DESTROY destroyPnpComponent;
         PNPBRIDGE_ADAPTER_DESTOY destroyAdapter;
     } PNP_ADAPTER, * PPNP_ADAPTER;
 
@@ -183,15 +181,15 @@ The PnP Bridge Adapter interacts with the device using whichever communication p
 ### Brief description of the PnP Bridge Adapter interface
 
 1. `PNPBRIDGE_ADAPTER_CREATE` creates the adapter and sets up resources for generic interface management. Adapter may also rely on global adapter parameters for adapter creation. This is called once for a single adapter.
-2. `PNPBRIDGE_INTERFACE_CREATE` creates digital twin client interfaces and binds callback functions. The adapter starts initiating the communication channel (an active connection) to the device. The adapter may set up resources to start the flow telemetry but does not start reporting telemetry until `PNPBRIDGE_INTERFACE_START` is called. This call is made once for each interface component in the configuration file. 
-3. `PNPBRIDGE_INTERFACE_ START` is called to allow the PnP Bridge Adapter to start reporting telemetry from the device to the digital twin client. This call is made once for each interface component in the configuration file.
-4. `PNPBRIDGE_INTERFACE_STOP` stops the flow of telemetry. 
-5. `PNPBRIDGE_INTERFACE_DESTROY` destroys the digital twin client and associated interface resources. This call is made once for each interface component in the configuration file when the bridge tears down or when a fatal error occurs.
+2. `PNPBRIDGE_COMPONENT_CREATE` creates digital twin client interfaces and binds callback functions. The adapter starts initiating the communication channel (an active connection) to the device. The adapter may set up resources to start the flow telemetry but does not start reporting telemetry until `PNPBRIDGE_COMPONENT_START` is called. This call is made once for each interface component in the configuration file. 
+3. `PNPBRIDGE_COMPONENT_START` is called to allow the PnP Bridge Adapter to start reporting telemetry from the device to the digital twin client. This call is made once for each interface component in the configuration file.
+4. `PNPBRIDGE_COMPONENT_STOP` stops the flow of telemetry. 
+5. `PNPBRIDGE_COMPONENT_DESTROY` destroys the digital twin client and associated interface resources. This call is made once for each interface component in the configuration file when the bridge tears down or when a fatal error occurs.
 6. `PNPBRIDGE_ADAPTER_DESTROY` cleans up adapter resources.
 
 ### Bridge Core's Interaction with PnP Bridge Adapters
 
-When the bridge starts, the PnP Bridge Adapter manager looks through each interface component that is in the configuration file and calls `PNPBRIDGE_ADAPTER_CREATE` on the appropriate adapter. The adapter may utilize optional global adapter configuration parameters to set up resources to support the various “interface configurations”. For every device in the configuration file, the manager initiates interface creation by calling the corresponding PnP Bridge Adapter’s `PNPBRIDGE_INTERFACE_CREATE`. The adapter receives optional adapter configuration corresponding to the interface component and may use this information to set up connections with the device after create digital twin client interfaces and bind callback functions for property updates and commands. The establishment of device connections should not block the return of this callback after digital twin interface creation succeeds. This is such that the active device connection is made independent of the active interface client which the bridge expects to create. If a connection fails, this will imply the device is inactive and the adapter could choose to retry making this connection later. Once all the interface components specified in the configuration file are created the PnP Bridge Adapter manager curates and compiles the complete list of interfaces and registers them once with Azure IoT. Registration is an asynchronous and blocking call which on completion trigger a registration callback which is handled by the PnP Bridge Adapter after which it also starts handling property update and command callbacks from the cloud. The adapter manager then calls `PNPBRIDGE_INTERFACE_ START` on each component and the corresponding adapter start reporting telemetry to the digital twin client on the IoT Central / IoT Hub.
+When the bridge starts, the PnP Bridge Adapter manager looks through each interface component that is in the configuration file and calls `PNPBRIDGE_ADAPTER_CREATE` on the appropriate adapter. The adapter may utilize optional global adapter configuration parameters to set up resources to support the various “interface configurations”. For every device in the configuration file, the manager initiates interface creation by calling the corresponding PnP Bridge Adapter’s `PNPBRIDGE_COMPONENT_CREATE`. The adapter receives optional adapter configuration corresponding to the interface component and may use this information to set up connections with the device after create digital twin client interfaces and bind callback functions for property updates and commands. The establishment of device connections should not block the return of this callback after digital twin interface creation succeeds. This is such that the active device connection is made independent of the active interface client which the bridge expects to create. If a connection fails, this will imply the device is inactive and the adapter could choose to retry making this connection later. Once all the interface components specified in the configuration file are created the PnP Bridge Adapter manager curates and compiles the complete list of interfaces and registers them once with Azure IoT. Registration is an asynchronous and blocking call which on completion trigger a registration callback which is handled by the PnP Bridge Adapter after which it also starts handling property update and command callbacks from the cloud. The adapter manager then calls `PNPBRIDGE_INTERFACE_ START` on each component and the corresponding adapter start reporting telemetry to the digital twin client on the IoT Central / IoT Hub.
 
 ### General Guidelines to Design a New PnP Bridge Adapter:
 
@@ -214,7 +212,7 @@ Enable the adapters in Pnp Bridge by adding a reference to these adapters in ada
     }
   ```
 
->[!NOTE] PnP Bridge Adapter callbacks are invoked in a sequential fashion. An adapter shouldn't block a callback since this will prevent the Bridge Core from making forward progress.
+>Note: PnP Bridge Adapter callbacks are invoked in a sequential fashion. An adapter shouldn't block a callback since this will prevent the Bridge Core from making forward progress.
 
 ### Sample Camera Adapter
 
@@ -245,7 +243,7 @@ After cloning the IoT Plug and Play bridge repo to your machine, open the "Devel
 %REPO_DIR%\pnpbridge\> git submodule update --init --recursive
 ```
 
->[!NOTE] If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
+>Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
 
 ### Step 2: Build the Azure IoT Plug and Play bridge (on Windows)
 
@@ -285,7 +283,7 @@ Modify the folowing parameters under **pnp_bridge_connection_parameters** node i
       "connection_parameters": {
         "connection_type" : "connection_string",
         "connection_string" : "[To fill in]",
-        "device_capability_model_uri": "[To fill in]",
+        "root_interface_model_id": "[To fill in]",
         "auth_parameters": {
             "auth_type": "symmetric_key",
             "symmetric_key": "[To fill in]"
@@ -300,7 +298,7 @@ Modify the folowing parameters under **pnp_bridge_connection_parameters** node i
   {
       "connection_parameters": {
         "connection_type" : "dps",
-        "device_capability_model_uri": "[To fill in]",
+        "root_interface_model_id": "[To fill in]",
         "auth_parameters" : {
           "auth_type" : "symmetric_key",
           "symmetric_key" : "[DEVICE KEY]"
@@ -314,8 +312,6 @@ Modify the folowing parameters under **pnp_bridge_connection_parameters** node i
   }
   ```
 
-  > Note: Refer to the [Azure IoT Central documentation on device connectivity](https://docs.microsoft.com/azure/iot-central/core/concepts-connectivity) for how to generate the id_scope, device_id, and symmetric_key for your device. The device_capability_model_uri is the "CapabilityModelId" that is listed for your device's Device Capability Model in Azure IoT Central.
-
 In this example we further modified the configuration file.
 
 ### Step 4: Start the IoT Plug and Play bridge for Generic Sensors
@@ -328,9 +324,9 @@ Start IoT Plug and Play bridge by running it in a command prompt.
   %REPO_DIR%\pnpbridge\cmake\pnpbridge_x86\src\pnpbridge\samples\console>    Debug\pnpbridge_bin.exe
   ```
 
-  > [!TIP] The path to the configuration file can also be passed to the bridge executable as a command line parameter.
+  > Tip: The path to the configuration file can also be passed to the bridge executable as a command line parameter.
   
-  > [!TIP] If you have either a built-in camera or a USB camera connected to your PC running the IoT Plug and Play bridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, IoT Plug and Play bridge's console output window will show the monitoring stats and the frame rate of the camera will be reported through Azure IoT Plug and Play (Digital Twin) interface to Azure.
+  > Tip: If you have either a built-in camera or a USB camera connected to your PC running the IoT Plug and Play bridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, IoT Plug and Play bridge's console output window will show the monitoring stats and the frame rate of the camera will be reported through Azure IoT Plug and Play (Digital Twin) interface to Azure.
 
 ## Folder Structure
 

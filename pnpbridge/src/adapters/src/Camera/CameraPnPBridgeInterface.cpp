@@ -6,50 +6,58 @@
 #include "CameraPnPBridgeInterface.h"
 #include "CameraIotPnpDeviceAdapter.h"
 
-DIGITALTWIN_CLIENT_RESULT Camera_StartPnpInterface(
+IOTHUB_CLIENT_RESULT Camera_StartPnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
-    LogInfo("Starting the PnP interface: %p", pnpInterfaceHandle);
+    LogInfo("Starting the PnP interface: %p", PnpComponentHandle);
 
     const auto cameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(
-        PnpInterfaceHandleGetContext(pnpInterfaceHandle));
+        PnpComponentHandleGetContext(PnpComponentHandle));
+    
+    if (!cameraDevice)
+    {
+        LogError("Device context is null, unable to start component");
+        return IOTHUB_CLIENT_ERROR;
+    }
+
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    cameraDevice->SetIotHubDeviceClientHandle(deviceHandle);
+
     if (cameraDevice)
     {
         if (cameraDevice->Start() != S_OK)
         {
-            return DIGITALTWIN_CLIENT_ERROR;
+            return IOTHUB_CLIENT_ERROR;
         }
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_StopPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
+IOTHUB_CLIENT_RESULT Camera_StopPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
-    LogInfo("Stopping PnP interface: %p", pnpInterfaceHandle);
+    LogInfo("Stopping PnP interface: %p", PnpComponentHandle);
 
     const auto cameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(
-        PnpInterfaceHandleGetContext(pnpInterfaceHandle));
+        PnpComponentHandleGetContext(PnpComponentHandle));
     if (cameraDevice)
     {
         // Blocks until the worker is stopped.
         cameraDevice->Stop();
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_DestroyPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle) noexcept
+IOTHUB_CLIENT_RESULT Camera_DestroyPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
-    LogInfo("Destroying PnP interface: %p", pnpInterfaceHandle);
-
-    DigitalTwin_InterfaceClient_Destroy(pnpInterfaceHandle);
+    LogInfo("Destroying PnP interface: %p", PnpComponentHandle);
 
     auto cameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(
-        PnpInterfaceHandleGetContext(pnpInterfaceHandle));
+        PnpComponentHandleGetContext(PnpComponentHandle));
     if (cameraDevice)
     {
         // Blocks until the worker is stopped.
@@ -58,65 +66,63 @@ DIGITALTWIN_CLIENT_RESULT Camera_DestroyPnpInterface(
         delete cameraDevice;
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpInterface(
+IOTHUB_CLIENT_RESULT Camera_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */,
-    const char* interfaceId,
     const char* componentName,
-    const JSON_Object* adapterInterfaceConfig,
-    PNPBRIDGE_INTERFACE_HANDLE pnpInterfaceHandle,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* pnpInterfaceClient) noexcept
+    const JSON_Object* AdapterComponentConfig,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) noexcept
 {
     static constexpr char g_cameraIdentityName[] = "hardware_id";
-    const auto cameraId = json_object_get_string(adapterInterfaceConfig, g_cameraIdentityName);
+    const auto cameraId = json_object_get_string(AdapterComponentConfig, g_cameraIdentityName);
     if (!cameraId)
     {
         LogError("Failed to get camera hardware ID from interface defined in config");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
     std::string cameraIdStr(cameraId);
 
     auto newCameraDevice = CameraIotPnpDeviceAdapter::MakeUnique(
-        interfaceId,
         componentName,
-        cameraIdStr,
-        pnpInterfaceClient);
+        cameraIdStr);
 
-    PnpInterfaceHandleSetContext(
-        pnpInterfaceHandle,
+    PnpComponentHandleSetContext(
+        PnpComponentHandle,
         static_cast<void*>(newCameraDevice.get()));
+    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate);
+    PnpComponentHandleSetCommandCallback(PnpComponentHandle, CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate);
 
     // Interface context now owns object
     newCameraDevice.release();
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_CreatePnpAdapter(
+IOTHUB_CLIENT_RESULT Camera_CreatePnpAdapter(
     const JSON_Object* /* adapterGlobalConfig */,
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */) noexcept
 {
     LogInfo("Creating the camera PnP adapter.");
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT Camera_DestroyPnpAdapter(
+IOTHUB_CLIENT_RESULT Camera_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE /* adapterHandle */) noexcept
 {
     LogInfo("Destroying the camera PnP adapter.");
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 PNP_ADAPTER CameraPnpInterface = {
     "camera-pnp-adapter",         // identity
     Camera_CreatePnpAdapter,      // createAdapter
-    Camera_CreatePnpInterface,    // createPnpInterface
-    Camera_StartPnpInterface,     // startPnpInterface
-    Camera_StopPnpInterface,      // stopPnpInterface
-    Camera_DestroyPnpInterface,   // destroyPnpInterface
+    Camera_CreatePnpComponent,    // createPnpComponent
+    Camera_StartPnpComponent,     // startPnpComponent
+    Camera_StopPnpComponent,      // stopPnpComponent
+    Camera_DestroyPnpComponent,   // destroyPnpComponent
     Camera_DestroyPnpAdapter      // destroyAdapter
 };

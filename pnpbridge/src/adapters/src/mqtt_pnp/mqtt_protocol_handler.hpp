@@ -1,3 +1,7 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#pragma once
+#include "pnpbridge.h"
 class MqttProtocolHandler {
 public:
     virtual
@@ -17,19 +21,27 @@ public:
     ) = 0;
 
     virtual
-    void
-    OnPnpMethodCall(
-        const DIGITALTWIN_CLIENT_COMMAND_REQUEST*   CommandRequest,
-        DIGITALTWIN_CLIENT_COMMAND_RESPONSE*        CommandResponse
-    ) = 0;
+    void SetIotHubDeviceClientHandle(
+        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle) = 0;
 
     virtual
-    void
-    AssignDigitalTwin(
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE DtHandle
+    void OnPnpPropertyCallback(
+        const char* PropertyName,
+        JSON_Value* PropertyValue,
+        int version,
+        void* userContextCallback
     ) = 0;
 
+    virtual 
+    int OnPnpCommandCallback(
+        const char* CommandName,
+        JSON_Value* CommandValue,
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize
+    ) = 0;
+
+
     virtual
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE
-    GetDigitalTwin() = 0;
+    void StartTelemetry() = 0;
+
 };

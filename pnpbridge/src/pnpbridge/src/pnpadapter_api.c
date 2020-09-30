@@ -18,21 +18,34 @@ void* PnpAdapterHandleGetContext(PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 
 }
 
-void PnpInterfaceHandleSetContext(PNPBRIDGE_INTERFACE_HANDLE InterfaceHandle, void* InterfaceContext)
+void PnpComponentHandleSetContext(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle, void* ComponentDeviceContext)
 {
-    PPNPADAPTER_INTERFACE_TAG interfaceContextTag = (PPNPADAPTER_INTERFACE_TAG)InterfaceHandle;
-    interfaceContextTag->context = InterfaceContext;
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    componentContextTag->context = ComponentDeviceContext;
 }
 
-void* PnpInterfaceHandleGetContext(PNPBRIDGE_INTERFACE_HANDLE InterfaceHandle)
+void* PnpComponentHandleGetContext(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle)
 {
-    PPNPADAPTER_INTERFACE_TAG interfaceContextTag = (PPNPADAPTER_INTERFACE_TAG)InterfaceHandle;
-    return (void*)interfaceContextTag->context;
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    return (void*)componentContextTag->context;
 }
 
-DIGITALTWIN_DEVICE_CLIENT_HANDLE
-IotHandle_GetPnpDeviceClient(_In_ MX_IOT_HANDLE IotHandle)
+void PnpComponentHandleSetPropertyUpdateCallback (PNPBRIDGE_COMPONENT_HANDLE ComponentHandle,
+    PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK PropertyUpdateCallback)
 {
-    MX_IOT_HANDLE_TAG* iotHandle = (MX_IOT_HANDLE_TAG*)IotHandle;
-    return iotHandle->u1.IotDevice.PnpDeviceClientHandle;
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    componentContextTag->processPropertyUpdate = PropertyUpdateCallback;
+}
+
+void PnpComponentHandleSetCommandCallback (PNPBRIDGE_COMPONENT_HANDLE ComponentHandle,
+    PNPBRIDGE_COMPONENT_METHOD_CALLBACK CommandCallback)
+{
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    componentContextTag->processCommand = CommandCallback;
+}
+
+IOTHUB_DEVICE_CLIENT_HANDLE PnpComponentHandleGetIotHubDeviceClient(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle)
+{
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    return componentContextTag->deviceClient;
 }
