@@ -106,7 +106,7 @@ For example the Bluetooth Sensor PnP Bridge Adapter has a dictionary (name : int
 
 There are currently 6 PnP Bridge Adapters supported by the Pnp Bridge:
 
-* Core Device Health Adapter: Connects devices with a specific hardware ID based on a list of adapter-supported device interface classes
+* [Core Device Health Adapter](./docs/coredevicehealth_adapter.md): Connects devices with a specific hardware ID based on a list of adapter-supported device interface classes
 * [Camera Adapter](./src/adapters/src/Camera/readme.md): Connects cameras on Windows
 * [SerialPnp Adapter](./../serialpnp/Readme.md): Connects devices that can communicate over the SerialPnp Protocol.
 * [Modbus Adapter](./docs/modbus_adapters.md): Connects sensors connected via Modbus
