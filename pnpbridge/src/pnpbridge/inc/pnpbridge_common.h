@@ -137,9 +137,8 @@ typedef struct _MX_IOT_HANDLE_TAG {
         } IotModule;
     } u1;
 
-    // Change this to enum
     bool IsModule;
-    bool DeviceClientInitialized;
+    bool ClientHandleInitialized;
 } MX_IOT_HANDLE_TAG;
 
 typedef enum PNP_BRIDGE_STATE {
@@ -149,6 +148,11 @@ typedef enum PNP_BRIDGE_STATE {
     PNP_BRIDGE_DESTROYED
 } PNP_BRIDGE_STATE;
 
+typedef enum PNP_BRIDGE_IOT_EDGE {
+    PNP_BRIDGE_IOT_EDGE_DEVICE,
+    PNP_BRIDGE_IOT_EDGE_RUNTIME_MODULE
+} PNP_BRIDGE_IOT_EDGE;
+
 // Device aggregator context
 typedef struct _PNP_BRIDGE {
     MX_IOT_HANDLE_TAG IotHandle;
@@ -157,6 +161,8 @@ typedef struct _PNP_BRIDGE {
 
     PNPBRIDGE_CONFIGURATION Configuration;
 
+    PNP_BRIDGE_IOT_EDGE IoTEdgeType;
+
     COND_HANDLE ExitCondition;
 
     LOCK_HANDLE ExitLock;
@@ -164,6 +170,19 @@ typedef struct _PNP_BRIDGE {
 
 
 void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
+
+// User Agent String for Pnp Bridge telemetry
+static const char g_pnpBridgeUserAgentString[] = "PnpBridgeUserAgentString";
+// Pnp Bridge desired property for component config
+static const char g_pnpBridgeConfigProperty[] = "PnpBridgeConfig";
+// Root Pnp Bridge Interface model ID when running as a module
+static const char g_pnpBridgeModuleRootModelId[] = "dtmi:com:example:RootPnpBridgeSampleDevice;1";
+// Environment variable used to specify this application's connection string when running as a module
+static const char g_connectionStringEnvironmentVariable[] = "IOTHUB_DEVICE_CONNECTION_STRING";
+// Environment variable used to specify workload URI for dockerized containers/modules
+static const char g_workloadURIEnvironmentVariable[] = "IOTEDGE_WORKLOADURI";
+// Hub client tracing for when Pnp Bridge runs in Edge Module
+static bool g_hubClientTraceEnabled = true;
 
 #ifdef __cplusplus
 }

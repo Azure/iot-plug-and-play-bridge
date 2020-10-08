@@ -10,7 +10,7 @@ extern "C"
 
 #include <pnpadapter_manager.h>
 
-IOTHUB_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams);
+IOTHUB_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, PCONNECTION_PARAMETERS ConnectionParams);
 IOTHUB_CLIENT_RESULT IotComms_DeinitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, PCONNECTION_PARAMETERS ConnectionParams);
 
 #ifdef __cplusplus

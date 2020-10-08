@@ -125,6 +125,10 @@ extern "C"
         const char * ComponentName,
         size_t ComponentNameSize);
 
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdapterManagerAndStartComponents(
+        PPNP_ADAPTER_MANAGER adapterMgr,
+        JSON_Value* config);
+
     // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.
     void PnpAdapterManager_DeviceTwinCallback(
         DEVICE_TWIN_UPDATE_STATE updateState,
@@ -148,6 +152,9 @@ extern "C"
         JSON_Value* propertyValue,
         int version,
         void* userContextCallback);
+
+    static void PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation(
+        JSON_Value* pnpBridgeConfig);
 
 #ifdef __cplusplus
 }

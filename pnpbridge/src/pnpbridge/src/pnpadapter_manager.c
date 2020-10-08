@@ -592,15 +592,32 @@ void PnpAdapterManager_DeviceTwinCallback(
     size_t size,
     void* userContextCallback)
 {
-    // Invoke PnP_ProcessTwinData to actualy process the data.  PnP_ProcessTwinData uses a visitor pattern to parse
-    // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
-    if (PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
-            g_PnpBridge->PnpMgr->NumComponents, PnpAdapterManager_RoutePropertyCallback, userContextCallback) == false)
+    if (g_PnpBridge->IoTEdgeType == PNP_BRIDGE_IOT_EDGE_RUNTIME_MODULE && g_PnpBridgeState != PNP_BRIDGE_INITIALIZED)
     {
-        // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)
-        // there is no action we can take beyond logging.
-        LogError("Unable to process twin json. Ignoring any desired property update requests");
+        if (PnP_ProcessModuleTwinConfigProperty(updateState, payload, size, 
+                PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation, g_pnpBridgeConfigProperty))
+        {
+            g_PnpBridgeState = PNP_BRIDGE_INITIALIZED;
+            LogInfo("Processing of module twin configuration for Pnp Bridge components completed successfully");
+        }
     }
+    else if ((g_PnpBridgeState == PNP_BRIDGE_INITIALIZED) && (g_PnpBridge->PnpMgr != NULL))
+    {
+        // Invoke PnP_ProcessTwinData to actualy process the data. PnP_ProcessTwinData uses a visitor pattern to parse
+        // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
+        if (!PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
+                g_PnpBridge->PnpMgr->NumComponents, PnpAdapterManager_RoutePropertyCallback, userContextCallback))
+        {
+            // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)
+            // there is no action we can take beyond logging.
+            LogError("Unable to process twin json. Ignoring any desired property update requests");
+        }
+    }
+    else
+    {
+        LogInfo("Dropping property update call back since Pnp Bridge configuration initialization has not completed");
+    }
+
 }
 
 // PnpAdapterManager_RoutePropertyCallback is the callback function that the PnP helper layer invokes per property update.
@@ -611,7 +628,6 @@ static void PnpAdapterManager_RoutePropertyCallback(
     int version,
     void* userContextCallback)
 {
-
     if (componentName != NULL && propertyName != NULL)
     {
         LogInfo("Received PnP property update for component=%s, property=%s", componentName, propertyName);
@@ -622,4 +638,61 @@ static void PnpAdapterManager_RoutePropertyCallback(
             componentHandle->processPropertyUpdate(componentHandle, propertyName, propertyValue, version, userContextCallback);
         }
     }
+}
+
+static void PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation(
+    JSON_Value* pnpBridgeConfig)
+{
+    if (pnpBridgeConfig != NULL)
+    {
+        LogInfo("Received PnP property update from module twin's desired Pnp Bridge configuration property");
+        if (IOTHUB_CLIENT_OK == PnpAdapterManager_BuildAdapterManagerAndStartComponents(g_PnpBridge->PnpMgr, pnpBridgeConfig))
+        {
+            LogInfo("Pnp Bridge Initialization complete");
+        }
+    }
+}
+
+IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdapterManagerAndStartComponents(
+    PPNP_ADAPTER_MANAGER adapterMgr,
+    JSON_Value* config)
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    LogInfo("Building Pnp Bridge Adapter Manager, Adapters & Components");
+
+    // Create all the adapters that are required by configured devices
+    result = PnpAdapterManager_CreateManager(&adapterMgr, config);
+    if (IOTHUB_CLIENT_OK != result) {
+        LogError("PnpAdapterManager_CreateManager failed: %d", result);
+        goto exit;
+    }
+
+    LogInfo("Pnp Adapter Manager created successfully.");
+
+    result = PnpAdapterManager_CreateComponents(adapterMgr, config);
+    if (IOTHUB_CLIENT_OK != result) {
+        LogError("PnpAdapterManager_CreateComponents failed: %d", result);
+        goto exit;
+    }
+
+    LogInfo("Pnp components created successfully.");
+
+    result = PnpAdapterManager_BuildComponentsInModel(adapterMgr);
+    if (IOTHUB_CLIENT_OK != result) {
+        LogError("PnpAdapterManager_BuildComponentsInModel failed: %d", result);
+        goto exit;
+    }
+
+    LogInfo("Pnp components built in model successfully.");
+
+    result = PnpAdapterManager_StartComponents(adapterMgr);
+    if (IOTHUB_CLIENT_OK != result) {
+        LogError("PnpAdapterManager_StartComponents failed: %d", result);
+        goto exit;
+    }
+
+    LogInfo("Pnp components started successfully.");
+
+exit:
+    return result;
 }

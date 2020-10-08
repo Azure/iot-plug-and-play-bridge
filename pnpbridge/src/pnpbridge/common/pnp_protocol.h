@@ -37,6 +37,12 @@ extern "C"
 // 
 typedef void (*PnP_PropertyCallbackFunction)(const char* componentName, const char* propertyName, JSON_Value* propertyValue, int version, void* userContextCallback);
 
+
+//
+// PnP_ModuleConfigPropertyCallbackFunction defines the function prototype the application implements to receive a callback for Pnp Bridge module configuration
+// 
+typedef void (*PnP_ModuleConfigPropertyCallbackFunction)(JSON_Value* propertyValue);
+
 //
 // PnP_CreateReportedProperty returns JSON to report a property's value from the device.  This does NOT contain any metadata such as 
 // a result code or version.  It is used when sending properties that are NOT marked as <"writable": true> in the DTDL defining
@@ -79,6 +85,15 @@ IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetryMessageHandle(const char* componentName
 // function for each property that it visits.
 // 
 bool PnP_ProcessTwinData(DEVICE_TWIN_UPDATE_STATE updateState, const unsigned char* payload, size_t size, const char** componentsInModel, size_t numComponentsInModel, PnP_PropertyCallbackFunction pnpPropertyCallback, void* userContextCallback);
+
+
+
+//
+// PnP_ProcessModuleTwinConfigProperty is invoked by the application when a module twin arrives to its module twin processing callback.
+// PnP_ProcessModuleTwinConfigProperty will visit the children of the desired portion of the twin and invoke the modules's pnpPropertyCallback
+// function for the PnpBridgeConfig property that is used to configure the Pnp Bridge module's modelled components
+// 
+bool PnP_ProcessModuleTwinConfigProperty(DEVICE_TWIN_UPDATE_STATE updateState, const unsigned char* payload, size_t size, PnP_ModuleConfigPropertyCallbackFunction pnpPropertyCallback, const char* targetProperty);
 
 //
 // PnP_CopyTwinPayloadToString takes the payload data, which arrives as a potentially non-NULL terminated string from the IoTHub SDK, and creates
