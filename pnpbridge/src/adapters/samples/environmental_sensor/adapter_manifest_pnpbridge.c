@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // Pnp Adapter headers
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 
 extern PNP_ADAPTER EnvironmentSensorInterface;
 

@@ -114,7 +114,7 @@ PnpBridge_InitializeEdgeModuleConfig(PNPBRIDGE_CONFIGURATION * Configuration)
     result = PnpBridge_InitializePnpModuleConfig(&Configuration->ConnParams->PnpDeviceConfiguration);
     if (IOTHUB_CLIENT_OK != result)
     {
-        LogError("Failed to retrieve the bridge configuration from specified file location.");
+        LogError("Failed to initialize PnP module configuration for edge module.");
         goto exit;
     }
 
@@ -167,10 +167,10 @@ PnpBridge_IsRunningInEdgeRuntime()
     return dockerizedModule;
 }
 
+
 IOTHUB_CLIENT_RESULT 
-PnpBridge_Initialize(
-    PPNP_BRIDGE* PnpBridge,
-    const char * ConfigFilePath
+PnpBridge_Create(
+    PPNP_BRIDGE* PnpBridge
     )
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
@@ -204,27 +204,18 @@ PnpBridge_Initialize(
         Lock(pbridge->ExitLock);
         lockAcquired = true;
 
-        if (PnpBridge_IsRunningInEdgeRuntime())
         {
-            pbridge->IoTEdgeType = PNP_BRIDGE_IOT_EDGE_RUNTIME_MODULE;
-            result = PnpBridge_InitializeEdgeModuleConfig(&pbridge->Configuration);
-            if (IOTHUB_CLIENT_OK != result) {
-                LogError("Failed to initilize IoT Edge Runtime module configuration for module client handle");
-                goto exit;
+            if (PnpBridge_IsRunningInEdgeRuntime())
+            {
+                pbridge->IoTClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
             }
-            LogInfo("IoT Edge Module configuration initialized successfully");
-        }
-        else
-        {
-            pbridge->IoTEdgeType = PNP_BRIDGE_IOT_EDGE_DEVICE;
-            result = PnpBridge_InitializeDeviceConfig(&pbridge->Configuration, ConfigFilePath);
-            if (IOTHUB_CLIENT_OK != result) {
-                LogError("Failed to initialize Pnp Bridge device configuration");
-                goto exit;
+            else
+            {
+                pbridge->IoTClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
             }
-            LogInfo("IoT Edge Device configuration initialized successfully");
         }
 
+        LogInfo("Pnp Bridge creation succeeded.");
         *PnpBridge = pbridge;
     }
 exit:
@@ -235,6 +226,45 @@ exit:
             }
             PnpBridge_Release(pbridge);
             *PnpBridge = NULL;
+        }
+    }
+   
+    return result;
+}
+
+IOTHUB_CLIENT_RESULT 
+PnpBridge_Initialize(
+    PPNP_BRIDGE PnpBridge,
+    const char * ConfigFilePath
+    )
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+
+    {
+        if (PnpBridge->IoTClientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE)
+        {
+            result = PnpBridge_InitializeEdgeModuleConfig(&PnpBridge->Configuration);
+            if (IOTHUB_CLIENT_OK != result) {
+                LogError("Failed to initilize IoT Edge Runtime module configuration for module client handle");
+                goto exit;
+            }
+            LogInfo("IoT Edge Module configuration initialized successfully");
+        }
+        else
+        {
+            result = PnpBridge_InitializeDeviceConfig(&PnpBridge->Configuration, ConfigFilePath);
+            if (IOTHUB_CLIENT_OK != result) {
+                LogError("Failed to initialize Pnp Bridge device configuration");
+                goto exit;
+            }
+            LogInfo("IoT Edge Device configuration initialized successfully");
+        }
+    }
+exit:
+    {
+        if (IOTHUB_CLIENT_OK != result) {
+            PnpBridge_Release(PnpBridge);
+            PnpBridge = NULL;
         }
     }
    
@@ -312,18 +342,21 @@ int
 PnpBridge_Main(const char * ConfigurationFilePath)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
-    PPNP_BRIDGE pnpBridge = NULL;
 
     {
             LogInfo("Starting Azure PnpBridge");
 
-            result = PnpBridge_Initialize(&pnpBridge, ConfigurationFilePath);
+            result = PnpBridge_Create(&g_PnpBridge);
+            if (IOTHUB_CLIENT_OK != result) {
+                LogError("PnpBridge_Create failed: %d", result);
+                goto exit;
+            }
+
+            result = PnpBridge_Initialize(g_PnpBridge, ConfigurationFilePath);
             if (IOTHUB_CLIENT_OK != result) {
                 LogError("PnpBridge_Initialize failed: %d", result);
                 goto exit;
             }
-
-            g_PnpBridge = pnpBridge;
 
             result = PnpBridge_RegisterIoTHubHandle();
             if (IOTHUB_CLIENT_OK != result) {
@@ -333,32 +366,38 @@ PnpBridge_Main(const char * ConfigurationFilePath)
 
             LogInfo("Connected to Azure IoT Hub");
 
-            if (g_PnpBridge->IoTEdgeType == PNP_BRIDGE_IOT_EDGE_DEVICE)
+            if (g_PnpBridge->IoTClientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
             {
-                result = PnpAdapterManager_BuildAdapterManagerAndStartComponents(pnpBridge->PnpMgr, pnpBridge->Configuration.JsonConfig);
+                result = PnpAdapterManager_BuildAdaptersAndComponents(&g_PnpBridge->PnpMgr, g_PnpBridge->Configuration.JsonConfig);
                 if (IOTHUB_CLIENT_OK != result)
                 {
-                    LogError("PnpAdapterManager_BuildAdapterManagerAndStartComponents failed: %d", result);
+                    LogError("PnpAdapterManager_BuildAdaptersAndComponents failed: %d", result);
                     goto exit;
                 }
+
                 g_PnpBridgeState = PNP_BRIDGE_INITIALIZED;
+
+            }
+            else
+            {
+                LogInfo("Pnp Bridge adapter and component initialization pending while running as an edge module");
             }
 
             // Prevent main thread from returning by waiting for the
             // exit condition to be set. This condition will be set when
             // the bridge has received a stop signal
             // ExitLock was taken in call to PnpBridge_Initialize so does not need to be reacquired.
-            Condition_Wait(pnpBridge->ExitCondition, pnpBridge->ExitLock, 0);
-            Unlock(pnpBridge->ExitLock);
+            Condition_Wait(g_PnpBridge->ExitCondition, g_PnpBridge->ExitLock, 0);
+            Unlock(g_PnpBridge->ExitLock);
 
     } 
 exit:
     {
-        if (pnpBridge)
+        if (g_PnpBridge != NULL && g_PnpBridgeState != PNP_BRIDGE_DESTROYED)
         {
-            PnpAdapterManager_StopComponents(pnpBridge->PnpMgr);
+            PnpAdapterManager_StopComponents(g_PnpBridge->PnpMgr);
             PnpBridge_UnregisterIoTHubHandle();
-            PnpBridge_Release(pnpBridge);
+            PnpBridge_Release(g_PnpBridge);
         }
         g_PnpBridge = NULL;
     }

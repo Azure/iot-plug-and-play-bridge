@@ -166,6 +166,7 @@ MqttPnp_CreatePnpComponent(
     }
 
     context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, adapterConfig);
+    context->s_ProtocolHandler->SetIotHubClientHandle(PnpComponentHandle);
 
     PnpComponentHandleSetContext(PnpComponentHandle, context);
     PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, MqttPnp_OnPnpPropertyCallback);
@@ -217,8 +218,6 @@ MqttPnp_StartPnpComponent(
 
     if (context)
     {
-        IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-        context->s_ProtocolHandler->SetIotHubDeviceClientHandle(deviceHandle);
         context->s_ProtocolHandler->StartTelemetry();
     }
 

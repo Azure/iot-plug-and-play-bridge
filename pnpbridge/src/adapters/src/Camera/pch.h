@@ -33,7 +33,7 @@ using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 
 // PnpBridge headers.
-#include <PnpBridge.h>
+#include <pnpadapter_api.h>
 
 // IOT Hub Headers
 #include <iothub.h>

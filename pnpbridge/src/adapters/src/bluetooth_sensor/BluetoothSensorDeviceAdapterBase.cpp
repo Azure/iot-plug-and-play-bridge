@@ -80,7 +80,7 @@ void BluetoothSensorDeviceAdapterBase::OnInterfaceRegisteredCallback(
     IOTHUB_CLIENT_RESULT interfaceStatus,
     void* /* userInterfaceContext */)
 {
-    if (PNPBRIDGE_SUCCESS(interfaceStatus))
+    if ((IOTHUB_CLIENT_OK == interfaceStatus))
     {
         LogInfo("Bluetooth sensor interface successfully registered.");
     }

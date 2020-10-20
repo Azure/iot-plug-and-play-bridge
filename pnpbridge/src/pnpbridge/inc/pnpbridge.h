@@ -26,9 +26,6 @@
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
 
-#include "pnpadapter_api.h"
-#include "pnpbridge_common.h"
-
 #ifdef __cplusplus
 extern "C"
 {

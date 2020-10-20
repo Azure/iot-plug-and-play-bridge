@@ -6,7 +6,7 @@
 #include "util.h"
 #include <fstream>
 #include <pnpbridge_common.h>
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 
 NetworkCameraIotPnpDevice::NetworkCameraIotPnpDevice(std::wstring& deviceName, std::string& componentName)
     : CameraIotPnpDevice(deviceName, componentName)

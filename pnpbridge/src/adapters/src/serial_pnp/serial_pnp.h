@@ -109,6 +109,8 @@ extern "C"
     typedef struct _SERIAL_DEVICE_CONTEXT {
         HANDLE hSerial;
         IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
+        IOTHUB_MODULE_CLIENT_HANDLE ModuleClient;
+        PNP_BRIDGE_IOT_TYPE ClientType;
         char * ComponentName;
         byte RxBuffer[MAX_BUFFER_SIZE]; // Temporary buffer that gets filled by the reading thread. TODO: maximum buffer size
         byte* pbMainBuffer;             // pointer used to pass buffers back to the main thread

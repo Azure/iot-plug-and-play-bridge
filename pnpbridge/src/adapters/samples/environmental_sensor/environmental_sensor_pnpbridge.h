@@ -7,7 +7,7 @@
 extern "C"
 {
 #endif
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 
 #include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"

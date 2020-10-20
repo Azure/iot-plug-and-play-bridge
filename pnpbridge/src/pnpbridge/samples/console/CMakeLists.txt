@@ -75,6 +75,7 @@ set(pnp_bridge_common_libs
     pnpbridge_modbus
     pnpbridge_mqtt
     pnpbridge_serial
+    pnpbridge_environmentalsensor
 )
 
 if(WIN32)

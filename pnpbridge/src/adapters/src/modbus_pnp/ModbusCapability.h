@@ -17,7 +17,7 @@ extern "C"
     typedef int HANDLE;
 #endif
 
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 #include "azure_c_shared_utility/lock.h"
 #include "ModbusConnection/ModbusConnectionHelper.h"
 
@@ -69,6 +69,8 @@ typedef struct CapabilityContext {
     LOCK_HANDLE hLock;
     MODBUS_CONNECTION_TYPE connectionType;
     IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
+    IOTHUB_MODULE_CLIENT_HANDLE moduleClient;
+    PNP_BRIDGE_IOT_TYPE clientType;
     char * componentName;
 }CapabilityContext;
 

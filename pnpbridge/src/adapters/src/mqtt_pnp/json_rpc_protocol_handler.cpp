@@ -6,7 +6,7 @@
 #include <thread>
 #include <mutex>
 #include "parson.h"
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -229,10 +229,17 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
             {
                 LogError("Mqtt Pnp Component: PnP_CreateTelemetryMessageHandle failed.");
             }
-            else if ((result = IoTHubDeviceClient_SendEventAsync(ph->s_DeviceClient, messageHandle,
-                    NULL, NULL)) != IOTHUB_CLIENT_OK)
+            else if ((ph->s_ClientType ==  PNP_BRIDGE_IOT_TYPE_DEVICE) &&
+                    ((result = IoTHubDeviceClient_SendEventAsync(ph->s_DeviceClient, messageHandle,
+                    NULL, NULL)) != IOTHUB_CLIENT_OK))
             {
-                LogError("Mqtt Pnp Component: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
+                LogError("Mqtt Pnp Component: IoTHubDeviceClient_SendEventAsync failed for device, error=%d", result);
+            }
+            else if ((ph->s_ClientType ==  PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) &&
+                    ((result = IoTHubModuleClient_SendEventAsync(ph->s_ModuleClient, messageHandle,
+                    NULL, NULL)) != IOTHUB_CLIENT_OK))
+            {
+                LogError("Mqtt Pnp Component: IoTHubModuleClient_SendEventAsync failed for module, error=%d", result);
             }
             else
             {
@@ -253,10 +260,20 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
     }
 }
 
-void JsonRpcProtocolHandler::SetIotHubDeviceClientHandle(
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle)
+void JsonRpcProtocolHandler::SetIotHubClientHandle(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    s_DeviceClient = DeviceClientHandle;
+    // Assign client handle
+    if (PnpComponentHandleGetIoTType(PnpComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        s_ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
+        s_DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    }
+    else
+    {
+        s_ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
+        s_ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
+    }
 }
 
 void JsonRpcProtocolHandler::StartTelemetry()

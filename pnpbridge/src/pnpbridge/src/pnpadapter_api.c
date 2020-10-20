@@ -49,3 +49,15 @@ IOTHUB_DEVICE_CLIENT_HANDLE PnpComponentHandleGetIotHubDeviceClient(PNPBRIDGE_CO
     PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
     return componentContextTag->deviceClient;
 }
+
+IOTHUB_MODULE_CLIENT_HANDLE PnpComponentHandleGetIotHubModuleClient(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle)
+{
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    return componentContextTag->moduleClient;
+}
+
+PNP_BRIDGE_IOT_TYPE PnpComponentHandleGetIoTType(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle)
+{
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    return componentContextTag->clientType;
+}

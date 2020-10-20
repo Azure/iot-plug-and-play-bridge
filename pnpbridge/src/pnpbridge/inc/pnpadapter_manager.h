@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #pragma once
-#include <pnpbridge.h>
+#include "pnpadapter_api.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -45,6 +45,8 @@ extern "C"
         PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK processPropertyUpdate;
         PNPBRIDGE_COMPONENT_METHOD_CALLBACK processCommand;
         IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
+        IOTHUB_MODULE_CLIENT_HANDLE moduleClient;
+        PNP_BRIDGE_IOT_TYPE clientType;
     } PNPADAPTER_COMPONENT_TAG, * PPNPADAPTER_COMPONENT_TAG;
 
 
@@ -95,17 +97,24 @@ extern "C"
     IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(
         const char* adapterId,
         PPNP_ADAPTER* adapter);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateAdapter(
         const char* adapterId,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext,
         JSON_Value* config);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
         PPNP_ADAPTER_MANAGER adapterMgr,
         JSON_Value* config);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
         PPNP_ADAPTER_MANAGER adapterMgr,
         const char* adapterIdentity,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext);
+
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_InitializeClientHandle(
+        PPNPADAPTER_COMPONENT_TAG componentHandle);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_StartComponents(
         PPNP_ADAPTER_MANAGER adapterMgr);
 
@@ -125,8 +134,8 @@ extern "C"
         const char * ComponentName,
         size_t ComponentNameSize);
 
-    IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdapterManagerAndStartComponents(
-        PPNP_ADAPTER_MANAGER adapterMgr,
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdaptersAndComponents(
+        PPNP_ADAPTER_MANAGER * adapterMgr,
         JSON_Value* config);
 
     // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.

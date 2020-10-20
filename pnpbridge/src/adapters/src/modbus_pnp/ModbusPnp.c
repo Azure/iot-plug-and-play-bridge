@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <pnpbridge.h>
+#include "pnpadapter_api.h"
 
 #include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
@@ -638,8 +638,8 @@ void Modbus_CleanupPollingTasks(
 
 IOTHUB_CLIENT_RESULT
 Modbus_StartPnpComponent(
-    _In_ PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
@@ -649,8 +649,6 @@ Modbus_StartPnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
 
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-    deviceContext->DeviceClient = deviceHandle;
     // Start polling all telemetry
     return ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
 }
@@ -858,6 +856,18 @@ Modbus_CreatePnpComponent(
         LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
         result = IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
+    }
+
+    // Assign client handle
+    if (PnpComponentHandleGetIoTType(BridgeComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
+        deviceContext->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(BridgeComponentHandle);
+    }
+    else
+    {
+        deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
+        deviceContext->ModuleClient = PnpComponentHandleGetIotHubModuleClient(BridgeComponentHandle);
     }
 
     // Allocate and copy component name into device context

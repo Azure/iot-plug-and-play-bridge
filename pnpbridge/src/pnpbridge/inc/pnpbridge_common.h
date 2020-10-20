@@ -48,6 +48,10 @@ extern "C"
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
 
+// Pnp Bridge headers
+#include "configuration_parser.h"
+#include "pnpadapter_manager.h"
+
 #include <assert.h>
 
 #define PNPBRIDGE_CLIENT_HANDLE void*
@@ -65,14 +69,10 @@ extern "C"
 MU_DEFINE_ENUM(PNPBRIDGE_RESULT, PNPBRIDGE_RESULT_VALUES);
 
 #define PNPBRIDGE_SUCCESS(Result) (Result == IOTHUB_CLIENT_OK)
-#include "configuration_parser.h"
-#include "pnpadapter_manager.h"
 
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
 
 int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
-
-#include <pnpbridge.h>
 
 #define PNP_CONFIG_CONNECTION_PARAMETERS "pnp_bridge_connection_parameters"
 #define PNP_CONFIG_TRACE_ON "pnp_bridge_debug_trace"
@@ -148,11 +148,6 @@ typedef enum PNP_BRIDGE_STATE {
     PNP_BRIDGE_DESTROYED
 } PNP_BRIDGE_STATE;
 
-typedef enum PNP_BRIDGE_IOT_EDGE {
-    PNP_BRIDGE_IOT_EDGE_DEVICE,
-    PNP_BRIDGE_IOT_EDGE_RUNTIME_MODULE
-} PNP_BRIDGE_IOT_EDGE;
-
 // Device aggregator context
 typedef struct _PNP_BRIDGE {
     MX_IOT_HANDLE_TAG IotHandle;
@@ -161,7 +156,7 @@ typedef struct _PNP_BRIDGE {
 
     PNPBRIDGE_CONFIGURATION Configuration;
 
-    PNP_BRIDGE_IOT_EDGE IoTEdgeType;
+    PNP_BRIDGE_IOT_TYPE IoTClientType;
 
     COND_HANDLE ExitCondition;
 
@@ -182,7 +177,7 @@ static const char g_connectionStringEnvironmentVariable[] = "IOTHUB_DEVICE_CONNE
 // Environment variable used to specify workload URI for dockerized containers/modules
 static const char g_workloadURIEnvironmentVariable[] = "IOTEDGE_WORKLOADURI";
 // Hub client tracing for when Pnp Bridge runs in Edge Module
-static bool g_hubClientTraceEnabled = true;
+static bool g_hubClientTraceEnabled = false;
 
 #ifdef __cplusplus
 }

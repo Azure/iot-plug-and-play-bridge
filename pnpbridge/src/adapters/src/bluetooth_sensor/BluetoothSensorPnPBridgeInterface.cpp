@@ -6,7 +6,7 @@
 
 #include <azure_c_shared_utility/xlogging.h>
 #include <azure_c_shared_utility/const_defines.h>
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 #include <parson.h>
 
 #include "InterfaceDescriptor.h"

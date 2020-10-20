@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 
 #include "InterfaceDescriptor.h"
 

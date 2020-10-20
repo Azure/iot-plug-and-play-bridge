@@ -42,13 +42,24 @@ extern "C"
 
     // Sends  telemetry messages about current environment
     IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_SendTelemetryMessagesAsync(
-        PENVIRONMENT_SENSOR EnvironmentalSensor);
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
     IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_ReportDeviceStateAsync(
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
         const char * ComponentName);
+    IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        const unsigned char * ReportedState,
+        size_t Size,
+        IOTHUB_CLIENT_REPORTED_STATE_CALLBACK ReportedStateCallback,
+        void * UserContextCallback);
+    IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteSendEventAsync(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        IOTHUB_MESSAGE_HANDLE EventMessageHandle,
+        IOTHUB_CLIENT_EVENT_CONFIRMATION_CALLBACK EventConfirmationCallback,
+        void * UserContextCallback
+        );
     void SampleEnvironmentalSensor_ProcessPropertyUpdate(
-        PENVIRONMENT_SENSOR EnvironmentalSensor,
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
         const char* PropertyName,
         JSON_Value* PropertyValue,
         int version);

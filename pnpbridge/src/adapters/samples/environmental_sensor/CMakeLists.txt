@@ -28,7 +28,9 @@ add_definitions("-D_UNICODE")
 
 set(pnp_bridge_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/../pnpbridge/inc CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
 set(pnp_bridge_common_pnp_inc ${CMAKE_CURRENT_LIST_DIR}/../pnpbridge/common CACHE INTERNAL "this is what needs to be included if using pnp_bridge lib" FORCE)
+set(AZUREIOT_INC_FOLDER "/usr/include/azureiot" "/usr/include/azureiot/inc")
 
+include_directories(${AZUREIOT_INC_FOLDER})
 include_directories(../../deps/azure-iot-sdk-c-pnp/deps/parson)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/inc)
 include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/deps/azure-macro-utils-c/inc)
@@ -46,10 +48,10 @@ ENDIF(WIN32)
 
 add_definitions(-DPNP_LOGGING_ENABLED)
 
-# add_library(${PROJECT_NAME} STATIC 
-    # ${pnpbridge_adaptersample_c_files}
-    # ${pnpbridge_adaptersample_h_files}
-# )
+add_library(${PROJECT_NAME} STATIC 
+    ${pnpbridge_adaptersample_c_files}
+    ${pnpbridge_adaptersample_h_files}
+)
 
 set(pnp_bridge_common_libs
     aziotsharedutil
@@ -70,10 +72,10 @@ set(pnp_bridge_common_libs
     utpm
 )
 
-add_executable(${PROJECT_NAME}
-    ${pnpbridge_adaptersample_c_files}
-    ${pnpbridge_adaptersample_h_files}
-)
+# add_executable(${PROJECT_NAME}
+    # ${pnpbridge_adaptersample_c_files}
+    # ${pnpbridge_adaptersample_h_files}
+# )
 target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})
 
 configure_file(./config.json config.json COPYONLY)

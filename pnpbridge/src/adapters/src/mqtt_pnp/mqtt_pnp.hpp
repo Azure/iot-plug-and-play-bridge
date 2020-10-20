@@ -3,7 +3,8 @@
 #pragma once
 
 #include "mqtt_protocol_handler.hpp"
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
+#include <nosal.h>
 
 #ifdef __cplusplus
 extern "C" {

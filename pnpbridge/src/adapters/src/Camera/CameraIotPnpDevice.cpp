@@ -6,6 +6,7 @@
 #include <fstream>
 #include "CameraIotPnpDevice.h"
 #include <pnpbridge_common.h>
+#include <pnpadapter_api.h>
 #include <pnpbridge.h>
 
 #define ONE_SECOND_IN_100HNS        10000000    // 10,000,000 100hns in 1 second.

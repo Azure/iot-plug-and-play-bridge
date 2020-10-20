@@ -280,6 +280,10 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateManager(
                 LogError("Destroying all adapters previously created.");
                 goto exit;
             }
+            else
+            {
+                LogInfo("Pnp Adapter with adapter ID %s has been created.", adapterId);
+            }
 
             // Add to list of manager's adapters
             singlylinkedlist_add(adapterManager->PnpAdapterHandleList, pnpAdapterHandle);
@@ -364,6 +368,40 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
 
 }
 
+IOTHUB_CLIENT_RESULT PnpAdapterManager_InitializeClientHandle(
+    PPNPADAPTER_COMPONENT_TAG componentHandle)
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    if (NULL == componentHandle)
+    {
+        LogError("Component handle is null.");
+        result = IOTHUB_CLIENT_ERROR;
+        goto exit;
+    }
+    else if((NULL == g_PnpBridge) || (!g_PnpBridge->IotHandle.ClientHandleInitialized))
+    {
+        LogError("IoT Hub client handle has not been initialized!");
+        result = IOTHUB_CLIENT_ERROR;
+        goto exit;
+    }
+    else
+    {
+        componentHandle->clientType = g_PnpBridge->IoTClientType;
+    }
+    
+    if (componentHandle->clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE)
+    {
+        componentHandle->moduleClient = g_PnpBridge->IotHandle.u1.IotModule.moduleHandle;
+    }
+    else
+    {
+        componentHandle->deviceClient = g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle;
+    }
+
+exit:
+    return result;
+}
+
 IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
     PPNP_ADAPTER_MANAGER adapterMgr, JSON_Value* config)
 {
@@ -396,6 +434,11 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
 
                 componentHandle->componentName = componentName;
                 componentHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
+                if (IOTHUB_CLIENT_OK != PnpAdapterManager_InitializeClientHandle(componentHandle))
+                {
+                    LogError("Client handle initialization for component handle failed.");
+                    goto exit;
+                }
                 result = adapterHandle->adapter->adapter->createPnpComponent(adapterHandle, componentName, deviceAdapterArgs,
                                                                                 componentHandle);
                 if (PNPBRIDGE_SUCCESS(result))
@@ -438,7 +481,6 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_StartComponents(
             while (NULL != componentHandleItem)
             {
                 PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
-                componentHandle->deviceClient = g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle;
                 result = adapterHandle->adapter->adapter->startPnpComponent(adapterHandle, componentHandle);
                 componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
             }
@@ -510,7 +552,7 @@ PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
     bool componentFound = false;
     if (NULL != ComponentName)
     {
-        if ((g_PnpBridge != NULL) && (PNP_BRIDGE_INITIALIZED == g_PnpBridgeState) && (g_PnpBridge->PnpMgr != NULL))
+        if ((g_PnpBridge != NULL) && (g_PnpBridge->PnpMgr != NULL))
         {
             LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
 
@@ -580,6 +622,10 @@ int PnpAdapterManager_DeviceMethodCallback(
             {
                 result = componentHandle->processCommand(componentHandle, pnpCommandName, commandValue, response, responseSize);
             }
+            else
+            {
+                LogInfo("Pnp Bridge does not have a suitable adapter to route %s's property update callback to at this time.", componentName);
+            }
         }
     }
 
@@ -592,17 +638,17 @@ void PnpAdapterManager_DeviceTwinCallback(
     size_t size,
     void* userContextCallback)
 {
-    if (g_PnpBridge->IoTEdgeType == PNP_BRIDGE_IOT_EDGE_RUNTIME_MODULE && g_PnpBridgeState != PNP_BRIDGE_INITIALIZED)
+    if (g_PnpBridge->IoTClientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE && g_PnpBridge->PnpMgr == NULL)
     {
         if (PnP_ProcessModuleTwinConfigProperty(updateState, payload, size, 
                 PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation, g_pnpBridgeConfigProperty))
         {
-            g_PnpBridgeState = PNP_BRIDGE_INITIALIZED;
             LogInfo("Processing of module twin configuration for Pnp Bridge components completed successfully");
         }
     }
-    else if ((g_PnpBridgeState == PNP_BRIDGE_INITIALIZED) && (g_PnpBridge->PnpMgr != NULL))
+    else if ((g_PnpBridge->PnpMgr != NULL))
     {
+        LogInfo("Processing property update for the device or module twin");
         // Invoke PnP_ProcessTwinData to actualy process the data. PnP_ProcessTwinData uses a visitor pattern to parse
         // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
         if (!PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
@@ -637,6 +683,10 @@ static void PnpAdapterManager_RoutePropertyCallback(
         {
             componentHandle->processPropertyUpdate(componentHandle, propertyName, propertyValue, version, userContextCallback);
         }
+        else
+        {
+            LogInfo("Pnp Bridge does not have a suitable adapter to route %s's property update callback to at this time.", componentName);
+        }
     }
 }
 
@@ -646,22 +696,28 @@ static void PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation(
     if (pnpBridgeConfig != NULL)
     {
         LogInfo("Received PnP property update from module twin's desired Pnp Bridge configuration property");
-        if (IOTHUB_CLIENT_OK == PnpAdapterManager_BuildAdapterManagerAndStartComponents(g_PnpBridge->PnpMgr, pnpBridgeConfig))
+        if (IOTHUB_CLIENT_OK == PnpAdapterManager_BuildAdaptersAndComponents(&g_PnpBridge->PnpMgr, pnpBridgeConfig))
         {
-            LogInfo("Pnp Bridge Initialization complete");
+            LogInfo("Pnp Bridge adapter manager, adapter and component creation complete");
         }
+        else
+        {
+            LogError("PnpAdapterManager_BuildAdaptersAndComponents failed");
+        }
+
+        g_PnpBridgeState = PNP_BRIDGE_INITIALIZED;
     }
 }
 
-IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdapterManagerAndStartComponents(
-    PPNP_ADAPTER_MANAGER adapterMgr,
+IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdaptersAndComponents(
+    PPNP_ADAPTER_MANAGER * adapterMgr,
     JSON_Value* config)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     LogInfo("Building Pnp Bridge Adapter Manager, Adapters & Components");
 
     // Create all the adapters that are required by configured devices
-    result = PnpAdapterManager_CreateManager(&adapterMgr, config);
+    result = PnpAdapterManager_CreateManager(adapterMgr, config);
     if (IOTHUB_CLIENT_OK != result) {
         LogError("PnpAdapterManager_CreateManager failed: %d", result);
         goto exit;
@@ -669,7 +725,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdapterManagerAndStartComponents(
 
     LogInfo("Pnp Adapter Manager created successfully.");
 
-    result = PnpAdapterManager_CreateComponents(adapterMgr, config);
+    result = PnpAdapterManager_CreateComponents(*adapterMgr, config);
     if (IOTHUB_CLIENT_OK != result) {
         LogError("PnpAdapterManager_CreateComponents failed: %d", result);
         goto exit;
@@ -677,7 +733,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdapterManagerAndStartComponents(
 
     LogInfo("Pnp components created successfully.");
 
-    result = PnpAdapterManager_BuildComponentsInModel(adapterMgr);
+    result = PnpAdapterManager_BuildComponentsInModel(*adapterMgr);
     if (IOTHUB_CLIENT_OK != result) {
         LogError("PnpAdapterManager_BuildComponentsInModel failed: %d", result);
         goto exit;
@@ -685,7 +741,7 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdapterManagerAndStartComponents(
 
     LogInfo("Pnp components built in model successfully.");
 
-    result = PnpAdapterManager_StartComponents(adapterMgr);
+    result = PnpAdapterManager_StartComponents(*adapterMgr);
     if (IOTHUB_CLIENT_OK != result) {
         LogError("PnpAdapterManager_StartComponents failed: %d", result);
         goto exit;

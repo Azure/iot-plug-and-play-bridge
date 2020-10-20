@@ -8,7 +8,7 @@ extern "C"
 {
 #endif
 
-#include <PnpBridge.h>
+#include <pnpadapter_api.h>
 
 extern PNP_ADAPTER CameraPnpInterface;
 

@@ -130,8 +130,8 @@ void ModbusPnp_PropertyHandler(
     void* userContextCallback)
 {
     UNREFERENCED_PARAMETER(version);
+    UNREFERENCED_PARAMETER(userContextCallback);
     PMODBUS_DEVICE_CONTEXT modbusDevice = PnpComponentHandleGetContext(PnpComponentHandle);
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient = (IOTHUB_DEVICE_CLIENT_HANDLE)userContextCallback;
 
     const ModbusProperty* property = ModbusPnp_LookupProperty(modbusDevice->InterfaceConfig, PropertyName);
 
@@ -154,7 +154,9 @@ void ModbusPnp_PropertyHandler(
     capContext->hDevice = modbusDevice->hDevice;
     capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
     capContext->hLock= modbusDevice->hConnectionLock;
-    capContext->deviceClient = deviceClient;
+    capContext->deviceClient = modbusDevice->DeviceClient;
+    capContext->moduleClient = modbusDevice->DeviceClient;
+    capContext->clientType = modbusDevice->ClientType;
     capContext->componentName = modbusDevice->ComponentName;
 
     if (PropertyValueString)
@@ -177,14 +179,25 @@ void ModbusPnp_ReportPropertyUpdatedCallback(
 
 IOTHUB_CLIENT_RESULT 
 ModbusPnp_ReportReadOnlyProperty(
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    CapabilityContext* CapabilityContext ,
     const char * ComponentName,
     const char* PropertyName,
     const char* PropertyValue)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
 
-    if (DeviceClient == NULL) {
+    if (CapabilityContext == NULL)
+    {
+        return iothubClientResult;
+    }
+    else if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_DEVICE) && CapabilityContext->deviceClient == NULL)
+    {
+        LogInfo("Device client handle is not initialized");
+        return iothubClientResult;
+    }
+    else if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) && CapabilityContext->moduleClient == NULL)
+    {
+        LogInfo("Module client handle is not initialized");
         return iothubClientResult;
     }
 
@@ -199,10 +212,18 @@ ModbusPnp_ReportReadOnlyProperty(
         const char* jsonToSendStr = STRING_c_str(jsonToSend);
         size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-        if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(DeviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
-            ModbusPnp_ReportPropertyUpdatedCallback, (void*)PropertyName)) != IOTHUB_CLIENT_OK)
+        if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_DEVICE) && 
+            ((iothubClientResult = IoTHubDeviceClient_SendReportedState(CapabilityContext->deviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+            ModbusPnp_ReportPropertyUpdatedCallback, (void*)PropertyName)) != IOTHUB_CLIENT_OK))
         {
-            LogError("Modbus Adapter: Unable to send reported state for property=%s, error=%d",
+            LogError("Modbus Adapter: Unable to send reported state for device property=%s, error=%d",
+                                PropertyName, iothubClientResult);
+        }
+        else if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) && 
+            ((iothubClientResult = IoTHubModuleClient_SendReportedState(CapabilityContext->moduleClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+            ModbusPnp_ReportPropertyUpdatedCallback, (void*)PropertyName)) != IOTHUB_CLIENT_OK))
+        {
+            LogError("Modbus Adapter: Unable to send reported state for module property=%s, error=%d",
                                 PropertyName, iothubClientResult);
         }
         else
@@ -237,7 +258,7 @@ ModbusPnp_PollingSingleProperty(
         int resultLen = ModbusPnp_ReadCapability(context, Property, resultedData);
         if (resultLen > 0)
         {
-            result = ModbusPnp_ReportReadOnlyProperty(context->deviceClient, context->componentName, property->Name, (const char*) resultedData);
+            result = ModbusPnp_ReportReadOnlyProperty(context, context->componentName, property->Name, (const char*) resultedData);
         }
 
         Condition_Wait(StopPolling, lock, property->DefaultFrequency);
@@ -264,7 +285,7 @@ void ModbusPnp_ReportTelemetryCallback(
 
 IOTHUB_CLIENT_RESULT
 ModbusPnp_ReportTelemetry(
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    CapabilityContext* CapabilityContext,
     const char * ComponentName,
     const char* TelemetryName,
     const char* TelemetryValue)
@@ -272,7 +293,18 @@ ModbusPnp_ReportTelemetry(
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
 
-    if (DeviceClient == NULL) {
+    if (CapabilityContext == NULL)
+    {
+        return result;
+    }
+    else if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_DEVICE) && CapabilityContext->deviceClient == NULL)
+    {
+        LogInfo("Device client handle is not initialized");
+        return result;
+    }
+    else if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) && CapabilityContext->moduleClient == NULL)
+    {
+        LogInfo("Module client handle is not initialized");
         return result;
     }
 
@@ -283,10 +315,17 @@ ModbusPnp_ReportTelemetry(
     {
         LogError("Modbus Adapter: PnP_CreateTelemetryMessageHandle failed.");
     }
-    else if ((result = IoTHubDeviceClient_SendEventAsync(DeviceClient, messageHandle,
-            ModbusPnp_ReportTelemetryCallback, (void*) TelemetryName)) != IOTHUB_CLIENT_OK)
+    else if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_DEVICE) &&
+             ((result = IoTHubDeviceClient_SendEventAsync(CapabilityContext->deviceClient, messageHandle,
+            ModbusPnp_ReportTelemetryCallback, (void*) TelemetryName)) != IOTHUB_CLIENT_OK))
     {
-        LogError("Modbus Adapter: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
+        LogError("Modbus Adapter: IoTHubDeviceClient_SendEventAsync failed for device, error=%d", result);
+    }
+    else if ((CapabilityContext->clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) &&
+             ((result = IoTHubModuleClient_SendEventAsync(CapabilityContext->moduleClient, messageHandle,
+            ModbusPnp_ReportTelemetryCallback, (void*) TelemetryName)) != IOTHUB_CLIENT_OK))
+    {
+        LogError("Modbus Adapter: IoTHubDeviceClient_SendEventAsync failed for device, error=%d", result);
     }
 
     IoTHubMessage_Destroy(messageHandle);
@@ -298,8 +337,8 @@ int ModbusPnp_PollingSingleTelemetry(
     void *param)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
-    CapabilityContext* context = param;
-    ModbusTelemetry* telemetry = context->capability;
+    CapabilityContext* context = (CapabilityContext*) param;
+    ModbusTelemetry* telemetry = (ModbusTelemetry*) context->capability;
     LogInfo("Start polling task for telemetry \"%s\".", telemetry->Name);
     uint8_t resultedData[MODBUS_RESPONSE_MAX_LENGTH];
 
@@ -312,7 +351,7 @@ int ModbusPnp_PollingSingleTelemetry(
         int resultLen = ModbusPnp_ReadCapability(context, Telemetry, resultedData);
 
         if (resultLen > 0) {
-            result = ModbusPnp_ReportTelemetry(context->deviceClient, (const char*) context->componentName,
+            result = ModbusPnp_ReportTelemetry(context, (const char*) context->componentName,
                 (const char*) telemetry->Name, (const char*) resultedData);
         }
 
@@ -388,6 +427,8 @@ IOTHUB_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
         pollingPayload->hLock = deviceContext->hConnectionLock;
         pollingPayload->connectionType = deviceContext->DeviceConfig->ConnectionType;
         pollingPayload->deviceClient = deviceContext->DeviceClient;
+        pollingPayload->moduleClient = deviceContext->ModuleClient;
+        pollingPayload->clientType = deviceContext->ClientType;
         pollingPayload->componentName = deviceContext->ComponentName;
 
         if (ThreadAPI_Create(&(deviceContext->PollingTasks[i]), ModbusPnp_PollingSingleTelemetry, (void*)pollingPayload) != THREADAPI_OK)
@@ -423,6 +464,8 @@ IOTHUB_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(
         pollingPayload->hLock = deviceContext->hConnectionLock;
         pollingPayload->connectionType = deviceContext->DeviceConfig->ConnectionType;
         pollingPayload->deviceClient = deviceContext->DeviceClient;
+        pollingPayload->moduleClient = deviceContext->ModuleClient;
+        pollingPayload->clientType = deviceContext->ClientType;
         pollingPayload->componentName = deviceContext->ComponentName;
 
         if (ThreadAPI_Create(&(deviceContext->PollingTasks[telemetryCount + i]), ModbusPnp_PollingSingleProperty, (void*)pollingPayload) != THREADAPI_OK)

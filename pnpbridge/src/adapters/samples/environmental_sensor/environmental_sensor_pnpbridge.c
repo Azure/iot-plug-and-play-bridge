@@ -6,7 +6,8 @@
 int EnvironmentSensor_TelemetryWorker(
     void* context)
 {
-    PENVIRONMENT_SENSOR device = (PENVIRONMENT_SENSOR)context;
+    PNPBRIDGE_COMPONENT_HANDLE componentHandle = (PNPBRIDGE_COMPONENT_HANDLE) context;
+    PENVIRONMENT_SENSOR device = PnpComponentHandleGetContext(componentHandle);
 
     // Report telemetry every 5 minutes till we are asked to stop
     while (true) {
@@ -14,7 +15,7 @@ int EnvironmentSensor_TelemetryWorker(
             return IOTHUB_CLIENT_OK;
         }
 
-        SampleEnvironmentalSensor_SendTelemetryMessagesAsync(device);
+        SampleEnvironmentalSensor_SendTelemetryMessagesAsync(componentHandle);
 
         // Sleep for 5 sec
         ThreadAPI_Sleep(5000);
@@ -30,15 +31,17 @@ IOTHUB_CLIENT_RESULT EnvironmentSensor_StartPnpComponent(
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     PENVIRONMENT_SENSOR device = PnpComponentHandleGetContext(PnpComponentHandle);
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-    device->DeviceClient = deviceHandle;
+
+    LogInfo("Environmental Sensor: Starting Pnp Component");
 
     // Report Device State Async
-    result = SampleEnvironmentalSensor_ReportDeviceStateAsync(deviceHandle, device->SensorState->componentName);
+    result = SampleEnvironmentalSensor_ReportDeviceStateAsync(PnpComponentHandle, device->SensorState->componentName);
     device->ShuttingDown = false;
 
+    PnpComponentHandleSetContext(PnpComponentHandle, device);
+
     // Create a thread to periodically publish telemetry
-    if (ThreadAPI_Create(&device->WorkerHandle, EnvironmentSensor_TelemetryWorker, device) != THREADAPI_OK) {
+    if (ThreadAPI_Create(&device->WorkerHandle, EnvironmentSensor_TelemetryWorker, PnpComponentHandle) != THREADAPI_OK) {
         LogError("ThreadAPI_Create failed");
         return IOTHUB_CLIENT_ERROR;
     }
@@ -104,9 +107,8 @@ void EnvironmentSensor_ProcessPropertyUpdate(
     void* userContextCallback
 )
 {
-    PENVIRONMENT_SENSOR device = PnpComponentHandleGetContext(PnpComponentHandle);
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient = (IOTHUB_DEVICE_CLIENT_HANDLE)userContextCallback;
-    SampleEnvironmentalSensor_ProcessPropertyUpdate(device, deviceClient, PropertyName, PropertyValue, version);
+    AZURE_UNREFERENCED_PARAMETER(userContextCallback);
+    SampleEnvironmentalSensor_ProcessPropertyUpdate(PnpComponentHandle, PropertyName, PropertyValue, version);
 }
 
 int EnvironmentalSensor_ProcessCommand(
@@ -175,18 +177,21 @@ PNP_ADAPTER EnvironmentSensorInterface = {
     .destroyAdapter = EnvironmentSensor_DestroyPnpAdapter
 };
 
-int main(int argc, char *argv[])
-{
-    if (argc > 1)
-    {
-        LogInfo("Using configuration from specified file path: %s", argv[1]);
-        PnpBridge_Main((const char*)argv[1]);
-    }
-    else
-    {
-        LogInfo("Using default configuration location");
-        PnpBridge_Main((const char*)"config.json");
-    }
-    
-    return 0;
-}
+// Uncomment & add executable to run Pnp Bridge with only the environmental sensor adapter
+
+// int main(int argc, char *argv[])
+// {
+//     printf("Starting Pnp Bridge with Environmental Sensor");
+//     if (argc > 1)
+//     {
+//         LogInfo("Using configuration from specified file path: %s", argv[1]);
+//         PnpBridge_Main((const char*)argv[1]);
+//     }
+//     else
+//     {
+//         LogInfo("Using default configuration location");
+//         PnpBridge_Main((const char*)"config.json");
+//     }
+
+//     return 0;
+// }
