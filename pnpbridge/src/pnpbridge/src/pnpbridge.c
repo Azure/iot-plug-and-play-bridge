@@ -20,8 +20,8 @@ PnpBridge_InitializePnpModuleConfig(PNP_DEVICE_CONFIGURATION * PnpModuleConfig)
 {
     PnpModuleConfig->deviceMethodCallback = (IOTHUB_CLIENT_DEVICE_METHOD_CALLBACK_ASYNC) PnpAdapterManager_DeviceMethodCallback;
     PnpModuleConfig->deviceTwinCallback = (IOTHUB_CLIENT_DEVICE_TWIN_CALLBACK) PnpAdapterManager_DeviceTwinCallback;
-    PnpModuleConfig->enableTracing = g_hubClientTraceEnabled;
-    PnpModuleConfig->modelId = g_pnpBridgeModuleRootModelId;
+    PnpModuleConfig->enableTracing = (strcmp(getenv(g_hubClientTraceEnabled), "true") == 0);
+    PnpModuleConfig->modelId = getenv(g_pnpBridgeModuleRootModelId);
     PnpModuleConfig->UserAgentString = g_pnpBridgeUserAgentString;
     PnpModuleConfig->securityType = PNP_CONNECTION_SECURITY_TYPE_CONNECTION_STRING;
     PnpModuleConfig->u.connectionString = getenv(g_connectionStringEnvironmentVariable);
@@ -100,7 +100,7 @@ PnpBridge_InitializeEdgeModuleConfig(PNPBRIDGE_CONFIGURATION * Configuration)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     Configuration->Features.ModuleClient = 1;
-    Configuration->TraceOn = g_hubClientTraceEnabled;
+    Configuration->TraceOn = (strcmp(getenv(g_hubClientTraceEnabled), "true") == 0);
     Configuration->ConnParams = (PCONNECTION_PARAMETERS)calloc(1, sizeof(CONNECTION_PARAMETERS));
     if (NULL == Configuration->ConnParams)
     {
@@ -109,7 +109,7 @@ PnpBridge_InitializeEdgeModuleConfig(PNPBRIDGE_CONFIGURATION * Configuration)
         goto exit;
     }
     Configuration->ConnParams->ConnectionType = CONNECTION_TYPE_EDGE_MODULE;
-    Configuration->ConnParams->RootInterfaceModelId = g_pnpBridgeModuleRootModelId;
+    Configuration->ConnParams->RootInterfaceModelId = getenv(g_pnpBridgeModuleRootModelId);
     Configuration->ConnParams->u1.ConnectionString = getenv(g_connectionStringEnvironmentVariable);
     result = PnpBridge_InitializePnpModuleConfig(&Configuration->ConnParams->PnpDeviceConfiguration);
     if (IOTHUB_CLIENT_OK != result)
@@ -376,11 +376,12 @@ PnpBridge_Main(const char * ConfigurationFilePath)
                 }
 
                 g_PnpBridgeState = PNP_BRIDGE_INITIALIZED;
-
+                PnpAdapterManager_SendPnpBridgeStateTelemetry(PnpBridge_ConfigurationComplete);
             }
             else
             {
                 LogInfo("Pnp Bridge adapter and component initialization pending while running as an edge module");
+                PnpAdapterManager_SendPnpBridgeStateTelemetry(PnpBridge_WaitingForConfig);
             }
 
             // Prevent main thread from returning by waiting for the

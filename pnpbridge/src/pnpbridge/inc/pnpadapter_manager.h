@@ -40,8 +40,8 @@ extern "C"
     // Pnp interface structure
     typedef struct _ {
         void* context;
-        const char* componentName;
-        const char* adapterIdentity;
+        char* componentName;
+        char* adapterIdentity;
         PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK processPropertyUpdate;
         PNPBRIDGE_COMPONENT_METHOD_CALLBACK processCommand;
         IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
@@ -164,6 +164,13 @@ extern "C"
 
     static void PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation(
         JSON_Value* pnpBridgeConfig);
+    
+    void PnpAdapterManager_SendPnpBridgeStateTelemetry(
+        const char * BridgeState);
+
+    static const char* PnpBridge_State = "ModuleState";
+    static const char* PnpBridge_WaitingForConfig = "Waiting for PnpBridge configuration property update";
+    static const char* PnpBridge_ConfigurationComplete = "PnpBridge configuration complete";
 
 #ifdef __cplusplus
 }

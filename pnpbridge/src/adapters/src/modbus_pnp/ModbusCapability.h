@@ -28,7 +28,7 @@ typedef enum ModbusAccessType
 } ModbusAccessType;
 
 typedef struct ModbusTelemetry {
-    const char*  Name;
+    char*  Name;
     const char*  StartAddress;
     uint16_t Length;
     ModbusDataType  DataType;
@@ -41,7 +41,7 @@ typedef struct ModbusTelemetry {
 typedef void(*MODBUS_TELEMETRY_POLLING_TASK)(ModbusTelemetry* userContextCallback);
 
 typedef struct ModbusProperty {
-    const char*  Name;
+    char*  Name;
     const char*  StartAddress;
     uint16_t Length;
     ModbusDataType  DataType;
@@ -54,7 +54,7 @@ typedef struct ModbusProperty {
 } ModbusProperty, *PModbusProperty;
 
 typedef struct ModbusCommand {
-    const char*  Name;
+    char*  Name;
     const char*  StartAddress;
     uint16_t Length;
     ModbusDataType  DataType;

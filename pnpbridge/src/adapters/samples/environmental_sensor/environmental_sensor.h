@@ -32,7 +32,6 @@ typedef struct _ENVIRONMENT_SENSOR {
     THREAD_HANDLE WorkerHandle;
     volatile bool ShuttingDown;
     PENVIRONMENTAL_SENSOR_STATE SensorState;
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
 } ENVIRONMENT_SENSOR, * PENVIRONMENT_SENSOR;
 
 #ifdef __cplusplus

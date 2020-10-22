@@ -4,6 +4,8 @@
 #include "pnpbridge_common.h"
 #include "pnpadapter_api.h"
 #include "pnpadapter_manager.h"
+#include "iothub_device_client.h"
+#include "iothub_module_client.h"
 
 extern PPNP_ADAPTER PNP_ADAPTER_MANIFEST[];
 extern const int PnpAdapterCount;
@@ -72,6 +74,14 @@ void PnpAdapterManager_ReleaseAdapterComponents(
         while (NULL != handle) {
             PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(handle);
             adapterTag->adapter->destroyPnpComponent(componentHandle);
+            if (componentHandle->adapterIdentity != NULL)
+            {
+                free(componentHandle->adapterIdentity);
+            }
+            if (componentHandle->componentName != NULL)
+            {
+                free(componentHandle->componentName);
+            }
             handle = singlylinkedlist_get_next_item(handle);
         }
         Unlock(adapterTag->ComponentListLock);
@@ -429,11 +439,10 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
         {
             PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)malloc(sizeof(PNPADAPTER_COMPONENT_TAG));
 
-            if (componentHandle != NULL)
+            if (componentHandle != NULL && adapterHandle->adapter != NULL && adapterHandle->adapter->adapter != NULL)
             {
-
-                componentHandle->componentName = componentName;
-                componentHandle->adapterIdentity = adapterHandle->adapter->adapter->identity;
+                mallocAndStrcpy_s(&componentHandle->componentName, componentName);
+                mallocAndStrcpy_s(&componentHandle->adapterIdentity, adapterHandle->adapter->adapter->identity);
                 if (IOTHUB_CLIENT_OK != PnpAdapterManager_InitializeClientHandle(componentHandle))
                 {
                     LogError("Client handle initialization for component handle failed.");
@@ -632,6 +641,48 @@ int PnpAdapterManager_DeviceMethodCallback(
     return result;
 }
 
+
+void PnpAdapterManager_PnpBridgeStateTelemetryCallback(
+    IOTHUB_CLIENT_CONFIRMATION_RESULT pnpSendEventStatus,
+    void* userContextCallback)
+{
+    LogInfo("PnpBridge_PnpBridgeStateTelemetryCallback called, result=%d, telemetry=%s", pnpSendEventStatus, (char*) userContextCallback);
+}
+
+void
+PnpAdapterManager_SendPnpBridgeStateTelemetry(
+const char * BridgeState
+)
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
+
+    char currentMessage[128];
+    sprintf(currentMessage, "{\"%s\":%s}", PnpBridge_State, BridgeState);
+
+
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(NULL, currentMessage)) == NULL)
+    {
+        LogError("Pnp Bridge Module: PnP_CreateTelemetryMessageHandle failed.");
+    }
+    else if ((g_PnpBridge->IoTClientType == PNP_BRIDGE_IOT_TYPE_DEVICE) &&
+             ((result = IoTHubDeviceClient_SendEventAsync(g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle, messageHandle,
+            PnpAdapterManager_PnpBridgeStateTelemetryCallback, (void*)BridgeState)) != IOTHUB_CLIENT_OK))
+    {
+        LogError("PnpBridge_SendPnpBridgeStateTelemetry: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
+    }
+    else if ((g_PnpBridge->IoTClientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) &&
+             ((result = IoTHubModuleClient_SendEventAsync(g_PnpBridge->IotHandle.u1.IotModule.moduleHandle, messageHandle,
+            PnpAdapterManager_PnpBridgeStateTelemetryCallback, (void*)BridgeState)) != IOTHUB_CLIENT_OK))
+    {
+        LogError("PnpBridge_SendPnpBridgeStateTelemetry: IoTHubModuleClient_SendEventAsync failed, error=%d", result);
+    }
+
+
+    IoTHubMessage_Destroy(messageHandle);
+}
+
+
 void PnpAdapterManager_DeviceTwinCallback(
     DEVICE_TWIN_UPDATE_STATE updateState,
     const unsigned char* payload,
@@ -644,6 +695,7 @@ void PnpAdapterManager_DeviceTwinCallback(
                 PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation, g_pnpBridgeConfigProperty))
         {
             LogInfo("Processing of module twin configuration for Pnp Bridge components completed successfully");
+            PnpAdapterManager_SendPnpBridgeStateTelemetry(PnpBridge_ConfigurationComplete);
         }
     }
     else if ((g_PnpBridge->PnpMgr != NULL))

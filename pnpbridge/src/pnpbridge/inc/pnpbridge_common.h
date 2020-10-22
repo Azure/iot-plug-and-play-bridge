@@ -171,13 +171,13 @@ static const char g_pnpBridgeUserAgentString[] = "PnpBridgeUserAgentString";
 // Pnp Bridge desired property for component config
 static const char g_pnpBridgeConfigProperty[] = "PnpBridgeConfig";
 // Root Pnp Bridge Interface model ID when running as a module
-static const char g_pnpBridgeModuleRootModelId[] = "dtmi:com:example:RootPnpBridgeSampleDevice;1";
+static const char g_pnpBridgeModuleRootModelId[] = "PNP_BRIDGE_ROOT_MODEL_ID";
 // Environment variable used to specify this application's connection string when running as a module
 static const char g_connectionStringEnvironmentVariable[] = "IOTHUB_DEVICE_CONNECTION_STRING";
 // Environment variable used to specify workload URI for dockerized containers/modules
 static const char g_workloadURIEnvironmentVariable[] = "IOTEDGE_WORKLOADURI";
 // Hub client tracing for when Pnp Bridge runs in Edge Module
-static bool g_hubClientTraceEnabled = false;
+static const char g_hubClientTraceEnabled[] = "PNP_BRIDGE_HUB_TRACING_ENABLED";
 
 #ifdef __cplusplus
 }
