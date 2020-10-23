@@ -358,30 +358,58 @@ PnpBridge_Main(const char * ConfigurationFilePath)
                 goto exit;
             }
 
-            result = PnpBridge_RegisterIoTHubHandle();
-            if (IOTHUB_CLIENT_OK != result) {
-                LogError("PnpBridge_RegisterIoTHubHandle failed: %d", result);
-                goto exit;
-            }
-
-            LogInfo("Connected to Azure IoT Hub");
-
             if (g_PnpBridge->IoTClientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
             {
-                result = PnpAdapterManager_BuildAdaptersAndComponents(&g_PnpBridge->PnpMgr, g_PnpBridge->Configuration.JsonConfig);
+                // Build adapter manager, required adapters and components with adapter configuration from local file
+                result = PnpAdapterManager_BuildAdaptersAndComponents(&g_PnpBridge->PnpMgr, g_PnpBridge->Configuration.JsonConfig, PNP_BRIDGE_IOT_TYPE_DEVICE);
                 if (IOTHUB_CLIENT_OK != result)
                 {
                     LogError("PnpAdapterManager_BuildAdaptersAndComponents failed: %d", result);
                     goto exit;
                 }
 
+                // After all Pnp Bridge Components have been built, state is initiaized
                 g_PnpBridgeState = PNP_BRIDGE_INITIALIZED;
+
+                // Register IoT Hub device client handle
+                result = PnpBridge_RegisterIoTHubHandle();
+                if (IOTHUB_CLIENT_OK != result) {
+                    LogError("PnpBridge_RegisterIoTHubHandle failed: %d", result);
+                    goto exit;
+                }
+
+                LogInfo("Connected to Azure IoT Hub");
+
                 PnpAdapterManager_SendPnpBridgeStateTelemetry(PnpBridge_ConfigurationComplete);
+
+                // Start Pnp Components
+
+                if (IOTHUB_CLIENT_OK != PnpAdapterManager_StartComponents(g_PnpBridge->PnpMgr))
+                {
+                    LogError("PnpAdapterManager_StartComponents failed");
+                    goto exit;
+                }
+
+                LogInfo("Pnp components started successfully.");
             }
             else
             {
+                // Register IoT Hub module client handle (This is required at this point to receive Bridge configuration property update)
+                result = PnpBridge_RegisterIoTHubHandle();
+                if (IOTHUB_CLIENT_OK != result) {
+                    LogError("PnpBridge_RegisterIoTHubHandle failed: %d", result);
+                    goto exit;
+                }
+
+                // Bridge waits for adapter and component configuration to be sent down as an edge module desired property
                 LogInfo("Pnp Bridge adapter and component initialization pending while running as an edge module");
-                PnpAdapterManager_SendPnpBridgeStateTelemetry(PnpBridge_WaitingForConfig);
+
+                // Send telemetry indicating Bridge State is currently waiting for confuration initialization
+                if (g_PnpBridgeState != PNP_BRIDGE_INITIALIZED && g_PnpBridge->IotHandle.ClientHandleInitialized)
+                {
+                    PnpAdapterManager_SendPnpBridgeStateTelemetry(PnpBridge_WaitingForConfig);
+                }
+
             }
 
             // Prevent main thread from returning by waiting for the

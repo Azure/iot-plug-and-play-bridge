@@ -166,7 +166,6 @@ MqttPnp_CreatePnpComponent(
     }
 
     context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, adapterConfig);
-    context->s_ProtocolHandler->SetIotHubClientHandle(PnpComponentHandle);
 
     PnpComponentHandleSetContext(PnpComponentHandle, context);
     PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, MqttPnp_OnPnpPropertyCallback);
@@ -215,6 +214,8 @@ MqttPnp_StartPnpComponent(
     LogInfo("Starting the PnP interface: %p", PnpComponentHandle);
 
     MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpComponentHandleGetContext(PnpComponentHandle));
+
+    context->s_ProtocolHandler->SetIotHubClientHandle(PnpComponentHandle);
 
     if (context)
     {

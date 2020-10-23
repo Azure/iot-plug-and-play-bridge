@@ -1321,7 +1321,6 @@ static void SerialPnp_PropertyUpdateHandler(
     void* userContextCallback)
 {
     AZURE_UNREFERENCED_PARAMETER(version);
-    AZURE_UNREFERENCED_PARAMETER(userContextCallback);
     IOTHUB_CLIENT_RESULT iothubClientResult;
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
 
@@ -1356,14 +1355,14 @@ static void SerialPnp_PropertyUpdateHandler(
                 size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
                 if ((deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_DEVICE) && 
-                    ((iothubClientResult = IoTHubDeviceClient_SendReportedState(deviceContext->DeviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                    ((iothubClientResult = IoTHubDeviceClient_SendReportedState((IOTHUB_DEVICE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
                     NULL, NULL)) != IOTHUB_CLIENT_OK))
                 {
                     LogError("Serial Pnp Adapter: Unable to send reported state for device property=%s, error=%d",
                         PropertyName, iothubClientResult);
                 }
                 else  if ((deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) && 
-                    ((iothubClientResult = IoTHubModuleClient_SendReportedState(deviceContext->ModuleClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                    ((iothubClientResult = IoTHubModuleClient_SendReportedState((IOTHUB_MODULE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
                     NULL, NULL)) != IOTHUB_CLIENT_OK))
                 {
                     LogError("Serial Pnp Adapter: Unable to send reported state for module property=%s, error=%d",
@@ -1443,6 +1442,18 @@ SerialPnp_StartPnpComponent(
         LogError("Device context is null, unable to start component");
         return IOTHUB_CLIENT_ERROR;
     }
+
+    // Assign client handle
+    if (deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        deviceContext->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    }
+    else
+    {
+        deviceContext->ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
+    }
+
+    PnpComponentHandleSetContext(PnpComponentHandle, deviceContext);
 
     // Start telemetry thread
     if (ThreadAPI_Create(&deviceContext->TelemetryWorkerHandle, SerialPnp_UartReceiver, deviceContext) != THREADAPI_OK) {
@@ -1731,12 +1742,10 @@ SerialPnp_CreatePnpComponent(
     if (PnpComponentHandleGetIoTType(BridgeComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
     {
         deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
-        deviceContext->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(BridgeComponentHandle);
     }
     else
     {
         deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
-        deviceContext->ModuleClient = PnpComponentHandleGetIotHubModuleClient(BridgeComponentHandle);
     }
 
     PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);

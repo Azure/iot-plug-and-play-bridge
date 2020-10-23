@@ -105,7 +105,8 @@ extern "C"
 
     IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
         PPNP_ADAPTER_MANAGER adapterMgr,
-        JSON_Value* config);
+        JSON_Value* config,
+        PNP_BRIDGE_IOT_TYPE clientType);
 
     IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
         PPNP_ADAPTER_MANAGER adapterMgr,
@@ -136,7 +137,8 @@ extern "C"
 
     IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdaptersAndComponents(
         PPNP_ADAPTER_MANAGER * adapterMgr,
-        JSON_Value* config);
+        JSON_Value* config,
+        PNP_BRIDGE_IOT_TYPE clientType);
 
     // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.
     void PnpAdapterManager_DeviceTwinCallback(

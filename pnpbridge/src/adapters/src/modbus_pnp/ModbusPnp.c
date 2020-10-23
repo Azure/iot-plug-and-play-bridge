@@ -661,6 +661,18 @@ Modbus_StartPnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
 
+    // Assign client handle
+    if (deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        deviceContext->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    }
+    else
+    {
+        deviceContext->ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
+    }
+
+    PnpComponentHandleSetContext(PnpComponentHandle, deviceContext);
+
     // Start polling all telemetry
     return ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
 }
@@ -874,12 +886,10 @@ Modbus_CreatePnpComponent(
     if (PnpComponentHandleGetIoTType(BridgeComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
     {
         deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
-        deviceContext->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(BridgeComponentHandle);
     }
     else
     {
         deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
-        deviceContext->ModuleClient = PnpComponentHandleGetIotHubModuleClient(BridgeComponentHandle);
     }
 
     // Allocate and copy component name into device context

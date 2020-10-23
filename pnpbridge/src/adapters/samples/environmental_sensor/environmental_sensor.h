@@ -32,6 +32,8 @@ typedef struct _ENVIRONMENT_SENSOR {
     THREAD_HANDLE WorkerHandle;
     volatile bool ShuttingDown;
     PENVIRONMENTAL_SENSOR_STATE SensorState;
+    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
+    IOTHUB_MODULE_CLIENT_HANDLE ModuleClient;
 } ENVIRONMENT_SENSOR, * PENVIRONMENT_SENSOR;
 
 #ifdef __cplusplus
@@ -46,6 +48,7 @@ extern "C"
         PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
         const char * ComponentName);
     IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
+        void * ClientHandle,
         PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
         const unsigned char * ReportedState,
         size_t Size,
@@ -58,10 +61,11 @@ extern "C"
         void * UserContextCallback
         );
     void SampleEnvironmentalSensor_ProcessPropertyUpdate(
-        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        void * ClientHandle,
         const char* PropertyName,
         JSON_Value* PropertyValue,
-        int version);
+        int version,
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
     int SampleEnvironmentalSensor_ProcessCommandUpdate(
         PENVIRONMENT_SENSOR EnvironmentalSensor,
         const char* CommandName,

@@ -10,17 +10,18 @@ int EnvironmentSensor_TelemetryWorker(
     PENVIRONMENT_SENSOR device = PnpComponentHandleGetContext(componentHandle);
 
     // Report telemetry every 5 minutes till we are asked to stop
-    while (true) {
-        if (device->ShuttingDown) {
+    while (true)
+    {
+        if (device->ShuttingDown)
+        {
             return IOTHUB_CLIENT_OK;
         }
 
         SampleEnvironmentalSensor_SendTelemetryMessagesAsync(componentHandle);
 
-        // Sleep for 5 sec
+        // Sleep for 5 seconds
         ThreadAPI_Sleep(5000);
     }
-
     return IOTHUB_CLIENT_OK;
 }
 
@@ -32,13 +33,24 @@ IOTHUB_CLIENT_RESULT EnvironmentSensor_StartPnpComponent(
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     PENVIRONMENT_SENSOR device = PnpComponentHandleGetContext(PnpComponentHandle);
 
+    // Store client handle before starting Pnp component
+    if (PnpComponentHandleGetIoTType(PnpComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        device->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    }
+    else
+    {
+        device->ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
+    }
+
+    // Set shutdown state
+    device->ShuttingDown = false;
     LogInfo("Environmental Sensor: Starting Pnp Component");
+
+    PnpComponentHandleSetContext(PnpComponentHandle, device);
 
     // Report Device State Async
     result = SampleEnvironmentalSensor_ReportDeviceStateAsync(PnpComponentHandle, device->SensorState->componentName);
-    device->ShuttingDown = false;
-
-    PnpComponentHandleSetContext(PnpComponentHandle, device);
 
     // Create a thread to periodically publish telemetry
     if (ThreadAPI_Create(&device->WorkerHandle, EnvironmentSensor_TelemetryWorker, PnpComponentHandle) != THREADAPI_OK) {
@@ -107,8 +119,7 @@ void EnvironmentSensor_ProcessPropertyUpdate(
     void* userContextCallback
 )
 {
-    AZURE_UNREFERENCED_PARAMETER(userContextCallback);
-    SampleEnvironmentalSensor_ProcessPropertyUpdate(PnpComponentHandle, PropertyName, PropertyValue, version);
+    SampleEnvironmentalSensor_ProcessPropertyUpdate(userContextCallback, PropertyName, PropertyValue, version, PnpComponentHandle);
 }
 
 int EnvironmentalSensor_ProcessCommand(

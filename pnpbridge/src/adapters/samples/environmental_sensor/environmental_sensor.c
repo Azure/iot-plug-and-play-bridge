@@ -178,10 +178,11 @@ static void SampleEnvironmentalSensor_PropertyCallback(
 
 // Processes a property update, which the server initiated, for customer name.
 static void SampleEnvironmentalSensor_CustomerNameCallback(
-    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    void * ClientHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
-    int version)
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult;
     STRING_HANDLE jsonToSend = NULL;
@@ -220,7 +221,7 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
                 const char* jsonToSendStr = STRING_c_str(jsonToSend);
                 size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-                if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(ClientHandle, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
                                             SampleEnvironmentalSensor_PropertyCallback,
                                             (void*) EnvironmentalSensor->SensorState->customerName)) != IOTHUB_CLIENT_OK)
                 {
@@ -251,10 +252,11 @@ static bool SampleEnvironmentalSensor_ValidateBrightness(
 
 // Process a property update for bright level.
 static void SampleEnvironmentalSensor_BrightnessCallback(
-    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    void * ClientHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
-    int version)
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult;
     STRING_HANDLE jsonToSend = NULL;
@@ -291,7 +293,7 @@ static void SampleEnvironmentalSensor_BrightnessCallback(
             const char* jsonToSendStr = STRING_c_str(jsonToSend);
             size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-            if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+            if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(ClientHandle, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
                                         SampleEnvironmentalSensor_PropertyCallback,
                                         (void*) &EnvironmentalSensor->SensorState->brightness)) != IOTHUB_CLIENT_OK)
             {
@@ -307,8 +309,10 @@ static void SampleEnvironmentalSensor_BrightnessCallback(
     }
 }
 
-// Routes the reported property for device or module client
+// Routes the reported property for device or module client. This function can be called either by passing a valid client handle or by passing
+// a NULL client handle after components have been started such that the client handle can be extracted from the PnpComponentHandle
 IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
+    void * ClientHandle,
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const unsigned char * ReportedState,
     size_t Size,
@@ -319,7 +323,9 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
     PNP_BRIDGE_IOT_TYPE clientType = PnpComponentHandleGetIoTType(PnpComponentHandle);
     if (clientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
     {
-        IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+        IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = (ClientHandle != NULL) ?
+            (IOTHUB_DEVICE_CLIENT_HANDLE) ClientHandle : PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+
         if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(deviceHandle, ReportedState, Size,
             ReportedStateCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
         {
@@ -333,7 +339,8 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
     }
     else if(clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE)
     {
-        IOTHUB_MODULE_CLIENT_HANDLE moduleHandle = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
+        IOTHUB_MODULE_CLIENT_HANDLE moduleHandle = (ClientHandle != NULL) ?
+            (IOTHUB_MODULE_CLIENT_HANDLE)(ClientHandle) : PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
         if ((iothubClientResult = IoTHubModuleClient_SendReportedState(moduleHandle, ReportedState, Size,
             ReportedStateCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
         {
@@ -369,7 +376,7 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_ReportDeviceStateAsync(
         const char* jsonToSendStr = STRING_c_str(jsonToSend);
         size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-        if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+        if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(NULL, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
             SampleEnvironmentalSensor_PropertyCallback, (void*)sampleDeviceStateProperty)) != IOTHUB_CLIENT_OK)
         {
             LogError("Environmental Sensor Adapter:: Unable to send reported state for property=%s, error=%d",
@@ -420,18 +427,19 @@ int SampleEnvironmentalSensor_ProcessCommandUpdate(
 // SampleEnvironmentalSensor_ProcessPropertyUpdate receives updated properties from the server.  This implementation
 // acts as a simple dispatcher to the functions to perform the actual processing.
 void SampleEnvironmentalSensor_ProcessPropertyUpdate(
-    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    void * ClientHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
-    int version)
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
     {
-        SampleEnvironmentalSensor_CustomerNameCallback(PnpComponentHandle, PropertyName, PropertyValue, version);
+        SampleEnvironmentalSensor_CustomerNameCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
     }
     else if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyBrightness) == 0)
     {
-        SampleEnvironmentalSensor_BrightnessCallback(PnpComponentHandle, PropertyName, PropertyValue, version);
+        SampleEnvironmentalSensor_BrightnessCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
     }
     else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
     {

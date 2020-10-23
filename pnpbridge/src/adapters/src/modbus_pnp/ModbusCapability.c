@@ -155,7 +155,7 @@ void ModbusPnp_PropertyHandler(
     capContext->connectionType = modbusDevice->DeviceConfig->ConnectionType;
     capContext->hLock= modbusDevice->hConnectionLock;
     capContext->deviceClient = modbusDevice->DeviceClient;
-    capContext->moduleClient = modbusDevice->DeviceClient;
+    capContext->moduleClient = modbusDevice->ModuleClient;
     capContext->clientType = modbusDevice->ClientType;
     capContext->componentName = modbusDevice->ComponentName;
 
@@ -325,7 +325,7 @@ ModbusPnp_ReportTelemetry(
              ((result = IoTHubModuleClient_SendEventAsync(CapabilityContext->moduleClient, messageHandle,
             ModbusPnp_ReportTelemetryCallback, (void*) TelemetryName)) != IOTHUB_CLIENT_OK))
     {
-        LogError("Modbus Adapter: IoTHubDeviceClient_SendEventAsync failed for device, error=%d", result);
+        LogError("Modbus Adapter: IoTHubModuleClient_SendEventAsync failed for device, error=%d", result);
     }
 
     IoTHubMessage_Destroy(messageHandle);
