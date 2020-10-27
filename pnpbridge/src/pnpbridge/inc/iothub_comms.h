@@ -8,18 +8,10 @@ extern "C"
 {
 #endif
 
+#include <pnpadapter_manager.h>
 
-int 
-IotComms_RegisterPnPInterfaces(
-    MX_IOT_HANDLE_TAG* IotHandle,
-    const char* ModelRepoId,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces,
-    int InterfaceCount
-    );
-
-DIGITALTWIN_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams);
-
-void IotComms_DigitalTwinClient_Destroy(MX_IOT_HANDLE_TAG* IotHandle);
+IOTHUB_CLIENT_RESULT IotComms_InitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, bool TraceOn, PCONNECTION_PARAMETERS ConnectionParams);
+IOTHUB_CLIENT_RESULT IotComms_DeinitializeIotHandle(MX_IOT_HANDLE_TAG* IotHandle, PCONNECTION_PARAMETERS ConnectionParams);
 
 #ifdef __cplusplus
 }

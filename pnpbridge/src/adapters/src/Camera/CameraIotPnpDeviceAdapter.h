@@ -3,27 +3,21 @@
 
 #include <string>
 
-#include <digitaltwin_device_client.h>
-#include <digitaltwin_interface_client.h>
-
-// Represents a PnP interface. It will register for its respective digital twin and then watch for
-// camera arrivals and removals. When the camera device arrives, it will create a CameraIotPnpDevice
-// for it and start sending telemetry if Start() has been called. When the camera device is removed
-// the CameraIotPnpDevice instance is removed.
+// Represents a PnP interface. It will = watch for camera arrivals and removals. When the camera 
+// device arrives, it will create a CameraIotPnpDevice for it and start sending telemetry if Start()
+// has been called. When the camera device is removed the CameraIotPnpDevice instance is removed.
 class CameraIotPnpDeviceAdapter
 {
 public:
     static std::unique_ptr<CameraIotPnpDeviceAdapter> MakeUnique(
-        const std::string& interfaceId,
         const std::string& componentName,
-        const std::string& cameraId,
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaceClient);
-
-    CameraIotPnpDeviceAdapter(
         const std::string& cameraId);
 
-    void Initialize(
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceClientHandle);
+    CameraIotPnpDeviceAdapter(
+        const std::string& cameraId,
+        const std::string& componentName);
+
+    void Initialize();
 
     // Allows properties, telemetry, and to be sent
     HRESULT Start();
@@ -31,25 +25,37 @@ public:
     // Stops any properties and telemetry from being sent
     void Stop();
 
-private:
-    static void CameraPnpCallback_ProcessCommandUpdate(
-        const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
-        DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
-        void* userInterfaceContext);
+    void SetIotHubDeviceClientHandle(IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle);
+
+    static int CameraPnpCallback_ProcessCommandUpdate(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        const char* CommandName,
+        JSON_Value* CommandValue,
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize);
 
     static void CameraPnpCallback_ProcessPropertyUpdate(
-        const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate,
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        const char* PropertyName,
+        JSON_Value* PropertyValue,
+        int version,
         void* userContextCallback);
 
+private:
+
+    int TakeVideo(
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize);
+
+    int TakePhoto(
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize);
+
+    int GetURI(
+        unsigned char** CommandResponse,
+        size_t* CommandResponseSize);
+
     void OnCameraArrivalRemoval();
-
-    void TakePhoto(
-        DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext);
-
-    void TakeVideo(
-        DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext);
-
-    void GetURI(DIGITALTWIN_CLIENT_COMMAND_RESPONSE* pnpClientCommandResponseContext);
 
     const std::string m_cameraId;
     bool m_hasStartedReporting{};
@@ -57,5 +63,6 @@ private:
     std::mutex m_cameraDeviceLock;
     std::unique_ptr<CameraIotPnpDevice> m_cameraDevice;
     std::unique_ptr<CameraPnpDiscovery> m_cameraDiscovery;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE m_interfaceClientHandle;
+    IOTHUB_DEVICE_CLIENT_HANDLE m_deviceClient;
+    std::string m_componentName;
 };

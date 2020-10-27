@@ -41,14 +41,16 @@ extern "C"
 #include <iothub_client_options.h>
 #include <iothubtransportmqtt.h>
 
-#include <digitaltwin_device_client.h>
-#include <digitaltwin_interface_client.h>
-
 #include "parson.h"
+
+// PnP helper utilities.
+#include "pnp_device_client.h"
+#include "pnp_dps.h"
+#include "pnp_protocol.h"
 
 #include <assert.h>
 
-#define DIGITALTWIN_MODULE_CLIENT_HANDLE void*
+#define PNPBRIDGE_CLIENT_HANDLE void*
 
 #define PNPBRIDGE_RESULT_VALUES \
     PNPBRIDGE_OK, \
@@ -62,8 +64,9 @@ extern "C"
 
 MU_DEFINE_ENUM(PNPBRIDGE_RESULT, PNPBRIDGE_RESULT_VALUES);
 
-#define PNPBRIDGE_SUCCESS(Result) (Result == DIGITALTWIN_CLIENT_OK)
+#define PNPBRIDGE_SUCCESS(Result) (Result == IOTHUB_CLIENT_OK)
 #include "configuration_parser.h"
+#include "pnpadapter_manager.h"
 
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
 
@@ -86,7 +89,7 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_CONNECTION_DPS_GLOBAL_PROV_URI "global_prov_uri"
 #define PNP_CONFIG_CONNECTION_DPS_ID_SCOPE "id_scope" 
 #define PNP_CONFIG_CONNECTION_DPS_DEVICE_ID "device_id"
-#define PNP_CONFIG_CONNECTION_DEVICE_CAPS_MODEL_URI "device_capability_model_uri"
+#define PNP_CONFIG_CONNECTION_ROOT_INTERFACE_MODEL_ID "root_interface_model_id"
 
 #define PNP_CONFIG_CONNECTION_AUTH_PARAMETERS "auth_parameters"
 #define PNP_CONFIG_CONNECTION_AUTH_TYPE "auth_type"
@@ -97,7 +100,6 @@ int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
 #define PNP_CONFIG_ADAPTER_GLOBAL "pnp_bridge_adapter_global_configs"
 #define PNP_CONFIG_DEVICES "pnp_bridge_interface_components"
 #define PNP_CONFIG_IDENTITY "identity"
-#define PNP_CONFIG_INTERFACE_ID "pnp_bridge_interface_id"
 #define PNP_CONFIG_COMPONENT_NAME "pnp_bridge_component_name"
 #define PNP_CONFIG_ADAPTER_ID "pnp_bridge_adapter_id"
 #define PNP_CONFIG_DEVICE_ADAPTER_CONFIG "pnp_bridge_adapter_config"
@@ -126,30 +128,42 @@ typedef struct _MX_IOT_HANDLE_TAG {
             // connection to iot device
             IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle;
 
-            // Handle representing PnpDeviceClient
-            DIGITALTWIN_DEVICE_CLIENT_HANDLE PnpDeviceClientHandle;
         } IotDevice;
 
         struct IotModule {
             // connection to iot device
             IOTHUB_MODULE_CLIENT_HANDLE moduleHandle;
 
-            // Handle representing PnpDeviceClient
-            DIGITALTWIN_MODULE_CLIENT_HANDLE pnpModuleClientHandle;
         } IotModule;
     } u1;
 
     // Change this to enum
     bool IsModule;
     bool DeviceClientInitialized;
-    bool DigitalTwinClientInitialized;
 } MX_IOT_HANDLE_TAG;
 
-DIGITALTWIN_CLIENT_RESULT
-PnpBridge_RegisterInterfaces(
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaces,
-    unsigned int interfaceCount
-);
+typedef enum PNP_BRIDGE_STATE {
+    PNP_BRIDGE_UNINITIALIZED,
+    PNP_BRIDGE_INITIALIZED,
+    PNP_BRIDGE_TEARING_DOWN,
+    PNP_BRIDGE_DESTROYED
+} PNP_BRIDGE_STATE;
+
+// Device aggregator context
+typedef struct _PNP_BRIDGE {
+    MX_IOT_HANDLE_TAG IotHandle;
+
+    PPNP_ADAPTER_MANAGER PnpMgr;
+
+    PNPBRIDGE_CONFIGURATION Configuration;
+
+    COND_HANDLE ExitCondition;
+
+    LOCK_HANDLE ExitLock;
+} PNP_BRIDGE, *PPNP_BRIDGE;
+
+
+void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
 
 #ifdef __cplusplus
 }

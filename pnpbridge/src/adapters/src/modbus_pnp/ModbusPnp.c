@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #include <pnpbridge.h>
 
 #include "azure_c_shared_utility/azure_base32.h"
@@ -19,7 +22,7 @@
 #endif
 
 int ModbusPnp_GetListCount(
-    SINGLYLINKEDLIST_HANDLE list) 
+    SINGLYLINKEDLIST_HANDLE list)
 {
     if (NULL == list) {
         return 0;
@@ -62,14 +65,14 @@ ModbusDataType ToModbusDataTypeEnum(
     return INVALID;
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
+IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
     ModbusInterfaceConfig* ModbusInterfaceConfig,
     JSON_Object* ConfigObj)
 {
     if (NULL == ModbusInterfaceConfig)
     {
         LogError("Cannot populate interface config for modbus adapter.");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     ModbusInterfaceConfig->Events = singlylinkedlist_create();
@@ -85,14 +88,14 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
         if (NULL == telemetryArgs)
         {
             LogError("ERROR: Telemetry \"%s\" definition is empty.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         ModbusTelemetry* telemetry = calloc(1, sizeof(ModbusTelemetry));
         if (NULL == telemetry)
         {
             LogError("Failed to allocation memory for telemetry configuration: \"%s\". ", name);
-            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            return IOTHUB_CLIENT_ERROR;
         }
 
         telemetry->Name = name;
@@ -101,40 +104,40 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
         if (0 == telemetry->StartAddress)
         {
             LogError("\"startAddress\" of telemetry \"%s\" is in valid. ", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
         telemetry->Length = (uint8_t)json_object_dotget_number(telemetryArgs, "length");
         if (0 == telemetry->Length)
         {
             LogError("\"length\" of telemetry \"%s\" is in valid. ", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         const char* dataTypeStr = (const char*)json_object_dotget_string(telemetryArgs, "dataType");
         if (NULL == dataTypeStr)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid. ", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
         telemetry->DataType = ToModbusDataTypeEnum(dataTypeStr);
         if (telemetry->DataType == INVALID)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         telemetry->DefaultFrequency = (int)json_object_dotget_number(telemetryArgs, "defaultFrequency");
         if (0 == telemetry->DefaultFrequency)
         {
             LogError("\"defaultFrequency\" of telemetry \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         telemetry->ConversionCoefficient = json_object_dotget_number(telemetryArgs, "conversionCoefficient");
         if (0 == telemetry->ConversionCoefficient)
         {
             LogError("\"conversionCoefficient\" of telemetry \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         singlylinkedlist_add(ModbusInterfaceConfig->Events, telemetry);
@@ -149,14 +152,14 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
         if (NULL == propertyArgs)
         {
             LogError("ERROR: Property \"%s\" definition is empty.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         ModbusProperty* property = calloc(1, sizeof(ModbusProperty));
         if (NULL == property)
         {
             LogError("Failed to allocation memory for property configuration: \"%s\".", name);
-            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            return IOTHUB_CLIENT_ERROR;
         }
 
         property->Name = name;
@@ -165,48 +168,48 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
         if (0 == property->StartAddress)
         {
             LogError("\"startAddress\" of property \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         property->Length = (uint8_t)json_object_dotget_number(propertyArgs, "length");
         if (0 == property->Length)
         {
             LogError("\"length\" of property \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         const char* dataTypeStr = (const char*)json_object_dotget_string(propertyArgs, "dataType");
         if (NULL == dataTypeStr)
         {
             LogError("\"dataType\" of property \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
         property->DataType = ToModbusDataTypeEnum(dataTypeStr);
         if (property->DataType == INVALID)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         property->DefaultFrequency = (int)json_object_dotget_number(propertyArgs, "defaultFrequency");
         if (0 == property->DefaultFrequency)
         {
             LogError("\"defaultFrequency\" of property \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         property->ConversionCoefficient = json_object_dotget_number(propertyArgs, "conversionCoefficient");
         if (0 == property->ConversionCoefficient)
         {
             LogError("\"conversionCoefficient\" of property \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         property->Access = (int)json_object_dotget_number(propertyArgs, "access");
         if (0 == property->Access)
         {
             LogError("\"conversionCoefficient\" of property \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         singlylinkedlist_add(ModbusInterfaceConfig->Properties, property);
@@ -221,7 +224,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
         if (NULL == commandArgs)
         {
             LogError("ERROR: Command \"%s\" definition is empty.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         ModbusCommand* command = calloc(1, sizeof(ModbusCommand));
@@ -229,7 +232,7 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
         if (NULL == command)
         {
             LogError("Failed to allocation memory for command configuration: \"%s\".", name);
-            return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            return IOTHUB_CLIENT_ERROR;
         }
 
         command->Name = name;
@@ -238,40 +241,40 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
         if (0 == command->StartAddress)
         {
             LogError("\"startAddress\" of command \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         command->Length = (uint8_t)json_object_dotget_number(commandArgs, "length");
         if (0 == command->Length)
         {
             LogError("\"length\" of command \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         const char* dataTypeStr = (const char*)json_object_dotget_string(commandArgs, "dataType");
         if (NULL == dataTypeStr)
         {
             LogError("\"dataType\" of command \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
         command->DataType = ToModbusDataTypeEnum(dataTypeStr);
         if (command->DataType == INVALID)
         {
             LogError("\"dataType\" of telemetry \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         command->ConversionCoefficient = json_object_dotget_number(commandArgs, "conversionCoefficient");
         if (0 == command->ConversionCoefficient)
         {
             LogError("\"conversionCoefficient\" of command \"%s\" is in valid.", name);
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         singlylinkedlist_add(ModbusInterfaceConfig->Commands, command);
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 int ModbusPnp_ParseRtuSettings(
@@ -282,14 +285,14 @@ int ModbusPnp_ParseRtuSettings(
     deviceConfig->ConnectionConfig.RtuConfig.Port = (char*)json_object_dotget_string(configObj, "port");
     if (NULL == deviceConfig->ConnectionConfig.RtuConfig.Port) {
         LogError("ComPort parameter is missing in RTU configuration");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     // Get serial baudRate
     const char* baudRateStr = (const char*)json_object_dotget_string(configObj, "baudRate");
     if (NULL == baudRateStr) {
         LogError("BaudRate parameter is missing in RTU configuration");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
     deviceConfig->ConnectionConfig.RtuConfig.BaudRate = atoi(baudRateStr);
 
@@ -297,7 +300,7 @@ int ModbusPnp_ParseRtuSettings(
     deviceConfig->ConnectionConfig.RtuConfig.DataBits = (uint8_t)json_object_dotget_number(configObj, "dataBits");
     if (7 != deviceConfig->ConnectionConfig.RtuConfig.DataBits && 8 != deviceConfig->ConnectionConfig.RtuConfig.DataBits) {
         LogError("data Bits parameter is missing or invalid in RTU configuration.  Valid Input: {7, 8}");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     // Get serial stopBits
@@ -314,7 +317,7 @@ int ModbusPnp_ParseRtuSettings(
         }
         else {
             LogError("Invalide Stop Bit parameter in RTU configuration. Valid Input: {\"ONE\", \"TWO\", \"OnePointFive\"}");
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
     }
     else {
@@ -322,7 +325,7 @@ int ModbusPnp_ParseRtuSettings(
         uint8_t stopBitInput = (uint8_t)json_object_dotget_number(configObj, "stopBits");
         if (0 == stopBitInput) {
             LogError("Stop Bit parameter is missing in RTU configuration.");
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
         }
 
         switch (stopBitInput) {
@@ -337,7 +340,7 @@ int ModbusPnp_ParseRtuSettings(
             break;
         default:
             LogError("Invalide Stop Bit parameter in RTU configuration. Valid Input: {\"ONE\", \"TWO\", \"OnePointFive\", 1, 2, 3}");
-            return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            return IOTHUB_CLIENT_INVALID_ARG;
             break;
         }
     }
@@ -370,7 +373,7 @@ int ModbusPnp_ParseRtuSettings(
     }
 
     deviceConfig->ConnectionType = RTU;
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 int ModbusPnP_ParseTcpSettings(
@@ -381,19 +384,19 @@ int ModbusPnP_ParseTcpSettings(
     deviceConfig->ConnectionConfig.TcpConfig.Host = (char*)json_object_dotget_string(configObj, "host");
     if (NULL == deviceConfig->ConnectionConfig.TcpConfig.Host) {
         LogError("\"Host\" parameter is missing in TCP configuration");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     // Get serial dataBits
     deviceConfig->ConnectionConfig.TcpConfig.Port = (uint16_t)json_object_dotget_number(configObj, "port");
     if (0 == deviceConfig->ConnectionConfig.TcpConfig.Port) {
         LogError("\"Port\" is invalide in TCP configuration: Cannot be 0.");
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     deviceConfig->ConnectionType = TCP;
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 #pragma endregion
 
@@ -422,7 +425,7 @@ int ModbusPnp_OpenSerial(
     if (*serialHandle == INVALID_HANDLE_VALUE) {
         // Handle the error
         LogError("Failed to open com port %s", rtuConfig->Port);
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
 #ifdef WIN32
@@ -432,7 +435,7 @@ int ModbusPnp_OpenSerial(
     dcbSerialParams.DCBlength = sizeof(DCB);
     if (!GetCommState(*serialHandle, &dcbSerialParams)) {
         LogError("Failed to open com port %s, %x", rtuConfig->Port, GetLastError());
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
     dcbSerialParams.BaudRate = rtuConfig->BaudRate;
     dcbSerialParams.ByteSize = rtuConfig->DataBits;
@@ -441,7 +444,7 @@ int ModbusPnp_OpenSerial(
     if (!SetCommState(*serialHandle, &dcbSerialParams)) {
         // Error setting serial port state
         LogError("Failed to open com port %s, %x", rtuConfig->Port, GetLastError());
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 
     LogInfo("Opened com port %s", rtuConfig->Port);
@@ -456,7 +459,7 @@ int ModbusPnp_OpenSerial(
     {
         int error = GetLastError();
         printf("Set timeout failed on com port %s, %x", rtuConfig->Port, error);
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 #else
     struct termios settings;
@@ -492,7 +495,7 @@ int ModbusPnp_OpenSerial(
     tcsetattr(*serialHandle, TCSANOW, &settings);
     tcflush(*serialHandle, TCOFLUSH);
 #endif
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 int ModbusPnp_OpenSocket(
@@ -506,7 +509,7 @@ int ModbusPnp_OpenSocket(
     result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != 0) {
         LogError("WSAStartup failed: %d\n", result);
-        return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        return IOTHUB_CLIENT_INVALID_ARG;
     }
 #endif
 
@@ -550,13 +553,13 @@ int ModbusPnp_OpenSocket(
         goto ExitOnError;
     }
     LogInfo("Connected to device at \"%s:%d\".", tcpConfig->Host, tcpConfig->Port);
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 
 ExitOnError:
 #ifdef WIN32
     WSACleanup();
 #endif
-    return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    return IOTHUB_CLIENT_INVALID_ARG;
 }
 
 #pragma endregion
@@ -633,26 +636,29 @@ void Modbus_CleanupPollingTasks(
     }
 }
 
-DIGITALTWIN_CLIENT_RESULT
-Modbus_StartPnpInterface(
+IOTHUB_CLIENT_RESULT
+Modbus_StartPnpComponent(
     _In_ PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    _In_ PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
     if (deviceContext == NULL)
     {
-        LogError("Modbus_StartPnpInterface: Device context is null, cannot start interface.");
-        return DIGITALTWIN_CLIENT_ERROR;
+        LogError("Modbus_StartPnpComponent: Device context is null, cannot start interface.");
+        return IOTHUB_CLIENT_ERROR;
     }
+
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    deviceContext->DeviceClient = deviceHandle;
     // Start polling all telemetry
     return ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
 }
 
-DIGITALTWIN_CLIENT_RESULT Modbus_DestroyPnpAdapter(
+IOTHUB_CLIENT_RESULT Modbus_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PMODBUS_ADAPTER_CONTEXT adapterContext = PnpAdapterHandleGetContext(AdapterHandle);
     if (adapterContext == NULL)
     {
@@ -677,16 +683,16 @@ DIGITALTWIN_CLIENT_RESULT Modbus_DestroyPnpAdapter(
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT Modbus_CreatePnpAdapter(
+IOTHUB_CLIENT_RESULT Modbus_CreatePnpAdapter(
     const JSON_Object* AdapterGlobalConfig,
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PMODBUS_ADAPTER_CONTEXT adapterContext = calloc(1, sizeof(MODBUS_ADAPTER_CONTEXT));
     if (!adapterContext)
     {
         LogError("Could not allocate memory for adapter context.");
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -695,7 +701,7 @@ DIGITALTWIN_CLIENT_RESULT Modbus_CreatePnpAdapter(
     if (AdapterGlobalConfig == NULL)
     {
         LogError("Modbus adapter requires associated global parameters in config");
-        result = DIGITALTWIN_CLIENT_ERROR;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
@@ -706,24 +712,24 @@ DIGITALTWIN_CLIENT_RESULT Modbus_CreatePnpAdapter(
         if (!interfaceConfig)
         {
             LogError("Could not allocate memory for interface configuration.");
-            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            result = IOTHUB_CLIENT_ERROR;
             goto exit;
         }
 
         if (0 != mallocAndStrcpy_s((char**)(&interfaceConfig->Id), modbusConfigIdentity))
         {
             LogError("Could not allocate memory for interface configuration's identity");
-            result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+            result = IOTHUB_CLIENT_ERROR;
             free(interfaceConfig);
             goto exit;
         }
 
         JSON_Object* interfaceConfigJson = json_object_get_object(AdapterGlobalConfig, modbusConfigIdentity);
 
-        if (DIGITALTWIN_CLIENT_OK != ModbusPnp_ParseInterfaceConfig(interfaceConfig, interfaceConfigJson))
+        if (IOTHUB_CLIENT_OK != ModbusPnp_ParseInterfaceConfig(interfaceConfig, interfaceConfigJson))
         {
             LogError("Could not parse interface config definition for %s", (char*)interfaceConfig->Id);
-            result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+            result = IOTHUB_CLIENT_INVALID_ARG;
             goto exit;
         }
 
@@ -734,19 +740,19 @@ DIGITALTWIN_CLIENT_RESULT Modbus_CreatePnpAdapter(
     PnpAdapterHandleSetContext(AdapterHandle, (void*)adapterContext);
 
 exit:
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
         result = Modbus_DestroyPnpAdapter(AdapterHandle);
     }
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT Modbus_RetrieveMatchingInterfaceConfig(
+IOTHUB_CLIENT_RESULT Modbus_RetrieveMatchingInterfaceConfig(
     const char* ModbusId,
     SINGLYLINKEDLIST_HANDLE InterfaceDefinitions,
     PMODBUS_DEVICE_CONTEXT DeviceContext)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_INVALID_ARG;
     if (ModbusId == NULL || InterfaceDefinitions == NULL || DeviceContext == NULL)
     {
         LogError("Modbus_RetrieveMatchingInterfaceConfig: Invalid arguments.");
@@ -761,7 +767,7 @@ DIGITALTWIN_CLIENT_RESULT Modbus_RetrieveMatchingInterfaceConfig(
         if (strcmp(interfaceConfig->Id, ModbusId) == 0)
         {
             DeviceContext->InterfaceConfig = interfaceConfig;
-            result = DIGITALTWIN_CLIENT_OK;
+            result = IOTHUB_CLIENT_OK;
         }
         interfaceDefinition = singlylinkedlist_get_next_item(interfaceDefinition);
     }
@@ -769,92 +775,100 @@ DIGITALTWIN_CLIENT_RESULT Modbus_RetrieveMatchingInterfaceConfig(
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT Modbus_ParseDeviceConfig(
-    const JSON_Object* AdapterInterfaceConfig,
+IOTHUB_CLIENT_RESULT Modbus_ParseDeviceConfig(
+    const JSON_Object* AdapterComponentConfig,
     PModbusDeviceConfig DeviceConfig)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
-    if (AdapterInterfaceConfig == NULL || DeviceConfig == NULL)
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    if (AdapterComponentConfig == NULL || DeviceConfig == NULL)
     {
         LogError("Modbus_ParseDeviceConfig: Invalid arguments.");
         return result;
     }
 
-    DeviceConfig->UnitId = (uint8_t)json_object_get_number(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_UNITID);
-    JSON_Object* rtuArgs = json_object_get_object(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_RTU);
-    if (NULL != rtuArgs && ModbusPnp_ParseRtuSettings(DeviceConfig, rtuArgs) != DIGITALTWIN_CLIENT_OK) {
+    DeviceConfig->UnitId = (uint8_t)json_object_get_number(AdapterComponentConfig, PNP_CONFIG_ADAPTER_INTERFACE_UNITID);
+    JSON_Object* rtuArgs = json_object_get_object(AdapterComponentConfig, PNP_CONFIG_ADAPTER_INTERFACE_RTU);
+    if (NULL != rtuArgs && ModbusPnp_ParseRtuSettings(DeviceConfig, rtuArgs) != IOTHUB_CLIENT_OK) {
         LogError("Failed to parse RTU connection settings.");
-        result =  DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        result =  IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
     }
 
-    JSON_Object* tcpArgs = json_object_get_object(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_INTERFACE_TCP);
-    if (NULL != tcpArgs && ModbusPnP_ParseTcpSettings(DeviceConfig, tcpArgs) != DIGITALTWIN_CLIENT_OK) {
+    JSON_Object* tcpArgs = json_object_get_object(AdapterComponentConfig, PNP_CONFIG_ADAPTER_INTERFACE_TCP);
+    if (NULL != tcpArgs && ModbusPnP_ParseTcpSettings(DeviceConfig, tcpArgs) != IOTHUB_CLIENT_OK) {
         LogError("Failed to parse RTU connection settings.");
-        result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        result = IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
     }
 
     if (UNKOWN == DeviceConfig->ConnectionType) {
         LogError("Missing Modbus connection settings.");
-        result = DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+        result = IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
     }
 exit:
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT Modbus_DestroyPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT Modbus_DestroyPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
 
     if (NULL == deviceContext) {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
-    // Call DigitalTwin_InterfaceClient_Destroy.
-    // This will block if there are any active callbacks in this interface, and then
-    // mark the underlying handle such that no future callbacks shall come to it
-
-    DigitalTwin_InterfaceClient_Destroy(deviceContext->pnpinterfaceHandle);
-
-    if (deviceContext->DeviceConfig)
+    if (NULL != deviceContext->DeviceConfig)
     {
         free(deviceContext->DeviceConfig);
     }
-    if (deviceContext)
+
+    if (NULL != deviceContext->ComponentName)
+    {
+        free(deviceContext->ComponentName);
+    }
+
+    if (NULL != deviceContext)
     {
         free(deviceContext);
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
-DIGITALTWIN_CLIENT_RESULT
-Modbus_CreatePnpInterface(
+IOTHUB_CLIENT_RESULT
+Modbus_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    const char* InterfaceId,
     const char* ComponentName,
-    const JSON_Object* AdapterInterfaceConfig,
-    PNPBRIDGE_INTERFACE_HANDLE BridgeInterfaceHandle,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* PnpInterfaceClient)
+    const JSON_Object* AdapterComponentConfig,
+    PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_OK;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterfaceClient;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PMODBUS_DEVICE_CONTEXT deviceContext = calloc(1, sizeof(MODBUS_DEVICE_CONTEXT));
-    if (!deviceContext)
+    if (NULL == deviceContext)
     {
         LogError("Could not allocate memory for device context.");
-        return DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
+        goto exit;
     }
+
+    if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
+    {
+        LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
+        result = IOTHUB_CLIENT_INVALID_ARG;
+        goto exit;
+    }
+
+    // Allocate and copy component name into device context
+    mallocAndStrcpy_s((char**)&deviceContext->ComponentName, ComponentName);
 
     // Populate interface config from adapter's supported interface definitions
 
     PMODBUS_ADAPTER_CONTEXT adapterContext = PnpAdapterHandleGetContext(AdapterHandle);
-    const char* modbusIdentity = json_object_dotget_string(AdapterInterfaceConfig, PNP_CONFIG_ADAPTER_MODBUS_IDENTITY);
+    const char* modbusIdentity = json_object_dotget_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MODBUS_IDENTITY);
     result = Modbus_RetrieveMatchingInterfaceConfig(modbusIdentity, adapterContext->InterfaceDefinitions, deviceContext);
-    if (DIGITALTWIN_CLIENT_OK != result)
+    if (IOTHUB_CLIENT_OK != result)
     {
         LogError("Could not find matching modbus interface configuration for this interface");
         goto exit;
@@ -865,7 +879,7 @@ Modbus_CreatePnpInterface(
     deviceContext->hConnectionLock = Lock_Init();
     if (NULL == deviceContext->hConnectionLock)
     {
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         LogError("Failed to create a valid lock handle for device connection.");
         goto exit;
     }
@@ -875,12 +889,12 @@ Modbus_CreatePnpInterface(
     if (!deviceConfig)
     {
         LogError("Could not allocate memory for device config.");
-        result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+        result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
     deviceConfig->ConnectionType = UNKOWN;
-    result = Modbus_ParseDeviceConfig(AdapterInterfaceConfig, deviceConfig);
-    if (result != DIGITALTWIN_CLIENT_OK)
+    result = Modbus_ParseDeviceConfig(AdapterComponentConfig, deviceConfig);
+    if (result != IOTHUB_CLIENT_OK)
     {
         LogError("Could not parse device configuration for this modbus interface.");
         goto exit;
@@ -891,7 +905,7 @@ Modbus_CreatePnpInterface(
     {
         result = ModbusPnp_OpenSerial(&(deviceConfig->ConnectionConfig.RtuConfig), 
                     &(deviceContext->hDevice));
-        if (DIGITALTWIN_CLIENT_OK != result)
+        if (IOTHUB_CLIENT_OK != result)
         {
             LogError("Failed to open serial connection to \"%s\".", 
                         deviceConfig->ConnectionConfig.RtuConfig.Port);
@@ -902,7 +916,7 @@ Modbus_CreatePnpInterface(
     {
         result = ModbusPnp_OpenSocket(&(deviceConfig->ConnectionConfig.TcpConfig), 
                     (SOCKET*)&(deviceContext->hDevice));
-        if (DIGITALTWIN_CLIENT_OK != result)
+        if (IOTHUB_CLIENT_OK != result)
         {
             LogError("Failed to open socket connection to \"%s:%d\".", 
                 deviceConfig->ConnectionConfig.TcpConfig.Host, 
@@ -925,10 +939,10 @@ Modbus_CreatePnpInterface(
         while (NULL != telemetryHandle) {
             PModbusTelemetry telemetry = (PModbusTelemetry)singlylinkedlist_item_get_value(telemetryHandle);
             result = ModbusPnp_SetReadRequest(deviceConfig, Telemetry, telemetry);
-            if (DIGITALTWIN_CLIENT_OK != result)
+            if (IOTHUB_CLIENT_OK != result)
             {
                 LogError("Failed to create read request for telemetry \"%s\".", telemetry->Name);
-                return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                return IOTHUB_CLIENT_INVALID_ARG;
             }
             telemetryHandle = singlylinkedlist_get_next_item(telemetryHandle);
         }
@@ -954,10 +968,10 @@ Modbus_CreatePnpInterface(
             }
 
             result = ModbusPnp_SetReadRequest(deviceConfig, Property, property);
-            if (DIGITALTWIN_CLIENT_OK != result)
+            if (IOTHUB_CLIENT_OK != result)
             {
                 LogError("Failed to create read request for telemetry \"%s\".", property->Name);
-                return DIGITALTWIN_CLIENT_ERROR_INVALID_ARG;
+                return IOTHUB_CLIENT_INVALID_ARG;
             }
             propertyhandle = singlylinkedlist_get_next_item(propertyhandle);
         }
@@ -991,7 +1005,7 @@ Modbus_CreatePnpInterface(
     // Construct a property table
     if (NULL != deviceContext->InterfaceConfig->Properties)
     {
-        DIGITALTWIN_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
+        MODBUS_PROPERTY_UPDATE_CALLBACK* propertyUpdateTable = NULL;
         char** propertyNames = NULL;
         SINGLYLINKEDLIST_HANDLE propertyList = deviceContext->InterfaceConfig->Properties;
         propertyCount = ModbusPnp_GetListCount(deviceContext->InterfaceConfig->Properties);
@@ -1024,13 +1038,13 @@ Modbus_CreatePnpInterface(
         {
             propertyNames = calloc(1, sizeof(char*) * readWritePropertyCount);
             if (NULL == propertyNames) {
-                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                result = IOTHUB_CLIENT_ERROR;
                 goto exit;
             }
 
-            propertyUpdateTable = calloc(1, sizeof(DIGITALTWIN_PROPERTY_UPDATE_CALLBACK*) * readWritePropertyCount);
+            propertyUpdateTable = calloc(1, sizeof(MODBUS_PROPERTY_UPDATE_CALLBACK*) * readWritePropertyCount);
             if (NULL == propertyUpdateTable) {
-                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                result = IOTHUB_CLIENT_ERROR;
                 goto exit;
             }
 
@@ -1058,7 +1072,7 @@ Modbus_CreatePnpInterface(
     if (NULL != deviceContext->InterfaceConfig->Commands)
     {
         char** commandNames = NULL;
-        DIGITALTWIN_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
+        MODBUS_COMMAND_EXECUTE_CALLBACK* commandUpdateTable = NULL;
         SINGLYLINKEDLIST_HANDLE commandList = deviceContext->InterfaceConfig->Commands;
         commandCount = ModbusPnp_GetListCount(commandList);
 
@@ -1066,13 +1080,13 @@ Modbus_CreatePnpInterface(
         {
             commandNames = calloc(1, sizeof(char*) * commandCount);
             if (NULL == commandNames) {
-                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                result = IOTHUB_CLIENT_ERROR;
                 goto exit;
             }
 
-            commandUpdateTable = calloc(1, sizeof(DIGITALTWIN_COMMAND_EXECUTE_CALLBACK*) * commandCount);
+            commandUpdateTable = calloc(1, sizeof(MODBUS_COMMAND_EXECUTE_CALLBACK*) * commandCount);
             if (NULL == commandUpdateTable) {
-                result = DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY;
+                result = IOTHUB_CLIENT_ERROR;
                 goto exit;
             }
 
@@ -1096,57 +1110,26 @@ Modbus_CreatePnpInterface(
             }
         }
     }
-   
-    // Call DigitalTwinClient Create and assign pnpInterfaceClient to deviceContext's pnpInterfaceClient
-    result = DigitalTwin_InterfaceClient_Create(InterfaceId, ComponentName, NULL, deviceContext, 
-                                                    &pnpInterfaceClient);
-    if (DIGITALTWIN_CLIENT_OK != result) {
-        LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_Create failed.");
-        result = DIGITALTWIN_CLIENT_ERROR;
-        goto exit;
-    }
 
-    if (propertyCount > 0) {
-        result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(pnpInterfaceClient, 
-                                                                            ModbusPnp_PropertyHandler, 
-                                                                            (void*) deviceContext);
-        if (DIGITALTWIN_CLIENT_OK != result) {
-            LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback failed.");
-            result = DIGITALTWIN_CLIENT_ERROR;
-            goto exit;
-        }
-    }
-
-    if (commandCount > 0) {
-        result = DigitalTwin_InterfaceClient_SetCommandsCallback(pnpInterfaceClient, 
-                                                                    ModbusPnp_CommandHandler, (void*)deviceContext);
-        if (DIGITALTWIN_CLIENT_OK != result) {
-            LogError("Modbus_CreatePnpInterface: DigitalTwin_InterfaceClient_SetCommandsCallback failed.");
-            result = DIGITALTWIN_CLIENT_ERROR;
-            goto exit;
-        }
-    }
-
-    *PnpInterfaceClient = pnpInterfaceClient;
-    deviceContext->pnpinterfaceHandle = pnpInterfaceClient;
-
-    PnpInterfaceHandleSetContext(BridgeInterfaceHandle, deviceContext);
+    PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ModbusPnp_PropertyHandler);
+    PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ModbusPnp_CommandHandler);
 
 exit:
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if (result != IOTHUB_CLIENT_OK)
     {
-        Modbus_DestroyPnpInterface(BridgeInterfaceHandle);
+        Modbus_DestroyPnpComponent(BridgeComponentHandle);
     }
 
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT Modbus_StopPnpInterface(
-    PNPBRIDGE_INTERFACE_HANDLE PnpInterfaceHandle)
+IOTHUB_CLIENT_RESULT Modbus_StopPnpComponent(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    PMODBUS_DEVICE_CONTEXT deviceContext = PnpInterfaceHandleGetContext(PnpInterfaceHandle);
+    PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
     if (NULL == deviceContext) {
-        return DIGITALTWIN_CLIENT_OK;
+        return IOTHUB_CLIENT_OK;
     }
 
     Modbus_CleanupPollingTasks(deviceContext);
@@ -1161,7 +1144,7 @@ DIGITALTWIN_CLIENT_RESULT Modbus_StopPnpInterface(
         Lock_Deinit(deviceContext->hConnectionLock);
     }
 
-    return DIGITALTWIN_CLIENT_OK;
+    return IOTHUB_CLIENT_OK;
 }
 
 #pragma endregion
@@ -1169,9 +1152,9 @@ DIGITALTWIN_CLIENT_RESULT Modbus_StopPnpInterface(
 PNP_ADAPTER ModbusPnpInterface = {
     .identity = "modbus-pnp-interface",
     .createAdapter = Modbus_CreatePnpAdapter,
-    .createPnpInterface = Modbus_CreatePnpInterface,
-    .startPnpInterface = Modbus_StartPnpInterface,
-    .stopPnpInterface = Modbus_StopPnpInterface,
-    .destroyPnpInterface = Modbus_DestroyPnpInterface,
+    .createPnpComponent = Modbus_CreatePnpComponent,
+    .startPnpComponent = Modbus_StartPnpComponent,
+    .stopPnpComponent = Modbus_StopPnpComponent,
+    .destroyPnpComponent = Modbus_DestroyPnpComponent,
     .destroyAdapter = Modbus_DestroyPnpAdapter
 };

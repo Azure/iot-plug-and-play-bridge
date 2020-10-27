@@ -11,7 +11,7 @@ extern "C"
 // Core device context
 typedef struct _CORE_DEVICE_TAG {
     // Azure IoT PnP Interface handle
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinInterface;
+    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
 
     // Windows PnP event notification registration handle
     HCMNOTIFICATION NotifyHandle;
@@ -21,6 +21,12 @@ typedef struct _CORE_DEVICE_TAG {
 
     // Device active state
     bool DeviceActive;
+
+    // Component Name
+    char* ComponentName;
+
+    // Telemetry Started
+    bool TelemetryStarted;
 } CORE_DEVICE_TAG, *PCORE_DEVICE_TAG;
 
 typedef struct _CORE_DEVICE_ADAPTER_CONTEXT {
@@ -28,9 +34,9 @@ typedef struct _CORE_DEVICE_ADAPTER_CONTEXT {
     SINGLYLINKEDLIST_HANDLE DeviceWatchers;
 } CORE_DEVICE_ADAPTER_CONTEXT, *PCORE_DEVICE_ADAPTER_CONTEXT;
 
-int
+IOTHUB_CLIENT_RESULT
 CoreDevice_SendConnectionEventAsync(
-    _In_ DIGITALTWIN_INTERFACE_CLIENT_HANDLE DigitalTwinInterface,
+    _In_ PCORE_DEVICE_TAG DeviceContext,
     _In_ char* EventName,
     _In_ char* EventData
     );

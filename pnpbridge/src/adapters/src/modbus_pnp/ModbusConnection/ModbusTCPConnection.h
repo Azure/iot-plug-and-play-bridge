@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #pragma once
 #ifdef __cplusplus
 extern "C"
@@ -25,8 +28,8 @@ typedef int SOCKET;
 int ModbusTcp_GetHeaderSize(void);
 bool ModbusTcp_CloseDevice(SOCKET hDevice, LOCK_HANDLE lock);
 
-DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, uint8_t unitId);
-DIGITALTWIN_CLIENT_RESULT ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr);
+IOTHUB_CLIENT_RESULT ModbusTcp_SetReadRequest(CapabilityType capabilityType, void* capability, uint8_t unitId);
+IOTHUB_CLIENT_RESULT ModbusTcp_SetWriteRequest(CapabilityType capabilityType, void* capability, char* valueStr);
 int ModbusTcp_SendRequest(SOCKET handler, uint8_t *requestArr, uint32_t arrLen);
 int ModbusTcp_ReadResponse(SOCKET handler, uint8_t *response, uint32_t arrLen);
 

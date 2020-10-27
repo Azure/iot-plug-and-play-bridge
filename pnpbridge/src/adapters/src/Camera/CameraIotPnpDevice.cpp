@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #include "pch.h"
 #include "util.h"
 #include <fstream>
@@ -14,11 +15,11 @@ using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::Storage;
 using namespace ABI::Windows::Storage::FileProperties;
 
-CameraIotPnpDevice::CameraIotPnpDevice(std::wstring& deviceName)
-    : m_PnpClientInterface(nullptr)
-    , m_hWorkerThread(nullptr)
-    , m_hShutdownEvent(nullptr)
-    , m_deviceName(deviceName)
+CameraIotPnpDevice::CameraIotPnpDevice(std::wstring& deviceName, std::string& componentName)
+    : m_hWorkerThread(nullptr),
+      m_hShutdownEvent(nullptr),
+      m_deviceName(deviceName),
+      m_componentName(componentName)
 {
     // Alternatively, declare and initialize a CameraMediaCaptureFrameRreader 
     // instance to enable FrameReader scenarios
@@ -28,24 +29,23 @@ CameraIotPnpDevice::CameraIotPnpDevice(std::wstring& deviceName)
 
 CameraIotPnpDevice::~CameraIotPnpDevice()
 {
-    // We don't close this handle, it's closed by the DeviceAggregator
-    // when the interface is released.
-    m_PnpClientInterface = nullptr;
-
     Shutdown();
 }
 
-HRESULT CameraIotPnpDevice::Initialize(_In_ DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface) try
+void CameraIotPnpDevice::SetIotHubDeviceClientHandle(IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle)
+{
+    m_deviceClient = DeviceClientHandle;
+}
+
+HRESULT CameraIotPnpDevice::Initialize() try
 {
 
     // Can't initialize twice...
-    RETURN_HR_IF_NULL (E_INVALIDARG, hPnpClientInterface);
     RETURN_HR_IF (HRESULT_FROM_WIN32(ERROR_ALREADY_INITIALIZED), m_cameraStats.get() != nullptr);
 
     m_cameraStats = std::make_unique<CameraStatConsumer>();
     RETURN_IF_FAILED (m_cameraStats->Initialize(nullptr, GUID_NULL, m_deviceName.c_str()));
     RETURN_IF_FAILED (m_cameraStats->AddProvider(g_FrameServerEventProvider));
-    m_PnpClientInterface = hPnpClientInterface;
 
     return S_OK;
 }
@@ -119,29 +119,37 @@ HRESULT CameraIotPnpDevice::ReportProperty(
     _In_ unsigned const char* propertyData,
     _In_ size_t propertyDataLen)
 {
-    AutoLock lock(&m_lock);
-
-    DIGITALTWIN_CLIENT_RESULT result;
-
     AZURE_UNREFERENCED_PARAMETER(readOnly);
     AZURE_UNREFERENCED_PARAMETER(propertyDataLen);
 
-    RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), m_PnpClientInterface);
+    AutoLock lock(&m_lock);
 
-    result = DigitalTwin_InterfaceClient_ReportPropertyAsync(m_PnpClientInterface,
-                                                                propertyName,
-                                                                propertyData,
-                                                                strlen((char*)propertyData),
-                                                                nullptr,
-                                                                CameraIotPnpDevice_PropertyCallback,
-                                                                (void*)propertyName);
-    if (result != DIGITALTWIN_CLIENT_OK)
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+
+    STRING_HANDLE jsonToSend = NULL;
+
+    if ((jsonToSend = PnP_CreateReportedProperty(m_componentName.c_str(), propertyName, (const char*) propertyData)) == NULL)
     {
-        LogError("DEVICE_INFO: Reporting property=<%s> failed, error=<%s>", propertyName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("Unable to build reported property response for propertyName=%s, propertyValue=%s", propertyName, propertyData);
     }
     else
     {
-        LogInfo("DEVICE_INFO: Queued async report read only property for %s", propertyName);
+        const char* jsonToSendStr = STRING_c_str(jsonToSend);
+        size_t jsonToSendStrLen = strlen(jsonToSendStr);
+
+        if ((result = IoTHubDeviceClient_SendReportedState(m_deviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+            CameraIotPnpDevice_PropertyCallback, (void*)propertyName)) != IOTHUB_CLIENT_OK)
+        {
+            LogError("Camera Component: Unable to send reported state for property=%s, error=%d",
+                                propertyName, result);
+        }
+        else
+        {
+            LogInfo("Camera Component: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
+                        propertyName, propertyData);
+        }
+
+        STRING_delete(jsonToSend);
     }
 
     return HResultFromPnpClient(result);
@@ -152,30 +160,27 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(
     _In_reads_bytes_(messageDataLen) const unsigned char* messageData,
     _In_ size_t messageDataLen)
 {
+    AZURE_UNREFERENCED_PARAMETER(messageDataLen);
     AutoLock lock(&m_lock);
 
-    DIGITALTWIN_CLIENT_RESULT result;
-
-    RETURN_HR_IF_NULL (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), m_PnpClientInterface);
-
-    AZURE_UNREFERENCED_PARAMETER(messageDataLen);
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
 
     char telemetryMessage[512] = { 0 };
     sprintf(telemetryMessage, "{\"%s\":%s}", telemetryName, messageData);
 
-    result = DigitalTwin_InterfaceClient_SendTelemetryAsync(m_PnpClientInterface,
-                                                            (unsigned char*) telemetryMessage,
-                                                            strlen(telemetryMessage),
-                                                            CameraIotPnpDevice_TelemetryCallback,
-                                                            (void*)telemetryName);
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(m_componentName.c_str(), telemetryMessage)) == NULL)
     {
-        LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%s>", telemetryName, MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("Camera Component %s: PnP_CreateTelemetryMessageHandle failed.", m_componentName.c_str());
     }
-    else
+    else if ((result = IoTHubDeviceClient_SendEventAsync(m_deviceClient, messageHandle,
+            CameraIotPnpDevice_TelemetryCallback, (void*)(telemetryName))) != IOTHUB_CLIENT_OK)
     {
-        LogInfo("DEVICE_INFO: Queued async report telemetry for %s", telemetryName);
+        LogError("Camera Component %s: Failed to report sensor data telemetry %s, error=%d",
+            m_componentName.c_str(), telemetryName, result);
     }
+
+    IoTHubMessage_Destroy(messageHandle);
 
     return HResultFromPnpClient(result);
 }
@@ -184,26 +189,24 @@ HRESULT CameraIotPnpDevice::ReportTelemetry(_In_ std::string& telemetryName, _In
 {
     AutoLock lock(&m_lock);
 
-    DIGITALTWIN_CLIENT_RESULT result;
-
-    RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), m_PnpClientInterface);
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
 
     char telemetryMessage[512] = { 0 };
     sprintf(telemetryMessage, "{\"%s\":%s}", telemetryName.c_str(), message.c_str());
 
-    result = DigitalTwin_InterfaceClient_SendTelemetryAsync(m_PnpClientInterface,
-                                                            (unsigned char*)telemetryMessage,
-                                                            strlen(telemetryMessage),
-                                                            CameraIotPnpDevice_TelemetryCallback,
-                                                            (void*)telemetryName.c_str());
-    if (result != DIGITALTWIN_CLIENT_OK)
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(m_componentName.c_str(), telemetryMessage)) == NULL)
     {
-        LogError("DEVICE_INFO: Reporting telemetry=<%s> failed, error=<%s>", telemetryName.c_str(), MU_ENUM_TO_STRING(DIGITALTWIN_CLIENT_RESULT, result));
+        LogError("Camera Component %s: PnP_CreateTelemetryMessageHandle failed.", m_componentName.c_str());
     }
-    else
+    else if ((result = IoTHubDeviceClient_SendEventAsync(m_deviceClient, messageHandle,
+            CameraIotPnpDevice_TelemetryCallback, (void*)(telemetryName.c_str()))) != IOTHUB_CLIENT_OK)
     {
-        LogInfo("DEVICE_INFO: Queued async report telemetry for %s", telemetryName.c_str());
+        LogError("Camera Component %s: Failed to report sensor data telemetry %s, error=%d",
+            m_componentName.c_str(), telemetryName.c_str(), result);
     }
+
+    IoTHubMessage_Destroy(messageHandle);
 
     return HResultFromPnpClient(result);
 }
@@ -402,7 +405,7 @@ catch (std::exception e)
     return E_UNEXPECTED;
 }
 
-HRESULT             
+HRESULT
 CameraIotPnpDevice::TakePhotoOp(_Out_ std::string& strResponse) try
 {
     ComPtr<IStorageFile> spStorageFile;
@@ -462,7 +465,7 @@ catch (std::exception e)
 
 void __cdecl
 CameraIotPnpDevice::CameraIotPnpDevice_PropertyCallback(
-    _In_ DIGITALTWIN_CLIENT_RESULT pnpReportedStatus,
+    _In_ int pnpReportedStatus,
     _In_opt_ void* userContextCallback)
 {
     LogInfo("%s:%d pnpstatus=%d,context=0x%p", __FUNCTION__, __LINE__, pnpReportedStatus, userContextCallback);
@@ -470,7 +473,7 @@ CameraIotPnpDevice::CameraIotPnpDevice_PropertyCallback(
 
 void __cdecl
 CameraIotPnpDevice::CameraIotPnpDevice_TelemetryCallback(
-    _In_ DIGITALTWIN_CLIENT_RESULT pnpTelemetryStatus,
+    _In_ IOTHUB_CLIENT_CONFIRMATION_RESULT pnpTelemetryStatus,
     _In_opt_ void* userContextCallback)
 {
     UNREFERENCED_PARAMETER(pnpTelemetryStatus);

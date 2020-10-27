@@ -9,58 +9,27 @@
 
 // static
 std::unique_ptr<CameraIotPnpDeviceAdapter> CameraIotPnpDeviceAdapter::MakeUnique(
-    const std::string& interfaceId,
     const std::string& componentName,
-    const std::string& cameraId,
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE* interfaceClient)
+    const std::string& cameraId)
 {
     auto newCameraDevice = std::make_unique<CameraIotPnpDeviceAdapter>(
-        cameraId);
+        cameraId, componentName);
 
-    auto result = DigitalTwin_InterfaceClient_Create(
-        interfaceId.c_str(),
-        componentName.c_str(),
-        nullptr,
-        newCameraDevice.get(),
-        interfaceClient);
-    if (result != DIGITALTWIN_CLIENT_OK)
-    {
-        throw std::exception("Failed to create digital twin interface");
-    }
-
-    result = DigitalTwin_InterfaceClient_SetCommandsCallback(
-        *interfaceClient,
-        CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate,
-        static_cast<void*>(newCameraDevice.get()));
-    if (result != DIGITALTWIN_CLIENT_OK)
-    {
-        throw std::exception("Failed to set digital twin command callback");
-    }
-
-    result = DigitalTwin_InterfaceClient_SetPropertiesUpdatedCallback(
-        *interfaceClient,
-        CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate,
-        static_cast<void*>(newCameraDevice.get()));
-    if (result != DIGITALTWIN_CLIENT_OK)
-    {
-        throw std::exception("Failed to set digital twin property callback");
-    }
-
-    newCameraDevice->Initialize(*interfaceClient);
+    newCameraDevice->Initialize();
     return newCameraDevice;
 }
 
 CameraIotPnpDeviceAdapter::CameraIotPnpDeviceAdapter(
-    const std::string& cameraId) :
-    m_cameraId(cameraId)
+    const std::string& cameraId,
+    const std::string& componentName) :
+    m_cameraId(cameraId),
+    m_componentName(componentName),
+    m_deviceClient(nullptr)
 {
 }
 
-void CameraIotPnpDeviceAdapter::Initialize(
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE interfaceClientHandle)
+void CameraIotPnpDeviceAdapter::Initialize()
 {
-    m_interfaceClientHandle = interfaceClientHandle;
-
     m_cameraDiscovery = std::make_unique<CameraPnpDiscovery>();
     m_cameraDiscovery->InitializePnpDiscovery();
     auto result = m_cameraDiscovery->RegisterForCameraArrivalRemovals(
@@ -81,7 +50,7 @@ void CameraIotPnpDeviceAdapter::OnCameraArrivalRemoval()
     std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
     if (m_cameraDiscovery->GetUniqueIdByCameraId(m_cameraId, cameraName) == S_OK && !m_cameraDevice)
     {
-        LogError("Camera device has arrived, starting telemetry");
+        LogInfo("Camera device has arrived");
 
         // For now, assume:
         //   - IP camera IDs begin with "uuid"
@@ -89,44 +58,42 @@ void CameraIotPnpDeviceAdapter::OnCameraArrivalRemoval()
         std::unique_ptr<CameraIotPnpDeviceAdapter> newCameraDevice;
         if (m_cameraId.rfind("uuid", 0) == 0)
         {
-            m_cameraDevice = std::make_unique<NetworkCameraIotPnpDevice>(cameraName);
+            m_cameraDevice = std::make_unique<NetworkCameraIotPnpDevice>(cameraName, m_componentName);
         }
         else
         {
-            m_cameraDevice = std::make_unique<CameraIotPnpDevice>(cameraName);
+            m_cameraDevice = std::make_unique<CameraIotPnpDevice>(cameraName, m_componentName);
         }
 
-        if (m_cameraDevice->Initialize(m_interfaceClientHandle) == S_OK)
+        if (m_cameraDevice->Initialize() == S_OK)
         {
-            if (m_hasStartedReporting)
-            {
-                m_cameraDevice->StartTelemetryWorker();
-            }
+            LogInfo("Camera device with camera name %s initialized successfully", (const char*) cameraName.c_str());
         }
         else
         {
-            m_cameraDevice = nullptr;
+            LogInfo("Camera device with camera name %s has already been initialized", (const char*) cameraName.c_str());
         }
     }
     else if (m_cameraDiscovery->GetUniqueIdByCameraId(m_cameraId, cameraName) != S_OK && m_cameraDevice)
     {
-        LogError("Camera device has been removed, stopping telemetry");
+        LogInfo("Camera device has been removed, stopping telemetry");
 
         m_cameraDevice->StopTelemetryWorker();
         m_cameraDevice->Shutdown();
         m_cameraDevice.reset();
+    }
+    else if (m_cameraDiscovery->GetUniqueIdByCameraId(m_cameraId, cameraName) == S_OK && m_cameraDevice && m_hasStartedReporting)
+    {
+        LogInfo("Camera device has started, starting telemetry");
+        m_cameraDevice->SetIotHubDeviceClientHandle(m_deviceClient);
+        m_cameraDevice->StartTelemetryWorker();
     }
 }
 
 HRESULT CameraIotPnpDeviceAdapter::Start()
 {
     m_hasStartedReporting = true;
-
-    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
-    if (m_cameraDevice)
-    {
-        return m_cameraDevice->StartTelemetryWorker();
-    }
+    OnCameraArrivalRemoval();
     return S_OK;
 }
 
@@ -144,89 +111,145 @@ void CameraIotPnpDeviceAdapter::Stop()
     }
 }
 
-// static
-void CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate(
-    const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtCommandRequest,
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse,
-    void* userInterfaceContext)
+int CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
-    auto cameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(userInterfaceContext);
-    std::lock_guard<std::mutex> lock(cameraDevice->m_cameraDeviceLock);
-    if (cameraDevice->m_cameraDevice)
+    AZURE_UNREFERENCED_PARAMETER(CommandValue);
+    auto CameraDevice = static_cast<CameraIotPnpDeviceAdapter*>(PnpComponentHandleGetContext(PnpComponentHandle));
+
+    std::lock_guard<std::mutex> lock(CameraDevice->m_cameraDeviceLock);
+    if (CameraDevice->m_cameraDevice)
     {
-        if (strcmp(dtCommandRequest->commandName, "TakePhoto") == 0)
+        if (strcmp(CommandName, "TakePhoto") == 0)
         {
-            cameraDevice->TakePhoto(dtCommandResponse);
+            return CameraDevice->TakePhoto(CommandResponse, CommandResponseSize);
         }
-        else if (strcmp(dtCommandRequest->commandName, "TakeVideo") == 0)
+        else if (strcmp(CommandName, "TakeVideo") == 0)
         {
-            cameraDevice->TakeVideo(dtCommandResponse);
+            return CameraDevice->TakeVideo(CommandResponse, CommandResponseSize);
         }
-        else if (strcmp(dtCommandRequest->commandName, "GetURI") == 0)
+        else if (strcmp(CommandName, "GetURI") == 0)
         {
-            cameraDevice->GetURI(dtCommandResponse);
+            return CameraDevice->GetURI(CommandResponse, CommandResponseSize);
         }
         else
         {
             LogError("Unknown command request");
-            dtCommandResponse->version = DIGITALTWIN_CLIENT_COMMAND_REQUEST_VERSION_1;
-            dtCommandResponse->status = 500;
-            dtCommandResponse->responseDataLen = 0;
+            *CommandResponseSize = 0;
+            return PNP_STATUS_INTERNAL_ERROR;
         }
     }
     else
     {
         LogError("Camera device was not available to process command");
-        dtCommandResponse->version = DIGITALTWIN_CLIENT_COMMAND_REQUEST_VERSION_1;
-        dtCommandResponse->status = 500;
-        dtCommandResponse->responseDataLen = 0;
+        *CommandResponseSize = 0;
+        return PNP_STATUS_INTERNAL_ERROR;
     }
 }
 
 // static
 void CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate(
-    const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* /* dtClientPropertyUpdate */,
+    PNPBRIDGE_COMPONENT_HANDLE /* PnpComponentHandle */,
+    const char* /* PropertyName */,
+    JSON_Value* /* PropertyValue */,
+    int /* version */,
     void* /* userContextCallback */)
 {
     // no-op
 }
 
-void CameraIotPnpDeviceAdapter::TakePhoto(
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse)
+int CameraIotPnpDeviceAdapter::TakePhoto(
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
-    char* responseBuf{};
+    int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
-    dtCommandResponse->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
-    dtCommandResponse->status =
-        (S_OK == m_cameraDevice->TakePhotoOp(strResponse) ? 200 : 500);
-    mallocAndStrcpy_s(&responseBuf, strResponse.c_str());
-    dtCommandResponse->responseData = (unsigned char*)responseBuf;
-    dtCommandResponse->responseDataLen = strlen(responseBuf);
-    m_cameraDevice->StartTelemetryWorker();
+
+    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
+    if (m_cameraDevice)
+    {
+        if (m_hasStartedReporting)
+        {
+            m_cameraDevice->StartTelemetryWorker();
+        }
+
+        if (S_OK == m_cameraDevice->TakePhotoOp(strResponse))
+        {
+            mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
+            *CommandResponseSize = strlen(strResponse.c_str());
+        }
+    }
+    else
+    {
+        LogError("Error taking photo");
+        *CommandResponseSize = 0;
+        result = PNP_STATUS_INTERNAL_ERROR;
+    }
+
+    return result;
 }
 
-void CameraIotPnpDeviceAdapter::TakeVideo(
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse)
+int CameraIotPnpDeviceAdapter::TakeVideo(
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
-    char* responseBuf{};
+    int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
-    dtCommandResponse->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
-    dtCommandResponse->status =
-        (S_OK == m_cameraDevice->TakeVideoOp(10000, strResponse) ? 200 : 500);
-    mallocAndStrcpy_s(&responseBuf, strResponse.c_str());
-    dtCommandResponse->responseData = (unsigned char*)responseBuf;
-    dtCommandResponse->responseDataLen = strlen(responseBuf);
+
+    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
+    if (m_cameraDevice)
+    {
+        if (m_hasStartedReporting)
+        {
+            m_cameraDevice->StartTelemetryWorker();
+        }
+
+        if (S_OK == m_cameraDevice->TakeVideoOp(10000, strResponse))
+        {
+            mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
+            *CommandResponseSize = strlen(strResponse.c_str());
+        }
+    }
+    else
+    {
+        LogError("Error taking video");
+        *CommandResponseSize = 0;
+        result = PNP_STATUS_INTERNAL_ERROR;
+    }
+
+    return result;
 }
 
-void CameraIotPnpDeviceAdapter::GetURI(
-    DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtCommandResponse)
+int CameraIotPnpDeviceAdapter::GetURI(
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
 {
-    char* responseBuf{};
+
+    int result = PNP_STATUS_SUCCESS;
     std::string strResponse;
-    dtCommandResponse->version = DIGITALTWIN_CLIENT_COMMAND_RESPONSE_VERSION_1;
-    dtCommandResponse->status =
-        (S_OK == m_cameraDevice->GetURIOp(strResponse) ? 200 : 500);
-    mallocAndStrcpy_s(&responseBuf, strResponse.c_str());
-    dtCommandResponse->responseData = (unsigned char*)responseBuf;
-    dtCommandResponse->responseDataLen = strlen(responseBuf);
+
+    std::lock_guard<std::mutex> lock(m_cameraDeviceLock);
+    if (m_cameraDevice && (S_OK == m_cameraDevice->GetURIOp(strResponse)))
+    {
+        mallocAndStrcpy_s((char**)CommandResponse, strResponse.c_str());
+        *CommandResponseSize = strlen(strResponse.c_str());
+    }
+    else
+    {
+        LogError("Error taking photo");
+        *CommandResponseSize = 0;
+        result = PNP_STATUS_INTERNAL_ERROR;
+    }
+
+    return result;
+}
+
+void CameraIotPnpDeviceAdapter::SetIotHubDeviceClientHandle(
+    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle)
+{
+    m_deviceClient = DeviceClientHandle;
 }

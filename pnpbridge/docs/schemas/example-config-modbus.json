@@ -1,0 +1,99 @@
+{
+    "$schema": "../../../pnpbridge/src/pnpbridge_config_schema.json",
+    "pnp_bridge_connection_parameters": {
+        "connection_type" : "connection_string",
+        "connection_string" : "[To fill in]",
+        "root_interface_model_id": "dtmi:com:example:RootPnpBridgeSampleDevice;1",
+        "auth_parameters": {
+            "auth_type": "symmetric_key",
+            "symmetric_key": "[To fill in]"
+        },
+        "dps_parameters": {
+            "global_prov_uri": "[To fill in]",
+            "id_scope": "[To fill in]",
+            "device_id": "[To fill in]"
+        }
+    },
+    "pnp_bridge_debug_trace": false,
+    "pnp_bridge_config_source": "local",
+    "pnp_bridge_interface_components": [
+        {
+            "_comment": "Component 1 - Modbus Device",
+            "pnp_bridge_component_name": "Co2Detector1",
+            "pnp_bridge_adapter_id": "modbus-pnp-interface",
+            "pnp_bridge_adapter_config": {
+                "unit_id": 1,
+                "rtu": null,
+                "tcp": {
+                    "host": "10.159.29.9",
+                    "port": 502
+                },
+                "modbus_identity": "DL679"
+            }
+        }
+    ],
+    "pnp_bridge_adapter_global_configs": {
+        "modbus-pnp-interface": {
+            "DL679": {
+                "telemetry": {
+                    "co2": {
+                        "startAddress": "40001",
+                        "length": 1,
+                        "dataType": "integer",
+                        "defaultFrequency": 5000,
+                        "conversionCoefficient": 1
+                    },
+                    "temperature": {
+                        "startAddress": "40003",
+                        "length": 1,
+                        "dataType": "decimal",
+                        "defaultFrequency": 5000,
+                        "conversionCoefficient": 0.01
+                    }
+                },
+                "properties": {
+                    "firmwareVersion": {
+                        "startAddress": "40482",
+                        "length": 1,
+                        "dataType": "hexstring",
+                        "defaultFrequency": 60000,
+                        "conversionCoefficient": 1,
+                        "access": 1
+                    },
+                    "modelName": {
+                        "startAddress": "40483",
+                        "length": 2,
+                        "dataType": "string",
+                        "defaultFrequency": 60000,
+                        "conversionCoefficient": 1,
+                        "access": 1
+                    },
+                    "alarmStatus_co2": {
+                        "startAddress": "00305",
+                        "length": 1,
+                        "dataType": "boolean",
+                        "defaultFrequency": 1000,
+                        "conversionCoefficient": 1,
+                        "access": 1
+                    },
+                    "alarmThreshold_co2": {
+                        "startAddress": "40225",
+                        "length": 1,
+                        "dataType": "integer",
+                        "defaultFrequency": 30000,
+                        "conversionCoefficient": 1,
+                        "access": 2
+                    }
+                },
+                "commands": {
+                    "clearAlarm_co2": {
+                        "startAddress": "00305",
+                        "length": 1,
+                        "dataType": "flag",
+                        "conversionCoefficient": 1
+                    }
+                }
+            }
+        }
+    }
+  }

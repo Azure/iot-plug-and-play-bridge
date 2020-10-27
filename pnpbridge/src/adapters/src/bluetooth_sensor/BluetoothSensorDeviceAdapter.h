@@ -20,7 +20,6 @@ public:
     // that have the given bluetooth address. This function will throw if it fails to create
     // the BluetoothSensorDeviceAdapter.
     static std::unique_ptr<BluetoothSensorDeviceAdapter> MakeUnique(
-        const std::string& interfaceId,
         const std::string& componentName,
         uint64_t bluetoothAddress,
         const std::shared_ptr<InterfaceDescriptor>& interfaceDescriptor);
@@ -37,5 +36,6 @@ public:
     // previously started.
     virtual void StopTelemetryReporting() = 0;
 
-    virtual DIGITALTWIN_INTERFACE_CLIENT_HANDLE GetPnpInterfaceClientHandle() = 0;
+    virtual void SetIotHubDeviceClientHandle(IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle) = 0;
+
 };

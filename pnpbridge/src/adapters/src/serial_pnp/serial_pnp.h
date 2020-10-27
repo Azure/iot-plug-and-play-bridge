@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #pragma once
-
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/condition.h"
 
@@ -109,8 +108,8 @@ extern "C"
 
     typedef struct _SERIAL_DEVICE_CONTEXT {
         HANDLE hSerial;
-        DIGITALTWIN_INTERFACE_CLIENT_HANDLE PnpInterfaceHandle;
-
+        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
+        char * ComponentName;
         byte RxBuffer[MAX_BUFFER_SIZE]; // Temporary buffer that gets filled by the reading thread. TODO: maximum buffer size
         byte* pbMainBuffer;             // pointer used to pass buffers back to the main thread
         LOCK_HANDLE CommandLock;
@@ -128,19 +127,38 @@ extern "C"
         SINGLYLINKEDLIST_HANDLE InterfaceDefinitions;
     } SERIAL_DEVICE_CONTEXT, *PSERIAL_DEVICE_CONTEXT;
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_RxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte** receivedPacket, DWORD* length, char packetType);
+    IOTHUB_CLIENT_RESULT SerialPnp_RxPacket(
+        PSERIAL_DEVICE_CONTEXT serialDevice,
+        byte** receivedPacket,
+        DWORD* length,
+        char packetType);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_TxPacket(PSERIAL_DEVICE_CONTEXT serialDevice, byte* OutPacket, int Length);
+    IOTHUB_CLIENT_RESULT SerialPnp_TxPacket(
+        PSERIAL_DEVICE_CONTEXT serialDevice,
+        byte* OutPacket,
+        int Length);
 
-    void SerialPnp_UnsolicitedPacket(PSERIAL_DEVICE_CONTEXT device, byte* packet, DWORD length);
+    void SerialPnp_UnsolicitedPacket(
+        PSERIAL_DEVICE_CONTEXT device,
+        byte* packet,
+        DWORD length);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
+    IOTHUB_CLIENT_RESULT SerialPnp_ResetDevice(PSERIAL_DEVICE_CONTEXT serialDevice);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(PSERIAL_DEVICE_CONTEXT serialDevice, byte** desc, DWORD* length);
+    IOTHUB_CLIENT_RESULT SerialPnp_DeviceDescriptorRequest(
+        PSERIAL_DEVICE_CONTEXT serialDevice,
+        byte** desc,
+        DWORD* length);
 
-    byte* SerialPnp_StringSchemaToBinary(Schema Schema, byte* data, int* length);
+    byte* SerialPnp_StringSchemaToBinary(
+        Schema Schema,
+        byte* data,
+        int* length);
 
-    DIGITALTWIN_CLIENT_RESULT SerialPnp_SendEventAsync(DIGITALTWIN_INTERFACE_CLIENT_HANDLE pnpInterface, char* eventName, char* data);
+    IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
+        PSERIAL_DEVICE_CONTEXT DeviceContext,
+        char* TelemetryName,
+        char* TelemetryData);
 
     // Serial Pnp Adapter Config
     #define PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT "com_port"

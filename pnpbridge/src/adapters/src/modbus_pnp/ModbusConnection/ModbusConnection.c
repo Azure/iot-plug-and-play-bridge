@@ -1,4 +1,6 @@
-﻿
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #include "ModbusConnection.h"
 
 int ModbusPnp_GetHeaderSize(
@@ -294,12 +296,12 @@ bool ModbusPnp_CloseDevice(
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusPnp_SetReadRequest(
+IOTHUB_CLIENT_RESULT ModbusPnp_SetReadRequest(
     ModbusDeviceConfig* deviceConfig,
     CapabilityType capabilityType,
     void* capability)
 {
-    int result = DIGITALTWIN_CLIENT_ERROR;
+    int result = IOTHUB_CLIENT_ERROR;
     switch (deviceConfig->ConnectionType)
     {
         case TCP:
@@ -314,13 +316,13 @@ DIGITALTWIN_CLIENT_RESULT ModbusPnp_SetReadRequest(
     return result;
 }
 
-DIGITALTWIN_CLIENT_RESULT ModbusPnp_SetWriteRequest(
+IOTHUB_CLIENT_RESULT ModbusPnp_SetWriteRequest(
     MODBUS_CONNECTION_TYPE connectionType,
     CapabilityType capabilityType,
     void* capability,
     char* valueStr)
 {
-    DIGITALTWIN_CLIENT_RESULT result = DIGITALTWIN_CLIENT_ERROR;
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_ERROR;
     switch (connectionType)
     {
         case TCP:
@@ -507,7 +509,7 @@ int ModbusPnp_WriteToCapability(
         {
             ModbusCommand* command = (ModbusCommand*)(capabilityContext->capability);
             capabilityName = command->Name;
-            if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Command, command, requestStr))
+            if (IOTHUB_CLIENT_OK != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Command, command, requestStr))
             {
                 LogError("Failed to create write request for command \"%s\".", capabilityName);
                 return -1;
@@ -532,7 +534,7 @@ int ModbusPnp_WriteToCapability(
         {
             ModbusProperty* property = (ModbusProperty*)(capabilityContext->capability);
             capabilityName = property->Name;
-            if (DIGITALTWIN_CLIENT_OK != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Property, property, requestStr))
+            if (IOTHUB_CLIENT_OK != ModbusPnp_SetWriteRequest(capabilityContext->connectionType, Property, property, requestStr))
             {
                 LogError("Failed to create write request for writable property \"%s\".", capabilityName);
                 return -1;

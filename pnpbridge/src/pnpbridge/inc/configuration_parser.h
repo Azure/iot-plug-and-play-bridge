@@ -47,7 +47,7 @@ typedef struct _DPS_PARAMETERS {
     const char* GlobalProvUri;
     const char* IdScope;
     const char* DeviceId;
-    const char* DcmModelId;
+    const char* RootInterfaceModelId;
 } DPS_PARAMETERS;
 
 // Transport used to connect with IoTHub Device/Module
@@ -70,7 +70,8 @@ typedef struct _CONNECTION_PARAMETERS {
     } u1;
     AUTH_PARAMETERS AuthParameters;
     IOTDEVICE_CONNECTION_TYPE ConnectionType;
-    const char* DeviceCapabilityModelUri;
+    const char* RootInterfaceModelId;
+    PNP_DEVICE_CONFIGURATION PnpDeviceConfiguration;
 } CONNECTION_PARAMETERS, *PCONNECTION_PARAMETERS;
 
 typedef struct PNPBRIDGE_CONFIGURATION {
@@ -97,18 +98,18 @@ typedef struct PNPBRIDGE_CONFIGURATION {
 *
 * @param    Config              JSON_Value representing the root of the config file
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
-DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* Filename, JSON_Value** Config);
+IOTHUB_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromConfigFile(const char* Filename, JSON_Value** Config);
 
 /**
 * @brief    PnpBridgeConfig_GetJsonValueFromString reads a PnpBridge JSON config from string.
 *
 * @param    ConfigString        String containing JSON config
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
-DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *ConfigString, JSON_Value** Config);
+IOTHUB_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *ConfigString, JSON_Value** Config);
 
 /**
 * @brief    PnpBridgeConfig_GetConnectionDetails parses the connection parameters from 
@@ -116,7 +117,7 @@ DIGITALTWIN_CLIENT_RESULT PnpBridgeConfig_GetJsonValueFromString(const char *Con
 *
 * @param    config            String containing JSON config
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
 PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* ConnectionParams);
 
@@ -126,10 +127,10 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
 *
 * @param    config   JSON value of the config file from parson
 *
-* @returns  DIGITALTWIN_CLIENT_OK on success and other DIGITALTWIN_CLIENT_RESULT values on failure.
+* @returns  IOTHUB_CLIENT_OK on success and other IOTHUB_CLIENT_RESULT values on failure.
 */
 MOCKABLE_FUNCTION(,
-DIGITALTWIN_CLIENT_RESULT,
+IOTHUB_CLIENT_RESULT,
 PnpBridgeConfig_RetrieveConfiguration,
     JSON_Value*, ConfigJson,
     PNPBRIDGE_CONFIGURATION*, BridgeConfig

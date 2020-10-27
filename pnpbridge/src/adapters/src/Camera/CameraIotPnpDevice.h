@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #pragma once
 
 #include "pch.h"
@@ -13,10 +14,10 @@
 class CameraIotPnpDevice
 {
 public:
-    CameraIotPnpDevice(std::wstring& uniqueId);
+    CameraIotPnpDevice(std::wstring& uniqueId, std::string& componentName);
     virtual ~CameraIotPnpDevice();
 
-    virtual HRESULT             Initialize(_In_ DIGITALTWIN_INTERFACE_CLIENT_HANDLE hPnpClientInterface);
+    virtual HRESULT             Initialize();
     virtual HRESULT             StartTelemetryWorker();
     virtual HRESULT             StopTelemetryWorker();
     virtual void                Shutdown();
@@ -37,23 +38,25 @@ public:
     virtual HRESULT             StartDetection();
     virtual HRESULT             GetURIOp(_Out_ std::string& strResponse);
 
+    void                        SetIotHubDeviceClientHandle(IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle);
 
-    static void __cdecl         CameraIotPnpDevice_PropertyCallback(_In_ DIGITALTWIN_CLIENT_RESULT pnpReportedStatus, _In_opt_ void* userContextCallback);
-    static void __cdecl         CameraIotPnpDevice_TelemetryCallback(_In_ DIGITALTWIN_CLIENT_RESULT pnpTelemetryStatus, _In_opt_ void* userContextCallback);
+    static void __cdecl         CameraIotPnpDevice_PropertyCallback(_In_ int pnpReportedStatus, _In_opt_ void* userContextCallback);
+    static void __cdecl         CameraIotPnpDevice_TelemetryCallback(_In_ IOTHUB_CLIENT_CONFIRMATION_RESULT pnpTelemetryStatus, _In_opt_ void* userContextCallback);
     static void __cdecl         CameraIotPnpDevice_BlobUploadCallback(IOTHUB_CLIENT_FILE_UPLOAD_RESULT result, void* userContextCallback);
 
     HRESULT                     UploadStorageFileToBlob(ABI::Windows::Storage::IStorageFile* pStorageFile);
 protected:
-    static DWORD WINAPI                         TelemetryWorkerThreadProc(_In_opt_ PVOID pv);
+    static DWORD WINAPI         TelemetryWorkerThreadProc(_In_opt_ PVOID pv);
 
     // TODO: use Azure C PNP SDK threads and concurrency
     CritSec                                     m_lock;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE         m_PnpClientInterface;
     HANDLE                                      m_hWorkerThread;
     HANDLE                                      m_hShutdownEvent;
     std::unique_ptr<CameraStatConsumer>         m_cameraStats;
 
     std::wstring                                m_deviceName;
     std::unique_ptr<CameraMediaCapture>         m_spCameraMediaCapture;
+    IOTHUB_DEVICE_CLIENT_HANDLE                 m_deviceClient;
+    std::string                                 m_componentName;
 };
 

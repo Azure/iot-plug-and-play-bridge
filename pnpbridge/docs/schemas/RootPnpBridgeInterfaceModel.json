@@ -1,0 +1,39 @@
+{
+    "@id": "dtmi:com:example:RootPnpBridgeSampleDevice;1",
+    "@type": "Interface",
+    "displayName": "Pnp Bridge Root Interface Model",
+    "contents": [
+      {
+        "@type": "Component",
+        "name": "Co2Detector1",
+        "schema": "dtmi:contoso:com:Co2Detector;1"
+      },
+      {
+        "@type": "Component",
+        "name": "coredevicehealth1",
+        "schema": "dtmi:contoso:com:coredevicehealth;1"
+      },
+      {
+        "@type": "Component",
+        "name": "serialpnp1",
+        "schema": "dtmi:contoso:com:serialpnp;1"
+      },
+      {
+        "@type": "Component",
+        "name": "cameracomponent",
+        "schema": "dtmi:contoso:com:camera_pnp_adapter;1"
+      },
+      {
+        "@type": "Component",
+        "name": "ruuvi1",
+        "schema": "dtmi:contoso:com:ruuvi;1"
+      },
+      {
+        "@type": "Component",
+        "name": "mqttdevice1",
+        "schema": "dtmi:contoso:com:mqttdevice;1"
+      }
+    ],
+    "@context": "dtmi:dtdl:context;2"
+  }
+  

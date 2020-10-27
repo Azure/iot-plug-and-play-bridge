@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #ifndef PCH_H
 #define PCH_H
 
@@ -41,8 +42,6 @@ using namespace Microsoft::WRL::Wrappers;
 #include <iothubtransportmqtt.h>
 
 // IOT PnP Headers
-#include <digitaltwin_device_client.h>
-#include <digitaltwin_interface_client.h>
 #include <azure_c_shared_utility/lock.h>
 #include "azure_c_shared_utility/condition.h"
 #include "azure_c_shared_utility/xlogging.h"
@@ -246,30 +245,17 @@ __inline HRESULT HResultFromIotHub(_In_ IOTHUB_CLIENT_RESULT r)
     }
 }
 
-__inline HRESULT HResultFromPnpClient(_In_ DIGITALTWIN_CLIENT_RESULT r)
+__inline HRESULT HResultFromPnpClient(_In_ IOTHUB_CLIENT_RESULT r)
 {
     switch (r)
     {
-    case DIGITALTWIN_CLIENT_OK:
+    case IOTHUB_CLIENT_OK:
         return S_OK;
-    case DIGITALTWIN_CLIENT_ERROR_INVALID_ARG:
+    case IOTHUB_CLIENT_INVALID_ARG:
         return E_INVALIDARG;
-    case DIGITALTWIN_CLIENT_ERROR_OUT_OF_MEMORY:
-        return E_OUTOFMEMORY;
-    case DIGITALTWIN_CLIENT_ERROR_INTERFACE_NOT_REGISTERED:
-        return HRESULT_FROM_WIN32(ERROR_ADDRESS_NOT_ASSOCIATED);
-    case DIGITALTWIN_CLIENT_ERROR_REGISTRATION_PENDING:
-        return HRESULT_FROM_WIN32(ERROR_CONNECTION_ACTIVE);
-    case DIGITALTWIN_CLIENT_ERROR_INTERFACE_ALREADY_REGISTERED:
-        return HRESULT_FROM_WIN32(ERROR_ADDRESS_ALREADY_ASSOCIATED);
-    case DIGITALTWIN_CLIENT_ERROR_COMMAND_NOT_PRESENT:
-    //case DIGITALTWIN_CLIENT_ERROR_INTERFACE_NOT_PRESENT:
-        return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
-    case DIGITALTWIN_CLIENT_ERROR_SHUTTING_DOWN:
-        return SEC_E_SHUTDOWN_IN_PROGRESS;
-    case DIGITALTWIN_CLIENT_ERROR_TIMEOUT:
+    case IOTHUB_CLIENT_INDEFINITE_TIME:
         return HRESULT_FROM_WIN32(WAIT_TIMEOUT);
-    case DIGITALTWIN_CLIENT_ERROR:
+    case IOTHUB_CLIENT_ERROR:
     default:
         return E_UNEXPECTED;
     }

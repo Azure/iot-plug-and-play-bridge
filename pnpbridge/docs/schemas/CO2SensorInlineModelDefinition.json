@@ -1,0 +1,69 @@
+﻿{
+  "@context": "dtmi:dtdl:context;2",
+  "@id": "dtmi:contoso:com:Co2Detector;1",
+  "@type": "Interface",
+  "displayName": "Co2Detector",
+  "description": "The device interface for a sample CO₂ detector device.",
+  "contents": [
+    {
+      "@type": "Telemetry",
+      "comment": "Carbon Dioxide (CO₂) concentration level in ppm",
+      "name": "co2",
+      "schema": "integer"
+    },
+    {
+      "@type": [
+        "Telemetry",
+        "Temperature"
+      ],
+      "comment": "Room temperature in Celsius.",
+      "name": "temperature",
+      "schema": "float",
+      "unit": "degreeCelsius"
+    },
+    {
+      "@type": "Property",
+      "name": "modelName",
+      "comment": "Model ID of the device",
+      "schema": "string",
+      "writable": false
+    },
+    {
+      "@type": "Property",
+      "name": "firmwareVersion",
+      "comment": "Firmware version of the device",
+      "schema": "string",
+      "writable": false
+    },
+    {
+      "@type": "Property",
+      "name": "alarmStatus_co2",
+      "comment": "CO2 alarm status",
+      "schema": "boolean",
+      "writable": false
+    },
+    {
+      "@type": "Property",
+      "name": "alarmThreshold_co2",
+      "comment": "Value of the upper theshold of CO2 alarm",
+      "schema": "integer",
+      "writable": true
+    },
+    {
+      "@type": "Command",
+      "name": "clearAlarm",
+      "comment": "Set payload to TRUE to Clear CO2 alarm.",
+      "commandType": "synchronous",
+      "request": {
+        "name": "clearAlarm_co2",
+        "displayName": "Clear Alarm",
+        "description": "Clears alarm if true",
+        "schema": "boolean"
+      },
+      "response": {
+          "name": "alarmResponse",
+          "schema": "string"
+      }
+    }
+  ]
+}

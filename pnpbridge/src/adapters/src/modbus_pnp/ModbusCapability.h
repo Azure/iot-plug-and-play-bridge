@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #pragma once
 
 #ifdef __cplusplus
@@ -14,7 +17,7 @@ extern "C"
     typedef int HANDLE;
 #endif
 
-#include <digitaltwin_interface_client.h>
+#include <pnpbridge.h>
 #include "azure_c_shared_utility/lock.h"
 #include "ModbusConnection/ModbusConnectionHelper.h"
 
@@ -65,16 +68,26 @@ typedef struct CapabilityContext {
     HANDLE hDevice;
     LOCK_HANDLE hLock;
     MODBUS_CONNECTION_TYPE connectionType;
-    DIGITALTWIN_INTERFACE_CLIENT_HANDLE InterfaceClient;
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
+    char * componentName;
 }CapabilityContext;
 
-DIGITALTWIN_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(void* context);
+IOTHUB_CLIENT_RESULT ModbusPnp_StartPollingAllTelemetryProperty(void* context);
 void StopPollingTasks();
 
-void ModbusPnp_CommandHandler(const DIGITALTWIN_CLIENT_COMMAND_REQUEST* dtClientCommandContext, 
-        DIGITALTWIN_CLIENT_COMMAND_RESPONSE* dtClientCommandResponseContext, void* userContextCallback);
+int ModbusPnp_CommandHandler(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize);
 
-void ModbusPnp_PropertyHandler(const DIGITALTWIN_CLIENT_PROPERTY_UPDATE* dtClientPropertyUpdate, void* userContextCallback);
+void ModbusPnp_PropertyHandler(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* PropertyName,
+    JSON_Value* PropertyValue,
+    int version,
+    void* userContextCallback);
 
 
 #ifdef __cplusplus

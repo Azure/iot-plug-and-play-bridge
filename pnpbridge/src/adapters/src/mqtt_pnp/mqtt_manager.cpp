@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/platform.h"
@@ -9,10 +11,6 @@
 #include <map>
 #include <atomic>
 #include <thread>
-
-#include <pnpbridge.h>
-
-#include "mqtt_protocol_handler.hpp"
 #include "mqtt_manager.hpp"
 
 void
@@ -159,7 +157,8 @@ MqttConnectionManager::Connect(
 
     // Start worker thread
     s_RunWorker = true;
-    s_WorkerThread = std::thread([&](){
+    s_WorkerThread = std::thread([&]()
+    {
         while (s_RunWorker) {
             mqtt_client_dowork(s_MqttClientHandle);
         }
@@ -234,11 +233,10 @@ MqttConnectionManager::Disconnect()
         s_RunWorker = false;
     }
     mqtt_client_disconnect(s_MqttClientHandle,
-                           [](void* Context){
+                           [](void* Context)
+                            {
                                 auto mcm = static_cast<MqttConnectionManager*>(Context);
-                                xio_close(mcm->s_XioHandle,
-                                          [](void* /*Context*/){ },
-                                          Context);
+                                xio_close(mcm->s_XioHandle, [](void* /*Context*/) { }, Context);
                             },
                             this);
 

@@ -9,6 +9,8 @@
           |_|                 |___/
 */
 
+#pragma once
+
 #ifndef PNPBRIDGE_H
 #define PNPBRIDGE_H
 
@@ -19,8 +21,13 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
 
-#include <digitaltwin_interface_client.h>
-#include <pnpadapter_api.h>
+// PnP helper utilities.
+#include "pnp_device_client.h"
+#include "pnp_dps.h"
+#include "pnp_protocol.h"
+
+#include "pnpadapter_api.h"
+#include "pnpbridge_common.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -28,13 +35,6 @@ extern "C"
 #endif
 
 typedef void* MX_IOT_HANDLE;
-
-// Getter method for DigitalTwin client handle from a device/module
-MOCKABLE_FUNCTION(,
-DIGITALTWIN_DEVICE_CLIENT_HANDLE,
-IotHandle_GetPnpDeviceClient,
-    _In_ MX_IOT_HANDLE, IotHandle
-    );
 
 MOCKABLE_FUNCTION(, int, PnpBridge_Main, const char*, ConfigurationFilePath);
 
