@@ -31,7 +31,7 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
     
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = (IOTHUB_DEVICE_CLIENT_HANDLE) PnpComponentHandleGetClientHandle(PnpComponentHandle);
     deviceAdapter->SetIotHubDeviceClientHandle(deviceHandle);
 
     try

@@ -53,6 +53,7 @@ set(pnp_helper_h_core_files
     ./../common/pnp_device_client.h
     ./../common/pnp_dps.h
     ./../common/pnp_protocol.h
+    ./../common/pnp_bridge_client.h
 )
 
 # set(install_staticlibs
@@ -61,6 +62,9 @@ set(pnp_helper_h_core_files
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_EDGE_MODULES")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_EDGE_MODULES")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MODULE_CLIENT")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MODULE_CLIENT")
 
 add_definitions(-DPNP_LOGGING_ENABLED)
 

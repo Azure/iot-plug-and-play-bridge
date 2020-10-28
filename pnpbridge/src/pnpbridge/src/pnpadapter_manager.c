@@ -396,11 +396,11 @@ IOTHUB_CLIENT_RESULT PnpAdapterManager_InitializeClientHandle(
     }
     else if (componentHandle->clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE)
     {
-        componentHandle->moduleClient = g_PnpBridge->IotHandle.u1.IotModule.moduleHandle;
+        componentHandle->clientHandle = g_PnpBridge->IotHandle.u1.IotModule.moduleHandle;
     }
     else
     {
-        componentHandle->deviceClient = g_PnpBridge->IotHandle.u1.IotDevice.deviceHandle;
+        componentHandle->clientHandle = g_PnpBridge->IotHandle.u1.IotModule.moduleHandle;
     }
 
 exit:

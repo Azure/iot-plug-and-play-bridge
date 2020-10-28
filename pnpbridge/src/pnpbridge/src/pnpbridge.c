@@ -22,6 +22,7 @@ PnpBridge_InitializePnpModuleConfig(PNP_DEVICE_CONFIGURATION * PnpModuleConfig)
     PnpModuleConfig->deviceTwinCallback = (IOTHUB_CLIENT_DEVICE_TWIN_CALLBACK) PnpAdapterManager_DeviceTwinCallback;
     PnpModuleConfig->enableTracing = (strcmp(getenv(g_hubClientTraceEnabled), "true") == 0);
     PnpModuleConfig->modelId = getenv(g_pnpBridgeModuleRootModelId);
+    // Note: User Agent String should not be changed
     PnpModuleConfig->UserAgentString = g_pnpBridgeUserAgentString;
     PnpModuleConfig->securityType = PNP_CONNECTION_SECURITY_TYPE_CONNECTION_STRING;
     PnpModuleConfig->u.connectionString = getenv(g_connectionStringEnvironmentVariable);
@@ -37,6 +38,7 @@ PnpBridge_InitializePnpDeviceConfig(PNPBRIDGE_CONFIGURATION * Configuration)
     Configuration->ConnParams->PnpDeviceConfiguration.deviceTwinCallback = (IOTHUB_CLIENT_DEVICE_TWIN_CALLBACK) PnpAdapterManager_DeviceTwinCallback;
     Configuration->ConnParams->PnpDeviceConfiguration.enableTracing = Configuration->TraceOn;
     Configuration->ConnParams->PnpDeviceConfiguration.modelId = Configuration->ConnParams->RootInterfaceModelId;
+    // Note: User Agent String should not be changed
     Configuration->ConnParams->PnpDeviceConfiguration.UserAgentString = g_pnpBridgeUserAgentString;
 
     if (Configuration->ConnParams != NULL)

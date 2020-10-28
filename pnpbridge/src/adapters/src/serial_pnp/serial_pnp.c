@@ -1277,17 +1277,10 @@ IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
     {
         LogError("Serial Pnp Adapter: PnP_CreateTelemetryMessageHandle failed.");
     }
-    else if ((DeviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_DEVICE) &&
-             ((result = IoTHubDeviceClient_SendEventAsync(DeviceContext->DeviceClient, messageHandle,
-            SerialPnp_SendEventCallback, (void*)TelemetryName)) != IOTHUB_CLIENT_OK))
+    else if ((result = PnpBridgeClient_SendEventAsync(DeviceContext->ClientHandle, messageHandle,
+            SerialPnp_SendEventCallback, (void*)TelemetryName)) != IOTHUB_CLIENT_OK)
     {
-        LogError("Serial Pnp Adapter: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
-    }
-    else if ((DeviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) &&
-             ((result = IoTHubModuleClient_SendEventAsync(DeviceContext->ModuleClient, messageHandle,
-            SerialPnp_SendEventCallback, (void*)TelemetryName)) != IOTHUB_CLIENT_OK))
-    {
-        LogError("Serial Pnp Adapter: IoTHubModuleClient_SendEventAsync failed, error=%d", result);
+        LogError("Serial Pnp Adapter: IoTHub client call to _SendEventAsync failed, error=%d", result);
     }
 
     IoTHubMessage_Destroy(messageHandle);
@@ -1354,18 +1347,10 @@ static void SerialPnp_PropertyUpdateHandler(
                 const char* jsonToSendStr = STRING_c_str(jsonToSend);
                 size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-                if ((deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_DEVICE) && 
-                    ((iothubClientResult = IoTHubDeviceClient_SendReportedState((IOTHUB_DEVICE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
-                    NULL, NULL)) != IOTHUB_CLIENT_OK))
+                if ((iothubClientResult = PnpBridgeClient_SendReportedState((PNP_BRIDGE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                    NULL, NULL)) != IOTHUB_CLIENT_OK)
                 {
                     LogError("Serial Pnp Adapter: Unable to send reported state for device property=%s, error=%d",
-                        PropertyName, iothubClientResult);
-                }
-                else  if ((deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) && 
-                    ((iothubClientResult = IoTHubModuleClient_SendReportedState((IOTHUB_MODULE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
-                    NULL, NULL)) != IOTHUB_CLIENT_OK))
-                {
-                    LogError("Serial Pnp Adapter: Unable to send reported state for module property=%s, error=%d",
                         PropertyName, iothubClientResult);
                 }
                 else
@@ -1444,14 +1429,7 @@ SerialPnp_StartPnpComponent(
     }
 
     // Assign client handle
-    if (deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
-    {
-        deviceContext->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-    }
-    else
-    {
-        deviceContext->ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
-    }
+    deviceContext->ClientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
 
     PnpComponentHandleSetContext(PnpComponentHandle, deviceContext);
 

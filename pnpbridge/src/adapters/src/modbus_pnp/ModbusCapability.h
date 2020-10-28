@@ -68,8 +68,7 @@ typedef struct CapabilityContext {
     HANDLE hDevice;
     LOCK_HANDLE hLock;
     MODBUS_CONNECTION_TYPE connectionType;
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
-    IOTHUB_MODULE_CLIENT_HANDLE moduleClient;
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle;
     PNP_BRIDGE_IOT_TYPE clientType;
     char * componentName;
 }CapabilityContext;

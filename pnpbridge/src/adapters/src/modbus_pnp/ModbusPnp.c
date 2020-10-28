@@ -662,14 +662,7 @@ Modbus_StartPnpComponent(
     }
 
     // Assign client handle
-    if (deviceContext->ClientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
-    {
-        deviceContext->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-    }
-    else
-    {
-        deviceContext->ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
-    }
+    deviceContext->ClientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
 
     PnpComponentHandleSetContext(PnpComponentHandle, deviceContext);
 

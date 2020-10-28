@@ -44,6 +44,7 @@ set(pnp_helper_h_core_files
     ./common/pnp_device_client.h
     ./common/pnp_dps.h
     ./common/pnp_protocol.h
+    ./common/pnp_bridge_client.h
 )
 
 # set(install_staticlibs

@@ -44,8 +44,7 @@ extern "C"
         char* adapterIdentity;
         PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK processPropertyUpdate;
         PNPBRIDGE_COMPONENT_METHOD_CALLBACK processCommand;
-        IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
-        IOTHUB_MODULE_CLIENT_HANDLE moduleClient;
+        PNP_BRIDGE_CLIENT_HANDLE clientHandle;
         PNP_BRIDGE_IOT_TYPE clientType;
     } PNPADAPTER_COMPONENT_TAG, * PPNPADAPTER_COMPONENT_TAG;
 

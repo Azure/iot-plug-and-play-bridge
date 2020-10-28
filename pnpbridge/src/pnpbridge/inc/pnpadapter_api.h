@@ -15,6 +15,7 @@
 #include "pnp_device_client.h"
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
+#include "pnp_bridge_client.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -263,28 +264,15 @@ extern "C"
     );
 
     /**
-    * @brief    PnpComponentHandleGetIotHubDeviceClient gets the device client handle from the component handle
+    * @brief    PnpComponentHandleGetClientHandle gets the client handle from the component handle
 
     * @param    ComponentHandle               Handle to pnp component
     *
-    * @returns  IOTHUB_DEVICE_CLIENT_HANDLE   IoTHub Device Client handle
+    * @returns  PNP_BRIDGE_CLIENT_HANDLE      Client handle
     */
     MOCKABLE_FUNCTION(,
-        IOTHUB_DEVICE_CLIENT_HANDLE,
-        PnpComponentHandleGetIotHubDeviceClient,
-        PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle
-    );
-
-    /**
-    * @brief    PnpComponentHandleGetIotHubModuleClient gets the module client handle from the component handle
-
-    * @param    ComponentHandle               Handle to pnp component
-    *
-    * @returns  IOTHUB_MODULE_CLIENT_HANDLE   IoTHub Module Client handle
-    */
-    MOCKABLE_FUNCTION(,
-        IOTHUB_MODULE_CLIENT_HANDLE,
-        PnpComponentHandleGetIotHubModuleClient,
+        PNP_BRIDGE_CLIENT_HANDLE,
+        PnpComponentHandleGetClientHandle,
         PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle
     );
 

@@ -91,8 +91,7 @@ typedef int SOCKET;
     typedef struct _MODBUS_DEVICE_CONTEXT {
         HANDLE hDevice;
         LOCK_HANDLE hConnectionLock;
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
-        IOTHUB_MODULE_CLIENT_HANDLE ModuleClient;
+        PNP_BRIDGE_CLIENT_HANDLE ClientHandle;
         THREAD_HANDLE ModbusDeviceWorker;
 
         PModbusDeviceConfig DeviceConfig;

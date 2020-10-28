@@ -13,6 +13,7 @@
 #include "pnp_device_client.h"
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
+#include "pnp_bridge_client.h"
 
 //
 // Application state associated with the particular component. In particular it contains 
@@ -32,8 +33,7 @@ typedef struct _ENVIRONMENT_SENSOR {
     THREAD_HANDLE WorkerHandle;
     volatile bool ShuttingDown;
     PENVIRONMENTAL_SENSOR_STATE SensorState;
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
-    IOTHUB_MODULE_CLIENT_HANDLE ModuleClient;
+    PNP_BRIDGE_CLIENT_HANDLE ClientHandle;
 } ENVIRONMENT_SENSOR, * PENVIRONMENT_SENSOR;
 
 #ifdef __cplusplus

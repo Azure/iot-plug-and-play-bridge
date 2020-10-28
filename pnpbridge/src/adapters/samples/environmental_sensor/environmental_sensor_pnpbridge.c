@@ -34,14 +34,7 @@ IOTHUB_CLIENT_RESULT EnvironmentSensor_StartPnpComponent(
     PENVIRONMENT_SENSOR device = PnpComponentHandleGetContext(PnpComponentHandle);
 
     // Store client handle before starting Pnp component
-    if (PnpComponentHandleGetIoTType(PnpComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
-    {
-        device->DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-    }
-    else
-    {
-        device->ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
-    }
+    device->ClientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
 
     // Set shutdown state
     device->ShuttingDown = false;
@@ -178,7 +171,7 @@ exit:
     return result;
 }
 
-PNP_ADAPTER EnvironmentSensorInterface = {
+PNP_ADAPTER VirtualEnvironmentSensorSample = {
     .identity = "environment-sensor-sample-pnp-adapter",
     .createAdapter = EnvironmentSensor_CreatePnpAdapter,
     .createPnpComponent = EnvironmentSensor_CreatePnpComponent,

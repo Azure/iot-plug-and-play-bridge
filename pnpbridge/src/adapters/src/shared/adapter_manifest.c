@@ -7,7 +7,7 @@
 extern PNP_ADAPTER SerialPnpInterface;
 extern PNP_ADAPTER ModbusPnpInterface;
 extern PNP_ADAPTER MqttPnpInterface;
-extern PNP_ADAPTER EnvironmentSensorInterface;
+extern PNP_ADAPTER VirtualEnvironmentSensorSample;
 
 #ifdef WIN32
 
@@ -22,7 +22,7 @@ PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
     &ModbusPnpInterface,
     &MqttPnpInterface,
     &SerialPnpInterface,
-    &EnvironmentSensorInterface
+    &VirtualEnvironmentSensorSample
 };
 
 #else //WIN32
@@ -31,7 +31,7 @@ PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
     &ModbusPnpInterface,
     &MqttPnpInterface,
     &SerialPnpInterface,
-    &EnvironmentSensorInterface
+    &VirtualEnvironmentSensorSample
 };
 
 #endif

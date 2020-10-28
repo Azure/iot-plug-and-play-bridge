@@ -47,6 +47,7 @@ extern "C"
 #include "pnp_device_client.h"
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
+#include "pnp_bridge_client.h"
 
 // Pnp Bridge headers
 #include "configuration_parser.h"
@@ -166,7 +167,7 @@ typedef struct _PNP_BRIDGE {
 
 void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
 
-// User Agent String for Pnp Bridge telemetry
+// User Agent String for Pnp Bridge telemetry [THIS VALUE SHOULD NEVER BE CHANGED]
 static const char g_pnpBridgeUserAgentString[] = "PnpBridgeUserAgentString";
 // Pnp Bridge desired property for component config
 static const char g_pnpBridgeConfigProperty[] = "PnpBridgeConfig";

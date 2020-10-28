@@ -28,7 +28,7 @@ JsonRpcProtocolHandler::JsonRpcProtocolHandler(
         const std::string& ComponentName) :
         s_ComponentName(ComponentName),
         s_TelemetryStarted(false),
-        s_DeviceClient(NULL)
+        s_ClientHandle(NULL)
 {
 
 }
@@ -229,17 +229,10 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
             {
                 LogError("Mqtt Pnp Component: PnP_CreateTelemetryMessageHandle failed.");
             }
-            else if ((ph->s_ClientType ==  PNP_BRIDGE_IOT_TYPE_DEVICE) &&
-                    ((result = IoTHubDeviceClient_SendEventAsync(ph->s_DeviceClient, messageHandle,
-                    NULL, NULL)) != IOTHUB_CLIENT_OK))
+            else if (((result = PnpBridgeClient_SendEventAsync(ph->s_ClientHandle, messageHandle,
+                        NULL, NULL)) != IOTHUB_CLIENT_OK))
             {
-                LogError("Mqtt Pnp Component: IoTHubDeviceClient_SendEventAsync failed for device, error=%d", result);
-            }
-            else if ((ph->s_ClientType ==  PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE) &&
-                    ((result = IoTHubModuleClient_SendEventAsync(ph->s_ModuleClient, messageHandle,
-                    NULL, NULL)) != IOTHUB_CLIENT_OK))
-            {
-                LogError("Mqtt Pnp Component: IoTHubModuleClient_SendEventAsync failed for module, error=%d", result);
+                LogError("Mqtt Pnp Component: IoTHub's client call to _SendEventAsync failed, error=%d", result);
             }
             else
             {
@@ -264,15 +257,14 @@ void JsonRpcProtocolHandler::SetIotHubClientHandle(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     // Assign client handle
+    s_ClientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
     if (PnpComponentHandleGetIoTType(PnpComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
     {
         s_ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
-        s_DeviceClient = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
     }
     else
     {
         s_ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
-        s_ModuleClient = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
     }
 }
 

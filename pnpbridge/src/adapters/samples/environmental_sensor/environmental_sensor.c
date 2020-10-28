@@ -320,37 +320,19 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
     void * UserContextCallback)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
-    PNP_BRIDGE_IOT_TYPE clientType = PnpComponentHandleGetIoTType(PnpComponentHandle);
-    if (clientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
-    {
-        IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = (ClientHandle != NULL) ?
-            (IOTHUB_DEVICE_CLIENT_HANDLE) ClientHandle : PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
 
-        if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(deviceHandle, ReportedState, Size,
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle = (ClientHandle != NULL) ?
+            (PNP_BRIDGE_CLIENT_HANDLE) ClientHandle : PnpComponentHandleGetClientHandle(PnpComponentHandle);
+
+    if ((iothubClientResult = PnpBridgeClient_SendReportedState(clientHandle, ReportedState, Size,
             ReportedStateCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
-        {
-            LogError("IoTHubDeviceClient_SendReportedState failed with error code %d", iothubClientResult);
-            goto exit;
-        }
-        else
-        {
-            LogInfo("IoTHubDeviceClient_SendReportedState succeeded");
-        }
-    }
-    else if(clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE)
     {
-        IOTHUB_MODULE_CLIENT_HANDLE moduleHandle = (ClientHandle != NULL) ?
-            (IOTHUB_MODULE_CLIENT_HANDLE)(ClientHandle) : PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
-        if ((iothubClientResult = IoTHubModuleClient_SendReportedState(moduleHandle, ReportedState, Size,
-            ReportedStateCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
-        {
-            LogError("IoTHubModuleClient_SendReportedState failed with error code %d", iothubClientResult);
-            goto exit;
-        }
-        else
-        {
-            LogInfo("IoTHubModuleClient_SendReportedState succeeded");
-        }
+        LogError("IoTHub client call to _SendReportedState failed with error code %d", iothubClientResult);
+        goto exit;
+    }
+    else
+    {
+        LogInfo("IoTHub client call to _SendReportedState succeeded");
     }
 
 exit:
@@ -464,34 +446,16 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteSendEventAsync(
         void * UserContextCallback)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
-    PNP_BRIDGE_IOT_TYPE clientType = PnpComponentHandleGetIoTType(PnpComponentHandle);
-    if (clientType == PNP_BRIDGE_IOT_TYPE_DEVICE)
-    {
-        IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-        if ((iothubClientResult = IoTHubDeviceClient_SendEventAsync(deviceHandle, EventMessageHandle,
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
+    if ((iothubClientResult = PnpBridgeClient_SendEventAsync(clientHandle, EventMessageHandle,
             EventConfirmationCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
-        {
-            LogError("IoTHubDeviceClient_SendEventAsync failed with error code %d", iothubClientResult);
-            goto exit;
-        }
-        else
-        {
-            LogInfo("IoTHubDeviceClient_SendEventAsync succeeded");
-        }
+    {
+        LogError("IoTHub client call to _SendEventAsync failed with error code %d", iothubClientResult);
+        goto exit;
     }
-    else if(clientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE)
+    else
     {
-        IOTHUB_MODULE_CLIENT_HANDLE moduleHandle = PnpComponentHandleGetIotHubModuleClient(PnpComponentHandle);
-        if ((iothubClientResult = IoTHubModuleClient_SendEventAsync(moduleHandle, EventMessageHandle,
-            EventConfirmationCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
-        {
-            LogError("IoTHubModuleClient_SendEventAsync failed with error code %d", iothubClientResult);
-            goto exit;
-        }
-        else
-        {
-            LogInfo("IoTHubModuleClient_SendEventAsync succeeded");
-        }
+        LogInfo("IoTHub client call to _SendEventAsync succeeded");
     }
 
 exit:
