@@ -1,0 +1,315 @@
+{
+  "$schema-template": "2.0.0",
+  "modulesContent": {
+    "$edgeAgent": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "runtime": {
+          "type": "docker",
+          "settings": {
+            "minDockerVersion": "v1.25",
+            "loggingOptions": "",
+            "registryCredentials": {
+              "pnpbridge": {
+                "username": "$CONTAINER_REGISTRY_USERNAME_pnpbridge",
+                "password": "$CONTAINER_REGISTRY_PASSWORD_pnpbridge",
+                "address": "<ADD CONTAINER REGISTRY ADDRESS HERE>"
+              }
+            }
+          }
+        },
+        "systemModules": {
+          "edgeAgent": {
+            "type": "docker",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-agent:1.0",
+              "createOptions": {}
+            }
+          },
+          "edgeHub": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.0",
+              "createOptions": {
+                "HostConfig": {
+                  "PortBindings": {
+                    "5671/tcp": [
+                      {
+                        "HostPort": "5671"
+                      }
+                    ],
+                    "8883/tcp": [
+                      {
+                        "HostPort": "8883"
+                      }
+                    ],
+                    "443/tcp": [
+                      {
+                        "HostPort": "443"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "modules": {
+          "PnPBridgeModule": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "<ADD MODULE IMAGE HERE>",
+              "createOptions": {
+                "HostConfig": {
+                  "Privileged": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "routes": {
+          "PnPBridgeModuleToIoTHub": "FROM /messages/modules/PnPBridgeModule/outputs/* INTO $upstream"
+        },
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 7200
+        }
+      }
+    },
+    "PnPBridgeModule": {
+      "properties.desired": {
+        "PnpBridgeConfig": {
+            "pnp_bridge_debug_trace": false,
+            "pnp_bridge_config_source": "local",
+            "pnp_bridge_interface_components": [
+                {
+                    "_comment": "Component 1 - Modbus Device",
+                    "pnp_bridge_component_name": "Co2Detector1",
+                    "pnp_bridge_adapter_id": "modbus-pnp-interface",
+                    "pnp_bridge_adapter_config": {
+                        "unit_id": 1,
+                        "rtu": null,
+                        "tcp": {
+                            "host": "10.159.29.9",
+                            "port": 502
+                        },
+                        "modbus_identity": "DL679"
+                    }
+                },
+                {
+                    "_comment": "Component 2 - USB device",
+                    "pnp_bridge_component_name": "coredevicehealth1",
+                    "pnp_bridge_adapter_id": "core-device-health",
+                    "pnp_bridge_adapter_config": {
+                        "hardware_id": "USB\\VID_06CB&PID_00B3"
+                    }
+                },
+                {
+                    "_comment": "Component 3 - MCU sensor hub which reports Azure IoT Pnp interfaces",
+                    "pnp_bridge_component_name": "serialpnp1",
+                    "pnp_bridge_adapter_id": "serial-pnp-interface",
+                    "pnp_bridge_adapter_config": {
+                        "com_port": "COM1",
+                        "_comment": "NOTE: com_port parameter will NOT be used when use_com_device_interface is set to true. In case of windows iot edition, the COMXX symbolic links are not created. Setting use_com_device_interface to false will pick the first available COM interface.",
+                        "use_com_device_interface": "false",
+                        "baud_rate": "115200"
+                    }
+                },
+                {
+                    "_comment": "Component 4 - Standard Video Camera connected to a PC, for now the first camera only.",
+                    "pnp_bridge_component_name": "cameracomponent",
+                    "pnp_bridge_adapter_id": "camera-pnp-adapter",
+                    "pnp_bridge_adapter_config": {
+                        "hardware_id": "UVC_Webcam_00"
+                    }
+                },
+                {
+                    "_comment": "Component 5 - Ruuvi Instance 1",
+                    "pnp_bridge_component_name": "ruuvi1",
+                    "pnp_bridge_adapter_id": "bluetooth-sensor-pnp-adapter",
+                    "pnp_bridge_adapter_config": {
+                        "bluetooth_address": "267541100483322",
+                        "blesensor_identity" : "Ruuvi"
+                    }
+                },
+                {
+                  "pnp_bridge_component_name": "mqttdevice1",
+                  "pnp_bridge_adapter_id": "mqtt-pnp-interface",
+                  "pnp_bridge_adapter_config": {
+                      "mqtt_port": "1",
+                      "mqtt_server": "1.1.1.1",
+                      "mqtt_protocol": "json_rpc",
+                      "mqtt_identity": "json_rpc_1"
+                  }
+                }
+            ],
+            "pnp_bridge_adapter_global_configs": {
+                "modbus-pnp-interface": {
+                    "DL679": {
+                        "telemetry": {
+                            "co2": {
+                                "startAddress": "40001",
+                                "length": 1,
+                                "dataType": "integer",
+                                "defaultFrequency": 5000,
+                                "conversionCoefficient": 1
+                            },
+                            "temperature": {
+                                "startAddress": "40003",
+                                "length": 1,
+                                "dataType": "decimal",
+                                "defaultFrequency": 5000,
+                                "conversionCoefficient": 0.01
+                            }
+                        },
+                        "properties": {
+                            "firmwareVersion": {
+                                "startAddress": "40482",
+                                "length": 1,
+                                "dataType": "hexstring",
+                                "defaultFrequency": 60000,
+                                "conversionCoefficient": 1,
+                                "access": 1
+                            },
+                            "modelName": {
+                                "startAddress": "40483",
+                                "length": 2,
+                                "dataType": "string",
+                                "defaultFrequency": 60000,
+                                "conversionCoefficient": 1,
+                                "access": 1
+                            },
+                            "alarmStatus_co2": {
+                                "startAddress": "00305",
+                                "length": 1,
+                                "dataType": "boolean",
+                                "defaultFrequency": 1000,
+                                "conversionCoefficient": 1,
+                                "access": 1
+                            },
+                            "alarmThreshold_co2": {
+                                "startAddress": "40225",
+                                "length": 1,
+                                "dataType": "integer",
+                                "defaultFrequency": 30000,
+                                "conversionCoefficient": 1,
+                                "access": 2
+                            }
+                        },
+                        "commands": {
+                            "clearAlarm_co2": {
+                                "startAddress": "00305",
+                                "length": 1,
+                                "dataType": "flag",
+                                "conversionCoefficient": 1
+                            }
+                        }
+                    }
+                },
+                "core-device-health": {
+                    "device_interface_classes": [
+                        "A5DCBF10-6530-11D2-901F-00C04FB951ED"
+                      ]
+                },
+                "bluetooth-sensor-pnp-adapter": {
+                    "Ruuvi" : {
+                        "company_id": "0x499",
+                        "endianness": "big",
+                        "telemetry_descriptor": [
+                          {
+                            "telemetry_name": "humidity",
+                            "data_parse_type": "uint8",
+                            "data_offset": 1,
+                            "conversion_bias": 0,
+                            "conversion_coefficient": 0.5
+                          },
+                          {
+                            "telemetry_name": "temperature",
+                            "data_parse_type": "int8",
+                            "data_offset": 2,
+                            "conversion_bias": 0,
+                            "conversion_coefficient": 1.0
+                          },
+                          {
+                            "telemetry_name": "pressure",
+                            "data_parse_type": "int16",
+                            "data_offset": 4,
+                            "conversion_bias": 0,
+                            "conversion_coefficient": 1.0
+                          },
+                          {
+                            "telemetry_name": "acceleration_x",
+                            "data_parse_type": "int16",
+                            "data_offset": 6,
+                            "conversion_bias": 0,
+                            "conversion_coefficient": 0.00980665
+                          },
+                          {
+                            "telemetry_name": "acceleration_y",
+                            "data_parse_type": "int16",
+                            "data_offset": 8,
+                            "conversion_bias": 0,
+                            "conversion_coefficient": 0.00980665
+                          },
+                          {
+                            "telemetry_name": "acceleration_z",
+                            "data_parse_type": "int16",
+                            "data_offset": 10,
+                            "conversion_bias": 0,
+                            "conversion_coefficient": 0.00980665
+                          }
+                        ]
+                    }
+                },
+                "mqtt-pnp-interface": {
+                  "json_rpc_1": [
+                      {
+                          "type": "telemetry",
+                          "json_rpc_method": "inventory_summary",
+                          "name": "inventory_summary",
+                          "rx_topic": "rfid/controller/events"
+                      },
+                      {
+                          "type": "telemetry",
+                          "json_rpc_method": "inventory_event",
+                          "name": "inventory_event",
+                          "rx_topic": "rfid/controller/events"
+                      },
+                      {
+                          "type": "command",
+                          "json_rpc_method": "inventory_get_tag_info",
+                          "name": "inventory_get_tag_info",
+                          "tx_topic": "rfid/controller/command",
+                          "rx_topic": "rfid/controller/response"
+                      },
+                      {
+                          "type": "command",
+                          "name": "inventory_unload",
+                          "json_rpc_method": "inventory_unload",
+                          "tx_topic": "rfid/controller/command",
+                          "rx_topic": "rfid/controller/response"
+                      },
+                      {
+                          "type": "command",
+                          "name": "scheduler_set_run_state",
+                          "json_rpc_method": "scheduler_set_run_state",
+                          "tx_topic": "rfid/controller/command",
+                          "rx_topic": "rfid/controller/response"
+                      }
+                  ]
+              }
+            }
+          }
+      }
+    }
+  }
+}

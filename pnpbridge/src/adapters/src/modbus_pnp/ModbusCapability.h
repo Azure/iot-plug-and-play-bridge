@@ -17,7 +17,7 @@ extern "C"
     typedef int HANDLE;
 #endif
 
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 #include "azure_c_shared_utility/lock.h"
 #include "ModbusConnection/ModbusConnectionHelper.h"
 
@@ -28,7 +28,7 @@ typedef enum ModbusAccessType
 } ModbusAccessType;
 
 typedef struct ModbusTelemetry {
-    const char*  Name;
+    char*  Name;
     const char*  StartAddress;
     uint16_t Length;
     ModbusDataType  DataType;
@@ -41,7 +41,7 @@ typedef struct ModbusTelemetry {
 typedef void(*MODBUS_TELEMETRY_POLLING_TASK)(ModbusTelemetry* userContextCallback);
 
 typedef struct ModbusProperty {
-    const char*  Name;
+    char*  Name;
     const char*  StartAddress;
     uint16_t Length;
     ModbusDataType  DataType;
@@ -54,7 +54,7 @@ typedef struct ModbusProperty {
 } ModbusProperty, *PModbusProperty;
 
 typedef struct ModbusCommand {
-    const char*  Name;
+    char*  Name;
     const char*  StartAddress;
     uint16_t Length;
     ModbusDataType  DataType;
@@ -68,7 +68,8 @@ typedef struct CapabilityContext {
     HANDLE hDevice;
     LOCK_HANDLE hLock;
     MODBUS_CONNECTION_TYPE connectionType;
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle;
+    PNP_BRIDGE_IOT_TYPE clientType;
     char * componentName;
 }CapabilityContext;
 

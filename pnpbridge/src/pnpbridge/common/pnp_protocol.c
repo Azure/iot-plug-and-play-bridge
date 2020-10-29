@@ -309,6 +309,55 @@ bool PnP_ProcessTwinData(DEVICE_TWIN_UPDATE_STATE updateState, const unsigned ch
     return result;
 }
 
+bool PnP_ProcessModuleTwinConfigProperty(DEVICE_TWIN_UPDATE_STATE updateState, const unsigned char* payload, size_t size,
+    PnP_ModuleConfigPropertyCallbackFunction pnpPropertyCallback, const char* targetProperty)
+{
+    char* jsonStr = NULL;
+    JSON_Value* rootValue = NULL;
+    JSON_Object* desiredObject;
+    bool result = false;
+
+    if ((jsonStr = PnP_CopyPayloadToString(payload, size)) == NULL)
+    {
+        LogError("Unable to allocate module twin's property buffer");
+        result = false;
+    }
+    else if ((rootValue = json_parse_string(jsonStr)) == NULL)
+    {
+        LogError("Unable to parse module twin property JSON");
+        result = false;
+    }
+    else if ((desiredObject = GetDesiredJson(updateState, rootValue)) == NULL)
+    {
+        LogError("Cannot retrieve desired JSON object for module twin property");
+        result = false;
+    }
+    else
+    {
+        size_t numChildren = json_object_get_count(desiredObject);
+
+        // Visit each child JSON element of the desired device twin.
+        for (size_t i = 0; i < numChildren; i++)
+        {
+            const char* name = json_object_get_name(desiredObject, i);
+            JSON_Value* value = json_object_get_value_at(desiredObject, i);
+
+            if ((strcmp(name, targetProperty) == 0) && (json_type(value) == JSONObject))
+            {
+                // Found the target config property
+                pnpPropertyCallback(value);
+                result = true;
+                break;
+            }
+        }
+    }
+
+    json_value_free(rootValue);
+    free(jsonStr);
+
+    return result;
+}
+
 char* PnP_CopyPayloadToString(const unsigned char* payload, size_t size)
 {
     char* jsonStr;

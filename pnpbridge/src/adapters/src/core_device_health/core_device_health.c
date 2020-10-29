@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <PnpBridge.h>
+#include <pnpadapter_api.h>
 #include <windows.h>
 #include <cfgmgr32.h>
 #include <initguid.h>
@@ -359,7 +359,7 @@ static void CoreDevice_InterfaceRegisteredCallback(
     void* userInterfaceContext)
 {
     UNREFERENCED_PARAMETER(userInterfaceContext);
-    if (PNPBRIDGE_SUCCESS(dtInterfaceStatus))
+    if (IOTHUB_CLIENT_OK == dtInterfaceStatus)
     {
         LogInfo("Core Device Health: Interface registered.");
     }
@@ -601,7 +601,7 @@ IOTHUB_CLIENT_RESULT CoreDevice_StartPnpComponent(
         LogError("Device context is null, unable to start component");
         return IOTHUB_CLIENT_ERROR;
     }
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = (IOTHUB_DEVICE_CLIENT_HANDLE) PnpComponentHandleGetClientHandle(PnpComponentHandle);
     device->DeviceClient = deviceHandle;
     device->TelemetryStarted = true;
     return CoreDevice_SendConnectionEventAsync(device, "DeviceStatus", "Connected");

@@ -21,7 +21,7 @@ IOTHUB_CLIENT_RESULT Camera_StartPnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
 
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = (IOTHUB_DEVICE_CLIENT_HANDLE) PnpComponentHandleGetClientHandle(PnpComponentHandle);
     cameraDevice->SetIotHubDeviceClientHandle(deviceHandle);
 
     if (cameraDevice)

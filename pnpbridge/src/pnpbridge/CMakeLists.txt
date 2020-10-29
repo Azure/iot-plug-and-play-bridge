@@ -44,6 +44,7 @@ set(pnp_helper_h_core_files
     ./common/pnp_device_client.h
     ./common/pnp_dps.h
     ./common/pnp_protocol.h
+    ./common/pnp_bridge_client.h
 )
 
 # set(install_staticlibs
@@ -120,6 +121,12 @@ add_library(${PROJECT_NAME} STATIC
 
 add_subdirectory(tests)
 add_subdirectory(samples)
+
+if(WIN32)
+
+else()
+add_subdirectory(module)
+endif()
 
 if(WIN32)
 # Ole32 (COM) is used by camera health monitoring adapter

@@ -6,7 +6,7 @@
 #include <thread>
 #include <mutex>
 #include "parson.h"
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -28,7 +28,7 @@ JsonRpcProtocolHandler::JsonRpcProtocolHandler(
         const std::string& ComponentName) :
         s_ComponentName(ComponentName),
         s_TelemetryStarted(false),
-        s_DeviceClient(NULL)
+        s_ClientHandle(NULL)
 {
 
 }
@@ -229,10 +229,10 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
             {
                 LogError("Mqtt Pnp Component: PnP_CreateTelemetryMessageHandle failed.");
             }
-            else if ((result = IoTHubDeviceClient_SendEventAsync(ph->s_DeviceClient, messageHandle,
-                    NULL, NULL)) != IOTHUB_CLIENT_OK)
+            else if (((result = PnpBridgeClient_SendEventAsync(ph->s_ClientHandle, messageHandle,
+                        NULL, NULL)) != IOTHUB_CLIENT_OK))
             {
-                LogError("Mqtt Pnp Component: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
+                LogError("Mqtt Pnp Component: IoTHub's client call to _SendEventAsync failed, error=%d", result);
             }
             else
             {
@@ -253,10 +253,19 @@ JsonRpcProtocolHandler::RpcNotificationCallback(
     }
 }
 
-void JsonRpcProtocolHandler::SetIotHubDeviceClientHandle(
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle)
+void JsonRpcProtocolHandler::SetIotHubClientHandle(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    s_DeviceClient = DeviceClientHandle;
+    // Assign client handle
+    s_ClientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
+    if (PnpComponentHandleGetIoTType(PnpComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        s_ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
+    }
+    else
+    {
+        s_ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
+    }
 }
 
 void JsonRpcProtocolHandler::StartTelemetry()

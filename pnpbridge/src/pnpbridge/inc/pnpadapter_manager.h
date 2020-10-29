@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #pragma once
-#include <pnpbridge.h>
+#include "pnpadapter_api.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -40,11 +40,12 @@ extern "C"
     // Pnp interface structure
     typedef struct _ {
         void* context;
-        const char* componentName;
-        const char* adapterIdentity;
+        char* componentName;
+        char* adapterIdentity;
         PNPBRIDGE_COMPONENT_PROPERTY_CALLBACK processPropertyUpdate;
         PNPBRIDGE_COMPONENT_METHOD_CALLBACK processCommand;
-        IOTHUB_DEVICE_CLIENT_HANDLE deviceClient;
+        PNP_BRIDGE_CLIENT_HANDLE clientHandle;
+        PNP_BRIDGE_IOT_TYPE clientType;
     } PNPADAPTER_COMPONENT_TAG, * PPNPADAPTER_COMPONENT_TAG;
 
 
@@ -95,17 +96,25 @@ extern "C"
     IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterFromManifest(
         const char* adapterId,
         PPNP_ADAPTER* adapter);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateAdapter(
         const char* adapterId,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext,
         JSON_Value* config);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_CreateComponents(
         PPNP_ADAPTER_MANAGER adapterMgr,
-        JSON_Value* config);
+        JSON_Value* config,
+        PNP_BRIDGE_IOT_TYPE clientType);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_GetAdapterHandle(
         PPNP_ADAPTER_MANAGER adapterMgr,
         const char* adapterIdentity,
         PPNP_ADAPTER_CONTEXT_TAG* adapterContext);
+
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_InitializeClientHandle(
+        PPNPADAPTER_COMPONENT_TAG componentHandle);
+
     IOTHUB_CLIENT_RESULT PnpAdapterManager_StartComponents(
         PPNP_ADAPTER_MANAGER adapterMgr);
 
@@ -124,6 +133,11 @@ extern "C"
     PPNPADAPTER_COMPONENT_TAG PnpAdapterManager_GetComponentHandleFromComponentName(
         const char * ComponentName,
         size_t ComponentNameSize);
+
+    IOTHUB_CLIENT_RESULT PnpAdapterManager_BuildAdaptersAndComponents(
+        PPNP_ADAPTER_MANAGER * adapterMgr,
+        JSON_Value* config,
+        PNP_BRIDGE_IOT_TYPE clientType);
 
     // Device Twin callback is invoked by IoT SDK when a twin - either full twin or a PATCH update - arrives.
     void PnpAdapterManager_DeviceTwinCallback(
@@ -148,6 +162,16 @@ extern "C"
         JSON_Value* propertyValue,
         int version,
         void* userContextCallback);
+
+    static void PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation(
+        JSON_Value* pnpBridgeConfig);
+    
+    void PnpAdapterManager_SendPnpBridgeStateTelemetry(
+        const char * BridgeState);
+
+    static const char* PnpBridge_State = "ModuleState";
+    static const char* PnpBridge_WaitingForConfig = "Waiting for PnpBridge configuration property update";
+    static const char* PnpBridge_ConfigurationComplete = "PnpBridge configuration complete";
 
 #ifdef __cplusplus
 }

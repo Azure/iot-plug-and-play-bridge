@@ -8,7 +8,7 @@ extern "C"
 {
 #endif
 
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/lock.h"
@@ -91,13 +91,14 @@ typedef int SOCKET;
     typedef struct _MODBUS_DEVICE_CONTEXT {
         HANDLE hDevice;
         LOCK_HANDLE hConnectionLock;
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
+        PNP_BRIDGE_CLIENT_HANDLE ClientHandle;
         THREAD_HANDLE ModbusDeviceWorker;
 
         PModbusDeviceConfig DeviceConfig;
         PModbusInterfaceConfig InterfaceConfig;
         THREAD_HANDLE* PollingTasks;
         char * ComponentName;
+        PNP_BRIDGE_IOT_TYPE ClientType;
     } MODBUS_DEVICE_CONTEXT, *PMODBUS_DEVICE_CONTEXT;
 
     typedef struct _MODBUS_ADAPTER_CONTEXT {

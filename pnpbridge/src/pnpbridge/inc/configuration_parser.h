@@ -89,6 +89,7 @@ typedef struct PNPBRIDGE_CONFIGURATION {
     // before a feature is used, a check should be made to see
     // if its available.
     BridgeFeatures Features;
+
 } PNPBRIDGE_CONFIGURATION;
 
 /**

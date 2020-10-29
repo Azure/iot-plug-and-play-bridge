@@ -215,10 +215,10 @@ MqttPnp_StartPnpComponent(
 
     MqttPnpInstance* context = static_cast<MqttPnpInstance*>(PnpComponentHandleGetContext(PnpComponentHandle));
 
+    context->s_ProtocolHandler->SetIotHubClientHandle(PnpComponentHandle);
+
     if (context)
     {
-        IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-        context->s_ProtocolHandler->SetIotHubDeviceClientHandle(deviceHandle);
         context->s_ProtocolHandler->StartTelemetry();
     }
 

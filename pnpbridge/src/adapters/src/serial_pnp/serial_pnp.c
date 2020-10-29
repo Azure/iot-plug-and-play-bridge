@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 
 #include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
@@ -1277,10 +1277,10 @@ IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
     {
         LogError("Serial Pnp Adapter: PnP_CreateTelemetryMessageHandle failed.");
     }
-    else if ((result = IoTHubDeviceClient_SendEventAsync(DeviceContext->DeviceClient, messageHandle,
+    else if ((result = PnpBridgeClient_SendEventAsync(DeviceContext->ClientHandle, messageHandle,
             SerialPnp_SendEventCallback, (void*)TelemetryName)) != IOTHUB_CLIENT_OK)
     {
-        LogError("Serial Pnp Adapter: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
+        LogError("Serial Pnp Adapter: IoTHub client call to _SendEventAsync failed, error=%d", result);
     }
 
     IoTHubMessage_Destroy(messageHandle);
@@ -1316,7 +1316,7 @@ static void SerialPnp_PropertyUpdateHandler(
     AZURE_UNREFERENCED_PARAMETER(version);
     IOTHUB_CLIENT_RESULT iothubClientResult;
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceClient = (IOTHUB_DEVICE_CLIENT_HANDLE)userContextCallback;
+
     STRING_HANDLE jsonToSend = NULL;
     const char * PropertyValueString = json_value_get_string(PropertyValue);
     size_t PropertyValueLen = strlen(PropertyValueString);
@@ -1347,10 +1347,10 @@ static void SerialPnp_PropertyUpdateHandler(
                 const char* jsonToSendStr = STRING_c_str(jsonToSend);
                 size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-                if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(deviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                if ((iothubClientResult = PnpBridgeClient_SendReportedState((PNP_BRIDGE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
                     NULL, NULL)) != IOTHUB_CLIENT_OK)
                 {
-                    LogError("Serial Pnp Adapter: Unable to send reported state for property=%s, error=%d",
+                    LogError("Serial Pnp Adapter: Unable to send reported state for device property=%s, error=%d",
                         PropertyName, iothubClientResult);
                 }
                 else
@@ -1428,8 +1428,10 @@ SerialPnp_StartPnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
 
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-    deviceContext->DeviceClient = deviceHandle;
+    // Assign client handle
+    deviceContext->ClientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
+
+    PnpComponentHandleSetContext(PnpComponentHandle, deviceContext);
 
     // Start telemetry thread
     if (ThreadAPI_Create(&deviceContext->TelemetryWorkerHandle, SerialPnp_UartReceiver, deviceContext) != THREADAPI_OK) {
@@ -1712,6 +1714,16 @@ SerialPnp_CreatePnpComponent(
     if (THREADAPI_OK != ThreadAPI_Create(&deviceContext->SerialDeviceWorker, SerialPnp_ParseInterfaceConfig, deviceContext))
     {
         LogError("ThreadAPI_Create failed");
+    }
+
+    // Assign client handle
+    if (PnpComponentHandleGetIoTType(BridgeComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
+    }
+    else
+    {
+        deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
     }
 
     PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <pnpbridge.h>
+#include "pnpadapter_api.h"
 
 #include "azure_c_shared_utility/azure_base32.h"
 #include "azure_c_shared_utility/gballoc.h"
@@ -66,18 +66,18 @@ ModbusDataType ToModbusDataTypeEnum(
 }
 
 IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
-    ModbusInterfaceConfig* ModbusInterfaceConfig,
+    PModbusInterfaceConfig * ModbusInterfaceConfig,
     JSON_Object* ConfigObj)
 {
-    if (NULL == ModbusInterfaceConfig)
+    if (NULL == *ModbusInterfaceConfig)
     {
         LogError("Cannot populate interface config for modbus adapter.");
         return IOTHUB_CLIENT_INVALID_ARG;
     }
 
-    ModbusInterfaceConfig->Events = singlylinkedlist_create();
-    ModbusInterfaceConfig->Properties = singlylinkedlist_create();
-    ModbusInterfaceConfig->Commands = singlylinkedlist_create();
+    (*ModbusInterfaceConfig)->Events = singlylinkedlist_create();
+    (*ModbusInterfaceConfig)->Properties = singlylinkedlist_create();
+    (*ModbusInterfaceConfig)->Commands = singlylinkedlist_create();
 
     JSON_Object* telemetryList = json_object_dotget_object(ConfigObj, "telemetry");
     for (size_t i = 0; i < json_object_get_count(telemetryList); i++)
@@ -98,7 +98,7 @@ IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
             return IOTHUB_CLIENT_ERROR;
         }
 
-        telemetry->Name = name;
+        mallocAndStrcpy_s(&telemetry->Name, name);
 
         telemetry->StartAddress = json_object_dotget_string(telemetryArgs, "startAddress");
         if (0 == telemetry->StartAddress)
@@ -140,7 +140,7 @@ IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
             return IOTHUB_CLIENT_INVALID_ARG;
         }
 
-        singlylinkedlist_add(ModbusInterfaceConfig->Events, telemetry);
+        singlylinkedlist_add((*ModbusInterfaceConfig)->Events, telemetry);
     }
 
     JSON_Object* propertyList = json_object_dotget_object(ConfigObj, "properties");
@@ -162,7 +162,7 @@ IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
             return IOTHUB_CLIENT_ERROR;
         }
 
-        property->Name = name;
+        mallocAndStrcpy_s(&property->Name, name);
 
         property->StartAddress = json_object_dotget_string(propertyArgs, "startAddress");
         if (0 == property->StartAddress)
@@ -212,7 +212,7 @@ IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
             return IOTHUB_CLIENT_INVALID_ARG;
         }
 
-        singlylinkedlist_add(ModbusInterfaceConfig->Properties, property);
+        singlylinkedlist_add((*ModbusInterfaceConfig)->Properties, property);
     }
 
     JSON_Object* commandList = json_object_dotget_object(ConfigObj, "commands");
@@ -235,7 +235,7 @@ IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
             return IOTHUB_CLIENT_ERROR;
         }
 
-        command->Name = name;
+        mallocAndStrcpy_s(&command->Name, name);
 
         command->StartAddress = json_object_dotget_string(commandArgs, "startAddress");
         if (0 == command->StartAddress)
@@ -271,7 +271,7 @@ IOTHUB_CLIENT_RESULT ModbusPnp_ParseInterfaceConfig(
             return IOTHUB_CLIENT_INVALID_ARG;
         }
 
-        singlylinkedlist_add(ModbusInterfaceConfig->Commands, command);
+        singlylinkedlist_add((*ModbusInterfaceConfig)->Commands, command);
     }
 
     return IOTHUB_CLIENT_OK;
@@ -576,6 +576,10 @@ void ModbusPnp_FreeTelemetryList(
     LIST_ITEM_HANDLE telemetryItem = singlylinkedlist_get_head_item(telemetryList);
     while (NULL != telemetryItem) {
         ModbusTelemetry* telemetry = (ModbusTelemetry*)singlylinkedlist_item_get_value(telemetryItem);
+        if (telemetry->Name)
+        {
+            free(telemetry->Name);
+        }
         free(telemetry);
         telemetryItem = singlylinkedlist_get_next_item(telemetryItem);
     }
@@ -591,6 +595,10 @@ void ModbusPnp_FreeCommandList(
     LIST_ITEM_HANDLE commandItem = singlylinkedlist_get_head_item(commandList);
     while (NULL != commandItem) {
         ModbusCommand* command = (ModbusCommand*)singlylinkedlist_item_get_value(commandItem);
+        if (command->Name)
+        {
+            free(command->Name);
+        }
         free(command);
         commandItem = singlylinkedlist_get_next_item(commandItem);
     }
@@ -606,6 +614,10 @@ void ModbusPnp_FreePropertyList(
     LIST_ITEM_HANDLE propertyItem = singlylinkedlist_get_head_item(propertyList);
     while (NULL != propertyItem) {
         ModbusProperty* property = (ModbusProperty*)singlylinkedlist_item_get_value(propertyItem);
+        if (property->Name)
+        {
+            free(property->Name);
+        }
         free(property);
         propertyItem = singlylinkedlist_get_next_item(propertyItem);
     }
@@ -638,8 +650,8 @@ void Modbus_CleanupPollingTasks(
 
 IOTHUB_CLIENT_RESULT
 Modbus_StartPnpComponent(
-    _In_ PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    _In_ PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+    PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     PMODBUS_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
@@ -649,8 +661,11 @@ Modbus_StartPnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
 
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
-    deviceContext->DeviceClient = deviceHandle;
+    // Assign client handle
+    deviceContext->ClientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
+
+    PnpComponentHandleSetContext(PnpComponentHandle, deviceContext);
+
     // Start polling all telemetry
     return ModbusPnp_StartPollingAllTelemetryProperty(deviceContext);
 }
@@ -726,7 +741,7 @@ IOTHUB_CLIENT_RESULT Modbus_CreatePnpAdapter(
 
         JSON_Object* interfaceConfigJson = json_object_get_object(AdapterGlobalConfig, modbusConfigIdentity);
 
-        if (IOTHUB_CLIENT_OK != ModbusPnp_ParseInterfaceConfig(interfaceConfig, interfaceConfigJson))
+        if (IOTHUB_CLIENT_OK != ModbusPnp_ParseInterfaceConfig(&interfaceConfig, interfaceConfigJson))
         {
             LogError("Could not parse interface config definition for %s", (char*)interfaceConfig->Id);
             result = IOTHUB_CLIENT_INVALID_ARG;
@@ -858,6 +873,16 @@ Modbus_CreatePnpComponent(
         LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
         result = IOTHUB_CLIENT_INVALID_ARG;
         goto exit;
+    }
+
+    // Assign client handle
+    if (PnpComponentHandleGetIoTType(BridgeComponentHandle) == PNP_BRIDGE_IOT_TYPE_DEVICE)
+    {
+        deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_DEVICE;
+    }
+    else
+    {
+        deviceContext->ClientType = PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE;
     }
 
     // Allocate and copy component name into device context

@@ -10,11 +10,23 @@
 #include "umock_c/umock_c_prod.h"
 #include "parson.h"
 #include <iothub_device_client.h>
+#include <iothub_module_client.h>
+
+#include "pnp_device_client.h"
+#include "pnp_dps.h"
+#include "pnp_protocol.h"
+#include "pnp_bridge_client.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+    // Pnp Bridge IoT type
+    typedef enum PNP_BRIDGE_IOT_TYPE {
+        PNP_BRIDGE_IOT_TYPE_DEVICE,
+        PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE
+    } PNP_BRIDGE_IOT_TYPE;
 
     // Pnp component handle
     typedef void* PNPBRIDGE_COMPONENT_HANDLE;
@@ -116,7 +128,7 @@ extern "C"
     * @brief    PNPBRIDGE_COMPONENT_START callback is invoked for each component in the configuration
     *           file after the IoT hub device client handle associated with the root interface of the
     *           pnp bridge has been registered with IoT hub. The pnp adapter should ensure that the component
-    *           starts reporting telenetry after this call is made and not before it.
+    *           starts reporting telemetry after this call is made and not before it.
     *
     * @param    PnpComponentHandle    Handle to Pnp component
     *
@@ -252,15 +264,28 @@ extern "C"
     );
 
     /**
-    * @brief    PnpComponentHandleGetIotHubDeviceClient gets device client handle from the component handle
+    * @brief    PnpComponentHandleGetClientHandle gets the client handle from the component handle
 
     * @param    ComponentHandle               Handle to pnp component
     *
-    * @returns  IOTHUB_DEVICE_CLIENT_HANDLE   IoTHub Device Client handle
+    * @returns  PNP_BRIDGE_CLIENT_HANDLE      Client handle
     */
     MOCKABLE_FUNCTION(,
-        IOTHUB_DEVICE_CLIENT_HANDLE,
-        PnpComponentHandleGetIotHubDeviceClient,
+        PNP_BRIDGE_CLIENT_HANDLE,
+        PnpComponentHandleGetClientHandle,
+        PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle
+    );
+
+    /**
+    * @brief    PnpComponentHandleGetIoTType gets the type of client handle from the component handle (Module or Device)
+
+    * @param    ComponentHandle               Handle to pnp component
+    *
+    * @returns  PNP_BRIDGE_IOT_TYPE           Client Type (PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE or PNP_BRIDGE_IOT_TYPE_DEVICE)
+    */
+    MOCKABLE_FUNCTION(,
+        PNP_BRIDGE_IOT_TYPE,
+        PnpComponentHandleGetIoTType,
         PNPBRIDGE_COMPONENT_HANDLE, ComponentHandle
     );
 

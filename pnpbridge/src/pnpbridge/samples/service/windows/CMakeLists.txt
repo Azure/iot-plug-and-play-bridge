@@ -80,6 +80,7 @@ set(pnp_bridge_common_libs
     pnpbridge
     pnpbridge_modbus
     pnpbridge_serial
+    pnpbridge_environmentalsensor
 )
 
 

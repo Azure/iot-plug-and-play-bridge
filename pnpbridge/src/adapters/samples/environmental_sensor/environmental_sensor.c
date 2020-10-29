@@ -178,11 +178,11 @@ static void SampleEnvironmentalSensor_PropertyCallback(
 
 // Processes a property update, which the server initiated, for customer name.
 static void SampleEnvironmentalSensor_CustomerNameCallback(
-    PENVIRONMENT_SENSOR EnvironmentalSensor,
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    void * ClientHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
-    int version)
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult;
     STRING_HANDLE jsonToSend = NULL;
@@ -191,6 +191,8 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
 
     LogInfo("Environmental Sensor Adapter:: CustomerName property invoked...");
     LogInfo("Environmental Sensor Adapter:: CustomerName data=<%.*s>", (int)PropertyValueLen, PropertyValueString);
+
+    PENVIRONMENT_SENSOR EnvironmentalSensor = PnpComponentHandleGetContext(PnpComponentHandle);
 
     if (EnvironmentalSensor->SensorState != NULL)
     {
@@ -219,11 +221,11 @@ static void SampleEnvironmentalSensor_CustomerNameCallback(
                 const char* jsonToSendStr = STRING_c_str(jsonToSend);
                 size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-                if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(DeviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(ClientHandle, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
                                             SampleEnvironmentalSensor_PropertyCallback,
                                             (void*) EnvironmentalSensor->SensorState->customerName)) != IOTHUB_CLIENT_OK)
                 {
-                    LogError("Environmental Sensor Adapter:: IoTHubDeviceClient_SendReportedState for customer name failed, error=%d", iothubClientResult);
+                    LogError("Environmental Sensor Adapter:: SampleEnvironmentalSensor_RouteReportedState for customer name failed, error=%d", iothubClientResult);
                 }
                 else
                 {
@@ -250,17 +252,19 @@ static bool SampleEnvironmentalSensor_ValidateBrightness(
 
 // Process a property update for bright level.
 static void SampleEnvironmentalSensor_BrightnessCallback(
-    PENVIRONMENT_SENSOR EnvironmentalSensor,
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    void * ClientHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
-    int version)
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult;
     STRING_HANDLE jsonToSend = NULL;
     char targetBrightnessString[32];
 
     LogInfo("Environmental Sensor Adapter:: Brightness property invoked...");
+
+    PENVIRONMENT_SENSOR EnvironmentalSensor = PnpComponentHandleGetContext(PnpComponentHandle);
 
     if (json_value_get_type(PropertyValue) != JSONNumber)
     {
@@ -289,11 +293,11 @@ static void SampleEnvironmentalSensor_BrightnessCallback(
             const char* jsonToSendStr = STRING_c_str(jsonToSend);
             size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-            if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(DeviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+            if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(ClientHandle, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
                                         SampleEnvironmentalSensor_PropertyCallback,
                                         (void*) &EnvironmentalSensor->SensorState->brightness)) != IOTHUB_CLIENT_OK)
             {
-                LogError("Environmental Sensor Adapter:: IoTHubDeviceClient_SendReportedState for brightness failed, error=%d", iothubClientResult);
+                LogError("Environmental Sensor Adapter:: SampleEnvironmentalSensor_RouteReportedState for brightness failed, error=%d", iothubClientResult);
             }
             else
             {
@@ -305,9 +309,40 @@ static void SampleEnvironmentalSensor_BrightnessCallback(
     }
 }
 
+// Routes the reported property for device or module client. This function can be called either by passing a valid client handle or by passing
+// a NULL client handle after components have been started such that the client handle can be extracted from the PnpComponentHandle
+IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
+    void * ClientHandle,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const unsigned char * ReportedState,
+    size_t Size,
+    IOTHUB_CLIENT_REPORTED_STATE_CALLBACK ReportedStateCallback,
+    void * UserContextCallback)
+{
+    IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
+
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle = (ClientHandle != NULL) ?
+            (PNP_BRIDGE_CLIENT_HANDLE) ClientHandle : PnpComponentHandleGetClientHandle(PnpComponentHandle);
+
+    if ((iothubClientResult = PnpBridgeClient_SendReportedState(clientHandle, ReportedState, Size,
+            ReportedStateCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("IoTHub client call to _SendReportedState failed with error code %d", iothubClientResult);
+        goto exit;
+    }
+    else
+    {
+        LogInfo("IoTHub client call to _SendReportedState succeeded");
+    }
+
+exit:
+    return iothubClientResult;
+}
+
+
 // Sends a reported property for device state of this simulated device.
 IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_ReportDeviceStateAsync(
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char * ComponentName)
 {
 
@@ -323,7 +358,7 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_ReportDeviceStateAsync(
         const char* jsonToSendStr = STRING_c_str(jsonToSend);
         size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-        if ((iothubClientResult = IoTHubDeviceClient_SendReportedState(DeviceClient, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+        if ((iothubClientResult = SampleEnvironmentalSensor_RouteReportedState(NULL, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
             SampleEnvironmentalSensor_PropertyCallback, (void*)sampleDeviceStateProperty)) != IOTHUB_CLIENT_OK)
         {
             LogError("Environmental Sensor Adapter:: Unable to send reported state for property=%s, error=%d",
@@ -374,20 +409,19 @@ int SampleEnvironmentalSensor_ProcessCommandUpdate(
 // SampleEnvironmentalSensor_ProcessPropertyUpdate receives updated properties from the server.  This implementation
 // acts as a simple dispatcher to the functions to perform the actual processing.
 void SampleEnvironmentalSensor_ProcessPropertyUpdate(
-    PENVIRONMENT_SENSOR EnvironmentalSensor,
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+    void * ClientHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
-    int version)
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-
     if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
     {
-        SampleEnvironmentalSensor_CustomerNameCallback(EnvironmentalSensor, DeviceClient, PropertyName, PropertyValue, version);
+        SampleEnvironmentalSensor_CustomerNameCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
     }
     else if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyBrightness) == 0)
     {
-        SampleEnvironmentalSensor_BrightnessCallback(EnvironmentalSensor, DeviceClient, PropertyName, PropertyValue, version);
+        SampleEnvironmentalSensor_BrightnessCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
     }
     else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
     {
@@ -402,6 +436,30 @@ void SampleEnvironmentalSensor_ProcessPropertyUpdate(
         // If the property is not implemented by this interface, presently we only record a log message but do not have a mechanism to report back to the service
         LogError("Environmental Sensor Adapter:: Property name <%s> is not associated with this interface", PropertyName);
     }
+}
+
+// Routes the sending asynchronous events for device or module client
+IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteSendEventAsync(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        IOTHUB_MESSAGE_HANDLE EventMessageHandle,
+        IOTHUB_CLIENT_EVENT_CONFIRMATION_CALLBACK EventConfirmationCallback,
+        void * UserContextCallback)
+{
+    IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
+    if ((iothubClientResult = PnpBridgeClient_SendEventAsync(clientHandle, EventMessageHandle,
+            EventConfirmationCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("IoTHub client call to _SendEventAsync failed with error code %d", iothubClientResult);
+        goto exit;
+    }
+    else
+    {
+        LogInfo("IoTHub client call to _SendEventAsync succeeded");
+    }
+
+exit:
+    return iothubClientResult;
 }
 
 
@@ -430,10 +488,11 @@ static void SampleEnvironmentalSensor_TelemetryCallback(
 // so this sample will work on platforms without these sensors).
 //
 IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_SendTelemetryMessagesAsync(
-    PENVIRONMENT_SENSOR EnvironmentalSensor)
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
+    PENVIRONMENT_SENSOR device = PnpComponentHandleGetContext(PnpComponentHandle);
 
     float currentTemperature = 20.0f + ((float)rand() / RAND_MAX) * 15.0f;
     float currentHumidity = 60.0f + ((float)rand() / RAND_MAX) * 20.0f;
@@ -443,14 +502,14 @@ IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_SendTelemetryMessagesAsync(
             currentTemperature, SampleEnvironmentalSensor_HumidityTelemetry, currentHumidity);
 
 
-    if ((messageHandle = PnP_CreateTelemetryMessageHandle(EnvironmentalSensor->SensorState->componentName, currentMessage)) == NULL)
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, currentMessage)) == NULL)
     {
         LogError("Environmental Sensor Adapter:: PnP_CreateTelemetryMessageHandle failed.");
     }
-    else if ((result = IoTHubDeviceClient_SendEventAsync(EnvironmentalSensor->DeviceClient, messageHandle,
-            SampleEnvironmentalSensor_TelemetryCallback, EnvironmentalSensor)) != IOTHUB_CLIENT_OK)
+    else if ((result = SampleEnvironmentalSensor_RouteSendEventAsync(PnpComponentHandle, messageHandle,
+            SampleEnvironmentalSensor_TelemetryCallback, device)) != IOTHUB_CLIENT_OK)
     {
-        LogError("Environmental Sensor Adapter:: IoTHubDeviceClient_SendEventAsync failed, error=%d", result);
+        LogError("Environmental Sensor Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
     }
 
     IoTHubMessage_Destroy(messageHandle);

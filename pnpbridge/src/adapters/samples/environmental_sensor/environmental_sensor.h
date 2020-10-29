@@ -13,6 +13,7 @@
 #include "pnp_device_client.h"
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
+#include "pnp_bridge_client.h"
 
 //
 // Application state associated with the particular component. In particular it contains 
@@ -32,7 +33,7 @@ typedef struct _ENVIRONMENT_SENSOR {
     THREAD_HANDLE WorkerHandle;
     volatile bool ShuttingDown;
     PENVIRONMENTAL_SENSOR_STATE SensorState;
-    IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient;
+    PNP_BRIDGE_CLIENT_HANDLE ClientHandle;
 } ENVIRONMENT_SENSOR, * PENVIRONMENT_SENSOR;
 
 #ifdef __cplusplus
@@ -42,16 +43,29 @@ extern "C"
 
     // Sends  telemetry messages about current environment
     IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_SendTelemetryMessagesAsync(
-        PENVIRONMENT_SENSOR EnvironmentalSensor);
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
     IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_ReportDeviceStateAsync(
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
         const char * ComponentName);
+    IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteReportedState(
+        void * ClientHandle,
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        const unsigned char * ReportedState,
+        size_t Size,
+        IOTHUB_CLIENT_REPORTED_STATE_CALLBACK ReportedStateCallback,
+        void * UserContextCallback);
+    IOTHUB_CLIENT_RESULT SampleEnvironmentalSensor_RouteSendEventAsync(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        IOTHUB_MESSAGE_HANDLE EventMessageHandle,
+        IOTHUB_CLIENT_EVENT_CONFIRMATION_CALLBACK EventConfirmationCallback,
+        void * UserContextCallback
+        );
     void SampleEnvironmentalSensor_ProcessPropertyUpdate(
-        PENVIRONMENT_SENSOR EnvironmentalSensor,
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClient,
+        void * ClientHandle,
         const char* PropertyName,
         JSON_Value* PropertyValue,
-        int version);
+        int version,
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
     int SampleEnvironmentalSensor_ProcessCommandUpdate(
         PENVIRONMENT_SENSOR EnvironmentalSensor,
         const char* CommandName,

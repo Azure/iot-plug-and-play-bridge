@@ -6,7 +6,7 @@
 
 #include <azure_c_shared_utility/xlogging.h>
 #include <azure_c_shared_utility/const_defines.h>
-#include <pnpbridge.h>
+#include <pnpadapter_api.h>
 #include <parson.h>
 
 #include "InterfaceDescriptor.h"
@@ -31,7 +31,7 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_StartPnpComponent(
         return IOTHUB_CLIENT_ERROR;
     }
     
-    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = PnpComponentHandleGetIotHubDeviceClient(PnpComponentHandle);
+    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle = (IOTHUB_DEVICE_CLIENT_HANDLE) PnpComponentHandleGetClientHandle(PnpComponentHandle);
     deviceAdapter->SetIotHubDeviceClientHandle(deviceHandle);
 
     try

@@ -25,9 +25,7 @@
 #include "pnp_device_client.h"
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
-
-#include "pnpadapter_api.h"
-#include "pnpbridge_common.h"
+#include "pnp_bridge_client.h"
 
 #ifdef __cplusplus
 extern "C"

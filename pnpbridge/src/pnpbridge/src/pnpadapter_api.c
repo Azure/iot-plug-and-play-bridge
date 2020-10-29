@@ -44,8 +44,14 @@ void PnpComponentHandleSetCommandCallback (PNPBRIDGE_COMPONENT_HANDLE ComponentH
     componentContextTag->processCommand = CommandCallback;
 }
 
-IOTHUB_DEVICE_CLIENT_HANDLE PnpComponentHandleGetIotHubDeviceClient(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle)
+PNP_BRIDGE_CLIENT_HANDLE PnpComponentHandleGetClientHandle(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle)
 {
     PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
-    return componentContextTag->deviceClient;
+    return componentContextTag->clientHandle;
+}
+
+PNP_BRIDGE_IOT_TYPE PnpComponentHandleGetIoTType(PNPBRIDGE_COMPONENT_HANDLE ComponentHandle)
+{
+    PPNPADAPTER_COMPONENT_TAG componentContextTag = (PPNPADAPTER_COMPONENT_TAG)ComponentHandle;
+    return componentContextTag->clientType;
 }

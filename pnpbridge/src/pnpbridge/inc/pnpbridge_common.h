@@ -47,6 +47,11 @@ extern "C"
 #include "pnp_device_client.h"
 #include "pnp_dps.h"
 #include "pnp_protocol.h"
+#include "pnp_bridge_client.h"
+
+// Pnp Bridge headers
+#include "configuration_parser.h"
+#include "pnpadapter_manager.h"
 
 #include <assert.h>
 
@@ -65,14 +70,10 @@ extern "C"
 MU_DEFINE_ENUM(PNPBRIDGE_RESULT, PNPBRIDGE_RESULT_VALUES);
 
 #define PNPBRIDGE_SUCCESS(Result) (Result == IOTHUB_CLIENT_OK)
-#include "configuration_parser.h"
-#include "pnpadapter_manager.h"
 
 MAP_RESULT Map_Add_Index(MAP_HANDLE handle, const char* key, int value);
 
 int Map_GetIndexValueFromKey(MAP_HANDLE handle, const char* key);
-
-#include <pnpbridge.h>
 
 #define PNP_CONFIG_CONNECTION_PARAMETERS "pnp_bridge_connection_parameters"
 #define PNP_CONFIG_TRACE_ON "pnp_bridge_debug_trace"
@@ -137,9 +138,8 @@ typedef struct _MX_IOT_HANDLE_TAG {
         } IotModule;
     } u1;
 
-    // Change this to enum
     bool IsModule;
-    bool DeviceClientInitialized;
+    bool ClientHandleInitialized;
 } MX_IOT_HANDLE_TAG;
 
 typedef enum PNP_BRIDGE_STATE {
@@ -157,6 +157,8 @@ typedef struct _PNP_BRIDGE {
 
     PNPBRIDGE_CONFIGURATION Configuration;
 
+    PNP_BRIDGE_IOT_TYPE IoTClientType;
+
     COND_HANDLE ExitCondition;
 
     LOCK_HANDLE ExitLock;
@@ -164,6 +166,19 @@ typedef struct _PNP_BRIDGE {
 
 
 void PnpBridge_Release(PPNP_BRIDGE pnpBridge);
+
+// User Agent String for Pnp Bridge telemetry [THIS VALUE SHOULD NEVER BE CHANGED]
+static const char g_pnpBridgeUserAgentString[] = "PnpBridgeUserAgentString";
+// Pnp Bridge desired property for component config
+static const char g_pnpBridgeConfigProperty[] = "PnpBridgeConfig";
+// Root Pnp Bridge Interface model ID when running as a module
+static const char g_pnpBridgeModuleRootModelId[] = "PNP_BRIDGE_ROOT_MODEL_ID";
+// Environment variable used to specify this application's connection string when running as a module
+static const char g_connectionStringEnvironmentVariable[] = "IOTHUB_DEVICE_CONNECTION_STRING";
+// Environment variable used to specify workload URI for dockerized containers/modules
+static const char g_workloadURIEnvironmentVariable[] = "IOTEDGE_WORKLOADURI";
+// Hub client tracing for when Pnp Bridge runs in Edge Module
+static const char g_hubClientTraceEnabled[] = "PNP_BRIDGE_HUB_TRACING_ENABLED";
 
 #ifdef __cplusplus
 }

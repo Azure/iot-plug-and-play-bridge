@@ -40,8 +40,8 @@ public:
     );
 
     void
-    SetIotHubDeviceClientHandle(
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle
+    SetIotHubClientHandle(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle
     );
 
     void 
@@ -55,7 +55,8 @@ private:
                                         s_Commands;
     JsonRpc*                            s_JsonRpc = nullptr;
     std::string                         s_ComponentName;
-    IOTHUB_DEVICE_CLIENT_HANDLE         s_DeviceClient;
+    PNP_BRIDGE_CLIENT_HANDLE            s_ClientHandle;
+    PNP_BRIDGE_IOT_TYPE                 s_ClientType;
     bool                                s_TelemetryStarted;
 
     static

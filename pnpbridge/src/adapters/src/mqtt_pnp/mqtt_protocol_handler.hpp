@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #pragma once
-#include "pnpbridge.h"
+#include "pnpadapter_api.h"
 class MqttProtocolHandler {
 public:
     virtual
@@ -21,8 +21,8 @@ public:
     ) = 0;
 
     virtual
-    void SetIotHubDeviceClientHandle(
-        IOTHUB_DEVICE_CLIENT_HANDLE DeviceClientHandle) = 0;
+    void SetIotHubClientHandle(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle) = 0;
 
     virtual
     void OnPnpPropertyCallback(
