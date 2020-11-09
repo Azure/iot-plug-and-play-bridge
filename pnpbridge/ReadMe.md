@@ -7,13 +7,14 @@ These instructions and samples assume basic familiarity with Azure Digital Twin 
 
 * [IoT Plug and Play bridge Components](#IoT-Plug-and-Play-bridge-Components)
 * [Extending IoT Plug and Play bridge: Authoring new PnP Bridge Adapters](#Extending-IoT-Plug-and-Play-bridge-Authoring-new-PnP-bridge-Adapters)
-* [Building and Running the IoT Plug and Play bridge](#Building-and-Running-the-IoT-Plug-and-Play-bridge)
+* [Building and Running the IoT Plug and Play bridge on an IoT device or gateway](#building-and-running-the-iot-plug-and-play-bridge-on-an-iot-device-or-gateway)
+* [Building and Running the IoT Plug and Play bridge as an edge module on IoT Edge Runtime](#building-and-running-the-iot-plug-and-play-bridge-as-an-edge-module-on-iot-edge-runtime)
 * [Folder Structure](#Folder-Structure)
 * [Support](#Support)
 
 ## IoT Plug and Play bridge Components
 
-![A diagram that outlines the structure of the IoT Plug and Play bridge. It consists of an adaptor manager, and pnp bridge adaptors that bind devices/peripherals to Azure Digital Twin Interfaces.](/pnpbridge/docs/Pictures/AzurePnPBridgeComponents.png)
+![A diagram that outlines the structure of the IoT Plug and Play bridge. It consists of an adapter manager, and pnp bridge adapters that bind devices/peripherals to Azure Digital Twin Interfaces.](/pnpbridge/docs/Pictures/AzurePnPBridgeComponents.png)
 
 ### PnP Bridge Adapters
 
@@ -21,7 +22,7 @@ The IoT Plug and Play bridge supports a set of PnP Bridge Adapters for various t
 
 ### Configuration JSON
 
-The IoT Plug and Play bridge is supplied with a JSON based configuration file that generally specifies the following pieces of information:
+The IoT Plug and Play bridge is supplied with a JSON based configuration that generally specifies the following pieces of information:
 
 * How to make a connection with Azure IoT, i.e. via connection strings, authentication parameters or device provisioning information if the connection is made using DPS
 * The location of the device capability model that will be used by the Pnp Bridge (static and immutable for now) which defines capabilities of an IoT plug and play device
@@ -138,13 +139,23 @@ Since this interface component has specified its hardware ID, the core device he
 }
 ```
 
+### Configuring Plug and Play Bridge
+Depending on whether the IoT Plug and Play bridge is being run natively on an IoT device or gateway (Linus or Windows) or as edge module on an IoT edge runtime (Linux) configuration happens in one of two ways:
+
+- If the Plug and Play bridge is running natively on an IoT device or gateway, use the [configuration file](#configuration-file) to configure the bridge.
+- If the Plug and Play bridge is running as an edge module on an IoT edge runtime, use the [desired property](#edge-module-configuration-using-desired-property) of the module twin to configure the bridge.
+
 ### Configuration file
 
-IoT Plug and Play bridge uses a configuration file to get the IoT Central / IoT Hub connection settings and to configure devices for which pnp interfaces will be published. The path to this configuration file can either be supplied to the bridge executable as a command line parameter or the binplaced config.json in the `pnpbridge\cmake\pnpbridge_x86\src\pnpbridge\samples\console` directory can be modified directly. In the future the configuration could come from cloud.
+When Plug and Play bridge is running natively on an IoT device or gateway,it uses a configuration file to get the IoT Central / IoT Hub connection settings and to configure devices for which pnp interfaces will be published. The path to this configuration file can either be supplied to the bridge executable as a command line parameter or the binplaced config.json in the `pnpbridge\cmake\pnpbridge_x86\src\pnpbridge\samples\console` directory can be modified directly. In the future the configuration could come from cloud.
 
 The schema for the configuration file is located under [**src\pnpbridge\src\pnpbridge_config_schema.json**](./src/pnpbridge/src/pnpbridge_config_schema.json).
 
 Use this with VS code while authoring a PnpBridge configuration file to get schema validation.
+
+### Edge Module Configuration Using Desired Property
+
+When Plug and Play bridge is running as an edge module on an IoT edge runtime, the JSON payload for the configuration, which tells the IoT Plug and Play bridge which sensors and peripherals should be exposed up to Azure, must be sent from the cloud to the module in the form of a desired property update for `PnpBridgeConfig`. The Plug and Play bridge will wait for this property update from the module twin to begin adapter and component configuration.
 
 ## Extending IoT Plug and Play bridge: Authoring new PnP Bridge Adapters
 
@@ -153,7 +164,7 @@ The IoT Plug and Play bridge establishes cloud connections and facilitates data 
 1. The creation of [Digital Twin Interfaces](https://github.com/Azure/azure-iot-sdk-c/blob/public-preview/digitaltwin_client/doc/interfaces.md) and binding device side functionality with the cloud-based capabilities such as the flow of telemetry or property and command updates.
 2. The establishment of control and data communication with the device hardware or firmware.
 
-Each PnP Bridge Adapters is designed to specifically interact with certain types of devices based on how connections are made or how device side communication is established. However, even if the communication happens over some handshaking protocol, a PnP Bridge Adapters may have multiple ways of interpreting the data from a supported device. In such cases, an interface component in the configuration file that specifies this adapter to be its associated PnP Bridge Adapters, should also specify which “interface configuration” its adapter must use in order to parse the data coming from the device.
+Each PnP Bridge Adapter is designed to specifically interact with certain types of devices based on how connections are made or how device side communication is established. However, even if the communication happens over some handshaking protocol, a PnP Bridge Adapters may have multiple ways of interpreting the data from a supported device. In such cases, an interface component in the configuration file that specifies this adapter to be its associated PnP Bridge Adapters, should also specify which “interface configuration” its adapter must use in order to parse the data coming from the device.
 
 The PnP Bridge Adapter interacts with the device using whichever communication protocol it supports and APIs provided by the underlying operating system (Windows, Linux or uses a platform abstraction layer) or vendor provided APIs for interaction with custom hardware/firmware. On the cloud side, the PnP Bridge Adapter uses APIs provided by the Azure IoT Device C SDK to create digital twin interfaces and bind callback functions to report updates to telemetry, properties or commands.
 
@@ -218,7 +229,7 @@ Enable the adapters in Pnp Bridge by adding a reference to these adapters in ada
 
 The following [readme](./src/adapters/src/Camera/readme.md) provides details on a sample camera adapter that can be enabled with this preview.
 
-## Building and Running the IoT Plug and Play bridge
+## Building and Running the IoT Plug and Play bridge on an IoT device or gateway
 
 | Platform | Supported |
 | :-----------: | :-----------: |
@@ -327,6 +338,216 @@ Start IoT Plug and Play bridge by running it in a command prompt.
   > Tip: The path to the configuration file can also be passed to the bridge executable as a command line parameter.
   
   > Tip: If you have either a built-in camera or a USB camera connected to your PC running the IoT Plug and Play bridge, you can start an application that uses camera, such as the built-in "Camera" app.  Once you started running the Camera app, IoT Plug and Play bridge's console output window will show the monitoring stats and the frame rate of the camera will be reported through Azure IoT Plug and Play (Digital Twin) interface to Azure.
+
+## Building and Running the IoT Plug and Play bridge as an edge module on IoT Edge Runtime
+
+| Platform | Supported |
+| :-----------: | :-----------: |
+| Windows |  :x: |
+| Linux | :heavy_check_mark: |
+
+### Prerequisites
+
+To complete this section, you need to install the following software on your local machine:
+
+* A development environment that supports compiling C++ such as: [Visual Studio (Community, Professional, or Enterprise)](https://visualstudio.microsoft.com/downloads/)- make sure that you include the NuGet package manager component and the Desktop Development with C++ workload when you install Visual Studio.
+* [Azure IoT Edge for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.azure-iot-edge), [Azure IoT Edge Tools for Visual Studio 2017](https://marketplace.visualstudio.com/items?itemName=vsc-iot.vsiotedgetools) or [Azure IoT Edge Tools for Visual Studio 2019](https://marketplace.visualstudio.com/items?itemName=vsc-iot.vs16iotedgetools) 
+* An Azure IoT Edge device on Linux
+* A container engine such as [Docker](https://docs.docker.com/docker-for-windows/install/). IoT Edge modules are packaged as containers, so you need a container engine on your development machine to build and manage them.
+* A free or standard-tier [IoT hub](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-create-through-portal) in Azure.
+
+### Step 1: Get the required dependencies
+
+After cloning the IoT Plug and Play bridge repo to your machine, open the "Developer Command Prompt for VS 2017" and navigate to the directory of the cloned repo:
+
+```cmd
+%REPO_DIR%\> cd pnpbridge
+
+%REPO_DIR%\pnpbridge\> git submodule update --init --recursive
+```
+
+>Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
+
+### Step 2: Setup Visual Studio tools
+To make the building and creation of the module image easy, setup IoT extensions for Visual Studio using instructions [here](https://docs.microsoft.com/en-us/azure/iot-edge/tutorial-develop-for-linux#set-up-vs-code-and-tools).
+
+### Step 3: Create a container registry
+You will need the container registry to push the IoT Plug and Play bridge module image onto. Create one using instructions [here](https://docs.microsoft.com/en-us/azure/iot-edge/tutorial-develop-for-linux#create-a-container-registry).
+
+### Step 4: Install Edge Runtime & Create IoT Edge device
+ - Create an IoT edge device using IoT Hub
+ - Install the edge runtime on your linux machine using instructions from [here](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge?tabs=linux)
+ - Provision the IoT edge device on the edge runtime using the symmetric key. More information can be found [here](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-manual-provision-symmetric-key?tabs=azure-portal%2Clinux#provision-an-iot-edge-device)
+ - Restart IoT Edge runtime
+
+### Step 5: Sign into Docker
+Provide your container registry credentials to Docker so that it can push your container image to be stored in the registry.
+
+### Step 6: Update Dockerfile
+Open pnpbridge\Dockerfile.amd64 (or the dockerfile corresponding to the architecture you want to use) and add/update the following environment variables:
+
+```bash
+  ENV IOTHUB_DEVICE_CONNECTION_STRING="<ENTER CONNECTION STRING OF EDGE MODULE DEVICE>"
+  ENV PNP_BRIDGE_ROOT_MODEL_ID "dtmi:com:example:RootPnpBridgeSampleDevice;1"
+  ENV PNP_BRIDGE_HUB_TRACING_ENABLED "false"
+```
+
+### Step 7: Build IoT Plug and Play Bridge module image
+ - Open pnpbridge\module.json and update the container registry/image information :
+```JSON
+{
+  "$schema-version": "0.0.1",
+  "description": "",
+  "image": {
+    "repository": "<ENTER CONTAINER REGISTRY URL>/<NAME OF IMAGE>",
+    "tag": {
+      "version": "<ENTER VERSION TAG>",
+      "platforms": {
+        "amd64": "./Dockerfile.amd64",
+        "amd64.debug": "./Dockerfile.amd64.debug",
+        "arm32v7": "./Dockerfile.arm32v7",
+        "arm64v8": "./Dockerfile.arm64v8"
+      }
+    },
+    "buildOptions": []
+  },
+  "language": "c"
+}
+
+```
+ - Right click module.json and select "Build and Push IoT Edge Module image"
+
+### Step 8: Update the deployment manifest
+
+  After the image has been successfully built and pushed to your container registry open pnpbridge\deployment.template.json and update the following:
+
+ - Add the container registry credentials:
+```JSON
+{
+  "registryCredentials": {
+     "pnpbridge": {
+        "username": "$CONTAINER_REGISTRY_USERNAME_pnpbridge",
+        "password": "$CONTAINER_REGISTRY_PASSWORD_pnpbridge",
+        "address": "<ADD CONTAINER REGISTRY ADDRESS HERE>"
+    }
+  }
+}
+
+```
+- Add the image name of the module image you created:
+```JSON
+{
+  "modules": {
+          "ModulePnpBridge": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "<CONTAINER REGISTRY URL>/<NAME OF IMAGE>:<TAG>",
+              "createOptions": "{}"
+            }
+          }
+        }
+}
+
+```
+
+- Add the Pnp Bridge device & adapter configuration with desired property `PnpBridgeConfig`, for example, the following configues a Modbus TCP carbon monoxide sensor:
+```JSON
+{
+  "ModulePnpBridge": {
+      "properties.desired": {
+        "PnpBridgeConfig": {
+          "pnp_bridge_interface_components": [
+            {
+                "_comment": "Component 1 - Modbus Device",
+                "pnp_bridge_component_name": "Co2Detector1",
+                "pnp_bridge_adapter_id": "modbus-pnp-interface",
+                "pnp_bridge_adapter_config": {
+                    "unit_id": 1,
+                    "tcp": {
+                        "host": "10.159.29.2",
+                        "port": 502
+                    },
+                    "modbus_identity": "DL679"
+                }
+            }
+        ],
+        "pnp_bridge_adapter_global_configs": {
+            "modbus-pnp-interface": {
+                "DL679": {
+                    "telemetry": {
+                        "co2": {
+                            "startAddress": "40001",
+                            "length": 1,
+                            "dataType": "integer",
+                            "defaultFrequency": 5000,
+                            "conversionCoefficient": 1
+                        },
+                        "temperature": {
+                            "startAddress": "40003",
+                            "length": 1,
+                            "dataType": "decimal",
+                            "defaultFrequency": 5000,
+                            "conversionCoefficient": 0.01
+                        }
+                    },
+                    "properties": {
+                        "firmwareVersion": {
+                            "startAddress": "40482",
+                            "length": 1,
+                            "dataType": "hexstring",
+                            "defaultFrequency": 60000,
+                            "conversionCoefficient": 1,
+                            "access": 1
+                        },
+                        "modelName": {
+                            "startAddress": "40483",
+                            "length": 2,
+                            "dataType": "string",
+                            "defaultFrequency": 60000,
+                            "conversionCoefficient": 1,
+                            "access": 1
+                        },
+                        "alarmStatus_co2": {
+                            "startAddress": "00305",
+                            "length": 1,
+                            "dataType": "boolean",
+                            "defaultFrequency": 1000,
+                            "conversionCoefficient": 1,
+                            "access": 1
+                        },
+                        "alarmThreshold_co2": {
+                            "startAddress": "40225",
+                            "length": 1,
+                            "dataType": "integer",
+                            "defaultFrequency": 30000,
+                            "conversionCoefficient": 1,
+                            "access": 2
+                        }
+                    },
+                    "commands": {
+                        "clearAlarm_co2": {
+                            "startAddress": "00305",
+                            "length": 1,
+                            "dataType": "flag",
+                            "conversionCoefficient": 1
+                        }
+                    }
+                }
+            }
+          }
+        }
+      }
+    }
+}
+
+```
+
+- Build the deployment manifest: Right Click, Build IoT Edge Solution
+
+- Deploy the newly created manifest to your device pnpbridge\config\deployment.amd64.json: Right Click, select Create Deployment for Single device
 
 ## Folder Structure
 

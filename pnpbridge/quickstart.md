@@ -172,9 +172,9 @@ Similarly on Linux run the following:
  Start the IoT Plug and Play bridge sample for Environmental sensors by running it in a command prompt:
 
     ```
-    %REPO_DIR%\pnpbridge\> cd cmake\pnpbridge_x86\src\adaptors\samples\environmental_sensor
+    %REPO_DIR%\pnpbridge\> cd cmake\pnpbridge_x86\src\adapters\samples\environmental_sensor
 
-    %REPO_DIR%\pnpbridge\cmake\pnpbridge_x86\src\adaptors\samples\environmental_sensor>  Debug\pnpbridge_environmentalsensor.exe
+    %REPO_DIR%\pnpbridge\cmake\pnpbridge_x86\src\adapters\samples\environmental_sensor>  Debug\pnpbridge_environmentalsensor.exe
     ```
 ## View Telemetry in Azure IoT explorer 
 The bridge will start to display informational messages indicating a successful connection and messaging with an Azure IoT Hub. Data should briefly start to appear in the dashboard that was created in "Setting up Azure IoT Central".
