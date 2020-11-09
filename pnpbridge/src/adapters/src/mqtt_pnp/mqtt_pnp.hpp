@@ -29,4 +29,4 @@ public:
 #define PNP_CONFIG_ADAPTER_MQTT_PROTOCOL "mqtt_protocol"
 #define PNP_CONFIG_ADAPTER_MQTT_SERVER "mqtt_server"
 #define PNP_CONFIG_ADAPTER_MQTT_PORT "mqtt_port"
-#define PNP_CONFIG_ADAPTER_MQTT_SUPPORTED_CONFIG "mqtt_identity"
+#define PNP_CONFIG_ADAPTER_MQTT_SUPPORTED_CONFIG "json_rpc_1"
