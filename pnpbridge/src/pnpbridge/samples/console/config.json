@@ -71,7 +71,7 @@
         "pnp_bridge_component_name": "mqttdevice1",
         "pnp_bridge_adapter_id": "mqtt-pnp-interface",
         "pnp_bridge_adapter_config": {
-            "mqtt_port": "1",
+            "mqtt_port": 1,
             "mqtt_server": "1.1.1.1",
             "mqtt_protocol": "json_rpc",
             "mqtt_identity": "json_rpc_1"

@@ -5,7 +5,11 @@
 
 IoT Plug and Play bridge is the open source effort from Microsoft that connects the PC sensor and peripheral ecosystem to Azure. It builds on top of [IoT Plug and Play](https://www.aka.ms/iotpnp) so that with minimal to no code, developers can easily connect peripherals/sensors to Azure, remotely access their data, monitor them, and manage them. This allows developers to perform analytics and gain valuable insights on their IoT devices from either the edge or the cloud. The IoT Plug and Play bridge accomplishes this without requiring peripherals to have direct Azure connectivity, enabling them to use a Windows or Linux host as a gateway to Azure instead. Because of this, it is particularly well suited for connecting existing/constrained sensors to Azure.
 
-IoT Plug and Play bridge can be deployed as a standalone executable on any IoT device, industrial PC, server, or gateway running Windows 10 or Linux. It can also be compiled into your application code. A simple configuration file tells the IoT Plug and Play bridge which sensors and peripherals should be exposed up to Azure. Once configured, the IoT Plug and Play bridge uses the [Azure IoT Hub Device C SDK](https://github.com/Azure/azure-iot-sdk-c) to publish IoT Plug and Play (PnP) interfaces for the specified sensors and peripherals up to Azure. Developers can then use existing Azure services and solution accelerators to receive data from and send commands to their sensors and peripherals.
+IoT Plug and Play bridge can be deployed as a standalone executable on any IoT device, industrial PC, server, or gateway running Windows 10 or Linux. It can also be compiled into your application code. A simple configuration file tells the IoT Plug and Play bridge which sensors and peripherals should be exposed up to Azure. Once configured, the IoT Plug and Play bridge uses the [Azure IoT Hub Device C SDK](https://github.com/Azure/azure-iot-sdk-c) to create a single device client handle, corresponding to a top level interface with specific model ID (DTMI) and supported IoT Plug and Play (PnP) components as specified in the model,for the specified sensors and peripherals up to Azure.
+
+IoT Plug and Play bridge can also be deployed as an IoT edge module running on any IoT edge device from an edge runtime running Linux. When the IoT Plug and Play bridge starts running as an edge module, it creates a single module client handle, corresponding to a top level interface with specific model ID (DTMI). Plug and Play Bridge adapter and IoT Plug and Play (PnP) components are not created until a property update for component and adapter related configuration (same as the JSON payload in the confugration file for IoT device) is received by the module. The JSON payload for the configuration, which tells the IoT Plug and Play bridge which sensors and peripherals should be exposed up to Azure, must be sent from the cloud to the module in the form of a desired property update for `PnpBridgeConfig`. The Plug and Play bridge will wait for this property update from the module twin to begin adapter and component configuration. Once configured, the IoT Plug and Play bridge uses the [Azure IoT Hub Module C SDK](https://docs.microsoft.com/en-us/azure/iot-hub/iot-c-sdk-ref/iothub-module-client-h) to begin device <-> cloud communication corresponding to the sensors and peripherals configured. 
+
+Developers can then use existing Azure services and solution accelerators to receive data from and send commands to their sensors and peripherals.
 
 ## Get Started - Documentation
 
@@ -57,11 +61,12 @@ The following OS platforms and versions are supported:
 - [CMake](https://cmake.org/download/) - when you install CMake, select the option `Add CMake to the system PATH`.
 - If you are building on Windows, you will also need to download Windows 17763 SDK: [https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
-- [Azure IoT Hub Device C SDK](https://github.com/Azure/azure-iot-sdk-c). The included build scripts in this repo will automatically clone the required Azure IoT C SDK for you.
+- [Azure IoT Hub Device Client C SDK](https://github.com/Azure/azure-iot-sdk-c) and [Azure IoT Hub Module Client C SDK](https://docs.microsoft.com/en-us/azure/iot-hub/iot-c-sdk-ref/iothub-module-client-h) . The included build scripts in this repo will automatically clone the required Azure IoT C SDK for you.
 
 ### Azure IoT Products and Tools
 
 - **Azure IoT Hub** - You'll need an [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/) in your Azure subscription to connect your device to. If you don't have an Azure subscription, [create a free account](https://azure.microsoft.com/free/) before you begin. If you don't have an IoT Hub, [follow these instructions to create one](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-create-using-cli).
+
 > Note: IoT Plug and Play support is not included in basic-tier IoT Hubs.
 
 - **[OPTIONAL]:** To interact with the your IoT Plug and Play device, you use the **Azure IoT explorer** tool. [Download and install the latest release of Azure IoT explorer](https://docs.microsoft.com/en-us/azure/iot-pnp/howto-use-iot-explorer) for your operating system.

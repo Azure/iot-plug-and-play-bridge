@@ -127,7 +127,7 @@ MqttPnp_CreatePnpComponent(
     const char* mqtt_server = json_object_get_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_SERVER);
     int mqtt_port = (int) json_object_get_number(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_PORT);
     const char* protocol = json_object_get_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_PROTOCOL);
-    const char* mqttConfigId = json_object_get_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_SUPPORTED_CONFIG);
+    const char* mqttConfigId = json_object_get_string(AdapterComponentConfig, PNP_CONFIG_ADAPTER_MQTT_IDENTITY);
 
     MqttPnpAdapter* adapterContext = reinterpret_cast<MqttPnpAdapter*>(PnpAdapterHandleGetContext(AdapterHandle));
     if (adapterContext == NULL)

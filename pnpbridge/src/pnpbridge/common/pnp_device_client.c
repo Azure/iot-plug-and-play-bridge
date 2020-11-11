@@ -106,12 +106,12 @@ IOTHUB_DEVICE_CLIENT_HANDLE PnP_CreateDeviceClientHandle(const PNP_DEVICE_CONFIG
         LogError("Unable to set the trusted cert, error=%d", iothubResult);
         result = false;
     }
+#endif // SET_TRUSTED_CERT
     else if ((iothubResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_PRODUCT_INFO, pnpDeviceConfiguration->UserAgentString)) != IOTHUB_CLIENT_OK)
     {
         LogError("Unable to set product info string option, error=%d", iothubResult);
         result = false;
     }
-#endif // SET_TRUSTED_CERT
     else
     {
         result = true;
@@ -209,12 +209,12 @@ IOTHUB_MODULE_CLIENT_HANDLE PnP_CreateModuleClientHandle(const PNP_DEVICE_CONFIG
         LogError("Unable to set the trusted cert for module client, error=%d", iothubResult);
         result = false;
     }
+#endif // SET_TRUSTED_CERT
     else if ((iothubResult = IoTHubModuleClient_SetOption(moduleClientHandle, OPTION_PRODUCT_INFO, pnpModuleConfiguration->UserAgentString)) != IOTHUB_CLIENT_OK)
     {
         LogError("Unable to set product info string option for module client, error=%d", iothubResult);
         result = false;
     }
-#endif // SET_TRUSTED_CERT
     else
     {
         result = true;
