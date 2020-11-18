@@ -72,9 +72,6 @@ add_definitions(-DPNP_LOGGING_ENABLED)
     # ${pnp_bridge_h_files}
 # )
 
-set(AZUREIOT_INC_FOLDER "/usr/include/azureiot" "/usr/include/azureiot/inc")
-
-include_directories(${AZUREIOT_INC_FOLDER})
 include_directories(inc)
 include_directories(common)
 include_directories(../../deps/azure-iot-sdk-c-pnp/deps/parson)
