@@ -98,13 +98,9 @@ void BluetoothSensorDeviceAdapterBase::OnTelemetryCallback(
 {
     if (telemetryStatus != IOTHUB_CLIENT_OK)
     {
-        LogError("Bluetooth Sensor Component: Telemetry callback reported error: %d",
-            telemetryStatus);
-    }
-    else
-    {
-        LogInfo("Bluetooth Sensor Component: Telemetry %s was reported correctly",
-            (char*)userContextCallback);
+        LogError("Bluetooth Sensor Component: Telemetry callback reported error: %d, usercontext: 0x%p",
+            telemetryStatus, userContextCallback);
+        return;
     }
 }
 

@@ -104,7 +104,6 @@ set(pnp_bridge_common_libs
     ssl
     crypto
     m
-    uuid
     pnpbridge_adapters
     pnpbridge_modbus
     pnpbridge_mqtt
