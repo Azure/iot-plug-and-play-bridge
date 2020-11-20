@@ -58,5 +58,3 @@ add_library(${PROJECT_NAME} STATIC
     ${pnpbridge_adapters_c_files}
     ${pnpbridge_adapters_h_files}
 )
-
-target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})
