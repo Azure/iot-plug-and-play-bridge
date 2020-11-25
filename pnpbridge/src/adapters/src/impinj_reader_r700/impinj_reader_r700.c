@@ -8,6 +8,27 @@
 
 #include "azure_c_shared_utility/const_defines.h"
 
+int ImpinjReader_TelemetryWorker(
+    void* context)
+{
+    PNPBRIDGE_COMPONENT_HANDLE componentHandle = (PNPBRIDGE_COMPONENT_HANDLE) context;
+    PIMPINJ_READER device = PnpComponentHandleGetContext(componentHandle);
+
+    // Report telemetry every 5 seconds till we are asked to stop
+    while (true)
+    {
+        if (device->ShuttingDown)
+        {
+            return IOTHUB_CLIENT_OK;
+        }
+
+        // SampleEnvironmentalSensor_SendTelemetryMessagesAsync(componentHandle);
+        fprintf(stdout, "Telemetry Worker Message: Ping");
+        // Sleep for 5 seconds
+        ThreadAPI_Sleep(5000);
+    }
+    return IOTHUB_CLIENT_OK;
+}
 
 IOTHUB_CLIENT_RESULT ImpinjReader_CreatePnpAdapter(
     const JSON_Object* AdapterGlobalConfig,
@@ -56,8 +77,8 @@ ImpinjReader_CreatePnpComponent(
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
-    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_ProcessPropertyUpdate);
-    PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ImpinjReader_ProcessCommand);
+    // PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_ProcessPropertyUpdate); // not yet implemented
+    // PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ImpinjReader_ProcessCommand);  // not yet implemented
 
 exit:
     return result;
