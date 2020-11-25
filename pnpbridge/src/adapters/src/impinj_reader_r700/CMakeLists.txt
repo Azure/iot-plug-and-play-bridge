@@ -67,3 +67,5 @@ set(pnp_bridge_common_libs
 )
 
 target_link_libraries(${PROJECT_NAME} ${pnp_bridge_common_libs})
+
+configure_file(./config.json config.json COPYONLY)

@@ -97,12 +97,12 @@ IOTHUB_CLIENT_RESULT ImpinjReader_StartPnpComponent(
 
     // Set shutdown state
     device->ShuttingDown = false;
-    LogInfo("Environmental Sensor: Starting Pnp Component");
+    LogInfo("Impinj Reader: Starting Pnp Component");
 
     PnpComponentHandleSetContext(PnpComponentHandle, device);
 
     // Report Device State Async
-    result = SampleImpinjReader_ReportDeviceStateAsync(PnpComponentHandle, device->SensorState->componentName);
+    // result = ImpinjReader_ReportDeviceStateAsync(PnpComponentHandle, device->SensorState->componentName);
 
     // Create a thread to periodically publish telemetry
     if (ThreadAPI_Create(&device->WorkerHandle, ImpinjReader_TelemetryWorker, PnpComponentHandle) != THREADAPI_OK) {

@@ -23,7 +23,8 @@ PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
     &ModbusPnpInterface,
     &MqttPnpInterface,
     &SerialPnpInterface,
-    &VirtualEnvironmentSensorSample
+    &VirtualEnvironmentSensorSample, 
+    &ImpinjReaderR700
 };
 
 #else //WIN32
