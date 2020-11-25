@@ -8,6 +8,7 @@ extern PNP_ADAPTER SerialPnpInterface;
 extern PNP_ADAPTER ModbusPnpInterface;
 extern PNP_ADAPTER MqttPnpInterface;
 extern PNP_ADAPTER VirtualEnvironmentSensorSample;
+extern PNP_ADAPTER ImpinjReaderR700;
 
 #ifdef WIN32
 
@@ -31,7 +32,8 @@ PPNP_ADAPTER PNP_ADAPTER_MANIFEST[] = {
     &ModbusPnpInterface,
     &MqttPnpInterface,
     &SerialPnpInterface,
-    &VirtualEnvironmentSensorSample
+    &VirtualEnvironmentSensorSample,
+    &ImpinjReaderR700
 };
 
 #endif
