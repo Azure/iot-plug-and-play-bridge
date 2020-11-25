@@ -76,6 +76,7 @@ set(pnp_bridge_common_libs
     pnpbridge_mqtt
     pnpbridge_serial
     pnpbridge_environmentalsensor
+    pnpbridge_impinj_reader_r700
 )
 
 if(WIN32)
