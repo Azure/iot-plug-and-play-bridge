@@ -22,8 +22,8 @@ int ImpinjReader_TelemetryWorker(
             return IOTHUB_CLIENT_OK;
         }
 
-        // SampleEnvironmentalSensor_SendTelemetryMessagesAsync(componentHandle);
-        fprintf(stdout, "Telemetry Worker Message: Ping");
+        // ImpinjReader_SendTelemetryMessagesAsync(componentHandle);
+        LogInfo("Telemetry Worker: Ping");  // Placeholder for actual data
         // Sleep for 5 seconds
         ThreadAPI_Sleep(5000);
     }
@@ -50,6 +50,17 @@ ImpinjReader_CreatePnpComponent(
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PIMPINJ_READER device = NULL;
+
+    char compCreateStr[100] = "Creating Impinj Reader component: ";
+    const char* compHostname;
+    compHostname = json_object_dotget_string(AdapterComponentConfig, "hostname");
+    strcat(compCreateStr, ComponentName);
+    strcat(compCreateStr, "\n       Hostname: ");
+    strcat(compCreateStr, compHostname);
+
+    LogInfo(compCreateStr);
+    // char compHostnameStr[] = "Hostname: " + *json_object_dotget_string(AdapterComponentConfig,"hostname");
+    // char compCreateFullStr[] = *compCreateStr + "\n" + *compHostnameStr;
 
     if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
     {
