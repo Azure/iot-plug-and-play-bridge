@@ -14,10 +14,12 @@ compileAsC99()
 
 set(pnpbridge_adapters_c_files
     ./impinj_reader_r700.c
+    ./curl_wrapper/curl_wrapper.c
 )
 
 set(pnpbridge_adapters_h_files
     ./impinj_reader_r700.h
+    ./curl_wrapper/curl_wrapper.h
 )
 
 add_definitions("-D_UNICODE") 

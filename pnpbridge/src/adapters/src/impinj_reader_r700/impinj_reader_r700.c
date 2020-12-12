@@ -14,6 +14,7 @@ int ImpinjReader_TelemetryWorker(
     PNPBRIDGE_COMPONENT_HANDLE componentHandle = (PNPBRIDGE_COMPONENT_HANDLE) context;
     PIMPINJ_READER device = PnpComponentHandleGetContext(componentHandle);
 
+
     // Report telemetry every 5 seconds till we are asked to stop
     while (true)
     {
@@ -36,6 +37,9 @@ IOTHUB_CLIENT_RESULT ImpinjReader_CreatePnpAdapter(
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterGlobalConfig);
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);  // initialize cURL globally
+
     return IOTHUB_CLIENT_OK;
 }
 
@@ -51,7 +55,8 @@ ImpinjReader_CreatePnpComponent(
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     PIMPINJ_READER device = NULL;
 
-    char compCreateStr[100] = "Creating Impinj Reader component: ";
+    /* print component creation message */
+    char compCreateStr[] = "Creating Impinj Reader component: ";
     const char* compHostname;
     compHostname = json_object_dotget_string(AdapterComponentConfig, "hostname");
     strcat(compCreateStr, ComponentName);
@@ -59,8 +64,6 @@ ImpinjReader_CreatePnpComponent(
     strcat(compCreateStr, compHostname);
 
     LogInfo(compCreateStr);
-    // char compHostnameStr[] = "Hostname: " + *json_object_dotget_string(AdapterComponentConfig,"hostname");
-    // char compCreateFullStr[] = *compCreateStr + "\n" + *compHostnameStr;
 
     if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
     {
@@ -69,6 +72,52 @@ ImpinjReader_CreatePnpComponent(
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
+
+    /* initialize cURL handles */
+    CURL *static_handle;
+    CURL *stream_handle;
+    CURLM *multi_handle;
+    static_handle = curl_easy_init();
+    stream_handle = curl_easy_init();   
+
+    /* initialize base HTTP strings */
+    char str_http[] = "http://";
+    char str_basepath[] = "/api/v1/";
+    char str_endpoint_status[] = "status";
+    char str_endpoint_stream[] = "data/stream";
+
+    char str_url_always[100] = "";
+    strcat(str_url_always, str_http);
+    strcat(str_url_always, compHostname);
+    strcat(str_url_always, str_basepath);
+
+    char str_url_status[100] = "";
+    strcat(str_url_status, str_url_always);
+    strcat(str_url_status, str_endpoint_status);
+
+    char str_url_stream[100] = "";
+    strcat(str_url_stream, str_url_always);
+    strcat(str_url_stream, str_endpoint_stream);
+
+    char http_user[] = "root";
+    char http_pass[] = "impinj";
+    char http_login[50] = "";
+    strcat(http_login, http_user);
+    strcat(http_login, ":");
+    strcat(http_login, http_pass);
+
+    LogInfo("Status Endpoint: %s", str_url_status);
+    LogInfo("Stream Endpoint: %s", str_url_stream);
+    LogInfo("Reader Login: %s", http_login);
+
+    curl_easy_setopt(static_handle, CURLOPT_URL, str_url_status);
+    curl_easy_setopt(static_handle, CURLOPT_USERPWD, http_login);
+    curl_easy_setopt(static_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
+
+    curl_easy_setopt(stream_handle, CURLOPT_URL, str_url_stream);
+    curl_easy_setopt(stream_handle, CURLOPT_USERPWD, http_login);
+    curl_easy_setopt(stream_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
+
 
     device = calloc(1, sizeof(IMPINJ_READER));
     if (NULL == device) {
@@ -162,6 +211,9 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
+
+    curl_global_cleanup();  // cleanup cURL globally
+
     return IOTHUB_CLIENT_OK;
 }
 

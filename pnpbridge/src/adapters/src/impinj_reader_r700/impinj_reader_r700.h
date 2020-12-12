@@ -20,6 +20,7 @@ extern "C"
 
 
 #include "parson.h"
+#include "curl_wrapper/curl_wrapper.h"
 
 
 //
