@@ -63,18 +63,25 @@ typedef struct _IMPINJ_READER {
 //     IOTHUB_CLIENT_EVENT_CONFIRMATION_CALLBACK EventConfirmationCallback,
 //     void * UserContextCallback
 //     );
-// void ImpinjReader_ProcessPropertyUpdate(
-//     void * ClientHandle,
-//     const char* PropertyName,
-//     JSON_Value* PropertyValue,
-//     int version,
-//     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
-// int ImpinjReader_ProcessCommandUpdate(
-//     PIMPINJ_READER EnvironmentalSensor,
+void ImpinjReader_ProcessPropertyUpdate(
+    void * ClientHandle,
+    const char* PropertyName,
+    JSON_Value* PropertyValue,
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
+// int ImpinjReader_ProcessCommand(
+//     PIMPINJ_READER ImpinjReader,
 //     const char* CommandName,
 //     JSON_Value* CommandValue,
 //     unsigned char** CommandResponse,
 //     size_t* CommandResponseSize);
+int ImpinjReader_ProcessCommand(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize);
+
 
 #ifdef __cplusplus
 }

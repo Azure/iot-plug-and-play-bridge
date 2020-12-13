@@ -137,8 +137,8 @@ ImpinjReader_CreatePnpComponent(
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
-    // PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_ProcessPropertyUpdate); // not yet implemented
-    // PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ImpinjReader_ProcessCommand);  // not yet implemented
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_ProcessPropertyUpdate); 
+    PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ImpinjReader_ProcessCommand); 
 
 exit:
     return result;
@@ -215,6 +215,86 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
     curl_global_cleanup();  // cleanup cURL globally
 
     return IOTHUB_CLIENT_OK;
+}
+
+void ImpinjReader_ProcessPropertyUpdate(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* PropertyName,
+    JSON_Value* PropertyValue,
+    int version,
+    void* userContextCallback
+)
+// {
+//     SampleEnvironmentalSensor_ProcessPropertyUpdate(userContextCallback, PropertyName, PropertyValue, version, PnpComponentHandle);
+// }
+
+// void SampleEnvironmentalSensor_ProcessPropertyUpdate(
+//     void * ClientHandle,
+//     const char* PropertyName,
+//     JSON_Value* PropertyValue,
+//     int version,
+//     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+{
+    // if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
+    // {
+    //     SampleEnvironmentalSensor_CustomerNameCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+    // }
+    // else if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyBrightness) == 0)
+    // {
+    //     SampleEnvironmentalSensor_BrightnessCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+    // }
+    // else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
+    // {
+    //     const char * PropertyValueString = json_value_get_string(PropertyValue);
+    //     size_t PropertyValueLen = strlen(PropertyValueString);
+
+    //     LogInfo("Environmental Sensor Adapter:: Property name <%s>, last reported value=<%.*s>",
+    //         PropertyName, (int)PropertyValueLen, PropertyValueString);
+    // }
+    // else
+    // {
+        // If the property is not implemented by this interface, presently we only record a log message but do not have a mechanism to report back to the service
+        LogError("Impinj Reader Adapter:: Property name <%s> is not associated with this interface", PropertyName);
+    // }
+}
+
+int ImpinjReader_ProcessCommandUpdate(
+    PIMPINJ_READER ImpinjReader,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
+{
+    // if (strcmp(CommandName, sampleEnvironmentalSensorCommandBlink) == 0)
+    // {
+    //     return SampleEnvironmentalSensor_BlinkCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
+    // }
+    // else if (strcmp(CommandName, sampleEnvironmentalSensorCommandTurnOn) == 0)
+    // {
+    //     return SampleEnvironmentalSensor_TurnOnLightCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
+    // }
+    // else if (strcmp(CommandName, sampleEnvironmentalSensorCommandTurnOff) == 0)
+    // {
+    //     return SampleEnvironmentalSensor_TurnOffLightCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
+    // }
+    // else
+    // {
+        // If the command is not implemented by this interface, by convention we return a 404 error to server.
+        LogError("Impinj Reader Adapter:: Command name <%s> is not associated with this interface", CommandName);
+        return 0; // SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_NotImplemented);
+    // }
+}
+
+int ImpinjReader_ProcessCommand(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize
+)
+{
+    PIMPINJ_READER device = PnpComponentHandleGetContext(PnpComponentHandle);
+    return ImpinjReader_ProcessCommandUpdate(device, CommandName, CommandValue, CommandResponse, CommandResponseSize);
 }
 
 PNP_ADAPTER ImpinjReaderR700 = {
