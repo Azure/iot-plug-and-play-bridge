@@ -141,9 +141,9 @@ static IOTHUB_MODULE_CLIENT_HANDLE AllocateModuleClientHandle(const PNP_DEVICE_C
 
     if (pnpModuleConfiguration->securityType == PNP_CONNECTION_SECURITY_TYPE_CONNECTION_STRING)
     {
-        if ((moduleClientHandle = IoTHubModuleClient_CreateFromConnectionString(pnpModuleConfiguration->u.connectionString, MQTT_Protocol)) == NULL)
+        if ((moduleClientHandle = IoTHubModuleClient_CreateFromEnvironment(MQTT_Protocol)) == NULL)
         {
-            LogError("Failure creating IotHub module client. Hint: Check your connection string");
+            LogError("Failure creating IotHub module client from environment info.");
         }
     }
 
