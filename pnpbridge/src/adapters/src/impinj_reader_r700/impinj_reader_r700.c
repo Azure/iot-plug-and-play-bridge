@@ -8,6 +8,86 @@
 
 #include "azure_c_shared_utility/const_defines.h"
 
+// Telemetry names for this interface
+//
+static const char* impinjReader_telemetry_eventData = "eventData";
+
+//
+// Read-only property, device state indiciating whether its online or not
+//
+static const char impinjReader_property_deviceStatus[] = "deviceStatus";
+static const unsigned char impinjReader_property_deviceStatus_exampleData[] = "{\"status\":\"idle\",\"time\":\"2021-01-12T22:19:10.293609888Z\",\"serialNumber\":\"37020340091\",\"mqttBrokerConnectionStatus\":\"disconnected\",\"mqttTlsAuthentication\":\"none\",\"kafkaClusterConnectionStatus\":\"connected\"}";
+static const int impinjReader_property_deviceStatus_DataLen = sizeof(impinjReader_property_deviceStatus_exampleData) - 1;
+
+//
+// Callback command names for this interface.
+//vb
+static const char impinjReader_command_startPreset[] = "startPreset";
+static const char impinjReader_command_stopPreset[] = "stopPreset";
+
+//
+// Command status codes
+//
+static const int commandStatusSuccess = 200;
+static const int commandStatusPending = 202;
+static const int commandStatusNotPresent = 404;
+static const int commandStatusFailure = 500;
+
+//
+// Response to various commands [Must be valid JSON]
+//
+// static const unsigned char sampleEnviromentalSensor_BlinkResponse[] = "{ \"status\": 12, \"description\": \"leds blinking\" }";
+// static const unsigned char sampleEnviromentalSensor_TurnOnLightResponse[] = "{ \"status\": 1, \"description\": \"light on\" }";
+// static const unsigned char sampleEnviromentalSensor_TurnOffLightResponse[] = "{ \"status\": 1, \"description\": \"light off\" }";
+static const unsigned char impinjReader_EmptyBody[] = "\" \"";
+
+static const unsigned char impinjReader_OutOfMemory[] = "\"Out of memory\"";
+static const unsigned char impinjReader_NotImplemented[] = "\"Requested command not implemented on this interface\"";
+
+//
+// Property names that are updatable from the server application/operator
+//
+static const char impinjReader_property_testPropertyString[] = "testPropertyString";
+
+//
+// Response description is an optional, human readable message including more information
+// about the setting of the property
+//
+static const char g_ImpinjReaderPropertyResponseDescription[] = "success";
+
+// Format of the body when responding to a targetTemperature 
+// static const char g_environmentalSensorBrightnessResponseFormat[] = "%.2d";
+
+
+// ImpinjReader_SetCommandResponse is a helper that fills out a command response
+static int ImpinjReader_SetCommandResponse(
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize,
+    const unsigned char* ResponseData)
+{
+    int result = PNP_STATUS_SUCCESS;
+    if (ResponseData == NULL)
+    {
+        LogError("Impinj Reader Adapter:: Response Data is empty");
+        *CommandResponseSize = 0;
+        return PNP_STATUS_INTERNAL_ERROR;
+    }
+
+    *CommandResponseSize = strlen((char*)ResponseData);
+    memset(CommandResponse, 0, sizeof(*CommandResponse));
+
+    // Allocate a copy of the response data to return to the invoker. Caller will free this.
+    if (mallocAndStrcpy_s((char**)CommandResponse, (char*)ResponseData) != 0)
+    {
+        LogError("Impinj Reader Adapter:: Unable to allocate response data");
+        result = PNP_STATUS_INTERNAL_ERROR;
+    }
+
+    return result;
+}
+
+
+
 int ImpinjReader_TelemetryWorker(
     void* context)
 {
@@ -137,8 +217,8 @@ ImpinjReader_CreatePnpComponent(
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
-    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_ProcessPropertyUpdate); 
-    PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ImpinjReader_ProcessCommand); 
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_OnPropertyCallback); 
+    PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ImpinjReader_OnCommandCallback); 
 
 exit:
     return result;
@@ -217,12 +297,19 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
     return IOTHUB_CLIENT_OK;
 }
 
-void ImpinjReader_ProcessPropertyUpdate(
+
+void ImpinjReader_ProcessProperty(void* ClientHandle, const char* PropertyName, JSON_Value* PropertyValue, int version, PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+{
+    LogInfo("Proccesing Property Update: %s", PropertyName);
+    LogInfo("   New Property Value: %s", json_value_get_string(PropertyValue));
+}
+
+void ImpinjReader_OnPropertyCallback(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
     int version,
-    void* userContextCallback
+    void* ClientHandle
 )
 // {
 //     SampleEnvironmentalSensor_ProcessPropertyUpdate(userContextCallback, PropertyName, PropertyValue, version, PnpComponentHandle);
@@ -235,6 +322,12 @@ void ImpinjReader_ProcessPropertyUpdate(
 //     int version,
 //     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
+    
+    LogInfo("Processing Property: %s", PropertyName);
+    if (strcmp(PropertyName, impinjReader_property_testPropertyString) == 0)
+    {
+        ImpinjReader_ProcessProperty(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+    }
     // if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
     // {
     //     SampleEnvironmentalSensor_CustomerNameCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
@@ -251,41 +344,39 @@ void ImpinjReader_ProcessPropertyUpdate(
     //     LogInfo("Environmental Sensor Adapter:: Property name <%s>, last reported value=<%.*s>",
     //         PropertyName, (int)PropertyValueLen, PropertyValueString);
     // }
-    // else
-    // {
+    else
+    {
         // If the property is not implemented by this interface, presently we only record a log message but do not have a mechanism to report back to the service
         LogError("Impinj Reader Adapter:: Property name <%s> is not associated with this interface", PropertyName);
-    // }
+    }
 }
 
-int ImpinjReader_ProcessCommandUpdate(
+int ImpinjReader_ProcessCommand(
     PIMPINJ_READER ImpinjReader,
     const char* CommandName,
     JSON_Value* CommandValue,
     unsigned char** CommandResponse,
     size_t* CommandResponseSize)
 {
-    // if (strcmp(CommandName, sampleEnvironmentalSensorCommandBlink) == 0)
-    // {
-    //     return SampleEnvironmentalSensor_BlinkCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
-    // }
-    // else if (strcmp(CommandName, sampleEnvironmentalSensorCommandTurnOn) == 0)
-    // {
-    //     return SampleEnvironmentalSensor_TurnOnLightCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
-    // }
-    // else if (strcmp(CommandName, sampleEnvironmentalSensorCommandTurnOff) == 0)
-    // {
-    //     return SampleEnvironmentalSensor_TurnOffLightCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
-    // }
-    // else
-    // {
+    if (strcmp(CommandName, "startPreset") == 0)
+    {
+        // return SampleEnvironmentalSensor_BlinkCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
+        LogInfo("Stub: Execute Start Preset command with value = %s", json_value_get_string(CommandValue));
+    }
+    else if (strcmp(CommandName, "stopPreset") == 0)
+    {
+        // return SampleEnvironmentalSensor_TurnOnLightCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
+        LogInfo("Stub: Execute Stop Preset command.");
+    }
+    else
+    {
         // If the command is not implemented by this interface, by convention we return a 404 error to server.
         LogError("Impinj Reader Adapter:: Command name <%s> is not associated with this interface", CommandName);
         return 0; // SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_NotImplemented);
-    // }
+    }
 }
 
-int ImpinjReader_ProcessCommand(
+int ImpinjReader_OnCommandCallback(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char* CommandName,
     JSON_Value* CommandValue,
@@ -293,8 +384,9 @@ int ImpinjReader_ProcessCommand(
     size_t* CommandResponseSize
 )
 {
+    LogInfo("Processing Command: %s", CommandName);
     PIMPINJ_READER device = PnpComponentHandleGetContext(PnpComponentHandle);
-    return ImpinjReader_ProcessCommandUpdate(device, CommandName, CommandValue, CommandResponse, CommandResponseSize);
+    return ImpinjReader_ProcessCommand(device, CommandName, CommandValue, CommandResponse, CommandResponseSize);
 }
 
 PNP_ADAPTER ImpinjReaderR700 = {

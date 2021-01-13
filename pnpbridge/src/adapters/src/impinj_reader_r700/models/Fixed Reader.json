@@ -1,0 +1,13 @@
+[
+  {
+    "@id": "dtmi:impinj:fixedReader;1",
+    "@type": "Interface",
+    "displayName": {
+      "en": "Fixed Reader"
+    },
+    "@context": [
+      "dtmi:iotcentral:context;2",
+      "dtmi:dtdl:context;2"
+    ]
+  }
+]

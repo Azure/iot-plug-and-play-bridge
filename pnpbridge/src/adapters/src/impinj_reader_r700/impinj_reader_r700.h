@@ -31,10 +31,11 @@ extern "C"
 typedef struct IMPINJ_READER_STATE_TAG
 {
     char * componentName;
-    int brightness;
     char* customerName;
-    int numTimesBlinkCommandCalled;
-    int blinkInterval;
+    int statusHeartbeatSec;
+    char* state;
+    char* preset;
+
 } IMPINJ_READER_STATE, * PIMPINJ_READER_STATE;
 
 typedef struct _IMPINJ_READER {
@@ -63,19 +64,14 @@ typedef struct _IMPINJ_READER {
 //     IOTHUB_CLIENT_EVENT_CONFIRMATION_CALLBACK EventConfirmationCallback,
 //     void * UserContextCallback
 //     );
-void ImpinjReader_ProcessPropertyUpdate(
+void ImpinjReader_OnPropertyCallback(
     void * ClientHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
     int version,
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
-// int ImpinjReader_ProcessCommand(
-//     PIMPINJ_READER ImpinjReader,
-//     const char* CommandName,
-//     JSON_Value* CommandValue,
-//     unsigned char** CommandResponse,
-//     size_t* CommandResponseSize);
-int ImpinjReader_ProcessCommand(
+
+int ImpinjReader_OnCommandCallback(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char* CommandName,
     JSON_Value* CommandValue,
