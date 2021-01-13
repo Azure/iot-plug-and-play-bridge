@@ -231,17 +231,17 @@ The following [readme](./src/adapters/src/Camera/readme.md) provides details on 
 
 ## Building and Running the IoT Plug and Play bridge on an IoT device or gateway
 
-| Platform | Supported |
-| :-----------: | :-----------: |
-| Windows |  :heavy_check_mark: |
-| Linux | :heavy_check_mark: |
+| Platform |     Supported      |
+| :------: | :----------------: |
+| Windows  | :heavy_check_mark: |
+|  Linux   | :heavy_check_mark: |
 
 ### Prerequisites
 
 To complete this section, you need to install the following software on your local machine:
 
-* A development environment that supports compiling C++ such as: [Visual Studio (Community, Professional, or Enterprise)](https://visualstudio.microsoft.com/downloads/)- make sure that you include the NuGet package manager component and the Desktop Development with C++ workload when you install Visual Studio.
-* [CMake](https://cmake.org/download/) - when you install CMake, select the option `Add CMake to the system PATH`.
+* A development environment that supports compiling C++ such as: [Visual Studio (Community, Professional, or Enterprise)](https://visualstudio.microsoft.com/downloads/)- make sure that you include the NuGet package manager component and the Desktop Development with C++ workload when you install Visual Studio.
+* [CMake](https://cmake.org/download/) - when you install CMake, select the option `Add CMake to the system PATH`.
 * If you are building on Windows, you will also need to download Windows 17763 SDK: [https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
 ### Step 1: Get the required dependencies
@@ -254,7 +254,7 @@ After cloning the IoT Plug and Play bridge repo to your machine, open the "Devel
 %REPO_DIR%\pnpbridge\> git submodule update --init --recursive
 ```
 
->Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
+>Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
 
 ### Step 2: Build the Azure IoT Plug and Play bridge (on Windows)
 
@@ -341,16 +341,16 @@ Start IoT Plug and Play bridge by running it in a command prompt.
 
 ## Building and Running the IoT Plug and Play bridge as an edge module on IoT Edge Runtime
 
-| Platform | Supported |
-| :-----------: | :-----------: |
-| Windows |  :x: |
-| Linux | :heavy_check_mark: |
+| Platform |     Supported      |
+| :------: | :----------------: |
+| Windows  |        :x:         |
+|  Linux   | :heavy_check_mark: |
 
 ### Prerequisites
 
 To complete this section, you need to install the following software on your local machine:
 
-* A development environment that supports compiling C++ such as: [Visual Studio (Community, Professional, or Enterprise)](https://visualstudio.microsoft.com/downloads/)- make sure that you include the NuGet package manager component and the Desktop Development with C++ workload when you install Visual Studio.
+* A development environment that supports compiling C++ such as: [Visual Studio (Community, Professional, or Enterprise)](https://visualstudio.microsoft.com/downloads/)- make sure that you include the NuGet package manager component and the Desktop Development with C++ workload when you install Visual Studio.
 * [Azure IoT Edge for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.azure-iot-edge), [Azure IoT Edge Tools for Visual Studio 2017](https://marketplace.visualstudio.com/items?itemName=vsc-iot.vsiotedgetools) or [Azure IoT Edge Tools for Visual Studio 2019](https://marketplace.visualstudio.com/items?itemName=vsc-iot.vs16iotedgetools) 
 * An Azure IoT Edge device on Linux
 * A container engine such as [Docker](https://docs.docker.com/docker-for-windows/install/). IoT Edge modules are packaged as containers, so you need a container engine on your development machine to build and manage them.
@@ -366,7 +366,7 @@ After cloning the IoT Plug and Play bridge repo to your machine, open the "Devel
 %REPO_DIR%\pnpbridge\> git submodule update --init --recursive
 ```
 
->Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
+>Note: If you run into issues with the git clone sub module update failing, this is a known issue with Windows file paths and git see: [https://github.com/msysgit/git/pull/110](https://github.com/msysgit/git/pull/110) . You can try the following command to resolve the issue: `git config --system core.longpaths true`
 
 ### Step 2: Setup Visual Studio tools
 To make the building and creation of the module image easy, setup IoT extensions for Visual Studio using instructions [here](https://docs.microsoft.com/en-us/azure/iot-edge/tutorial-develop-for-linux#set-up-vs-code-and-tools).
@@ -387,31 +387,31 @@ Provide your container registry credentials to Docker so that it can push your c
 Open pnpbridge\Dockerfile.amd64 (or the dockerfile corresponding to the architecture you want to use) and add/update the following environment variables:
 
 ```bash
-  ENV IOTHUB_DEVICE_CONNECTION_STRING="<ENTER CONNECTION STRING OF EDGE MODULE DEVICE>"
-  ENV PNP_BRIDGE_ROOT_MODEL_ID "dtmi:com:example:RootPnpBridgeSampleDevice;1"
-  ENV PNP_BRIDGE_HUB_TRACING_ENABLED "false"
+
+  ENV PNP_BRIDGE_ROOT_MODEL_ID "dtmi:com:example:RootPnpBridgeSampleDevice;1"
+  ENV PNP_BRIDGE_HUB_TRACING_ENABLED "false"
 ```
 
 ### Step 7: Build IoT Plug and Play Bridge module image
  - Open pnpbridge\module.json and update the container registry/image information :
 ```JSON
 {
-  "$schema-version": "0.0.1",
-  "description": "",
-  "image": {
-    "repository": "<ENTER CONTAINER REGISTRY URL>/<NAME OF IMAGE>",
-    "tag": {
-      "version": "<ENTER VERSION TAG>",
-      "platforms": {
-        "amd64": "./Dockerfile.amd64",
-        "amd64.debug": "./Dockerfile.amd64.debug",
-        "arm32v7": "./Dockerfile.arm32v7",
-        "arm64v8": "./Dockerfile.arm64v8"
-      }
-    },
-    "buildOptions": []
-  },
-  "language": "c"
+    "$schema-version": "0.0.1",
+    "description": "",
+    "image": {
+    "repository": "<ENTER CONTAINER REGISTRY URL>/<NAME OF IMAGE>",
+    "tag": {
+    "version": "<ENTER VERSION TAG>",
+       "platforms": {
+      "amd64": "./Dockerfile.amd64",
+      "amd64.debug": "./Dockerfile.amd64.debug",
+      "arm32v7": "./Dockerfile.arm32v7",
+      "arm64v8": "./Dockerfile.arm64v8"
+     }
+    },
+   "buildOptions": []
+  },
+  "language": "c"
 }
 
 ```
@@ -424,12 +424,12 @@ Open pnpbridge\Dockerfile.amd64 (or the dockerfile corresponding to the architec
  - Add the container registry credentials:
 ```JSON
 {
-  "registryCredentials": {
-     "pnpbridge": {
-        "username": "$CONTAINER_REGISTRY_USERNAME_pnpbridge",
-        "password": "$CONTAINER_REGISTRY_PASSWORD_pnpbridge",
-        "address": "<ADD CONTAINER REGISTRY ADDRESS HERE>"
-    }
+  "registryCredentials": {
+    "pnpbridge": {
+      "username": "$CONTAINER_REGISTRY_USERNAME_pnpbridge",
+      "password": "$CONTAINER_REGISTRY_PASSWORD_pnpbridge",
+      "address": "<ADD CONTAINER REGISTRY ADDRESS HERE>"
+   }
   }
 }
 
@@ -437,18 +437,18 @@ Open pnpbridge\Dockerfile.amd64 (or the dockerfile corresponding to the architec
 - Add the image name of the module image you created:
 ```JSON
 {
-  "modules": {
-          "ModulePnpBridge": {
-            "version": "1.0",
-            "type": "docker",
-            "status": "running",
-            "restartPolicy": "always",
-            "settings": {
-              "image": "<CONTAINER REGISTRY URL>/<NAME OF IMAGE>:<TAG>",
-              "createOptions": "{}"
-            }
-          }
-        }
+  "modules": {
+        "ModulePnpBridge": {
+         "version": "1.0",
+         "type": "docker",
+         "status": "running",
+         "restartPolicy": "always",
+         "settings": {
+           "image": "<CONTAINER REGISTRY URL>/<NAME OF IMAGE>:<TAG>",
+           "createOptions": "{}"
+         }
+        }
+      }
 }
 
 ```
@@ -456,91 +456,91 @@ Open pnpbridge\Dockerfile.amd64 (or the dockerfile corresponding to the architec
 - Add the Pnp Bridge device & adapter configuration with desired property `PnpBridgeConfig`, for example, the following configues a Modbus TCP carbon monoxide sensor:
 ```JSON
 {
-  "ModulePnpBridge": {
-      "properties.desired": {
-        "PnpBridgeConfig": {
-          "pnp_bridge_interface_components": [
-            {
-                "_comment": "Component 1 - Modbus Device",
-                "pnp_bridge_component_name": "Co2Detector1",
-                "pnp_bridge_adapter_id": "modbus-pnp-interface",
-                "pnp_bridge_adapter_config": {
-                    "unit_id": 1,
-                    "tcp": {
-                        "host": "10.159.29.2",
-                        "port": 502
-                    },
-                    "modbus_identity": "DL679"
-                }
-            }
-        ],
-        "pnp_bridge_adapter_global_configs": {
-            "modbus-pnp-interface": {
-                "DL679": {
-                    "telemetry": {
-                        "co2": {
-                            "startAddress": "40001",
-                            "length": 1,
-                            "dataType": "integer",
-                            "defaultFrequency": 5000,
-                            "conversionCoefficient": 1
-                        },
-                        "temperature": {
-                            "startAddress": "40003",
-                            "length": 1,
-                            "dataType": "decimal",
-                            "defaultFrequency": 5000,
-                            "conversionCoefficient": 0.01
-                        }
-                    },
-                    "properties": {
-                        "firmwareVersion": {
-                            "startAddress": "40482",
-                            "length": 1,
-                            "dataType": "hexstring",
-                            "defaultFrequency": 60000,
-                            "conversionCoefficient": 1,
-                            "access": 1
-                        },
-                        "modelName": {
-                            "startAddress": "40483",
-                            "length": 2,
-                            "dataType": "string",
-                            "defaultFrequency": 60000,
-                            "conversionCoefficient": 1,
-                            "access": 1
-                        },
-                        "alarmStatus_co2": {
-                            "startAddress": "00305",
-                            "length": 1,
-                            "dataType": "boolean",
-                            "defaultFrequency": 1000,
-                            "conversionCoefficient": 1,
-                            "access": 1
-                        },
-                        "alarmThreshold_co2": {
-                            "startAddress": "40225",
-                            "length": 1,
-                            "dataType": "integer",
-                            "defaultFrequency": 30000,
-                            "conversionCoefficient": 1,
-                            "access": 2
-                        }
-                    },
-                    "commands": {
-                        "clearAlarm_co2": {
-                            "startAddress": "00305",
-                            "length": 1,
-                            "dataType": "flag",
-                            "conversionCoefficient": 1
-                        }
-                    }
-                }
-            }
-          }
-        }
-      }
-    }
+  "ModulePnpBridge": {
+     "properties.desired": {
+      "PnpBridgeConfig": {
+        "pnp_bridge_interface_components": [
+         {
+            "_comment": "Component 1 - Modbus Device",
+            "pnp_bridge_component_name": "Co2Detector1",
+            "pnp_bridge_adapter_id": "modbus-pnp-interface",
+            "pnp_bridge_adapter_config": {
+               "unit_id": 1,
+               "tcp": {
+                  "host": "10.159.29.2",
+                  "port": 502
+               },
+               "modbus_identity": "DL679"
+            }
+         }
+      ],
+      "pnp_bridge_adapter_global_configs": {
+         "modbus-pnp-interface": {
+            "DL679": {
+               "telemetry": {
+                  "co2": {
+                     "startAddress": "40001",
+                     "length": 1,
+                     "dataType": "integer",
+                     "defaultFrequency": 5000,
+                     "conversionCoefficient": 1
+                  },
+                  "temperature": {
+                     "startAddress": "40003",
+                     "length": 1,
+                     "dataType": "decimal",
+                     "defaultFrequency": 5000,
+                     "conversionCoefficient": 0.01
+                  }
+               },
+               "properties": {
+                  "firmwareVersion": {
+                     "startAddress": "40482",
+                     "length": 1,
+                     "dataType": "hexstring",
+                     "defaultFrequency": 60000,
+                     "conversionCoefficient": 1,
+                     "access": 1
+                  },
+                  "modelName": {
+                     "startAddress": "40483",
+                     "length": 2,
+                     "dataType": "string",
+                     "defaultFrequency": 60000,
+                     "conversionCoefficient": 1,
+                     "access": 1
+                  },
+                  "alarmStatus_co2": {
+                     "startAddress": "00305",
+                     "length": 1,
+                     "dataType": "boolean",
+                     "defaultFrequency": 1000,
+                     "conversionCoefficient": 1,
+                     "access": 1
+                  },
+                  "alarmThreshold_co2": {
+                     "startAddress": "40225",
+                     "length": 1,
+                     "dataType": "integer",
+                     "defaultFrequency": 30000,
+                     "conversionCoefficient": 1,
+                     "access": 2
+                  }
+               },
+               "commands": {
+                  "clearAlarm_co2": {
+                     "startAddress": "00305",
+                     "length": 1,
+                     "dataType": "flag",
+                     "conversionCoefficient": 1
+                  }
+               }
+            }
+         }
+        }
+      }
+     }
+   }
 }
 
 ```
