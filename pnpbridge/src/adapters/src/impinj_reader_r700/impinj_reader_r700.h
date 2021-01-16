@@ -43,6 +43,7 @@ typedef struct _IMPINJ_READER {
     volatile bool ShuttingDown;
     PIMPINJ_READER_STATE SensorState;
     PNP_BRIDGE_CLIENT_HANDLE ClientHandle;
+    CURL_Session_Data *curl_static_session;
 } IMPINJ_READER, * PIMPINJ_READER;
 
 // Sends  telemetry messages about current environment

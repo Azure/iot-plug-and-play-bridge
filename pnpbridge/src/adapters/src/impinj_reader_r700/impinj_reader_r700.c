@@ -8,6 +8,8 @@
 
 #include "azure_c_shared_utility/const_defines.h"
 
+#include "curl_wrapper/curl_wrapper.h"
+
 // Telemetry names for this interface
 //
 static const char* impinjReader_telemetry_eventData = "eventData";
@@ -153,13 +155,6 @@ ImpinjReader_CreatePnpComponent(
         goto exit;
     }
 
-    /* initialize cURL handles */
-    CURL *static_handle;
-    CURL *stream_handle;
-    CURLM *multi_handle;
-    static_handle = curl_easy_init();
-    stream_handle = curl_easy_init();   
-
     /* initialize base HTTP strings */
     char str_http[] = "http://";
     char str_basepath[] = "/api/v1/";
@@ -190,14 +185,8 @@ ImpinjReader_CreatePnpComponent(
     LogInfo("Stream Endpoint: %s", str_url_stream);
     LogInfo("Reader Login: %s", http_login);
 
-    // curl_easy_setopt(static_handle, CURLOPT_URL, str_url_status);
-    // curl_easy_setopt(static_handle, CURLOPT_USERPWD, http_login);
-    // curl_easy_setopt(static_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
-
-    // curl_easy_setopt(stream_handle, CURLOPT_URL, str_url_stream);
-    // curl_easy_setopt(stream_handle, CURLOPT_USERPWD, http_login);
-    // curl_easy_setopt(stream_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
-
+    /* initialize cURL sessions */
+    CURL_Session_Data *static_session = curlStaticInit("root", "impinj", str_url_always, VERIFY_CERTS_OFF, curlDataReadCallback, VERBOSE_OUTPUT_OFF);
 
     device = calloc(1, sizeof(IMPINJ_READER));
     if (NULL == device) {
@@ -215,6 +204,8 @@ ImpinjReader_CreatePnpComponent(
     }
 
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
+
+    device->curl_static_session = static_session;
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
     PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_OnPropertyCallback); 
@@ -274,6 +265,10 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpComponent(
         {
             if (device->SensorState->customerName != NULL)
             {
+                if (device->curl_static_session != NULL) {
+                    curlStaticCleanup(device->curl_static_session);
+                    free(device->curl_static_session);
+                }
                 free(device->SensorState->customerName);
             }
             free(device->SensorState);
@@ -362,6 +357,12 @@ int ImpinjReader_ProcessCommand(
     {
         // return SampleEnvironmentalSensor_BlinkCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
         LogInfo("Stub: Execute Start Preset command with value = %s", json_value_get_string(CommandValue));
+        CURLcode res;
+        res = curlStaticGet(ImpinjReader->curl_static_session, "/status");
+
+        if(res != CURLE_OK)
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
     }
     else if (strcmp(CommandName, "stopPreset") == 0)
     {
