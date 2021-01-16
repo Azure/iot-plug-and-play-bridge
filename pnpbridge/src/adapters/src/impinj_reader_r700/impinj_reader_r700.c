@@ -143,7 +143,7 @@ ImpinjReader_CreatePnpComponent(
     strcat(compCreateStr, "\n       Hostname: ");
     strcat(compCreateStr, compHostname);
 
-    LogInfo(compCreateStr);
+    LogInfo("%s", compCreateStr);
 
     if (strlen(ComponentName) > PNP_MAXIMUM_COMPONENT_LENGTH)
     {
@@ -190,13 +190,13 @@ ImpinjReader_CreatePnpComponent(
     LogInfo("Stream Endpoint: %s", str_url_stream);
     LogInfo("Reader Login: %s", http_login);
 
-    curl_easy_setopt(static_handle, CURLOPT_URL, str_url_status);
-    curl_easy_setopt(static_handle, CURLOPT_USERPWD, http_login);
-    curl_easy_setopt(static_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
+    // curl_easy_setopt(static_handle, CURLOPT_URL, str_url_status);
+    // curl_easy_setopt(static_handle, CURLOPT_USERPWD, http_login);
+    // curl_easy_setopt(static_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
 
-    curl_easy_setopt(stream_handle, CURLOPT_URL, str_url_stream);
-    curl_easy_setopt(stream_handle, CURLOPT_USERPWD, http_login);
-    curl_easy_setopt(stream_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
+    // curl_easy_setopt(stream_handle, CURLOPT_URL, str_url_stream);
+    // curl_easy_setopt(stream_handle, CURLOPT_USERPWD, http_login);
+    // curl_easy_setopt(stream_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
 
 
     device = calloc(1, sizeof(IMPINJ_READER));
