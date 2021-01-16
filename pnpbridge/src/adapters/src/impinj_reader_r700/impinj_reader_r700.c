@@ -186,7 +186,7 @@ ImpinjReader_CreatePnpComponent(
     LogInfo("Reader Login: %s", http_login);
 
     /* initialize cURL sessions */
-    CURL_Session_Data *static_session = curlStaticInit("root", "impinj", str_url_always, VERIFY_CERTS_OFF, curlDataReadCallback, VERBOSE_OUTPUT_OFF);
+    CURL_Session_Data *static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", VERIFY_CERTS_OFF, curlDataReadCallback, VERBOSE_OUTPUT_OFF);
 
     device = calloc(1, sizeof(IMPINJ_READER));
     if (NULL == device) {
