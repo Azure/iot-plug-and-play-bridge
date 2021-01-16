@@ -38,21 +38,21 @@
 
 int main(void)
 {
-  CURL *static_handle;
+  CURL_Session_Data *static_session;
   CURLcode res;
   size_t (*callbackFunction)() = &curlDataReadCallback;
 
   curlGlobalInit();
  
-  static_handle = curlStaticInit("root", "impinj", 0, callbackFunction);
+  static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", VERIFY_CERTS_OFF, callbackFunction, VERBOSE_OUTPUT_OFF);
 
-  res = curlStaticGet(static_handle, "https://192.168.1.14/api/v1/status");
+  res = curlStaticGet(static_session, "/status");
 
-  // if(res != CURLE_OK)
-  //     fprintf(stderr, "curl_easy_perform() failed: %s\n",
-  //             curl_easy_strerror(res));
+  if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
 
-  curlStaticCleanup(static_handle);
+  curlStaticCleanup(static_session);
 
   curlGlobalCleanup();
  
