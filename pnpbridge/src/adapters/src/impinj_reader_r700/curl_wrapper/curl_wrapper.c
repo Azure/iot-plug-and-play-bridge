@@ -126,7 +126,7 @@ CURLcode curlStaticGet(CURL_Session_Data *session_data, char *endpoint) {
 
   char* full_endpoint = Str_Trim(fullurl).strPtr;
 
-  fprintf(stdout, "\n Endpoint: %s", full_endpoint);
+  fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
 
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
@@ -155,7 +155,7 @@ CURLcode curlStaticPost(CURL_Session_Data *session_data, char *endpoint, char *p
 
   char* full_endpoint = Str_Trim(fullurl).strPtr;
 
-  fprintf(stdout, "\n Endpoint: %s", full_endpoint);
+  fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
 
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
   curl_easy_setopt(static_handle, CURLOPT_POST, 1);

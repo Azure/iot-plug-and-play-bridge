@@ -346,10 +346,17 @@ int ImpinjReader_ProcessCommand(
 {
     if (strcmp(CommandName, "startPreset") == 0)
     {
-        // return SampleEnvironmentalSensor_BlinkCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
         LogInfo("Stub: Execute Start Preset command with value = %s", json_value_get_string(CommandValue));
+        
         CURLcode res;
-        res = curlStaticGet(ImpinjReader->curl_static_session, "/status");
+
+        char startPresetEndpoint_build[100] = "";
+        strcat(startPresetEndpoint_build, "/profiles/inventory/presets/");
+        strcat(startPresetEndpoint_build, json_value_get_string(CommandValue));
+        strcat(startPresetEndpoint_build, "/start");
+        char *startPresetEndpoint = Str_Trim(startPresetEndpoint_build).strPtr;
+
+        res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
 
         if(res != CURLE_OK)
             fprintf(stderr, "curl_easy_perform() failed: %s\n",
@@ -357,8 +364,15 @@ int ImpinjReader_ProcessCommand(
     }
     else if (strcmp(CommandName, "stopPreset") == 0)
     {
-        // return SampleEnvironmentalSensor_TurnOnLightCallback(EnvironmentalSensor, CommandValue, CommandResponse, CommandResponseSize);
         LogInfo("Stub: Execute Stop Preset command.");
+
+        CURLcode res;
+
+        res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
+
+        if(res != CURLE_OK)
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
     }
     else
     {
