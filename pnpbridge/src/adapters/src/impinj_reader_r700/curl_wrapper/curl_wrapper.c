@@ -11,7 +11,6 @@ void curlGlobalInit() {
 
 size_t curlStaticDataReadCallback(void *contents, size_t size, size_t nmemb, void *userp) {
 
-    fprintf(stdout, "\nStart callback fn.");
     size_t realsize = size * nmemb;
     
     struct CURL_Session_Data *session_data = (struct CURL_Session_Data*)userp;
@@ -21,8 +20,7 @@ size_t curlStaticDataReadCallback(void *contents, size_t size, size_t nmemb, voi
 
     fprintf(stdout,"\n   Size: %d", session_data->callbackDataLength);
     fprintf(stdout,"\n   %s", (char*)*(session_data->callbackData));
-
-    fprintf(stdout, "\nFinish callback fn.");
+    fprintf(stdout, "\n");
 
   return nmemb; // realsize;
 }
@@ -33,7 +31,7 @@ CURL_Session_Data * curlStaticInit(char *username, char *password, char *basePat
   static_handle = curl_easy_init();
 
   #define CALLBACK_DATA_BUFFER 10000
-  char *callback_data;
+  static char *callback_data;
   callback_data = (char *)malloc(sizeof(char)*CALLBACK_DATA_BUFFER);
   
   if(callback_data == NULL) {
@@ -70,7 +68,8 @@ CURL_Session_Data * curlStaticInit(char *username, char *password, char *basePat
     sessionMemSize = sessionMemSize + structInitSizes[i];
   }
 
-  CURL_Session_Data *session_data = malloc(sessionMemSize);
+  static CURL_Session_Data *session_data; 
+  session_data = malloc(sessionMemSize);
   
     session_data->curlHandle = static_handle;
     session_data->username = username;
@@ -122,14 +121,11 @@ CURLcode curlStaticGet(CURL_Session_Data *session_data, char *endpoint) {
 
   char fullurl[1000] = "";
 
-  *(session_data->callbackData) = startPtr;  // kwenner: this is to ree-assign the callback data pointer value.... for some reason it gets cleared on the previous line?
-
   strcat(fullurl, session_data->basePath);
   strcat(fullurl, endpoint);
 
   curl_easy_setopt(static_handle, CURLOPT_URL, fullurl);
 
-  fprintf(stdout, "\nRight before curl_easy_perform.");
   return curl_easy_perform(static_handle);
 
 }
@@ -138,7 +134,7 @@ void curlStaticCleanup(CURL_Session_Data *session_data) {
     
     CURL *static_handle = session_data->curlHandle;
     
-    free(session_data->callbackData);
+    free(*(session_data->callbackData));
     free(session_data);
 
     curl_easy_cleanup(static_handle);
