@@ -36,28 +36,10 @@
 /* curl stuff */ 
 #include "curl_wrapper.h"
 
+#define USEC_DELAY 500000
+
 int main(void)
 {
-
-// pointers example
-  // int **p;
-	// int *q;
-
-	// p = (int **)malloc(sizeof(int *));
-	// *p = (int *)malloc(sizeof(int));
-	// **p = 12;
-	// q = *p;
-	// printf("\n *q= %d",(int) *q);
-	// printf("\n q= %p",q);
-	// printf("\n **p= %d",(int) **p);
-	// printf("\n *p= %p",*p);
-	// printf("\n p= %p",p);
-
-
-	// free(q);
-	// free(p);
-
-
   CURL_Session_Data *static_session;
   CURLcode res;
   size_t (*callbackFunction)() = &curlStaticDataReadCallback;
@@ -66,11 +48,55 @@ int main(void)
  
   static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", VERIFY_CERTS_OFF, callbackFunction, VERBOSE_OUTPUT_OFF);
 
+  usleep(USEC_DELAY);
+
   res = curlStaticGet(static_session, "/status");
 
   if(res != CURLE_OK)
       fprintf(stderr, "curl_easy_perform() failed: %s\n",
               curl_easy_strerror(res));
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticGet(static_session, "/profiles/inventory/presets");
+
+  if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticPost(static_session, "/profiles/inventory/presets/basic_inventory/start", "");
+
+  if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticGet(static_session, "/status");
+
+  if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticPost(static_session, "/profiles/stop", "");
+
+  if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticGet(static_session, "/status");
+
+  if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+
+  usleep(USEC_DELAY);
 
   curlStaticCleanup(static_session);
 

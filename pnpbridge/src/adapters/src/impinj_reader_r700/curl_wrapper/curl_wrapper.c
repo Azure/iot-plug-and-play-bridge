@@ -124,7 +124,42 @@ CURLcode curlStaticGet(CURL_Session_Data *session_data, char *endpoint) {
   strcat(fullurl, session_data->basePath);
   strcat(fullurl, endpoint);
 
-  curl_easy_setopt(static_handle, CURLOPT_URL, fullurl);
+  char* full_endpoint = Str_Trim(fullurl).strPtr;
+
+  fprintf(stdout, "\n Endpoint: %s", full_endpoint);
+
+  curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
+  curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+
+  return curl_easy_perform(static_handle);
+
+}
+
+CURLcode curlStaticPost(CURL_Session_Data *session_data, char *endpoint, char *postData) {
+  
+  CURL *static_handle = session_data->curlHandle;
+
+  char* startPtr = *(session_data->callbackData);
+  char nullChar[1] = "\000";
+  for (int i=0;i<CALLBACK_DATA_BUFFER;i++) {
+    // set memory to \000
+    memcpy(startPtr + i, &nullChar, sizeof(char));
+  }
+
+  session_data->callbackDataLength = 0;
+
+  char fullurl[1000] = "";
+
+  strcat(fullurl, session_data->basePath);
+  strcat(fullurl, endpoint);
+
+  char* full_endpoint = Str_Trim(fullurl).strPtr;
+
+  fprintf(stdout, "\n Endpoint: %s", full_endpoint);
+
+  curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+  curl_easy_setopt(static_handle, CURLOPT_POST, 1);
+  curl_easy_setopt(static_handle, CURLOPT_POSTFIELDS, postData);
 
   return curl_easy_perform(static_handle);
 
