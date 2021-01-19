@@ -9,6 +9,8 @@
 #include "azure_c_shared_utility/const_defines.h"
 
 #include "curl_wrapper/curl_wrapper.h"
+#include <string.h>
+#include "helpers/string_manipulation.h"
 
 // Telemetry names for this interface
 //
@@ -139,8 +141,15 @@ ImpinjReader_CreatePnpComponent(
 
     /* print component creation message */
     char compCreateStr[] = "Creating Impinj Reader component: ";
-    const char* compHostname;
-    compHostname = json_object_dotget_string(AdapterComponentConfig, "hostname");
+
+    char* compHostname;
+    char* http_user;
+    char* http_pass;
+
+    compHostname = (char*)json_object_dotget_string(AdapterComponentConfig, "hostname");
+    http_user = (char*)json_object_dotget_string(AdapterComponentConfig, "username");
+    http_pass = (char*)json_object_dotget_string(AdapterComponentConfig, "password");
+    
     strcat(compCreateStr, ComponentName);
     strcat(compCreateStr, "\n       Hostname: ");
     strcat(compCreateStr, compHostname);
@@ -156,37 +165,19 @@ ImpinjReader_CreatePnpComponent(
     }
 
     /* initialize base HTTP strings */
-    char str_http[] = "http://";
-    char str_basepath[] = "/api/v1/";
-    char str_endpoint_status[] = "status";
-    char str_endpoint_stream[] = "data/stream";
+        
+    char str_http[] = "https://";
+    char str_basepath[] = "/api/v1";
 
-    char str_url_always[100] = "";
-    strcat(str_url_always, str_http);
-    strcat(str_url_always, compHostname);
-    strcat(str_url_always, str_basepath);
+    char build_str_url_always[100] = "";
+    strcat(build_str_url_always, str_http);
+    strcat(build_str_url_always, compHostname);
+    strcat(build_str_url_always, str_basepath);   
 
-    char str_url_status[100] = "";
-    strcat(str_url_status, str_url_always);
-    strcat(str_url_status, str_endpoint_status);
-
-    char str_url_stream[100] = "";
-    strcat(str_url_stream, str_url_always);
-    strcat(str_url_stream, str_endpoint_stream);
-
-    char http_user[] = "root";
-    char http_pass[] = "impinj";
-    char http_login[50] = "";
-    strcat(http_login, http_user);
-    strcat(http_login, ":");
-    strcat(http_login, http_pass);
-
-    LogInfo("Status Endpoint: %s", str_url_status);
-    LogInfo("Stream Endpoint: %s", str_url_stream);
-    LogInfo("Reader Login: %s", http_login);
+    char* http_basepath = Str_Trim(build_str_url_always).strPtr;
 
     /* initialize cURL sessions */
-    CURL_Session_Data *static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", VERIFY_CERTS_OFF, curlDataReadCallback, VERBOSE_OUTPUT_OFF);
+    CURL_Session_Data *static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, curlStaticDataReadCallback, VERBOSE_OUTPUT_OFF);
 
     device = calloc(1, sizeof(IMPINJ_READER));
     if (NULL == device) {

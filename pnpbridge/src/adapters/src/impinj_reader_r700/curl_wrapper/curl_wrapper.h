@@ -15,16 +15,14 @@ typedef struct CURL_Session_Data {
   int passwordLength;
   char *basePath;
   int basePathLength;
+  char **callbackData;
+  int callbackDataLength;
+  int callbackBufferSize;
   } CURL_Session_Data;
-
-typedef struct Str_Trim_Data {
-  char *string;
-  int strLength;
-} Str_Trim_Data;
 
 void curlGlobalInit();
 
-size_t curlDataReadCallback(void *contents, size_t size, size_t nmemb, void *userp);
+size_t curlStaticDataReadCallback(void *contents, size_t size, size_t nmemb, void *userp);
 
 CURL_Session_Data * curlStaticInit(char *username, char *password, char *basePath, int EnableVerify, size_t (*callbackFunction)(), long verboseOutput);
 

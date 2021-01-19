@@ -38,9 +38,29 @@
 
 int main(void)
 {
+
+// pointers example
+  // int **p;
+	// int *q;
+
+	// p = (int **)malloc(sizeof(int *));
+	// *p = (int *)malloc(sizeof(int));
+	// **p = 12;
+	// q = *p;
+	// printf("\n *q= %d",(int) *q);
+	// printf("\n q= %p",q);
+	// printf("\n **p= %d",(int) **p);
+	// printf("\n *p= %p",*p);
+	// printf("\n p= %p",p);
+
+
+	// free(q);
+	// free(p);
+
+
   CURL_Session_Data *static_session;
   CURLcode res;
-  size_t (*callbackFunction)() = &curlDataReadCallback;
+  size_t (*callbackFunction)() = &curlStaticDataReadCallback;
 
   curlGlobalInit();
  
