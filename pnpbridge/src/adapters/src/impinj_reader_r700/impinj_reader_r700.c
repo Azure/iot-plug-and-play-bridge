@@ -346,9 +346,6 @@ int ImpinjReader_ProcessCommand(
 {
     if (strcmp(CommandName, "startPreset") == 0)
     {
-        LogInfo("Stub: Execute Start Preset command with value = %s", json_value_get_string(CommandValue));
-        
-        CURLcode res;
 
         char startPresetEndpoint_build[100] = "";
         strcat(startPresetEndpoint_build, "/profiles/inventory/presets/");
@@ -356,23 +353,19 @@ int ImpinjReader_ProcessCommand(
         strcat(startPresetEndpoint_build, "/start");
         char *startPresetEndpoint = Str_Trim(startPresetEndpoint_build).strPtr;
 
-        res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
-
-        if(res != CURLE_OK)
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+        char** response = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
+        
+        return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, *response);
     }
     else if (strcmp(CommandName, "stopPreset") == 0)
     {
-        LogInfo("Stub: Execute Stop Preset command.");
 
-        CURLcode res;
+        char** response = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
 
-        res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
-
-        if(res != CURLE_OK)
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+        // response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
+        
+        return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, *response);
+        
     }
     else
     {
