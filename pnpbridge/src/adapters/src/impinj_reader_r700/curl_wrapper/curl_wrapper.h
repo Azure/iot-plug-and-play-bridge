@@ -26,9 +26,9 @@ size_t curlStaticDataReadCallback(void *contents, size_t size, size_t nmemb, voi
 
 CURL_Session_Data * curlStaticInit(char *username, char *password, char *basePath, int EnableVerify, size_t (*callbackFunction)(), long verboseOutput);
 
-CURLcode curlStaticGet(CURL_Session_Data *session_data, char *endpoint);
+char** curlStaticGet(CURL_Session_Data *session_data, char *endpoint);
 
-CURLcode curlStaticPost(CURL_Session_Data *session_data, char *endpoint, char *postData);
+char** curlStaticPost(CURL_Session_Data *session_data, char *endpoint, char *postData);
 
 void curlStaticCleanup(CURL_Session_Data *session_data);
 

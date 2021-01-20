@@ -36,6 +36,9 @@
 /* curl stuff */ 
 #include "curl_wrapper.h"
 
+/* helpers */
+#include "../helpers/string_manipulation.h"
+
 typedef struct curlPollStatic_ARGS {
   int *bool_continue_ptr;
   int *quit_loop_ptr;
@@ -43,15 +46,6 @@ typedef struct curlPollStatic_ARGS {
   CURL *static_handle;  
   
 } curlPollStatic_ARGS;
-
-
-// static size_t DataReadCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-
-//     fprintf(stdout,"\n   Size: %d", (int)nmemb);
-//     fprintf(stdout,"\n   %s", (char *)contents);
- 
-//   return nmemb; // realsize;
-// };
 
 void *curlPollStatic(void *params)
  {
@@ -86,7 +80,6 @@ void *curlPollStatic(void *params)
 
 int main(void)
 {
-  CURL *static_handle;
   CURL *stream_handle;
   CURLM *multi_handle;
   int still_running = 1; /* keep number of running handles */ 
@@ -100,12 +93,14 @@ int main(void)
  
   curl_global_init(CURL_GLOBAL_DEFAULT);
  
-  static_handle = curl_easy_init();
+  
   stream_handle = curl_easy_init();
  
-  curl_easy_setopt(static_handle, CURLOPT_URL, "http://192.168.1.14/api/v1/status");
-  curl_easy_setopt(static_handle, CURLOPT_USERPWD, "root:impinj");
-  curl_easy_setopt(static_handle, CURLOPT_WRITEFUNCTION, DataReadCallback);
+  CURL_Session_Data *static_handle;
+  static_handle = curlStaticInit("root", "impinj", "https://192.168.1.14/ap1/v1", VERIFY_CERTS_OFF, curlStaticDataReadCallback, VERBOSE_OUTPUT_OFF);
+  // curl_easy_setopt(static_handle, CURLOPT_URL, "http://192.168.1.14/api/v1/status");
+  // curl_easy_setopt(static_handle, CURLOPT_USERPWD, "root:impinj");
+  // curl_easy_setopt(static_handle, CURLOPT_WRITEFUNCTION, static);
   // curl_easy_setopt(static_handle, CURLOPT_WRITEDATA, (void *)&streamMem);
   
   curl_easy_setopt(stream_handle, CURLOPT_URL, "http://192.168.1.14/api/v1/data/stream");

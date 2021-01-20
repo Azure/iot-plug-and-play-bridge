@@ -41,7 +41,9 @@
 int main(void)
 {
   CURL_Session_Data *static_session;
-  CURLcode res;
+
+  char** res;
+
   size_t (*callbackFunction)() = &curlStaticDataReadCallback;
 
   curlGlobalInit();
@@ -51,50 +53,32 @@ int main(void)
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/status");
-
-  if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+  fprintf(stdout, "    Response: %s\n", *res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/profiles/inventory/presets");
-
-  if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+  fprintf(stdout, "    Response: %s\n", *res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticPost(static_session, "/profiles/inventory/presets/basic_inventory/start", "");
-
-  if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+  fprintf(stdout, "    Response: %s\n", *res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/status");
-
-  if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+  fprintf(stdout, "    Response: %s\n", *res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticPost(static_session, "/profiles/stop", "");
-
-  if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+  fprintf(stdout, "    Response: %s\n", *res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/status");
-
-  if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+  fprintf(stdout, "    Response: %s\n", *res);
 
   usleep(USEC_DELAY);
 

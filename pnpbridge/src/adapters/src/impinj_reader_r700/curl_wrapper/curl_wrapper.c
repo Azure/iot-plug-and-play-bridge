@@ -9,7 +9,10 @@ void curlGlobalInit() {
   curl_global_init(CURL_GLOBAL_DEFAULT);
 }
 
-size_t curlStaticDataReadCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+size_t curlStaticDataReadCallback(void *contents, 
+                                  size_t size, 
+                                  size_t nmemb, 
+                                  void *userp) {
 
     size_t realsize = size * nmemb;
     
@@ -18,14 +21,20 @@ size_t curlStaticDataReadCallback(void *contents, size_t size, size_t nmemb, voi
     memcpy(*(session_data->callbackData), (char*)contents, nmemb);
     session_data->callbackDataLength = (int)nmemb;
 
-    fprintf(stdout,"\n   Size: %d", session_data->callbackDataLength);
-    fprintf(stdout,"\n   %s", (char*)*(session_data->callbackData));
-    fprintf(stdout, "\n");
+    /* DEBUG - print out response */
+    // fprintf(stdout,"\n   Size: %d", session_data->callbackDataLength);
+    // fprintf(stdout,"\n   %s", (char*)*(session_data->callbackData));
+    // fprintf(stdout, "\n");
 
   return nmemb; // realsize;
 }
 
-CURL_Session_Data * curlStaticInit(char *username, char *password, char *basePath, int EnableVerify, size_t (*callbackFunction)(), long verboseOutput) {
+CURL_Session_Data * curlStaticInit(char *username, 
+                                   char *password, 
+                                   char *basePath, 
+                                   int EnableVerify, 
+                                   size_t (*callbackFunction)(), 
+                                   long verboseOutput) {
   
   CURL *static_handle;
   static_handle = curl_easy_init();
@@ -93,20 +102,18 @@ CURL_Session_Data * curlStaticInit(char *username, char *password, char *basePat
   curl_easy_setopt(static_handle, CURLOPT_VERBOSE, verboseOutput);
 
 // test curl configuration
-  CURLcode res;
-  res = curlStaticGet(session_data, "/status");
+  char** response;
 
-   if(res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-      fprintf(stdout, "\n    ERROR: Initialization of cURL session failed!  (test call failed, check inputs)");
-   }
+  response = curlStaticGet(session_data, "/status");
       
+  fprintf(stdout, "\nInitialization test Call: %s\n", *response);
 
   return session_data;
 
 }
 
-CURLcode curlStaticGet(CURL_Session_Data *session_data, char *endpoint) {
+char** curlStaticGet(CURL_Session_Data *session_data, 
+                       char *endpoint) {
   
   CURL *static_handle = session_data->curlHandle;
 
@@ -131,21 +138,34 @@ CURLcode curlStaticGet(CURL_Session_Data *session_data, char *endpoint) {
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
 
-  return curl_easy_perform(static_handle);
+  CURLcode res;
 
+  res = curl_easy_perform(static_handle);
+
+  if(res != CURLE_OK) {
+    fprintf(stderr, "curl_easy_perform() failed in curlStaticGet: %s\n",
+      curl_easy_strerror(res));
+  }
+
+  return session_data->callbackData;
 }
 
-CURLcode curlStaticPost(CURL_Session_Data *session_data, char *endpoint, char *postData) {
+ char** curlStaticPost(CURL_Session_Data *session_data, 
+                       char *endpoint, 
+                       char *postData) {
   
   CURL *static_handle = session_data->curlHandle;
 
+  // re-initialize callback data buffer
   char* startPtr = *(session_data->callbackData);
   char nullChar[1] = "\000";
   for (int i=0;i<CALLBACK_DATA_BUFFER;i++) {
     // set memory to \000
     memcpy(startPtr + i, &nullChar, sizeof(char));
   }
-
+  
+  // memset(startPtr, (char)nullChar, CALLBACK_DATA_BUFFER * sizeof(char));
+  
   session_data->callbackDataLength = 0;
 
   char fullurl[1000] = "";
@@ -161,8 +181,16 @@ CURLcode curlStaticPost(CURL_Session_Data *session_data, char *endpoint, char *p
   curl_easy_setopt(static_handle, CURLOPT_POST, 1);
   curl_easy_setopt(static_handle, CURLOPT_POSTFIELDS, postData);
 
-  return curl_easy_perform(static_handle);
+  CURLcode res;
 
+  res = curl_easy_perform(static_handle);
+
+  if(res != CURLE_OK) {
+      fprintf(stderr, "curl_easy_perform() failed in curlStaticPost: %s\n",
+        curl_easy_strerror(res));
+  }
+
+  return session_data->callbackData;
 }
 
 void curlStaticCleanup(CURL_Session_Data *session_data) {
