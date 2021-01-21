@@ -43,28 +43,39 @@ typedef struct _IMPINJ_READER {
     volatile bool ShuttingDown;
     PIMPINJ_READER_STATE SensorState;
     PNP_BRIDGE_CLIENT_HANDLE ClientHandle;
+    const char * ComponentName;
     CURL_Session_Data *curl_static_session;
 } IMPINJ_READER, * PIMPINJ_READER;
+
+IOTHUB_CLIENT_RESULT ImpinjReader_ReportPropertyAsync(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char * ComponentName, 
+    char * propertyName, 
+    char * propertyValue);
+
+IOTHUB_CLIENT_RESULT ImpinjReader_RouteReportedState(
+    void * ClientHandle,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const unsigned char * ReportedState,
+    size_t Size,
+    IOTHUB_CLIENT_REPORTED_STATE_CALLBACK ReportedStateCallback,
+    void * UserContextCallback);
+
+IOTHUB_CLIENT_RESULT ImpinjReader_ReportDeviceStateAsync(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char * ComponentName);
 
 // Sends  telemetry messages about current environment
 // IOTHUB_CLIENT_RESULT ImpinjReader_SendTelemetryMessagesAsync(
 //     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
-// IOTHUB_CLIENT_RESULT ImpinjReader_ReportDeviceStateAsync(
-//     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-//     const char * ComponentName);
-// IOTHUB_CLIENT_RESULT ImpinjReader_RouteReportedState(
-//     void * ClientHandle,
-//     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-//     const unsigned char * ReportedState,
-//     size_t Size,
-//     IOTHUB_CLIENT_REPORTED_STATE_CALLBACK ReportedStateCallback,
-//     void * UserContextCallback);
+
 // IOTHUB_CLIENT_RESULT ImpinjReader_RouteSendEventAsync(
 //     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
 //     IOTHUB_MESSAGE_HANDLE EventMessageHandle,
 //     IOTHUB_CLIENT_EVENT_CONFIRMATION_CALLBACK EventConfirmationCallback,
 //     void * UserContextCallback
 //     );
+
 void ImpinjReader_OnPropertyCallback(
     void * ClientHandle,
     const char* PropertyName,

@@ -9,10 +9,12 @@ void curlGlobalInit() {
   curl_global_init(CURL_GLOBAL_DEFAULT);
 }
 
-size_t curlStaticDataReadCallback(void *contents, 
-                                  size_t size, 
-                                  size_t nmemb, 
-                                  void *userp) {
+size_t curlStaticDataReadCallback(
+  void *contents, 
+  size_t size, 
+  size_t nmemb, 
+  void *userp) 
+  {
 
     size_t realsize = size * nmemb;
     
@@ -29,12 +31,14 @@ size_t curlStaticDataReadCallback(void *contents,
   return nmemb; // realsize;
 }
 
-CURL_Session_Data * curlStaticInit(char *username, 
-                                   char *password, 
-                                   char *basePath, 
-                                   int EnableVerify, 
-                                   size_t (*callbackFunction)(), 
-                                   long verboseOutput) {
+CURL_Session_Data * curlStaticInit(
+  char *username,                        
+  char *password, 
+  char *basePath, 
+  int EnableVerify, 
+  size_t (*callbackFunction)(), 
+  long verboseOutput) 
+  {
   
   CURL *static_handle;
   static_handle = curl_easy_init();
@@ -112,17 +116,20 @@ CURL_Session_Data * curlStaticInit(char *username,
 
 }
 
-char** curlStaticGet(CURL_Session_Data *session_data, 
-                       char *endpoint) {
+char** curlStaticGet(
+  CURL_Session_Data *session_data, 
+  char *endpoint) 
+  {
   
   CURL *static_handle = session_data->curlHandle;
 
   char* startPtr = *(session_data->callbackData);
-  char nullChar[1] = "\000";
-  for (int i=0;i<CALLBACK_DATA_BUFFER;i++) {
-    // set memory to \000
-    memcpy(startPtr + i, &nullChar, sizeof(char));
-  }
+  // for (int i=0;i<CALLBACK_DATA_BUFFER;i++) {
+  //   // set memory to \000
+  //   memcpy(startPtr + i, '\0', sizeof(char));
+  // }
+
+  memset(startPtr, '\0', CALLBACK_DATA_BUFFER * sizeof(char));
 
   session_data->callbackDataLength = 0;
 
@@ -133,7 +140,7 @@ char** curlStaticGet(CURL_Session_Data *session_data,
 
   char* full_endpoint = Str_Trim(fullurl).strPtr;
 
-  fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
+  // fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
 
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
@@ -158,13 +165,12 @@ char** curlStaticGet(CURL_Session_Data *session_data,
 
   // re-initialize callback data buffer
   char* startPtr = *(session_data->callbackData);
-  char nullChar[1] = "\000";
-  for (int i=0;i<CALLBACK_DATA_BUFFER;i++) {
-    // set memory to \000
-    memcpy(startPtr + i, &nullChar, sizeof(char));
-  }
+  // for (int i=0;i<CALLBACK_DATA_BUFFER;i++) {
+  //   // set memory to \000
+  //   memcpy(startPtr + i, &nullChar, sizeof(char));
+  // }
   
-  // memset(startPtr, (char)nullChar, CALLBACK_DATA_BUFFER * sizeof(char));
+  memset(startPtr, '\0', CALLBACK_DATA_BUFFER * sizeof(char));
   
   session_data->callbackDataLength = 0;
 
@@ -175,7 +181,7 @@ char** curlStaticGet(CURL_Session_Data *session_data,
 
   char* full_endpoint = Str_Trim(fullurl).strPtr;
 
-  fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
+  // fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
 
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
   curl_easy_setopt(static_handle, CURLOPT_POST, 1);

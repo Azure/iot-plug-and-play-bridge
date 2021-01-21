@@ -90,6 +90,86 @@ static int ImpinjReader_SetCommandResponse(
     return result;
 }
 
+static void ImpinjReader_PropertyCallback(
+        int ReportedStatus, 
+        void* UserContextCallback)
+        {
+            LogInfo("PropertyCallback called, result=%d, property name=%s", ReportedStatus, (const char*)UserContextCallback);
+        }
+
+IOTHUB_CLIENT_RESULT ImpinjReader_ReportDeviceStateAsync(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char * ComponentName)
+    {
+        PIMPINJ_READER device = PnpComponentHandleGetContext(PnpComponentHandle);
+        char ** result = curlStaticGet(device->curl_static_session, "/status");
+        return ImpinjReader_ReportPropertyAsync(PnpComponentHandle, ComponentName, "deviceStatus", *result);
+    }
+
+IOTHUB_CLIENT_RESULT ImpinjReader_ReportPropertyAsync(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char * ComponentName, 
+    char * propertyName, 
+    char * propertyValue) 
+    {
+        IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
+        STRING_HANDLE jsonToSend = NULL;
+
+
+        if ((jsonToSend = PnP_CreateReportedProperty(ComponentName, propertyName, propertyValue)) == NULL)
+        {
+            LogError("Unable to build reported property response for propertyName=%s, propertyValue=%s", propertyName, propertyValue);
+        }
+        else
+        {
+            const char* jsonToSendStr = STRING_c_str(jsonToSend);
+            size_t jsonToSendStrLen = strlen(jsonToSendStr);
+
+            if ((iothubClientResult = ImpinjReader_RouteReportedState(NULL, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                ImpinjReader_PropertyCallback, (void*)propertyName)) != IOTHUB_CLIENT_OK)
+            {
+                LogError("Impinj Reader:: Unable to send reported state for property=%s, error=%d",
+                                    propertyName, iothubClientResult);
+            }
+            else
+            {
+                LogInfo("Impinj Reader:: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
+                            propertyName, propertyValue);
+            }
+
+            STRING_delete(jsonToSend);
+        }
+
+        return iothubClientResult;
+    }
+
+IOTHUB_CLIENT_RESULT ImpinjReader_RouteReportedState(
+    void * ClientHandle,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const unsigned char * ReportedState,
+    size_t Size,
+    IOTHUB_CLIENT_REPORTED_STATE_CALLBACK ReportedStateCallback,
+    void * UserContextCallback)
+    {
+        IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
+
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle = (ClientHandle != NULL) ?
+            (PNP_BRIDGE_CLIENT_HANDLE) ClientHandle : PnpComponentHandleGetClientHandle(PnpComponentHandle);
+
+    if ((iothubClientResult = PnpBridgeClient_SendReportedState(clientHandle, ReportedState, Size,
+            ReportedStateCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("IoTHub client call to _SendReportedState failed with error code %d", iothubClientResult);
+        goto exit;
+    }
+    else
+    {
+        LogInfo("IoTHub client call to _SendReportedState succeeded");
+    }
+
+exit:
+    return iothubClientResult;
+    }
 
 
 int ImpinjReader_TelemetryWorker(
@@ -98,7 +178,7 @@ int ImpinjReader_TelemetryWorker(
     PNPBRIDGE_COMPONENT_HANDLE componentHandle = (PNPBRIDGE_COMPONENT_HANDLE) context;
     PIMPINJ_READER device = PnpComponentHandleGetContext(componentHandle);
 
-
+    long count = 0;
     // Report telemetry every 5 seconds till we are asked to stop
     while (true)
     {
@@ -106,10 +186,13 @@ int ImpinjReader_TelemetryWorker(
         {
             return IOTHUB_CLIENT_OK;
         }
+        LogInfo("Telemetry Worker Iteration %d: ", count);  // Placeholder for actual data
+        count++;
 
+        ImpinjReader_ReportDeviceStateAsync(componentHandle, device->ComponentName);
+    
         // ImpinjReader_SendTelemetryMessagesAsync(componentHandle);
-        LogInfo("Telemetry Worker: Ping");  // Placeholder for actual data
-        // Sleep for 5 seconds
+        // Sleep for X msec
         ThreadAPI_Sleep(5000);
     }
     return IOTHUB_CLIENT_OK;
@@ -194,9 +277,11 @@ ImpinjReader_CreatePnpComponent(
         goto exit;
     }
 
+
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
     device->curl_static_session = static_session;
+    device->ComponentName = ComponentName;
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
     PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ImpinjReader_OnPropertyCallback); 
@@ -224,7 +309,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_StartPnpComponent(
     PnpComponentHandleSetContext(PnpComponentHandle, device);
 
     // Report Device State Async
-    // result = ImpinjReader_ReportDeviceStateAsync(PnpComponentHandle, device->SensorState->componentName);
+    // result = ImpinjReader_ReportPropertyAsync(PnpComponentHandle, device->SensorState->componentName);
 
     // Create a thread to periodically publish telemetry
     if (ThreadAPI_Create(&device->WorkerHandle, ImpinjReader_TelemetryWorker, PnpComponentHandle) != THREADAPI_OK) {
@@ -284,7 +369,12 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
 }
 
 
-void ImpinjReader_ProcessProperty(void* ClientHandle, const char* PropertyName, JSON_Value* PropertyValue, int version, PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+void ImpinjReader_ProcessProperty(
+    void* ClientHandle, 
+    const char* PropertyName, 
+    JSON_Value* PropertyValue, 
+    int version, 
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
     LogInfo("Proccesing Property Update: %s", PropertyName);
     LogInfo("   New Property Value: %s", json_value_get_string(PropertyValue));
