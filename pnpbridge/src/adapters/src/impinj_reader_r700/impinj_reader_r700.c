@@ -106,6 +106,32 @@ IOTHUB_CLIENT_RESULT ImpinjReader_ReportDeviceStateAsync(
         return ImpinjReader_ReportPropertyAsync(PnpComponentHandle, ComponentName, "deviceStatus", *result);
     }
 
+char * ImpinjReader_CreateJsonResponse(
+    char * propertyName, 
+    char * propertyValue)
+    {
+        char jsonFirstChar = '{';
+        char jsonToSendStr[2000] = "";
+
+        strcat(jsonToSendStr, "{ \"");
+        strcat(jsonToSendStr, propertyName);
+        strcat(jsonToSendStr, "\": ");
+        if (propertyValue[0] != jsonFirstChar) {
+            strcat(jsonToSendStr, "\"");
+        }
+        strcat(jsonToSendStr, propertyValue);
+        if (propertyValue[0] != jsonFirstChar) {
+            strcat(jsonToSendStr, "\"");
+        }
+        strcat(jsonToSendStr, " }");
+
+        char * response = Str_Trim(jsonToSendStr).strPtr;
+        
+        // example JSON string: "{ \"status\": 12, \"description\": \"leds blinking\" }";
+
+        return response;
+    }
+
 IOTHUB_CLIENT_RESULT ImpinjReader_ReportPropertyAsync(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char * ComponentName, 
@@ -133,8 +159,8 @@ IOTHUB_CLIENT_RESULT ImpinjReader_ReportPropertyAsync(
             }
             else
             {
-                LogInfo("Impinj Reader:: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
-                            propertyName, propertyValue);
+                LogInfo("Impinj Reader:: Sending device information property to IoTHub. propertyName=%s", //, propertyValue=%s",
+                            propertyName); //, propertyValue);
             }
 
             STRING_delete(jsonToSend);
@@ -443,18 +469,27 @@ int ImpinjReader_ProcessCommand(
         strcat(startPresetEndpoint_build, "/start");
         char *startPresetEndpoint = Str_Trim(startPresetEndpoint_build).strPtr;
 
-        char** response = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
+        char** res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
+
+        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", *res);
+
+        LogInfo("Command Response: %s", response);
+        // char * response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
         
-        return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, *response);
+        return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, response);
     }
     else if (strcmp(CommandName, "stopPreset") == 0)
     {
 
-        char** response = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
+        char** res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
 
-        // response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
+        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", *res);
+
+        LogInfo("Command Response: %s", response);
+
+        // char * response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
         
-        return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, *response);
+        return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, response);
         
     }
     else
