@@ -473,7 +473,7 @@ int ImpinjReader_ProcessCommand(
 
         char * response = ImpinjReader_CreateJsonResponse("cmdResponse", *res);
 
-        LogInfo("Command Response: %s", response);
+        LogInfo("Sending %s Response: %s", CommandName, response);
         // char * response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
         
         return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, response);
@@ -484,8 +484,8 @@ int ImpinjReader_ProcessCommand(
         char** res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
 
         char * response = ImpinjReader_CreateJsonResponse("cmdResponse", *res);
-
-        LogInfo("Command Response: %s", response);
+        
+        LogInfo("Sending %s Response: %s", CommandName, response);
 
         // char * response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
         

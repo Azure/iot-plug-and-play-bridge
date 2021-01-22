@@ -140,7 +140,7 @@ char** curlStaticGet(
 
   char* full_endpoint = Str_Trim(fullurl).strPtr;
 
-  // fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
+  fprintf(stdout, " Endpoint: %s\n", full_endpoint);
 
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
@@ -181,7 +181,7 @@ char** curlStaticGet(
 
   char* full_endpoint = Str_Trim(fullurl).strPtr;
 
-  // fprintf(stdout, "\n Endpoint: %s\n", full_endpoint);
+  fprintf(stdout, " Endpoint: %s\n", full_endpoint);
 
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
   curl_easy_setopt(static_handle, CURLOPT_POST, 1);
