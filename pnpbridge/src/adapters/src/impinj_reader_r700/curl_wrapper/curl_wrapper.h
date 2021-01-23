@@ -7,7 +7,7 @@
 #define VERIFY_CERTS_OFF 0
 #define VERIFY_CERTS_ON 1
 
-typedef struct CURL_Session_Data {
+typedef struct CURL_Static_Session_Data {
   CURL *curlHandle;
   char *username;
   int usernameLength;
@@ -18,18 +18,89 @@ typedef struct CURL_Session_Data {
   char **callbackData;
   int callbackDataLength;
   int callbackBufferSize;
-  } CURL_Session_Data;
+  } CURL_Static_Session_Data;
 
-void curlGlobalInit();
+typedef struct CURL_Stream_Session_Data {
+  CURL *curlHandle;
+  char *username;
+  int usernameLength;
+  char *password;
+  int passwordLength;
+  char *basePath;
+  int basePathLength;
+  char **dataBuffer;
+  int dataBufferSize;
+  int bufferReadIndex;
+  int bufferWriteIndex;
+  } CURL_Stream_Session_Data;
 
-size_t curlStaticDataReadCallback(void *contents, size_t size, size_t nmemb, void *userp);
+void 
+curlGlobalInit();
 
-CURL_Session_Data * curlStaticInit(char *username, char *password, char *basePath, int EnableVerify, size_t (*callbackFunction)(), long verboseOutput);
+size_t 
+curlStaticDataReadCallback(
+  void *contents, 
+  size_t size, 
+  size_t nmemb, 
+  void *userp
+  );
 
-char** curlStaticGet(CURL_Session_Data *session_data, char *endpoint);
+size_t 
+curlStreamDataReadCallback(
+  void *contents, 
+  size_t size, 
+  size_t nmemb, 
+  void *userp
+  );
 
-char** curlStaticPost(CURL_Session_Data *session_data, char *endpoint, char *postData);
+size_t 
+curlDummyCallback(
+  void *contents, 
+  size_t size, 
+  size_t nmemb, 
+  void *userp
+ );
 
-void curlStaticCleanup(CURL_Session_Data *session_data);
+CURL_Static_Session_Data * 
+curlStaticInit(
+  char *username, 
+  char *password, 
+  char *basePath, 
+  int EnableVerify, 
+  long verboseOutput
+  );
 
-void curlGlobalCleanup();
+CURL_Stream_Session_Data * 
+curlStreamInit(
+  char *username, 
+  char *password, 
+  char *basePath, 
+  int EnableVerify, 
+  long verboseOutput
+  );
+
+char** 
+curlStaticGet(
+  CURL_Static_Session_Data *session_data, 
+  char *endpoint
+  );
+
+char** 
+curlStaticPost(
+  CURL_Static_Session_Data *session_data, 
+  char *endpoint, 
+  char *postData
+  );
+
+void 
+curlStaticCleanup(
+  CURL_Static_Session_Data *session_data
+  );
+
+void 
+curlStreamCleanup(
+  CURL_Stream_Session_Data *session_data
+  );
+
+void 
+curlGlobalCleanup();

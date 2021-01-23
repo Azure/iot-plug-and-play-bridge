@@ -286,7 +286,7 @@ ImpinjReader_CreatePnpComponent(
     char* http_basepath = Str_Trim(build_str_url_always).strPtr;
 
     /* initialize cURL sessions */
-    CURL_Session_Data *static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, curlStaticDataReadCallback, VERBOSE_OUTPUT_OFF);
+    CURL_Static_Session_Data *static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, curlStaticDataReadCallback, VERBOSE_OUTPUT_OFF);
 
     device = calloc(1, sizeof(IMPINJ_READER));
     if (NULL == device) {

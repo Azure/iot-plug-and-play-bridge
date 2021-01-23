@@ -44,7 +44,7 @@ typedef struct _IMPINJ_READER {
     PIMPINJ_READER_STATE SensorState;
     PNP_BRIDGE_CLIENT_HANDLE ClientHandle;
     const char * ComponentName;
-    CURL_Session_Data *curl_static_session;
+    CURL_Static_Session_Data *curl_static_session;
 } IMPINJ_READER, * PIMPINJ_READER;
 
 IOTHUB_CLIENT_RESULT ImpinjReader_ReportPropertyAsync(

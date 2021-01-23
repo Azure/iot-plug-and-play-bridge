@@ -40,15 +40,13 @@
 
 int main(void)
 {
-  CURL_Session_Data *static_session;
+  
 
   char** res;
 
-  size_t (*callbackFunction)() = &curlStaticDataReadCallback;
-
   curlGlobalInit();
  
-  static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", VERIFY_CERTS_OFF, callbackFunction, VERBOSE_OUTPUT_OFF);
+  CURL_Static_Session_Data *static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   usleep(USEC_DELAY);
 
