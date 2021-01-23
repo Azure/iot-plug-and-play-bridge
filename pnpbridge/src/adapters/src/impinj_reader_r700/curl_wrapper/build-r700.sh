@@ -1,1 +1,2 @@
-/home/kwenner/arm-toolchains/r700/7.3.0_Octane_Embedded_Development_Tools/arm-toolchain/bin/arm-linux-gnueabihf-gcc -g curl-test-main.c curl_wrapper.c -lcurl -o curl-test-main-r700 -lpthread
+/home/kwenner/arm-toolchains/r700/7.3.0_Octane_Embedded_Development_Tools/arm-toolchain/bin/arm-linux-gnueabihf-gcc -g static-test.c curl_wrapper.c ../helpers/string_manipulation.c -lcurl -o static-test-r700 -lpthread
+/home/kwenner/arm-toolchains/r700/7.3.0_Octane_Embedded_Development_Tools/arm-toolchain/bin/arm-linux-gnueabihf-gcc -g stream-test.c curl_wrapper.c ../helpers/string_manipulation.c -lcurl -o stream-test-r700 -lpthread
