@@ -1,5 +1,6 @@
 #pragma once
 #include <curl/curl.h>
+#include <stdint.h>
 
 #define VERBOSE_OUTPUT_OFF 0
 #define VERBOSE_OUTPUT_ON 1
@@ -28,14 +29,21 @@ typedef struct CURL_Stream_Session_Data {
   int passwordLength;
   char *basePath;
   int basePathLength;
-  char **dataBuffer;
+  char *dataBuffer;
   int dataBufferSize;
   int bufferReadIndex;
+  int64_t bufferReadCounter;
   int bufferWriteIndex;
+  int64_t bufferWriteCounter;
   } CURL_Stream_Session_Data;
 
 void 
 curlGlobalInit();
+
+void
+curlStreamBufferReadout(
+  CURL_Stream_Session_Data * session_data
+  );
 
 size_t 
 curlStaticDataReadCallback(

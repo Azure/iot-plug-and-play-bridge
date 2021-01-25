@@ -105,10 +105,13 @@ int main(void)
   struct CURL_Stream_Session_Data *session_data;
   session_data = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
+  // curlStreamBufferReadout(session_data); // DEBUG
+
   curl_easy_setopt(session_data->curlHandle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(session_data->curlHandle, CURLOPT_URL, full_stream_endpoint);
  
-  CURLM * multi_handle = curl_multi_init();
+  CURLM * multi_handle = NULL;
+  multi_handle = curl_multi_init();
 
   curl_multi_add_handle(multi_handle, session_data->curlHandle);
 
@@ -124,8 +127,6 @@ int main(void)
   // int rc;
   // fprintf(stdout, "\nSpawning thread for key polling...\n");
   // rc = pthread_create(&tid, NULL, curlPollStatic, (void *)curlPollStatic_args_ptr);
-
-  fprintf(stdout, "\nINIT DATA VALUES - data**: %p, data*: %p, data: %d", session_data->dataBuffer, *(session_data->dataBuffer), **(session_data->dataBuffer));
 
   CURLMcode mc; /* curl_multi_poll() return code */ 
   int numfds = 0;
