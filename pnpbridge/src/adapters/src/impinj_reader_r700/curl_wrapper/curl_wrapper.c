@@ -23,7 +23,7 @@ curlStaticDataReadCallback(
     
     struct CURL_Static_Session_Data *session_data = (struct CURL_Static_Session_Data*)userp;
 
-    memcpy(*(session_data->callbackData), (char*)contents, nmemb);
+    memcpy(*(session_data->callbackData), contents, nmemb);
     session_data->callbackDataLength = (int)nmemb;
 
     /* DEBUG - print out response */
@@ -31,22 +31,22 @@ curlStaticDataReadCallback(
     // fprintf(stdout,"\n   %s", (char*)*(session_data->callbackData));
     // fprintf(stdout, "\n");
 
-  return nmemb; // realsize;
+  return nmemb; 
 }
 
-char * curlReadStreamBufferChunk(
-  CURL_Stream_Session_Data *session_data
-)  {
-      if (session_data->bufferReadIndex == session_data->bufferWriteIndex) {
-        return NULL;
-      }
+// char * curlReadStreamBufferChunk(
+//   CURL_Stream_Session_Data *session_data
+// )  {
+//       if (session_data->bufferReadIndex == session_data->bufferWriteIndex) {
+//         return NULL;
+//       }
       
-      char * dataChunk = (session_data->dataBuffer[session_data->bufferReadIndex]);
-      session_data->bufferReadIndex = session_data->bufferReadIndex + strlen(dataChunk) - 1;
+//       char * dataChunk = (*(session_data->dataBuffer) + session_data->bufferReadIndex);
+//       session_data->bufferReadIndex = session_data->bufferReadIndex + strlen(dataChunk) + 1;
 
-      fprintf(stdout, "\n   POST READ - BufferWriteIndex: %d, BufferReadIndex: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex);
-      return dataChunk;
-}
+//       fprintf(stdout, "\n   POST READ - BufferWriteIndex: %d, BufferReadIndex: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex);
+//       return dataChunk;
+// }
 
 size_t 
 curlDummyCallback(
@@ -74,36 +74,46 @@ curlStreamDataReadCallback(
     
     struct CURL_Stream_Session_Data *session_data = (struct CURL_Stream_Session_Data*)userp;
 
-    if (((session_data->bufferWriteIndex + 1) % session_data->dataBufferSize) == session_data->dataBufferSize) {
-      fprintf(stdout, "  ERROR: Stream data buffer overflow.");
-      return -1;
-    }
+    // if (((session_data->bufferWriteIndex + 1) % session_data->dataBufferSize) == session_data->dataBufferSize) {
+    //   fprintf(stdout, "  ERROR: Stream data buffer overflow.");
+    //   return -1;
+    // }
 
-    int spaceUntilWrap = session_data->dataBufferSize-session_data->bufferWriteIndex;
+    fprintf(stdout, "\n     DATA VALUES - data**: %p, data*: %p, data: %d", session_data->dataBuffer, *(session_data->dataBuffer), **(session_data->dataBuffer));
 
-    if (nmemb > spaceUntilWrap - 1) {  // wrap around end of buffer
-        memcpy(*(session_data->dataBuffer) + session_data->bufferWriteIndex, contents, spaceUntilWrap);
-        memcpy(*(session_data->dataBuffer), contents + nmemb, nmemb - spaceUntilWrap);
+    int spaceUntilWrap = session_data->dataBufferSize - session_data->bufferWriteIndex;
+    
+    fprintf(stdout, "\n       PRE WRITE - BufferWriteIndex: %d, BufferReadIndex: %d, SpaceUntilWrap: %d, BufferSize: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex, spaceUntilWrap, session_data->dataBufferSize);
+
+    if (nmemb > spaceUntilWrap) {  // wrap around end of buffer
+        memcpy((session_data->dataBuffer[session_data->bufferWriteIndex]), contents, spaceUntilWrap);
+        memcpy((session_data->dataBuffer[0]), contents + nmemb, nmemb - spaceUntilWrap);
         session_data->bufferWriteIndex = nmemb - spaceUntilWrap;
     }
     else {
-        memcpy(*(session_data->dataBuffer) + session_data->bufferWriteIndex, contents, nmemb);
-        // session_data->dataBuffer[session_data->bufferWriteIndex] = contents;
-        session_data->bufferWriteIndex = (session_data->bufferWriteIndex + (int)nmemb);
+        memcpy((session_data->dataBuffer[session_data->bufferWriteIndex]), contents, nmemb);
+        session_data->bufferWriteIndex = session_data->bufferWriteIndex + (int)nmemb;
     }
-    // memcpy(*(session_data->dataBuffer), (char*)contents, nmemb);
 
-    session_data->dataBuffer[session_data->bufferWriteIndex] = '\000';
-    session_data->bufferWriteIndex = (session_data->bufferWriteIndex + 1) % session_data->dataBufferSize;
+    // follow contents with null char
+    // memset((*(session_data->dataBuffer))[session_data->bufferWriteIndex], '\000', 1);
+    // session_data->bufferWriteIndex = (session_data->bufferWriteIndex + 1) % session_data->dataBufferSize;
 
-    fprintf(stdout, "\n   POST WRITE - BufferWriteIndex: %d, BufferReadIndex: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex);
+    spaceUntilWrap = session_data->dataBufferSize - session_data->bufferWriteIndex;
 
+    fprintf(stdout, "\n      POST WRITE - BufferWriteIndex: %d, BufferReadIndex: %d, SpaceUntilWrap: %d, BufferSize: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex, spaceUntilWrap, session_data->dataBufferSize);
 
-    char * streamDataChunk = curlReadStreamBufferChunk(session_data);
+    //print out the entire buffer character space
+    fprintf(stdout, "\n      DATA: ");
+    for (int i = 0; i<1000; i++) { 
+        fprintf(stdout, "%c", (*(session_data->dataBuffer))[i]);
+    }
+    
+    // char * streamDataChunk = curlReadStreamBufferChunk(session_data);
 
     
-    fprintf(stdout, "\n  StreamDataLength: %d", (int)strlen(streamDataChunk));
-    fprintf(stdout, "\n  StreamData: %s", streamDataChunk);
+    // fprintf(stdout, "\n  StreamDataLength: %d", (int)strlen(streamDataChunk));
+    // fprintf(stdout, "\n  StreamData: %s", streamDataChunk);
     
 
     /* DEBUG - print out response */
@@ -111,7 +121,7 @@ curlStreamDataReadCallback(
     // fprintf(stdout,"\n   %s", (char*)*(session_data->callbackData));
     // fprintf(stdout, "\n");
 
-  return nmemb; // realsize;
+  return nmemb;
  }
 
 CURL_Static_Session_Data * 
@@ -207,8 +217,8 @@ CURL_Stream_Session_Data * curlStreamInit(
   stream_handle = curl_easy_init();
 
   #define STREAM_DATA_BUFFER_SIZE 1000
-  char *streamBuffer;
-  streamBuffer = (char *)malloc(sizeof(char)*STREAM_DATA_BUFFER_SIZE);
+  char ** streamBuffer;
+  streamBuffer = (char **)malloc(sizeof(char)*STREAM_DATA_BUFFER_SIZE);
   
   if(streamBuffer == NULL) {
     /* out of memory! */ 
@@ -250,7 +260,7 @@ CURL_Stream_Session_Data * curlStreamInit(
     session_data->passwordLength = strlen(password);
     session_data->basePath = basePath;
     session_data->basePathLength = strlen(basePath);
-    session_data->dataBuffer = &streamBuffer;
+    session_data->dataBuffer = streamBuffer;
     session_data->dataBufferSize = STREAM_DATA_BUFFER_SIZE-10;
     session_data->bufferReadIndex = 0;
     session_data->bufferWriteIndex = 0;
@@ -258,7 +268,7 @@ CURL_Stream_Session_Data * curlStreamInit(
 
 // apply curl settings with libcurl calls
   curl_easy_setopt(stream_handle, CURLOPT_USERPWD, usrpwd);
-  curl_easy_setopt(stream_handle, CURLOPT_WRITEFUNCTION, curlDummyCallback);
+  curl_easy_setopt(stream_handle, CURLOPT_WRITEFUNCTION, curlStreamDataReadCallback);
   curl_easy_setopt(stream_handle, CURLOPT_WRITEDATA, (void *)session_data);
   curl_easy_setopt(stream_handle, CURLOPT_SSL_VERIFYPEER, EnableVerify);
   curl_easy_setopt(stream_handle, CURLOPT_SSL_VERIFYHOST, EnableVerify);

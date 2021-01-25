@@ -88,7 +88,6 @@ int main(void)
  
  
   curl_global_init(CURL_GLOBAL_DEFAULT);
-  CURL * curl_handle = curl_easy_init();
 
   char * http_username = "root";
   char * http_password = "impinj";
@@ -106,13 +105,6 @@ int main(void)
   struct CURL_Stream_Session_Data *session_data;
   session_data = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
-  // curl_easy_setopt(curl_handle, CURLOPT_USERPWD, "root:impinj");
-  // curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, curlDummyCallback);
-  // curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)session_data);
-  // curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, VERIFY_CERTS_OFF);
-  // curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, VERIFY_CERTS_OFF);
-  // curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYSTATUS, VERIFY_CERTS_OFF);
-  // curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, VERBOSE_OUTPUT_ON);
   curl_easy_setopt(session_data->curlHandle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(session_data->curlHandle, CURLOPT_URL, full_stream_endpoint);
  
@@ -132,6 +124,8 @@ int main(void)
   // int rc;
   // fprintf(stdout, "\nSpawning thread for key polling...\n");
   // rc = pthread_create(&tid, NULL, curlPollStatic, (void *)curlPollStatic_args_ptr);
+
+  fprintf(stdout, "\nINIT DATA VALUES - data**: %p, data*: %p, data: %d", session_data->dataBuffer, *(session_data->dataBuffer), **(session_data->dataBuffer));
 
   CURLMcode mc; /* curl_multi_poll() return code */ 
   int numfds = 0;
@@ -155,8 +149,9 @@ int main(void)
  
   // rc = pthread_join(tid, NULL);
 
-  curl_multi_remove_handle(multi_handle, curl_handle);
+  curl_multi_remove_handle(multi_handle, session_data->curlHandle);
   curl_multi_cleanup(multi_handle);
+  curlStreamCleanup(session_data);
   curl_global_cleanup();
  
   return 0;
