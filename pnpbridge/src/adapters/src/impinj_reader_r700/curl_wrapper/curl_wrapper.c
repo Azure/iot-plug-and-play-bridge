@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "../helpers/string_manipulation.h"
 #include <stdint.h>
+#include <pthread.h>
 
 void 
 curlGlobalInit() {
@@ -192,6 +193,51 @@ curlStreamDataReadCallback(
   return nmemb;
  }
 
+void *
+curlStreamHandler(
+  void * sessionData
+  )
+  {
+    CURL_Stream_Session_Data * session_data = (CURL_Stream_Session_Data*)sessionData; 
+    
+    CURLMcode mc; /* curl_multi_poll() return code */ 
+    int numfds = 0;
+    int count = 0;
+    int still_running = 1;
+    while(still_running & (session_data->threadData.stopFlag == 0)) {
+      
+      /* we start some action by calling perform right away */  
+      mc = curl_multi_perform(session_data->multiHandle, &still_running);
+
+      if(still_running & mc == CURLM_OK)
+        /* wait for activity, timeout or "nothing" */ 
+        mc = curl_multi_poll(session_data->multiHandle, NULL, 0, 100, &numfds);
+        // fprintf(stdout, "\n Multipoll Thread: Iteration %d", count);
+        // count++;
+  
+      if(mc != CURLM_OK) {
+        fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
+        break;
+      }
+    }
+  }
+
+int 
+curlStreamSpawnThread(
+  CURL_Stream_Session_Data * session_data
+  )
+  {
+    session_data->threadData.thread_ref = pthread_create(&(session_data->threadData.tid), NULL, curlStreamHandler, (void *)session_data);
+  }
+
+int
+curlStreamStopThread(
+  CURL_Stream_Session_Data * session_data
+  )
+  {
+    session_data->threadData.stopFlag = 1;
+  }
+
 CURL_Static_Session_Data * 
 curlStaticInit(
   char *username,                        
@@ -304,9 +350,12 @@ CURL_Stream_Session_Data * curlStreamInit(
 
   char* usrpwd = Str_Trim(usrpwd_build).strPtr;
 
+    
+    // initialize session data structure
     CURL_Stream_Session_Data *session_data = malloc(sizeof(CURL_Stream_Session_Data));
   
     session_data->curlHandle = stream_handle;
+    session_data->threadData.stopFlag = 0;
     session_data->username = username;
     session_data->usernameLength = strlen(username);
     session_data->password = password;
@@ -329,12 +378,9 @@ CURL_Stream_Session_Data * curlStreamInit(
   curl_easy_setopt(stream_handle, CURLOPT_SSL_VERIFYSTATUS, EnableVerify);
   curl_easy_setopt(stream_handle, CURLOPT_VERBOSE, verboseOutput);
 
-// test curl configuration (can't do this for stream)
-  // char** response;
-
-  // response = curlStaticGet(session_data, "/status");
-      
-  // fprintf(stdout, "\nInitialization test Call: %s\n", *response);
+// initialize multi handle
+  session_data->multiHandle = curl_multi_init();
+  // curl_multi_add_handle(session_data->multiHandle, session_data->curlHandle);
 
   return session_data;
 }
@@ -441,6 +487,8 @@ void
 curlStreamCleanup(
   CURL_Stream_Session_Data *session_data
   ) {
+    curl_multi_remove_handle(session_data->multiHandle, session_data->curlHandle);
+    curl_multi_cleanup(session_data->multiHandle);
     curl_easy_cleanup(session_data->curlHandle);
     free(session_data->dataBuffer);
     free(session_data);

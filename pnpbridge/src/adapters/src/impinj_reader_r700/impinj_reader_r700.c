@@ -394,7 +394,6 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
     return IOTHUB_CLIENT_OK;
 }
 
-
 void ImpinjReader_ProcessProperty(
     void* ClientHandle, 
     const char* PropertyName, 

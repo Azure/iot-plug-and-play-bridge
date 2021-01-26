@@ -21,8 +21,16 @@ typedef struct CURL_Static_Session_Data {
   int callbackBufferSize;
   } CURL_Static_Session_Data;
 
+typedef struct CURL_Stream_Thread_Data {
+  pthread_t tid;
+  int thread_ref;
+  int stopFlag;
+} CURL_Stream_Thread_Data;
+
 typedef struct CURL_Stream_Session_Data {
   CURL *curlHandle;
+  CURLM *multiHandle; 
+  CURL_Stream_Thread_Data threadData;
   char *username;
   int usernameLength;
   char *password;
@@ -85,6 +93,21 @@ curlStreamInit(
   char *basePath, 
   int EnableVerify, 
   long verboseOutput
+  );
+
+void *
+curlStreamHandler(
+  void * sessionData
+  );
+
+int 
+curlStreamSpawnThread(
+  CURL_Stream_Session_Data * session_data
+  );
+
+int
+curlStreamStopThread(
+  CURL_Stream_Session_Data * session_data
   );
 
 char** 
