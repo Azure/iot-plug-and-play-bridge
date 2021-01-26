@@ -45,6 +45,12 @@ typedef struct CURL_Stream_Session_Data {
   int64_t bufferWriteCounter;
   } CURL_Stream_Session_Data;
 
+typedef struct CURL_Stream_Read_Data {
+  char * dataChunk;
+  int dataChunkSize;
+  int remainingData;  //data remaining in buffer
+} CURL_Stream_Read_Data;
+
 void 
 curlGlobalInit();
 
@@ -95,8 +101,13 @@ curlStreamInit(
   long verboseOutput
   );
 
+CURL_Stream_Read_Data 
+curlStreamReadBufferChunk(
+  CURL_Stream_Session_Data *session_data
+  ); 
+
 void *
-curlStreamHandler(
+curlStreamReader(
   void * sessionData
   );
 

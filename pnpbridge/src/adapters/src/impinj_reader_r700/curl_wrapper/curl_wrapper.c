@@ -36,11 +36,17 @@ curlStaticDataReadCallback(
   return nmemb; 
 }
 
-char * curlReadStreamBufferChunk(
+CURL_Stream_Read_Data 
+curlStreamReadBufferChunk(
   CURL_Stream_Session_Data *session_data
 )  {
+      CURL_Stream_Read_Data read_data;
+
       if (session_data->bufferReadIndex == session_data->bufferWriteIndex) {
-        return NULL;
+        read_data.dataChunk=NULL;
+        read_data.dataChunkSize=0;
+        read_data.remainingData=session_data->bufferWriteCounter - session_data->bufferReadCounter;
+        return read_data;
       }
       
       char * dataChunk = session_data->dataBuffer + session_data->bufferReadIndex;   // read first chunk of data from buffer
@@ -66,8 +72,13 @@ char * curlReadStreamBufferChunk(
             session_data->bufferReadCounter += firstChunkLength + strlen(secondDataChunk) + 1;
 
             if (session_data->bufferReadCounter % session_data->dataBufferSize != session_data->bufferReadIndex) {
+                  read_data.dataChunk=NULL;
+                  read_data.dataChunkSize=0;
+                  read_data.remainingData=session_data->bufferWriteCounter - session_data->bufferReadCounter;
+                  
                   fprintf(stdout, "\n  ERROR: Stream data buffer read index mismatch.");
-                  return NULL;
+                  
+                  return read_data;
             }
 
             // fprintf(stdout, "\n JOINED DATA: %s", joinedDataChunkReturn);
@@ -75,16 +86,24 @@ char * curlReadStreamBufferChunk(
 
             free(firstDataChunk);
             free(joinedDataChunk);
+            
+            read_data.dataChunk = joinedDataChunkReturn;
+            read_data.dataChunkSize = strlen(joinedDataChunkReturn);
+            read_data.remainingData=session_data->bufferWriteCounter - session_data->bufferReadCounter;
 
-            return joinedDataChunkReturn;
+            return read_data;
       }
 
-      else {   // if the chunk doesn't wrap around end of memory space, it should all be contained in first read
+      else {  // if the chunk doesn't wrap around end of memory space, it should all be contained in first read
               session_data->bufferReadIndex += strlen(dataChunk) + 1;
               session_data->bufferReadCounter += strlen(dataChunk) + 1;
 
-      // fprintf(stdout, "\n   POST READ - BufferWriteIndex: %d, BufferReadIndex: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex);
-      return dataChunk;
+              // fprintf(stdout, "\n   POST READ - BufferWriteIndex: %d, BufferReadIndex: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex);
+              read_data.dataChunk = dataChunk;
+              read_data.dataChunkSize = strlen(dataChunk);
+              read_data.remainingData=session_data->bufferWriteCounter - session_data->bufferReadCounter;
+              
+              return read_data;
       }
 }
 
@@ -175,29 +194,24 @@ curlStreamDataReadCallback(
 
     // fprintf(stdout, "\n      POST WRITE - BufferWriteIndex: %d, BufferReadIndex: %d, SpaceUntilWrap: %d, BufferSize: %d", session_data->bufferWriteIndex, session_data->bufferReadIndex, spaceUntilWrap, session_data->dataBufferSize);
 
-    //print out the entire buffer character space
+    // print out the entire buffer character space
     // curlStreamBufferReadout(session_data); //DEBUG
     
-    char * streamDataChunk = curlReadStreamBufferChunk(session_data);
-
-    
-    fprintf(stdout, "\n  StreamDataLength: %d", (int)strlen(streamDataChunk));
-    fprintf(stdout, "\n  StreamData: %s", streamDataChunk);
-    
-
-    /* DEBUG - print out response */
-    // fprintf(stdout,"\n   Size: %d", session_data->callbackDataLength);
-    // fprintf(stdout,"\n   %s", (char*)*(session_data->callbackData));
-    // fprintf(stdout, "\n");
+    // DEBUG readout 
+    // char * streamDataChunk = curlStreamReadBufferChunk(session_data);
+    // fprintf(stdout, "\n  StreamDataLength: %d", (int)strlen(streamDataChunk));
+    // fprintf(stdout, "\n  StreamData: %s", streamDataChunk);
 
   return nmemb;
  }
 
 void *
-curlStreamHandler(
+curlStreamReader(
   void * sessionData
   )
   {
+    fprintf(stdout, "\nINFO: cURL stream reader thread started.");
+
     CURL_Stream_Session_Data * session_data = (CURL_Stream_Session_Data*)sessionData; 
     
     CURLMcode mc; /* curl_multi_poll() return code */ 
@@ -216,10 +230,11 @@ curlStreamHandler(
         // count++;
   
       if(mc != CURLM_OK) {
-        fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
+        fprintf(stderr, "\ncurl_multi_wait() failed in curlStreamReader(), code %d.", mc);
         break;
       }
     }
+    fprintf(stdout, "\nINFO: cURL stream reader thread shut down.");
   }
 
 int 
@@ -227,7 +242,7 @@ curlStreamSpawnThread(
   CURL_Stream_Session_Data * session_data
   )
   {
-    session_data->threadData.thread_ref = pthread_create(&(session_data->threadData.tid), NULL, curlStreamHandler, (void *)session_data);
+    session_data->threadData.thread_ref = pthread_create(&(session_data->threadData.tid), NULL, curlStreamReader, (void *)session_data);
   }
 
 int

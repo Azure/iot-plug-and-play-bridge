@@ -55,7 +55,17 @@ int main(void)
   curlStreamSpawnThread(session_data);
 
   for (int i=0; i<10; i++){
-    fprintf(stdout, "\nWait Thread: %d", i);
+    fprintf(stdout, "\nWait Thread: %d - Reading Stream Data Out...", i);
+
+    int remainingData = 1;
+    while (remainingData > 0) // read all data out of buffer, exit on empty buffer
+      {
+        CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(session_data);
+        remainingData = read_data.remainingData;
+
+        fprintf(stdout, "\n  STREAM READ( DATA SIZE: %d, DATA REMAINING %d): %s", read_data.dataChunkSize, read_data.remainingData, read_data.dataChunk);
+      }
+
     usleep(1000000);
   }
 
