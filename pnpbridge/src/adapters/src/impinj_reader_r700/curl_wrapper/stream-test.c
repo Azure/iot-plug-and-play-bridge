@@ -52,10 +52,19 @@ int main(void)
   struct CURL_Stream_Session_Data *session_data;
   session_data = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
-  curlStreamSpawnThread(session_data);
+  curlStreamSpawnReaderThread(session_data);
 
-  for (int i=0; i<10; i++){
-    fprintf(stdout, "\nWait Thread: %d - Reading Stream Data Out...", i);
+  clock_t mSecInit = clock();
+
+  clock_t mSecTarget = 15000;
+
+  clock_t mSecTimer = 0;
+
+  fprintf(stdout, "\nCLOCKS_PER_SEC: %d", (int)CLOCKS_PER_SEC);
+
+  while (mSecTimer < mSecTarget) {
+    
+    fprintf(stdout, "\nWait Thread( Timer: %d uSec, Target: %d uSec): Reading Stream Data Out...", (int)mSecTimer, (int)mSecTarget);
 
     int remainingData = 1;
     while (remainingData > 0) // read all data out of buffer, exit on empty buffer
@@ -67,6 +76,8 @@ int main(void)
       }
 
     usleep(1000000);
+
+    mSecTimer = clock() - mSecInit;
   }
 
   curlStreamStopThread(session_data);

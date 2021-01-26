@@ -112,7 +112,7 @@ curlStreamReader(
   );
 
 int 
-curlStreamSpawnThread(
+curlStreamSpawnReaderThread(
   CURL_Stream_Session_Data * session_data
   );
 

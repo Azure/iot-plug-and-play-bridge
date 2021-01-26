@@ -203,7 +203,7 @@ int ImpinjReader_TelemetryWorker(
 {
     PNPBRIDGE_COMPONENT_HANDLE componentHandle = (PNPBRIDGE_COMPONENT_HANDLE) context;
     PIMPINJ_READER device = PnpComponentHandleGetContext(componentHandle);
-
+      
     long count = 0;
     // Report telemetry every 5 seconds till we are asked to stop
     while (true)
@@ -217,11 +217,85 @@ int ImpinjReader_TelemetryWorker(
 
         ImpinjReader_ReportDeviceStateAsync(componentHandle, device->ComponentName);
     
-        // ImpinjReader_SendTelemetryMessagesAsync(componentHandle);
+        ImpinjReader_SendTelemetryMessagesAsync(componentHandle);
         // Sleep for X msec
-        ThreadAPI_Sleep(5000);
+        ThreadAPI_Sleep(1000);
     }
     return IOTHUB_CLIENT_OK;
+}
+
+static void ImpinjReader_TelemetryCallback(
+    IOTHUB_CLIENT_CONFIRMATION_RESULT TelemetryStatus,
+    void* UserContextCallback)
+{
+    PIMPINJ_READER device = (PIMPINJ_READER) UserContextCallback;
+    if (TelemetryStatus == IOTHUB_CLIENT_CONFIRMATION_OK)
+    {
+        LogInfo("Impinj Reader:: Successfully delivered telemetry message for <%s>", (const char*)device->SensorState->componentName);
+    }
+    else
+    {
+        LogError("Impinj Reader:: Failed delivered telemetry message for <%s>, error=<%d>", (const char*)device->SensorState->componentName, TelemetryStatus);
+    }
+}
+
+IOTHUB_CLIENT_RESULT 
+ImpinjReader_RouteSendEventAsync(
+        PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+        IOTHUB_MESSAGE_HANDLE EventMessageHandle,
+        IOTHUB_CLIENT_EVENT_CONFIRMATION_CALLBACK EventConfirmationCallback,
+        void * UserContextCallback)
+{
+    IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
+    PNP_BRIDGE_CLIENT_HANDLE clientHandle = PnpComponentHandleGetClientHandle(PnpComponentHandle);
+    if ((iothubClientResult = PnpBridgeClient_SendEventAsync(clientHandle, EventMessageHandle,
+            EventConfirmationCallback, UserContextCallback)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("IoTHub client call to _SendEventAsync failed with error code %d", iothubClientResult);
+        goto exit;
+    }
+    else
+    {
+        LogInfo("IoTHub client call to _SendEventAsync succeeded");
+    }
+
+exit:
+    return iothubClientResult;
+}
+
+IOTHUB_CLIENT_RESULT 
+ImpinjReader_SendTelemetryMessagesAsync(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle
+    )
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
+    PIMPINJ_READER device = PnpComponentHandleGetContext(PnpComponentHandle);
+
+    // read curl stream 
+    
+    CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(device->curl_stream_session);
+    // float currentTemperature = 20.0f + ((float)rand() / RAND_MAX) * 15.0f;
+    // float currentHumidity = 60.0f + ((float)rand() / RAND_MAX) * 20.0f;
+
+    // char currentMessage[1000];
+    // sprintf(currentMessage, "{\"%s\":%.3f, \"%s\":%.3f}", SampleEnvironmentalSensor_TemperatureTelemetry, 
+            // currentTemperature, SampleEnvironmentalSensor_HumidityTelemetry, currentHumidity);
+
+
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, read_data.dataChunk)) == NULL)
+    {
+        LogError("Environmental Sensor Adapter:: PnP_CreateTelemetryMessageHandle failed.");
+    }
+    else if ((result = ImpinjReader_RouteSendEventAsync(PnpComponentHandle, messageHandle,
+            ImpinjReader_TelemetryCallback, device)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("Environmental Sensor Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
+    }
+
+    IoTHubMessage_Destroy(messageHandle);
+
+    return result;
 }
 
 IOTHUB_CLIENT_RESULT ImpinjReader_CreatePnpAdapter(
@@ -286,7 +360,8 @@ ImpinjReader_CreatePnpComponent(
     char* http_basepath = Str_Trim(build_str_url_always).strPtr;
 
     /* initialize cURL sessions */
-    CURL_Static_Session_Data *static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, curlStaticDataReadCallback, VERBOSE_OUTPUT_OFF);
+    CURL_Static_Session_Data *curl_static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+    CURL_Stream_Session_Data *curl_stream_session = curlStreamInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
     device = calloc(1, sizeof(IMPINJ_READER));
     if (NULL == device) {
@@ -306,7 +381,7 @@ ImpinjReader_CreatePnpComponent(
 
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
-    device->curl_static_session = static_session;
+    device->curl_static_session = curl_static_session;
     device->ComponentName = ComponentName;
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
@@ -334,6 +409,8 @@ IOTHUB_CLIENT_RESULT ImpinjReader_StartPnpComponent(
 
     PnpComponentHandleSetContext(PnpComponentHandle, device);
 
+    curlStreamSpawnReaderThread(device->curl_stream_session);
+
     // Report Device State Async
     // result = ImpinjReader_ReportPropertyAsync(PnpComponentHandle, device->SensorState->componentName);
 
@@ -352,6 +429,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_StopPnpComponent(
 
     if (device) {
         device->ShuttingDown = true;
+        curlStreamStopThread(device->curl_stream_session);
         ThreadAPI_Join(device->WorkerHandle, NULL);
     }
     return IOTHUB_CLIENT_OK;
@@ -368,6 +446,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpComponent(
             if (device->SensorState->customerName != NULL)
             {
                 if (device->curl_static_session != NULL) {
+                    curlStreamCleanup(device->curl_stream_session);
                     curlStaticCleanup(device->curl_static_session);
                     free(device->curl_static_session);
                 }
