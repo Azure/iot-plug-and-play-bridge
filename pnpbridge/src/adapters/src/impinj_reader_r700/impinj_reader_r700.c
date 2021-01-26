@@ -206,21 +206,36 @@ int ImpinjReader_TelemetryWorker(
       
     long count = 0;
     // Report telemetry every 5 seconds till we are asked to stop
-    while (true)
-    {
+    while (true) {
+
         if (device->ShuttingDown)
         {
             return IOTHUB_CLIENT_OK;
         }
+
         LogInfo("Telemetry Worker Iteration %d: ", count);  // Placeholder for actual data
         count++;
 
         ImpinjReader_ReportDeviceStateAsync(componentHandle, device->ComponentName);
-    
-        ImpinjReader_SendTelemetryMessagesAsync(componentHandle);
-        // Sleep for X msec
-        ThreadAPI_Sleep(1000);
+        
+        int uSecInit = clock();
+        int uSecTimer = 0;
+        int uSecTarget = 5000000;
+
+        while (uSecTimer < uSecTarget)
+        {
+            if (device->ShuttingDown)
+            {
+                return IOTHUB_CLIENT_OK;
+            }
+        
+            ImpinjReader_SendTelemetryMessagesAsync(componentHandle);
+            // Sleep for X msec
+            ThreadAPI_Sleep(100);
+            uSecTimer = clock() - uSecInit;
+        }
     }
+
     return IOTHUB_CLIENT_OK;
 }
 
@@ -274,23 +289,36 @@ ImpinjReader_SendTelemetryMessagesAsync(
 
     // read curl stream 
     
-    CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(device->curl_stream_session);
-    // float currentTemperature = 20.0f + ((float)rand() / RAND_MAX) * 15.0f;
-    // float currentHumidity = 60.0f + ((float)rand() / RAND_MAX) * 20.0f;
+    int uSecInit = clock();
+    int uSecTimer = 0;
+    int uSecTarget = 5000;
 
-    // char currentMessage[1000];
-    // sprintf(currentMessage, "{\"%s\":%.3f, \"%s\":%.3f}", SampleEnvironmentalSensor_TemperatureTelemetry, 
-            // currentTemperature, SampleEnvironmentalSensor_HumidityTelemetry, currentHumidity);
+    while (uSecTimer < uSecTarget) {
 
+        CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(device->curl_stream_session);
+        // float currentTemperature = 20.0f + ((float)rand() / RAND_MAX) * 15.0f;
+        // float currentHumidity = 60.0f + ((float)rand() / RAND_MAX) * 20.0f;
 
-    if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, read_data.dataChunk)) == NULL)
-    {
-        LogError("Environmental Sensor Adapter:: PnP_CreateTelemetryMessageHandle failed.");
-    }
-    else if ((result = ImpinjReader_RouteSendEventAsync(PnpComponentHandle, messageHandle,
-            ImpinjReader_TelemetryCallback, device)) != IOTHUB_CLIENT_OK)
-    {
-        LogError("Environmental Sensor Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
+        // char currentMessage[1000];
+        // sprintf(currentMessage, "{\"%s\":%.3f, \"%s\":%.3f}", SampleEnvironmentalSensor_TemperatureTelemetry, 
+        // currentTemperature, SampleEnvironmentalSensor_HumidityTelemetry, currentHumidity);
+        if (read_data.dataChunk == NULL) {
+            // LogInfo("No data returned from stream buffer.");
+            return IOTHUB_CLIENT_OK;
+        }
+
+        if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, read_data.dataChunk)) == NULL)
+        {
+            LogError("Impinj Reader Adapter:: PnP_CreateTelemetryMessageHandle failed.");
+        }
+        else if ((result = ImpinjReader_RouteSendEventAsync(PnpComponentHandle, messageHandle,
+                ImpinjReader_TelemetryCallback, device)) != IOTHUB_CLIENT_OK)
+        {
+            LogError("Impinj Reader Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
+        }
+
+        uSecTimer = clock() - uSecInit;
+        LogInfo("Stream Read Timer: %d, Stream Read Target %d", (int)uSecTimer, (int)uSecTarget);
     }
 
     IoTHubMessage_Destroy(messageHandle);
@@ -382,6 +410,7 @@ ImpinjReader_CreatePnpComponent(
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
     device->curl_static_session = curl_static_session;
+    device->curl_stream_session = curl_stream_session;
     device->ComponentName = ComponentName;
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
