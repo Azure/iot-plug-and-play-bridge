@@ -220,7 +220,7 @@ int ImpinjReader_TelemetryWorker(
         
         int uSecInit = clock();
         int uSecTimer = 0;
-        int uSecTarget = 5000000;
+        int uSecTarget = 50000;
 
         while (uSecTimer < uSecTarget)
         {
@@ -233,6 +233,7 @@ int ImpinjReader_TelemetryWorker(
             // Sleep for X msec
             ThreadAPI_Sleep(100);
             uSecTimer = clock() - uSecInit;
+            // LogInfo("Worker Thread Timer: %d, Target: %d", uSecTimer, uSecTarget);
         }
     }
 
@@ -293,32 +294,46 @@ ImpinjReader_SendTelemetryMessagesAsync(
     int uSecTimer = 0;
     int uSecTarget = 5000;
 
-    while (uSecTimer < uSecTarget) {
+    while (uSecTimer < uSecTarget) {  // pull messages out of buffer for target time, then return to calling function
 
         CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(device->curl_stream_session);
-        // float currentTemperature = 20.0f + ((float)rand() / RAND_MAX) * 15.0f;
-        // float currentHumidity = 60.0f + ((float)rand() / RAND_MAX) * 20.0f;
 
-        // char currentMessage[1000];
-        // sprintf(currentMessage, "{\"%s\":%.3f, \"%s\":%.3f}", SampleEnvironmentalSensor_TemperatureTelemetry, 
-        // currentTemperature, SampleEnvironmentalSensor_HumidityTelemetry, currentHumidity);
-        if (read_data.dataChunk == NULL) {
+        if (read_data.dataChunk == NULL) {  // if no data in buffer, stop reading and return to calling function
             // LogInfo("No data returned from stream buffer.");
+            IoTHubMessage_Destroy(messageHandle);
             return IOTHUB_CLIENT_OK;
         }
 
-        if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, read_data.dataChunk)) == NULL)
-        {
-            LogError("Impinj Reader Adapter:: PnP_CreateTelemetryMessageHandle failed.");
-        }
-        else if ((result = ImpinjReader_RouteSendEventAsync(PnpComponentHandle, messageHandle,
-                ImpinjReader_TelemetryCallback, device)) != IOTHUB_CLIENT_OK)
-        {
-            LogError("Impinj Reader Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
-        }
+        #define MESSAGE_SPLIT_DELIMITER "\n\r"
+
+        char * oneMessage = strtok(read_data.dataChunk, MESSAGE_SPLIT_DELIMITER);  // split data chunk by \n\r in case multiple reader events are contained in the same chunk
+            
+        int count = 0;
+
+        while (oneMessage != NULL) {  // send each event individually
+
+            count++;
+
+            LogInfo("TELEMETRY Message %d: %s", count, oneMessage);
+  
+            char * currentMessage = ImpinjReader_CreateJsonResponse("streamReadEvent", oneMessage); // TODO: Parameterize this property name
+
+            if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, currentMessage)) == NULL)
+            {
+                LogError("Impinj Reader Adapter:: PnP_CreateTelemetryMessageHandle failed.");
+            }
+            else if ((result = ImpinjReader_RouteSendEventAsync(PnpComponentHandle, messageHandle,
+                    ImpinjReader_TelemetryCallback, device)) != IOTHUB_CLIENT_OK)
+            {
+                LogError("Impinj Reader Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
+            }
+
+            oneMessage = strtok(NULL, MESSAGE_SPLIT_DELIMITER);
+        }  
 
         uSecTimer = clock() - uSecInit;
-        LogInfo("Stream Read Timer: %d, Stream Read Target %d", (int)uSecTimer, (int)uSecTarget);
+        // LogInfo("Stream Read Timer: %d, Stream Read Target %d", (int)uSecTimer, (int)uSecTarget);
+        // LogInfo(" TELEMETRY: %s", read_data.dataChunk);
     }
 
     IoTHubMessage_Destroy(messageHandle);

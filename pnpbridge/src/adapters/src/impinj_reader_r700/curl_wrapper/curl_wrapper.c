@@ -349,7 +349,7 @@ CURL_Stream_Session_Data * curlStreamInit(
   char * streamBuffer;
   streamBuffer = (char*)malloc(sizeof(char)*STREAM_DATA_BUFFER_SIZE);
 
-  memset(streamBuffer, '-', STREAM_DATA_BUFFER_SIZE);
+  memset(streamBuffer, '\0', STREAM_DATA_BUFFER_SIZE);
   
   if(streamBuffer == NULL) {
     /* out of memory! */ 
