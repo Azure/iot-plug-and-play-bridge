@@ -378,9 +378,20 @@ CURL_Stream_Session_Data * curlStreamInit(
   curl_easy_setopt(stream_handle, CURLOPT_SSL_VERIFYSTATUS, EnableVerify);
   curl_easy_setopt(stream_handle, CURLOPT_VERBOSE, verboseOutput);
 
+  char fullStreamUrl[1000] = "";
+  
+  strcat(fullStreamUrl, session_data->basePath);
+  strcat(fullStreamUrl, "/data/stream");
+
+  char* full_stream_endpoint = Str_Trim(fullStreamUrl).strPtr;
+
+  curl_easy_setopt(session_data->curlHandle, CURLOPT_HTTPGET, 1);
+  curl_easy_setopt(session_data->curlHandle, CURLOPT_URL, full_stream_endpoint);
+  fprintf(stdout, " STREAM Endpoint: %s\n", full_stream_endpoint);
+
 // initialize multi handle
   session_data->multiHandle = curl_multi_init();
-  // curl_multi_add_handle(session_data->multiHandle, session_data->curlHandle);
+  curl_multi_add_handle(session_data->multiHandle, session_data->curlHandle);
 
   return session_data;
 }
@@ -487,6 +498,7 @@ void
 curlStreamCleanup(
   CURL_Stream_Session_Data *session_data
   ) {
+    session_data->threadData.thread_ref = pthread_join(session_data->threadData.tid, NULL);
     curl_multi_remove_handle(session_data->multiHandle, session_data->curlHandle);
     curl_multi_cleanup(session_data->multiHandle);
     curl_easy_cleanup(session_data->curlHandle);
