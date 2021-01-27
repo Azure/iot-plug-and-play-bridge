@@ -3,27 +3,6 @@
   "@type": "Interface",
   "contents": [
     {
-      "@id": "dtmi:impinj:R700:eventData;1",
-      "@type": [
-        "Telemetry",
-        "Event"
-      ],
-      "displayName": {
-        "en": "Event Data"
-      },
-      "name": "eventData",
-      "schema": "string"
-    },
-    {
-      "@id": "dtmi:impinj:R700:status;1",
-      "@type": "Property",
-      "displayName": {
-        "en": "Device Status"
-      },
-      "name": "deviceStatus",
-      "schema": "string"
-    },
-    {
       "@id": "dtmi:impinj:R700:testPropertyString;1",
       "@type": "Property",
       "displayName": {
@@ -40,7 +19,15 @@
       "displayName": {
         "en": "Stop Preset"
       },
-      "name": "stopPreset"
+      "name": "stopPreset",
+      "response": {
+        "@type": "CommandPayload",
+        "displayName": {
+          "en": "cmdResponse"
+        },
+        "name": "cmdResponse",
+        "schema": "string"
+      }
     },
     {
       "@id": "dtmi:impinj:R700:startPreset;1",
@@ -57,6 +44,354 @@
         },
         "name": "presetName",
         "schema": "string"
+      },
+      "response": {
+        "@type": "CommandPayload",
+        "displayName": {
+          "en": "cmdResponse"
+        },
+        "name": "cmdResponse",
+        "schema": "string"
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:deviceStatus;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "Device Status"
+      },
+      "name": "deviceStatus",
+      "schema": {
+        "@id": "dtmi:impinj:R700:deviceStatus:schema;1",
+        "@type": "Object",
+        "displayName": {
+          "en": "Object"
+        },
+        "fields": [
+          {
+            "@id": "dtmi:impinj:R700:deviceStatus:schema:status;1",
+            "displayName": {
+              "en": "status"
+            },
+            "name": "status",
+            "schema": "string"
+          },
+          {
+            "@id": "dtmi:impinj:R700:deviceStatus:schema:time;1",
+            "displayName": {
+              "en": "time"
+            },
+            "name": "time",
+            "schema": "string"
+          },
+          {
+            "@id": "dtmi:impinj:R700:deviceStatus:schema:serialNumber;1",
+            "displayName": {
+              "en": "serialNumber"
+            },
+            "name": "serialNumber",
+            "schema": "string"
+          },
+          {
+            "@id": "dtmi:impinj:R700:deviceStatus:schema:mqttBrokerConnectionStatus;1",
+            "displayName": {
+              "en": "mqttBrokerConnectionStatus"
+            },
+            "name": "mqttBrokerConnectionStatus",
+            "schema": "string"
+          },
+          {
+            "@id": "dtmi:impinj:R700:deviceStatus:schema:mqttTlsAuthentication;1",
+            "displayName": {
+              "en": "mqttTlsAuthentication"
+            },
+            "name": "mqttTlsAuthentication",
+            "schema": "string"
+          },
+          {
+            "@id": "dtmi:impinj:R700:deviceStatus:schema:kafkaClusterConnectionStatus;1",
+            "displayName": {
+              "en": "kafkaClusterConnectionStatus"
+            },
+            "name": "kafkaClusterConnectionStatus",
+            "schema": "string"
+          },
+          {
+            "@id": "dtmi:impinj:R700:deviceStatus:schema:activePreset;1",
+            "displayName": {
+              "en": "activePreset"
+            },
+            "name": "activePreset",
+            "schema": {
+              "@id": "dtmi:impinj:R700:deviceStatus:schema:activePreset:schema;1",
+              "@type": "Object",
+              "displayName": {
+                "en": "Object"
+              },
+              "fields": [
+                {
+                  "@id": "dtmi:impinj:R700:deviceStatus:schema:activePreset:schema:id;1",
+                  "displayName": {
+                    "en": "id"
+                  },
+                  "name": "id",
+                  "schema": "string"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:deviceStatus:schema:activePreset:schema:profile;1",
+                  "displayName": {
+                    "en": "profile"
+                  },
+                  "name": "profile",
+                  "schema": "string"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "writable": false
+    },
+    {
+      "@id": "dtmi:impinj:R700:streamReadEvent;1",
+      "@type": "Telemetry",
+      "displayName": {
+        "en": "streamReadEvent"
+      },
+      "name": "streamReadEvent",
+      "schema": {
+        "@id": "dtmi:impinj:R700:streamReadEvent:schema;1",
+        "@type": "Object",
+        "displayName": {
+          "en": "Object"
+        },
+        "fields": [
+          {
+            "@id": "dtmi:impinj:R700:streamReadEvent:schema:timestamp;1",
+            "displayName": {
+              "en": "timestamp"
+            },
+            "name": "timestamp",
+            "schema": "time"
+          },
+          {
+            "@id": "dtmi:impinj:R700:streamReadEvent:schema:hostname;1",
+            "displayName": {
+              "en": "hostname"
+            },
+            "name": "hostname",
+            "schema": "string"
+          },
+          {
+            "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent;1",
+            "displayName": {
+              "en": "tagInventoryEvent"
+            },
+            "name": "tagInventoryEvent",
+            "schema": {
+              "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema;1",
+              "@type": "Object",
+              "displayName": {
+                "en": "Object"
+              },
+              "fields": [
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:epc;1",
+                  "displayName": {
+                    "en": "epc"
+                  },
+                  "name": "epc",
+                  "schema": "string"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:epcHex;1",
+                  "displayName": {
+                    "en": "epcHex"
+                  },
+                  "name": "epcHex",
+                  "schema": "string"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:pc;1",
+                  "displayName": {
+                    "en": "pc"
+                  },
+                  "name": "pc",
+                  "schema": "string"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:antennaPort;1",
+                  "displayName": {
+                    "en": "antennaPort"
+                  },
+                  "name": "antennaPort",
+                  "schema": "integer"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:antennaName;1",
+                  "displayName": {
+                    "en": "antennaName"
+                  },
+                  "name": "antennaName",
+                  "schema": "string"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:peakRssiCdbm;1",
+                  "displayName": {
+                    "en": "peakRssiCdbm"
+                  },
+                  "name": "peakRssiCdbm",
+                  "schema": "integer"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:frequency;1",
+                  "displayName": {
+                    "en": "frequency"
+                  },
+                  "name": "frequency",
+                  "schema": "integer"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:transmitPowerCdbm;1",
+                  "displayName": {
+                    "en": "transmitPowerCdbm"
+                  },
+                  "name": "transmitPowerCdbm",
+                  "schema": "double"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:lastSeenTime;1",
+                  "displayName": {
+                    "en": "lastSeenTime"
+                  },
+                  "name": "lastSeenTime",
+                  "schema": "time"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:phaseAngle;1",
+                  "displayName": {
+                    "en": "phaseAngle"
+                  },
+                  "name": "phaseAngle",
+                  "schema": "double"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:tid;1",
+                  "displayName": {
+                    "en": "tid"
+                  },
+                  "name": "tid",
+                  "schema": "string"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:tagInventoryEvent:schema:tidHex;1",
+                  "displayName": {
+                    "en": "tidHex"
+                  },
+                  "name": "tidHex",
+                  "schema": "string"
+                }
+              ]
+            }
+          },
+          {
+            "@id": "dtmi:impinj:R700:streamReadEvent:schema:inventoryStatusEvent;1",
+            "displayName": {
+              "en": "inventoryStatusEvent"
+            },
+            "name": "inventoryStatusEvent",
+            "schema": {
+              "@id": "dtmi:impinj:R700:streamReadEvent:schema:inventoryStatusEvent:schema;1",
+              "@type": "Object",
+              "displayName": {
+                "en": "Object"
+              },
+              "fields": [
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:inventoryStatusEvent:schema:status;1",
+                  "displayName": {
+                    "en": "status"
+                  },
+                  "name": "status",
+                  "schema": {
+                    "@id": "dtmi:impinj:R700:streamReadEvent:schema:inventoryStatusEvent:schema:status:schema;1",
+                    "@type": "Enum",
+                    "displayName": {
+                      "en": "Enum"
+                    },
+                    "enumValues": [
+                      {
+                        "@id": "dtmi:impinj:R700:streamReadEvent:schema:inventoryStatusEvent:schema:status:schema:idle;1",
+                        "displayName": {
+                          "en": "idle"
+                        },
+                        "enumValue": "idle",
+                        "name": "idle"
+                      },
+                      {
+                        "@id": "dtmi:impinj:R700:streamReadEvent:schema:inventoryStatusEvent:schema:status:schema:running;1",
+                        "displayName": {
+                          "en": "running"
+                        },
+                        "enumValue": "armed",
+                        "name": "running"
+                      }
+                    ],
+                    "valueSchema": "string"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "@id": "dtmi:impinj:R700:streamReadEvent:schema:overflowEvent;1",
+            "displayName": {
+              "en": "overflowEvent"
+            },
+            "name": "overflowEvent",
+            "schema": {
+              "@id": "dtmi:impinj:R700:streamReadEvent:schema:overflowEvent:schema;1",
+              "@type": "Object",
+              "displayName": {
+                "en": "Object"
+              },
+              "fields": [
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:overflowEvent:schema:firstEventTimestamp;1",
+                  "displayName": {
+                    "en": "firstEventTimestamp"
+                  },
+                  "name": "firstEventTimestamp",
+                  "schema": "time"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:overflowEvent:schema:lastEventTimestamp;1",
+                  "displayName": {
+                    "en": "lastEventTimestamp"
+                  },
+                  "name": "lastEventTimestamp",
+                  "schema": "time"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:overflowEvent:schema:eventsPurged;1",
+                  "displayName": {
+                    "en": "eventsPurged"
+                  },
+                  "name": "eventsPurged",
+                  "schema": "integer"
+                },
+                {
+                  "@id": "dtmi:impinj:R700:streamReadEvent:schema:overflowEvent:schema:eventsRemaining;1",
+                  "displayName": {
+                    "en": "eventsRemaining"
+                  },
+                  "name": "eventsRemaining",
+                  "schema": "integer"
+                }
+              ]
+            }
+          }
+        ]
       }
     }
   ],
