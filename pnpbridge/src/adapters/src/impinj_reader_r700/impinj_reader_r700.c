@@ -328,7 +328,7 @@ ImpinjReader_SendTelemetryMessagesAsync(
                 LogError("Impinj Reader Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
             }
 
-            oneMessage = strtok(NULL, MESSAGE_SPLIT_DELIMITER);
+            oneMessage = strtok(NULL, MESSAGE_SPLIT_DELIMITER);  // continue splitting until all messages are sent individually
         }  
 
         uSecTimer = clock() - uSecInit;
