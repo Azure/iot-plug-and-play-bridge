@@ -25,12 +25,12 @@ curlStaticDataReadCallback(
     
     struct CURL_Static_Session_Data *session_data = (struct CURL_Static_Session_Data*)userp;
 
-    memcpy(*(session_data->callbackData), contents, nmemb);
-    session_data->callbackDataLength = (int)nmemb;
+    memcpy(session_data->readCallbackData, contents, nmemb);
+    session_data->readCallbackDataLength = (int)nmemb;
 
     /* DEBUG - print out response */
-    // fprintf(stdout,"\n   Size: %d", session_data->callbackDataLength);
-    // fprintf(stdout,"\n   %s", (char*)*(session_data->callbackData));
+    // fprintf(stdout,"\n   Size: %d", session_data->readCallbackDataLength);
+    // fprintf(stdout,"\n   %s", (char*)*(session_data->readCallbackData));
     // fprintf(stdout, "\n");
 
   return nmemb; 
@@ -267,10 +267,10 @@ curlStaticInit(
   static_handle = curl_easy_init();
 
   #define STATIC_CALLBACK_DATA_BUFFER_SIZE 10000
-  static char *callback_data;
-  callback_data = (char *)malloc(sizeof(char)*STATIC_CALLBACK_DATA_BUFFER_SIZE);
+  static char *read_callback_data;
+  read_callback_data = (char *)malloc(sizeof(char)*STATIC_CALLBACK_DATA_BUFFER_SIZE);
   
-  if(callback_data == NULL) {
+  if(read_callback_data == NULL) {
     /* out of memory! */ 
     printf("not enough memory for cURL callback data buffer (malloc returned NULL)\n");
     return 0;
@@ -294,8 +294,8 @@ curlStaticInit(
       sizeof(int),    //password size
       sizeof(int*),   //basepath pointer
       sizeof(int),    //basepath size
-      sizeof(char**), //callbackData pointer
-      sizeof(int),    //callbackData size
+      sizeof(char**), //readCallbackData pointer
+      sizeof(int),    //readCallbackData size
       sizeof(int)     //callbackBuffer Size
   };
 
@@ -308,9 +308,9 @@ curlStaticInit(
     session_data->passwordLength = strlen(password);
     session_data->basePath = basePath;
     session_data->basePathLength = strlen(basePath);
-    session_data->callbackData = &callback_data;
-    session_data->callbackDataLength = 0;
-    session_data->callbackBufferSize = STATIC_CALLBACK_DATA_BUFFER_SIZE;
+    session_data->readCallbackData = read_callback_data;
+    session_data->readCallbackDataLength = 0;
+    session_data->readCallbackBufferSize = STATIC_CALLBACK_DATA_BUFFER_SIZE;
 
 
 // apply curl settings with libcurl calls
@@ -323,11 +323,11 @@ curlStaticInit(
   curl_easy_setopt(static_handle, CURLOPT_VERBOSE, verboseOutput);
 
 // test curl configuration
-  char** response;
+  char* response;
 
   response = curlStaticGet(session_data, "/status");
       
-  fprintf(stdout, "\nInitialization test Call: %s\n", *response);
+  fprintf(stdout, "\nInitialization test Call: %s\n", response);
 
   return session_data;
 
@@ -412,7 +412,7 @@ CURL_Stream_Session_Data * curlStreamInit(
 }
 
 
-char** 
+char*
 curlStaticGet(
   CURL_Static_Session_Data *session_data, 
   char *endpoint
@@ -421,7 +421,7 @@ curlStaticGet(
   
   CURL *static_handle = session_data->curlHandle;
 
-  char* startPtr = *(session_data->callbackData);
+  char* startPtr = session_data->readCallbackData;
   // for (int i=0;i<STATIC_CALLBACK_DATA_BUFFER_SIZE;i++) {
   //   // set memory to \000
   //   memcpy(startPtr + i, '\0', sizeof(char));
@@ -429,7 +429,7 @@ curlStaticGet(
 
   memset(startPtr, '\0', STATIC_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
 
-  session_data->callbackDataLength = 0;
+  session_data->readCallbackDataLength = 0;
 
   char fullurl[1000] = "";
 
@@ -452,28 +452,22 @@ curlStaticGet(
       curl_easy_strerror(res));
   }
 
-  return session_data->callbackData;
+  return session_data->readCallbackData;
 }
 
- char** 
- curlStaticPost(
-   CURL_Static_Session_Data *session_data, 
-   char *endpoint, 
-   char *postData
-   ) {
+char*
+curlStaticPost(
+  CURL_Static_Session_Data *session_data, 
+  char *endpoint, 
+  char *postData
+  ) {
   
   CURL *static_handle = session_data->curlHandle;
 
   // re-initialize callback data buffer
-  char* startPtr = *(session_data->callbackData);
-  // for (int i=0;i<STATIC_CALLBACK_DATA_BUFFER_SIZE;i++) {
-  //   // set memory to \000
-  //   memcpy(startPtr + i, &nullChar, sizeof(char));
-  // }
-  
+  char* startPtr = session_data->readCallbackData;
   memset(startPtr, '\0', STATIC_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
-  
-  session_data->callbackDataLength = 0;
+  session_data->readCallbackDataLength = 0;
 
   char fullurl[1000] = "";
 
@@ -497,15 +491,71 @@ curlStaticGet(
         curl_easy_strerror(res));
   }
 
-  return session_data->callbackData;
+  return session_data->readCallbackData;
 }
+
+size_t 
+curlStaticDataWriteCallback(
+  void *write_data, 
+  size_t size, 
+  size_t nmemb, 
+  void *userp
+ ) {
+
+    char * dataToWrite = (char*)userp;
+    fprintf(stdout, "PUT cURL buffer size (bytes): %d", (int)(size * nmemb));
+    fprintf(stdout, "   PUT cURL size: %d", (int)size);
+    fprintf(stdout, "   PUT cURL nmemb: %d", (int)nmemb);
+    fprintf(stdout, "PUT data size (bytes): %d", (int)(strlen(dataToWrite)));
+
+    return nmemb;
+
+ }
+
+char* 
+curlStaticPut(
+  CURL_Static_Session_Data *session_data, 
+  char *endpoint, 
+  char *putData
+  ) {
+
+    CURL *static_handle = session_data->curlHandle;
+
+    // re-initialize callback data buffer
+    char* startPtr = session_data->readCallbackData;
+    memset(startPtr, '\0', STATIC_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
+    session_data->readCallbackDataLength = 0;
+
+    char fullurl[1000] = "";
+
+    strcat(fullurl, session_data->basePath);
+    strcat(fullurl, endpoint);
+
+    char* full_endpoint = Str_Trim(fullurl).strPtr;
+
+    fprintf(stdout, " PUT Endpoint: %s\n", full_endpoint);
+
+    curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+    curl_easy_setopt(static_handle, CURLOPT_READFUNCTION, curlStaticDataWriteCallback);
+    curl_easy_setopt(static_handle, CURLOPT_READDATA, &putData);
+    curl_easy_setopt(static_handle, CURLOPT_UPLOAD, 1L);
+
+    CURLcode res = curl_easy_perform(static_handle);
+
+    if(res != CURLE_OK) {
+        fprintf(stderr, "curl_easy_perform() failed in curlStaticPost: %s\n",
+          curl_easy_strerror(res));
+    }
+
+    return putData; // TODO: implement error handling
+  }
 
 void 
 curlStaticCleanup(
   CURL_Static_Session_Data *session_data
   ) {
     curl_easy_cleanup(session_data->curlHandle);
-    free(*(session_data->callbackData));
+    free(session_data->readCallbackData);
     free(session_data);
   }
 

@@ -16,9 +16,12 @@ typedef struct CURL_Static_Session_Data {
   int passwordLength;
   char *basePath;
   int basePathLength;
-  char **callbackData;
-  int callbackDataLength;
-  int callbackBufferSize;
+  char *readCallbackData;
+  int readCallbackDataLength;
+  int readCallbackBufferSize;
+  char *writeCallbackData;
+  int writeCallbackDataLength;
+  int writeCallbackBufferSize;
   } CURL_Static_Session_Data;
 
 typedef struct CURL_Stream_Thread_Data {
@@ -121,17 +124,24 @@ curlStreamStopThread(
   CURL_Stream_Session_Data * session_data
   );
 
-char** 
+char*
 curlStaticGet(
   CURL_Static_Session_Data *session_data, 
   char *endpoint
   );
 
-char** 
+char*
 curlStaticPost(
   CURL_Static_Session_Data *session_data, 
   char *endpoint, 
   char *postData
+  );
+
+char*
+curlStaticPut(
+  CURL_Static_Session_Data *session_data, 
+  char *endpoint, 
+  char *putData
   );
 
 void 

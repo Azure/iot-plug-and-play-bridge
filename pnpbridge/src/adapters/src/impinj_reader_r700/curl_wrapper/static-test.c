@@ -40,9 +40,7 @@
 
 int main(void)
 {
-  
-
-  char** res;
+  char* res;
 
   curlGlobalInit();
  
@@ -51,32 +49,37 @@ int main(void)
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/status");
-  fprintf(stdout, "    Response: %s\n", *res);
+  fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/profiles/inventory/presets");
-  fprintf(stdout, "    Response: %s\n", *res);
+  fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
+  // res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}");
+  // fprintf(stdout, "    Response: %s\n", res);
+
+  // usleep(USEC_DELAY);
+
   res = curlStaticPost(static_session, "/profiles/inventory/presets/basic_inventory/start", "");
-  fprintf(stdout, "    Response: %s\n", *res);
+  fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/status");
-  fprintf(stdout, "    Response: %s\n", *res);
+  fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticPost(static_session, "/profiles/stop", "");
-  fprintf(stdout, "    Response: %s\n", *res);
+  fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
   res = curlStaticGet(static_session, "/status");
-  fprintf(stdout, "    Response: %s\n", *res);
+  fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
