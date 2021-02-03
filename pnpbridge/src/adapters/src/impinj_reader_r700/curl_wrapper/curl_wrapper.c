@@ -513,7 +513,7 @@ curlStaticDataWriteCallback(
  ) {
     CURL_Static_Session_Data * session_data = (CURL_Static_Session_Data*)userp;
 
-    int offset = strlen(session_data->writeCallbackData) - session_data->writeCallbackDataLength;
+    int offset = strlen(session_data->writeCallbackData) - session_data->writeCallbackDataLength;  // using writeCallbackDataLength as remaining data to write
 
     int curlWriteBufferSize = size * nmemb;
 
@@ -528,7 +528,7 @@ curlStaticDataWriteCallback(
       // fprintf(stdout, "        Data offset: %d\n", offset);
 
       memcpy(write_data, (session_data->writeCallbackData) + offset, curlWriteBufferSize);
-      session_data->writeCallbackDataLength -= curlWriteBufferSize;
+      session_data->writeCallbackDataLength -= curlWriteBufferSize;  // update remaining data to write
       return curlWriteBufferSize;
     }
 
@@ -538,11 +538,10 @@ curlStaticDataWriteCallback(
       size_t handled_bytes = strlen(session_data->writeCallbackData)*sizeof(char);
 
       memset(session_data->writeCallbackData, '\0', STATIC_WRITE_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
-      session_data->writeCallbackDataLength = 0;
+      session_data->writeCallbackDataLength = 0;  // no more data to write
 
       return handled_bytes;  // must return number of bytes handled.  Return 0 to terminate.
     }
-
  }
 
 char* 
@@ -577,7 +576,8 @@ curlStaticPut(
     curl_easy_setopt(static_handle, CURLOPT_READFUNCTION, curlStaticDataWriteCallback);
     curl_easy_setopt(static_handle, CURLOPT_READDATA, (void *)session_data);
     curl_easy_setopt(static_handle, CURLOPT_UPLOAD, 1L);
-
+    // curl_easy_setopt(static_handle, CURLOPT_INFILESIZE, (strlen(putData)) * sizeof(char));  // only needed for HTTP 1.x
+ 
     CURLcode res = curl_easy_perform(static_handle);
 
     if(res != CURLE_OK) {
@@ -585,7 +585,7 @@ curlStaticPut(
           curl_easy_strerror(res));
     }
 
-    return session_data->writeCallbackData; // TODO: implement error handling
+    return session_data->readCallbackData; // TODO: implement error handling
   }
 
 void 
@@ -594,6 +594,7 @@ curlStaticCleanup(
   ) {
     curl_easy_cleanup(session_data->curlHandle);
     free(session_data->readCallbackData);
+    free(session_data->writeCallbackData);
     free(session_data);
   }
 
