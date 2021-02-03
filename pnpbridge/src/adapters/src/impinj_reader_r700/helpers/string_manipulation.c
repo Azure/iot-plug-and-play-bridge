@@ -21,23 +21,3 @@ Str_Trim(
     return *output;
   }
 
-Str_Split_Data
-Str_Split(   // do not use, just use strtok()
-  char * orig_str,
-  char * delimiter
-)
-{
-  Str_Split_Data output;
-   
-  char * token = strtok(orig_str, "\n\r");
-
-  int count = 0;
-
-  while ( token != NULL) {
-    count++;
-    fprintf(stdout, "\nToken %d: %s", count, token);
-    token = strtok(NULL, "\n\r");
-  }
-
-  return output;
-}
