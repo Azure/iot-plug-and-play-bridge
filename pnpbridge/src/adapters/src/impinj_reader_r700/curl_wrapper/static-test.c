@@ -58,10 +58,15 @@ int main(void)
 
   usleep(USEC_DELAY);
 
-  // res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}");
-  // fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 1,\"eventPerSecondLimit\": 2,\"eventAgeLimitMinutes\": 3}");
+  fprintf(stdout, "    Response: %s\n", res);
 
-  // usleep(USEC_DELAY);
+  usleep(USEC_DELAY);
+
+  res = curlStaticGet(static_session, "/http-stream");
+  fprintf(stdout, "    Response: %s\n", res);
+
+  usleep(USEC_DELAY);
 
   res = curlStaticPost(static_session, "/profiles/inventory/presets/basic_inventory/start", "");
   fprintf(stdout, "    Response: %s\n", res);

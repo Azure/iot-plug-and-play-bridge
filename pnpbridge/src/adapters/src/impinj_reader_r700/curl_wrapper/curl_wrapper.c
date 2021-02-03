@@ -266,9 +266,17 @@ curlStaticInit(
   CURL *static_handle;
   static_handle = curl_easy_init();
 
-  #define STATIC_CALLBACK_DATA_BUFFER_SIZE 10000
+  #define STATIC_READ_CALLBACK_DATA_BUFFER_SIZE 10000
+
   static char *read_callback_data;
-  read_callback_data = (char *)malloc(sizeof(char)*STATIC_CALLBACK_DATA_BUFFER_SIZE);
+  read_callback_data = (char *)malloc(sizeof(char)*STATIC_READ_CALLBACK_DATA_BUFFER_SIZE);
+
+  #define STATIC_WRITE_CALLBACK_DATA_BUFFER_SIZE 10000
+
+  static char *write_callback_data;
+  write_callback_data = (char *)malloc(sizeof(char)*STATIC_WRITE_CALLBACK_DATA_BUFFER_SIZE);
+
+
   
   if(read_callback_data == NULL) {
     /* out of memory! */ 
@@ -310,8 +318,10 @@ curlStaticInit(
     session_data->basePathLength = strlen(basePath);
     session_data->readCallbackData = read_callback_data;
     session_data->readCallbackDataLength = 0;
-    session_data->readCallbackBufferSize = STATIC_CALLBACK_DATA_BUFFER_SIZE;
-
+    session_data->readCallbackBufferSize = STATIC_READ_CALLBACK_DATA_BUFFER_SIZE;
+    session_data->writeCallbackData = write_callback_data;
+    session_data->writeCallbackDataLength = 0;
+    session_data->writeCallbackBufferSize = STATIC_WRITE_CALLBACK_DATA_BUFFER_SIZE;
 
 // apply curl settings with libcurl calls
   curl_easy_setopt(static_handle, CURLOPT_USERPWD, usrpwd);
@@ -422,12 +432,12 @@ curlStaticGet(
   CURL *static_handle = session_data->curlHandle;
 
   char* startPtr = session_data->readCallbackData;
-  // for (int i=0;i<STATIC_CALLBACK_DATA_BUFFER_SIZE;i++) {
+  // for (int i=0;i<STATIC_READ_CALLBACK_DATA_BUFFER_SIZE;i++) {
   //   // set memory to \000
   //   memcpy(startPtr + i, '\0', sizeof(char));
   // }
 
-  memset(startPtr, '\0', STATIC_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
+  memset(startPtr, '\0', STATIC_READ_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
 
   session_data->readCallbackDataLength = 0;
 
@@ -466,7 +476,7 @@ curlStaticPost(
 
   // re-initialize callback data buffer
   char* startPtr = session_data->readCallbackData;
-  memset(startPtr, '\0', STATIC_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
+  memset(startPtr, '\0', STATIC_READ_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
   session_data->readCallbackDataLength = 0;
 
   char fullurl[1000] = "";
@@ -501,14 +511,37 @@ curlStaticDataWriteCallback(
   size_t nmemb, 
   void *userp
  ) {
+    CURL_Static_Session_Data * session_data = (CURL_Static_Session_Data*)userp;
 
-    char * dataToWrite = (char*)userp;
-    fprintf(stdout, "PUT cURL buffer size (bytes): %d", (int)(size * nmemb));
-    fprintf(stdout, "   PUT cURL size: %d", (int)size);
-    fprintf(stdout, "   PUT cURL nmemb: %d", (int)nmemb);
-    fprintf(stdout, "PUT data size (bytes): %d", (int)(strlen(dataToWrite)));
+    int offset = strlen(session_data->writeCallbackData) - session_data->writeCallbackDataLength;
 
-    return nmemb;
+    int curlWriteBufferSize = size * nmemb;
+
+    // fprintf(stdout, "     PUT cURL buffer size (bytes): %d\n", curlWriteBufferSize);
+    // fprintf(stdout, "        PUT cURL size: %d\n", (int)size);
+    // fprintf(stdout, "        PUT cURL nmemb: %d\n", (int)nmemb);
+    // fprintf(stdout, "     PUT data size (bytes): %d\n", session_data->writeCallbackDataLength);
+    // fprintf(stdout, "     PUT data to write: %s\n", session_data->writeCallbackData + offset);
+
+    if (session_data->writeCallbackDataLength * sizeof(char) >= curlWriteBufferSize) {  // data to write is larger than cURL buffer, write first chunk
+      
+      // fprintf(stdout, "        Data offset: %d\n", offset);
+
+      memcpy(write_data, (session_data->writeCallbackData) + offset, curlWriteBufferSize);
+      session_data->writeCallbackDataLength -= curlWriteBufferSize;
+      return curlWriteBufferSize;
+    }
+
+    else {  // data to write will fit in cURL buffer, write everything
+      memcpy(write_data, session_data->writeCallbackData + offset, strlen(session_data->writeCallbackData)*sizeof(char)+1);
+
+      size_t handled_bytes = strlen(session_data->writeCallbackData)*sizeof(char);
+
+      memset(session_data->writeCallbackData, '\0', STATIC_WRITE_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
+      session_data->writeCallbackDataLength = 0;
+
+      return handled_bytes;  // must return number of bytes handled.  Return 0 to terminate.
+    }
 
  }
 
@@ -522,9 +555,14 @@ curlStaticPut(
     CURL *static_handle = session_data->curlHandle;
 
     // re-initialize callback data buffer
-    char* startPtr = session_data->readCallbackData;
-    memset(startPtr, '\0', STATIC_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
+    memset(session_data->readCallbackData, '\0', STATIC_READ_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
     session_data->readCallbackDataLength = 0;
+
+    memset(session_data->writeCallbackData, '\0', STATIC_WRITE_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
+    session_data->writeCallbackDataLength = 0;
+
+    memcpy(session_data->writeCallbackData, putData, strlen(putData)*sizeof(char));
+    session_data->writeCallbackDataLength = strlen(putData);
 
     char fullurl[1000] = "";
 
@@ -537,7 +575,7 @@ curlStaticPut(
 
     curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
     curl_easy_setopt(static_handle, CURLOPT_READFUNCTION, curlStaticDataWriteCallback);
-    curl_easy_setopt(static_handle, CURLOPT_READDATA, &putData);
+    curl_easy_setopt(static_handle, CURLOPT_READDATA, (void *)session_data);
     curl_easy_setopt(static_handle, CURLOPT_UPLOAD, 1L);
 
     CURLcode res = curl_easy_perform(static_handle);
@@ -547,7 +585,7 @@ curlStaticPut(
           curl_easy_strerror(res));
     }
 
-    return putData; // TODO: implement error handling
+    return session_data->writeCallbackData; // TODO: implement error handling
   }
 
 void 
