@@ -49,10 +49,17 @@ int main(void)
   char * http_password = "impinj";
   char * http_basepath = "https://192.168.1.14/api/v1";
 
-  struct CURL_Stream_Session_Data *session_data;
-  session_data = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+  CURL_Static_Session_Data *static_session;
+  static_session = curlStaticInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
-  curlStreamSpawnReaderThread(session_data);
+  CURL_Stream_Session_Data *stream_session;
+  stream_session = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+
+  char * response;
+  response = curlStaticPost(static_session, "/profiles/inventory/presets/basic_inventory/start", "");  // start basic_inventory preset
+  fprintf(stdout, "\n curlStaticPost() Response: %s", response);
+
+  curlStreamSpawnReaderThread(stream_session);
 
   clock_t mSecInit = clock();
 
@@ -69,7 +76,7 @@ int main(void)
     int remainingData = 1;
     while (remainingData > 0) // read all data out of buffer, exit on empty buffer
       {
-        CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(session_data);
+        CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(stream_session);
         remainingData = read_data.remainingData;
 
         fprintf(stdout, "\n  STREAM READ( DATA SIZE: %d, DATA REMAINING %d): %s", read_data.dataChunkSize, read_data.remainingData, read_data.dataChunk);
@@ -80,9 +87,12 @@ int main(void)
     mSecTimer = clock() - mSecInit;
   }
 
-  curlStreamStopThread(session_data);
+  response = curlStaticPost(static_session, "/profiles/stop", "");  // stop preset
+  fprintf(stdout, "\n curlStaticPost() Response: %s", response);
 
-  curlStreamCleanup(session_data);
+  curlStreamStopThread(stream_session);
+
+  curlStreamCleanup(stream_session);
   
   curlGlobalCleanup();
    

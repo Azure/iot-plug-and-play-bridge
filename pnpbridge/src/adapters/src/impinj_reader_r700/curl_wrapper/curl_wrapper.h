@@ -144,6 +144,12 @@ curlStaticPut(
   char *putData
   );
 
+char*
+curlStaticDelete(
+  CURL_Static_Session_Data *session_data, 
+  char *endpoint
+  );
+
 void 
 curlStaticCleanup(
   CURL_Static_Session_Data *session_data

@@ -102,8 +102,8 @@ IOTHUB_CLIENT_RESULT ImpinjReader_ReportDeviceStateAsync(
     const char * ComponentName)
     {
         PIMPINJ_READER device = PnpComponentHandleGetContext(PnpComponentHandle);
-        char ** result = curlStaticGet(device->curl_static_session, "/status");
-        return ImpinjReader_ReportPropertyAsync(PnpComponentHandle, ComponentName, "deviceStatus", *result);
+        char * result = curlStaticGet(device->curl_static_session, "/status");
+        return ImpinjReader_ReportPropertyAsync(PnpComponentHandle, ComponentName, "deviceStatus", result);
     }
 
 char * ImpinjReader_CreateJsonResponse(
@@ -591,9 +591,9 @@ int ImpinjReader_ProcessCommand(
         strcat(startPresetEndpoint_build, "/start");
         char *startPresetEndpoint = Str_Trim(startPresetEndpoint_build).strPtr;
 
-        char** res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
+        char* res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
 
-        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", *res);
+        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", res);
 
         LogInfo("Sending %s Response: %s", CommandName, response);
         // char * response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
@@ -603,9 +603,9 @@ int ImpinjReader_ProcessCommand(
     else if (strcmp(CommandName, "stopPreset") == 0)
     {
 
-        char** res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
+        char* res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
 
-        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", *res);
+        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", res);
         
         LogInfo("Sending %s Response: %s", CommandName, response);
 
