@@ -16,18 +16,11 @@ void main() {
     Str_Trim_Data testOutput = Str_Trim(build_str_url_always);
 
     printf("\n");
-    printf("/n String: %s", (char*)testOutput.strPtr);
-    printf("\nSize: %d", testOutput.strLength);
+    printf("String: %s\n", (char*)testOutput.strPtr);
+    printf("  Size: %d\n", testOutput.strLength);
 
     free(testOutput.strPtr);
     // free(testOutput);
-
-
-    fprintf(stdout, "\nTEST Str_Split: \n");
-
-    char strToSplit[] = "{\"testField1\":\"testValue1\"}\n\r{\"testField2\":\"testValue2\"}\n\r{\"testField3\":\"testValue3\"}\n\r{\"testField4\":\"testValue4\"}";
-    fprintf(stdout, "\nString to Split: %s", strToSplit);
-    Str_Split_Data split_data = Str_Split(strToSplit, "\n\r");
 
     return;
 }
