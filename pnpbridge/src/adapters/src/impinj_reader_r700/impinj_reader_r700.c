@@ -205,6 +205,11 @@ int ImpinjReader_TelemetryWorker(
     PIMPINJ_READER device = PnpComponentHandleGetContext(componentHandle);
       
     long count = 0;
+
+    char * status = (char *)malloc(sizeof(char*)*1000);
+    char * statusNoTimePrev = (char *)malloc(sizeof(char*)*1000);
+    char * statusNoTime = (char *)malloc(sizeof(char*)*1000);
+
     // Report telemetry every 5 seconds till we are asked to stop
     while (true) {
 
@@ -213,14 +218,27 @@ int ImpinjReader_TelemetryWorker(
             return IOTHUB_CLIENT_OK;
         }
 
-        LogInfo("Telemetry Worker Iteration %d: ", count);  // Placeholder for actual data
+        // LogInfo("Telemetry Worker Iteration %d: ", count); 
         count++;
 
-        ImpinjReader_ReportDeviceStateAsync(componentHandle, device->ComponentName);
+        statusNoTimePrev = statusNoTime;
+
+        status = curlStaticGet(device->curl_static_session, "/status");
+
+        JSON_Value * jsonValueStatus = json_parse_string(status);
+        JSON_Object * jsonObjectStatus = json_value_get_object(jsonValueStatus);
+        json_object_remove(jsonObjectStatus, "time");  // remove "time" field before compare (time always changes)
+
+        statusNoTime = json_serialize_to_string(jsonValueStatus);
+
+        if(strcmp(statusNoTime, statusNoTimePrev)!=0) {  // send status update only on change in status
+            LogInfo("Status Update: %s", status);
+            // ImpinjReader_ReportDeviceStateAsync(componentHandle, device->ComponentName);
+        }
         
         int uSecInit = clock();
         int uSecTimer = 0;
-        int uSecTarget = 50000;
+        int uSecTarget = 10000;
 
         while (uSecTimer < uSecTarget)
         {
@@ -236,6 +254,8 @@ int ImpinjReader_TelemetryWorker(
             // LogInfo("Worker Thread Timer: %d, Target: %d", uSecTimer, uSecTarget);
         }
     }
+
+    free(status);
 
     return IOTHUB_CLIENT_OK;
 }
