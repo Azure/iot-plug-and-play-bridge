@@ -93,6 +93,40 @@ int ImpinjReader_OnCommandCallback(
     unsigned char** CommandResponse,
     size_t* CommandResponseSize);
 
+typedef enum _GET_REQUEST{
+    GET_STATUS,
+    GET_HTTP_STREAM,
+    GET_PROFILES,
+    GET_PROFILES_INVENTORY_PRESETS,
+    GET_SYSTEM,
+    GET_SYSTEM_HOSTNAME,
+    GET_SYSTEM_IMAGE,
+    GET_SYSTEM_IMAGE_UPGRADE,
+    GET_SYSTEM_NETORK_INTERFACES,
+    GET_SYSTEM_POWER,
+    GET_SYSTEM_REGION,
+    GET_SYSTEM_RFID_LLRP,
+    GET_SYSTEM_RFID_INTERFACE,
+    GET_SYSTEM_TIME,
+} GET_REQUEST;
+
+static char GetRequests[][2][32] = 
+{
+    {"/status", "ReaderStatus"},
+    {"/http-stream", "StreamConfiguration"},
+    {"/profiles", "profiles"},
+    {"/profiles/inventory/presets", "PresetId"},
+    {"/system", "SystemInfo"},
+    {"/system/hostname", "hostname"},
+    {"/system/image", "SystemImage"},
+    {"/system/image/upgrade", "UpgradeStatus"},
+    {"/system/network/interfaces", "NetworkInterface"},
+    {"/system/power", "PowerConfiguration"},
+    {"/system/region", "RegionInfo"},
+    {"/system/rfid/llrp", "LlrpStatus"},
+    {"/system/rfid/interface", "rfidInterface"},
+    {"/system/time", "TimeInfo"},
+};
 
 #ifdef __cplusplus
 }
