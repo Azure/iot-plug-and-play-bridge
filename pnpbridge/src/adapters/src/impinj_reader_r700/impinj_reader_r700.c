@@ -676,6 +676,7 @@ void ImpinjReader_OnPropertyCallback(
     JSON_Value* PropertyValue,
     int version,
     void* ClientHandle
+    )
 {
     LogInfo("Processing Property: handle %p name %s value %s ver %d", PnpComponentHandle, PropertyName, json_value_get_string(PropertyValue), version);
     if (strcmp(PropertyName, impinjReader_property_testPropertyString) == 0)
