@@ -3,24 +3,953 @@
   "@type": "Interface",
   "contents": [
     {
+      "@id": "dtmi:impinj:R700:status;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /status"
+      },
+      "description": {
+        "en": "Retrieves the reader’s current status."
+      },
+      "name": "ReaderStatus",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "activePreset",
+            "displayName": {
+              "en": "Active Presets"
+            },
+            "description": {
+              "en": "The running preset. If no preset is running, this property is not included in the status response."
+            },
+            "schema": {
+              "@type": "Object",
+              "fields": [
+                {
+                  "name": "id",
+                  "displayName": {
+                    "en": "Preset ID"
+                  },
+                  "description": {
+                    "en": "The profile preset identifier."
+                  },
+                  "schema": "string"
+                },
+                {
+                  "name": "profile",
+                  "displayName": {
+                    "en": "Profile"
+                  },
+                  "description": {
+                    "en": "The profile preset identifier."
+                  },
+                  "schema": "string"
+                }
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "displayName": {
+              "en": "Status"
+            },
+            "description": {
+              "en": "Indicates whether an RFID operation is currently running on the reader (running), is currently not running an RFID operation, but is waiting to be triggered (armed), or is not running an RFID operation and is not waiting to be triggered (idle)."
+            },
+            "schema": {
+              "@type": "Enum",
+              "valueSchema": "string",
+              "enumValues": [
+                {
+                  "name": "running",
+                  "enumValue": "running",
+                  "displayName": {
+                    "en": "Running"
+                  }
+                },
+                {
+                  "name": "armed",
+                  "enumValue": "armed",
+                  "displayName": {
+                    "en": "Armed"
+                  }
+                },
+                {
+                  "name": "idle",
+                  "enumValue": "idle",
+                  "displayName": {
+                    "en": "Idle"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "time",
+            "displayName": {
+              "en": "System Time"
+            },
+            "description": {
+              "en": "The current, system time on the reader."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "serialNumber",
+            "displayName": {
+              "en": "Serial Number"
+            },
+            "description": {
+              "en": "The serial number of the reader."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "mqttBrokerConnectionStatus",
+            "displayName": {
+              "en": "MQTT Broker Connection Status"
+            },
+            "description": {
+              "en": "The connection status to the MQTT broker."
+            },
+            "schema": {
+              "@type": "Enum",
+              "valueSchema": "string",
+              "enumValues": [
+                {
+                  "name": "connected",
+                  "enumValue": "connected",
+                  "displayName": {
+                    "en": "Connected"
+                  }
+                },
+                {
+                  "name": "disconnected",
+                  "enumValue": "disconnected",
+                  "displayName": {
+                    "en": "Disconnected"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "mqttTlsAuthentication",
+            "displayName": {
+              "en": "MQTT TLS Authentication"
+            },
+            "description": {
+              "en": "The Secure-MQTT authentication and encryption status. none – server not authenticated, no encryption. server – server authenticated, TLS encryption."
+            },
+            "schema": {
+              "@type": "Enum",
+              "valueSchema": "string",
+              "enumValues": [
+                {
+                  "name": "none",
+                  "enumValue": "none",
+                  "displayName": {
+                    "en": "Server Not Authenticated"
+                  }
+                },
+                {
+                  "name": "server",
+                  "enumValue": "server",
+                  "displayName": {
+                    "en": "Server Authenticated, TSL Encryption"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "kafkaClusterConnectionStatus",
+            "displayName": {
+              "en": "Kafka Cluster Connection Status"
+            },
+            "description": {
+              "en": "The connection status to the Kafka cluster. connected – The device is connected to at least one broker in the Kafka cluster. disconnected – The device is not connected to any brokers within the Kafka cluster."
+            },
+            "schema": {
+              "@type": "Enum",
+              "valueSchema": "string",
+              "enumValues": [
+                {
+                  "name": "connected",
+                  "enumValue": "connected",
+                  "displayName": {
+                    "en": "The device is connected to the Kafka cluster"
+                  }
+                },
+                {
+                  "name": "disconnected",
+                  "enumValue": "disconnected",
+                  "displayName": {
+                    "en": "The device is not connected"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:http_stream;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /http-stream"
+      },
+      "description": {
+        "en": "Retrieves the configuration settings that apply to all HTTP streams."
+      },
+      "name": "StreamConfiguration",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "eventBufferSize",
+            "displayName": {
+              "en": "Product Model"
+            },
+            "description": {
+              "en": "Contains configuration options for publishing data to HTTP streams. These settings apply to all HTTP streams and also affect the setting of the history buffer that will be used when a new HTTP stream is established."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "eventPerSecondLimit",
+            "displayName": {
+              "en": "Manufacturer"
+            },
+            "description": {
+              "en": "The reader manufacturer."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "eventAgeLimitMinutes",
+            "displayName": {
+              "en": "Product Description"
+            },
+            "description": {
+              "en": "A short, human-friendly description of the reader."
+            },
+            "schema": "string"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:profiles;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /profiles"
+      },
+      "description": {
+        "en": "Retrieves the profiles (e.g. inventory, location, and direction) supported by this reader."
+      },
+      "name": "profiles",
+      "schema": {
+        "@type": "Array",
+        "elementSchema": "string"
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:profiles:inventory:presets;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /profiles/inventory/presets"
+      },
+      "description": {
+        "en": "Retrieves the available presets for running inventory."
+      },
+      "name": "PresetsId",
+      "schema": {
+        "@type": "Array",
+        "elementSchema": "string"
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system"
+      },
+      "description": {
+        "en": "Details about the reader hardware."
+      },
+      "name": "SystemInfo",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "productModel",
+            "displayName": {
+              "en": "Product Model"
+            },
+            "description": {
+              "en": "The model number of the reader"
+            },
+            "schema": "string"
+          },
+          {
+            "name": "manufacturer",
+            "displayName": {
+              "en": "Manufacturer"
+            },
+            "description": {
+              "en": "The reader manufacturer"
+            },
+            "schema": "string"
+          },
+          {
+            "name": "productDescription",
+            "displayName": {
+              "en": "Product Description"
+            },
+            "description": {
+              "en": "A short, human-friendly description of the reader"
+            },
+            "schema": "string"
+          },
+          {
+            "name": "productSku",
+            "displayName": {
+              "en": "Product SKU"
+            },
+            "description": {
+              "en": "The official product SKU for the reader"
+            },
+            "schema": "string"
+          },
+          {
+            "name": "productHla",
+            "displayName": {
+              "en": "Product High-level Assembly Code"
+            },
+            "description": {
+              "en": "The reader’s high-level assembly code"
+            },
+            "schema": "string"
+          },
+          {
+            "name": "pcba",
+            "displayName": {
+              "en": "PCB Assembly Code"
+            },
+            "description": {
+              "en": "The assembly code for the reader’s PCB"
+            },
+            "schema": "string"
+          },
+          {
+            "name": "serialNumber",
+            "displayName": {
+              "en": "Serial Number"
+            },
+            "description": {
+              "en": "The serial number of the reader"
+            },
+            "schema": "string"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:hostname;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system/hostname"
+      },
+      "description": {
+        "en": "The current hostname of the reader. Note that this is not a fully qualified domain name."
+      },
+      "name": "hostname",
+      "schema": "string"
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:image;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system/image"
+      },
+      "description": {
+        "en": "Detailed information about the firmware installed on the reader. Properties are omitted for uninstalled or unavailable partitions."
+      },
+      "name": "SystemImage",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "primaryFirmware",
+            "displayName": {
+              "en": "Primary Firmware"
+            },
+            "description": {
+              "en": "he version of the booted firmware."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "primaryCustomer",
+            "displayName": {
+              "en": "Primary Customer"
+            },
+            "description": {
+              "en": "The version of the installed and running customer application (CAP)."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "secondaryFirmware",
+            "displayName": {
+              "en": "Secondary Firmware"
+            },
+            "description": {
+              "en": "The version of the firmware installed on the secondary partition."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "secondaryCustomer",
+            "displayName": {
+              "en": "Secondary Customer"
+            },
+            "description": {
+              "en": "The version of the customer application (CAP) installed on the secondary partition."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "scmRevision",
+            "displayName": {
+              "en": "SCM Revision"
+            },
+            "description": {
+              "en": "Unique build hash of primaryFirmware."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "buildDate",
+            "displayName": {
+              "en": "Build Date"
+            },
+            "description": {
+              "en": "Timestamp of build for primaryFirmware."
+            },
+            "schema": "dateTime"
+          },
+          {
+            "name": "buildPlan",
+            "displayName": {
+              "en": "Build Plan"
+            },
+            "description": {
+              "en": "Traceable build identifier for primaryFirmware."
+            },
+            "schema": "string"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:image:upgrade;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system/image/upgrade"
+      },
+      "description": {
+        "en": "Detailed information about the firmware installed on the reader. Properties are omitted for uninstalled or unavailable partitions."
+      },
+      "name": "UpgradeStatus",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "status",
+            "displayName": {
+              "en": "Status"
+            },
+            "description": {
+              "en": "Indicates what state the upgrade process is in."
+            },
+            "schema": {
+              "@type": "Enum",
+              "valueSchema": "string",
+              "enumValues": [
+                {
+                  "name": "ready",
+                  "enumValue": "ready",
+                  "displayName": {
+                    "en": "Ready"
+                  }
+                },
+                {
+                  "name": "verifying",
+                  "enumValue": "verifying",
+                  "displayName": {
+                    "en": "Verifying"
+                  }
+                },
+                {
+                  "name": "installing",
+                  "enumValue": "installing",
+                  "displayName": {
+                    "en": "Installing"
+                  }
+                },
+                {
+                  "name": "successful",
+                  "enumValue": "successful",
+                  "displayName": {
+                    "en": "Successful"
+                  }
+                },
+                {
+                  "name": "failed",
+                  "enumValue": "failed",
+                  "displayName": {
+                    "en": "Failed"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:network:interfaces;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system/network/interfaces"
+      },
+      "description": {
+        "en": "Retrieves the available network interfaces and their current network information."
+      },
+      "name": "NetworkInterface",
+      "schema": {
+        "@type": "Array",
+        "elementSchema": {
+          "@type": "Object",
+          "fields": [
+            {
+              "name": "interfaceId",
+              "schema": "integer",
+              "displayName": {
+                "en": "Interface Id"
+              }
+            },
+            {
+              "name": "interfaceName",
+              "schema": "string",
+              "displayName": {
+                "en": "Interface Name"
+              }
+            },
+            {
+              "name": "status",
+              "displayName": {
+                "en": "Interface Name"
+              },
+              "schema": {
+                "@type": "Enum",
+                "valueSchema": "string",
+                "enumValues": [
+                  {
+                    "name": "connected",
+                    "enumValue": "connected",
+                    "displayName": {
+                      "en": "Connected"
+                    }
+                  },
+                  {
+                    "name": "disconnected ",
+                    "enumValue": "disconnected ",
+                    "displayName": {
+                      "en": "Disconnected"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "networkAddress",
+              "displayName": {
+                "en": "Network Address"
+              },
+              "schema": {
+                "@type":"Object",
+                "fields": [
+                  {
+                    "name": "protocol",
+                    "displayName": {
+                      "en": "Interface Id"
+                    },
+                    "description": {
+                      "en": "An enumeration of network protocols that are supported by the reader."
+                    },
+                    "schema": 
+                    {
+                      "@type":"Enum",
+                      "valueSchema": "string",
+                      "enumValues": [
+                        {
+                          "name": "ipv4",
+                          "enumValue": "ipv4",
+                          "displayName": {
+                            "en": "IP v4"
+                          }
+                        },
+                        {
+                          "name": "ipv6",
+                          "enumValue": "ipv6",
+                          "displayName": {
+                            "en": "IP v6"
+                          }
+                        }
+                      ]
+      
+                    }
+                  },
+                  {
+                    "name": "address",
+                    "schema": "string",
+                    "displayName": {
+                      "en": "Address"
+                    },
+                    "description": {
+                      "en": "The IP address of the interface. Could be either an IPv4 address in dot-decimal format or an IPv6 address compliant with RFC-5952. The protocol property provides the expected network protocol version of the address."
+                    }
+                  },
+                  {
+                    "name": "prefix",
+                    "schema": "integer",
+                    "displayName": {
+                      "en": "Prefix"
+                    },
+                    "description": {
+                      "en": "The network prefix length of the interface. A typical value is 24 for IPv4 and 64 for IPv6."
+                    }
+                  },
+                  {
+                    "name": "gateway",
+                    "schema": "string",
+                    "displayName": {
+                      "en": "Gateway"
+                    },
+                    "description": {
+                      "en": "The gateway address of the interface. Could be either an IPv4 address in dot-decimal format or an IPv6 address compliant with RFC-5952."
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "hardwareAddress",
+              "schema": "string",
+              "displayName": {
+                "en": "Hardware Address"
+              },
+              "description": {
+                "en": "The hardware or MAC address associated with the network interface."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:power;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system/power"
+      },
+      "description": {
+        "en": "Retrieves the current power configuration on the reader."
+      },
+      "name": "PowerConfiguration",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "powerSource",
+            "displayName": {
+              "en": "Power Source"
+            },
+            "description": {
+              "en": "Possible power sources for the reader."
+            },
+            "schema": {
+              "@type": "Enum",
+              "valueSchema": "string",
+              "enumValues": [
+                {
+                  "name": "auto",
+                  "enumValue": "auto",
+                  "displayName": {
+                    "en": "Auto"
+                  }
+                },
+                {
+                  "name": "poe",
+                  "enumValue": "poe",
+                  "displayName": {
+                    "en": "POE"
+                  }
+                },
+                {
+                  "name": "poeplus",
+                  "enumValue": "poeplus",
+                  "displayName": {
+                    "en": "POE Plus"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "allocatedPowerMilliwatts",
+            "displayName": {
+              "en": "Allocated Power in mw"
+            },
+            "description": {
+              "en": "This field is only available when powerSource is set to auto. Contains the actual power that was allocated for the reader by the switch through negotiation."
+            },
+            "schema": "integer"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:region;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system/region"
+      },
+      "description": {
+        "en": "Retrieves the current operating region and a list of selectable regions for the reader."
+      },
+      "name": "RegionInfo",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "operatingRegion",
+            "displayName": {
+              "en": "Operating Region"
+            },
+            "description": {
+              "en": "The descriptive name of a regulatory region."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "selectableRegions",
+            "displayName": {
+              "en": "Selectable Regions"
+            },
+            "description": {
+              "en": "A list of unique selectable regions."
+            },
+            "schema": {
+              "@type": "Array",
+              "elementSchema": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:rfid:llrp;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "IoT Device Interface /system/rfid/llrp"
+      },
+      "description": {
+        "en": "Retrieves the current status of the LLRP interface."
+      },
+      "name": "LirpStatus",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "llrpRfidStatus",
+            "displayName": {
+              "en": "LLRP RFID Status"
+            },
+            "description": {
+              "en": "General LLRP and connection status."
+            },
+            "schema": {
+              "@type": "Enum",
+              "valueSchema": "string",
+              "enumValues": [
+                {
+                  "name": "idle",
+                  "enumValue": "idle",
+                  "displayName": {
+                    "en": "Idle"
+                  }
+                },
+                {
+                  "name": "enabled",
+                  "enumValue": "enabled",
+                  "displayName": {
+                    "en": "Enabled"
+                  }
+                },
+                {
+                  "name": "active",
+                  "enumValue": "active",
+                  "displayName": {
+                    "en": "Active"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "llrpConnection",
+            "displayName": {
+              "en": "LLRP Connection"
+            },
+            "description": {
+              "en": "A list of unique selectable regions."
+            },
+            "schema": {
+              "@type": "Object",
+              "fields": [
+                {
+                  "name": "status",
+                  "displayName": {
+                    "en": "Status"
+                  },
+                  "description": {
+                    "en": "The status of the LLRP connection."
+                  },
+                  "schema": {
+                    "@type": "Enum",
+                    "valueSchema": "string",
+                    "enumValues": [
+                      {
+                        "name": "disabled",
+                        "enumValue": "disabled",
+                        "displayName": {
+                          "en": "Disabled"
+                        }
+                      },
+                      {
+                        "name": "connected",
+                        "enumValue": "connected",
+                        "displayName": {
+                          "en": "Connected"
+                        }
+                      },
+                      {
+                        "name": "disconnected",
+                        "enumValue": "disconnected",
+                        "displayName": {
+                          "en": "Disconnected"
+                        }
+                      }
+                    ]
+                  }                },
+                {
+                  "name": "peerAddress",
+                  "displayName": {
+                    "en": "Peer Address"
+                  },
+                  "description": {
+                    "en": "IP address of the connected device. Will contain either an IPv4 address in dot-decimal format, or an IPv6 address compliant with RFC-5952. Will only be present if status is connected."
+                  },
+                  "schema": "string"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:rfid:interface;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "System time and uptime"
+      },
+      "description": {
+        "en": "Retrieves the application programming interface (API) that is currently being used to control the reader RFID operations."
+      },
+      "name": "rfidInterface",
+      "schema": {
+        "@type": "Enum",
+        "valueSchema": "string",
+        "enumValues": [
+          {
+            "name": "llrp",
+            "enumValue": "llrp",
+            "displayName": {
+              "en": "LLRP"
+            }
+          },
+          {
+            "name": "rest",
+            "enumValue": "rest",
+            "displayName": {
+              "en": "RESTFul API"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@id": "dtmi:impinj:R700:system:time;1",
+      "@type": "Property",
+      "displayName": {
+        "en": "System time and uptime"
+      },
+      "description": {
+        "en": "Retrieves information about system time and uptime. System time is in UTC and RFC-3339 compliant format. Uptime indicates how long the system has been running in seconds."
+      },
+      "name": "TimeInfo",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "systemTime",
+            "displayName": {
+              "en": "System Time"
+            },
+            "description": {
+              "en": "The current system time in UTC and RFC-3339 compliant format. Time precision is at second-level accuracy."
+            },
+            "schema": "string"
+          },
+          {
+            "name": "upTime",
+            "displayName": {
+              "en": "System Uptime"
+            },
+            "description": {
+              "en": "The number of seconds that the system has been running."
+            },
+            "schema": "integer"
+          }
+        ]
+      }
+    },
+    {
       "@id": "dtmi:impinj:R700:eventData;1",
       "@type": [
-        "Telemetry",
-        "Event"
+        "Telemetry"
       ],
       "displayName": {
         "en": "Event Data"
       },
       "name": "eventData",
-      "schema": "string"
-    },
-    {
-      "@id": "dtmi:impinj:R700:status;1",
-      "@type": "Property",
-      "displayName": {
-        "en": "Device Status"
-      },
-      "name": "deviceStatus",
       "schema": "string"
     },
     {
