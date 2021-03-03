@@ -5,12 +5,12 @@
     "root_interface_model_id": "dtmi:impinj:R700;1",
     "auth_parameters": {
         "auth_type": "symmetric_key",
-        "symmetric_key": "lZKGVYbHYRcaJkeJt4COQ6RxtBb61IHmO783Gx13lks="
+        "symmetric_key": ""
     },
     "dps_parameters": {
         "global_prov_uri": "global.azure-devices-provisioning.net",
-        "id_scope": "0ne001C686E",
-        "device_id": "kwenner-R700"
+        "id_scope": "",
+        "device_id": ""
     }
 },
   "pnp_bridge_debug_trace": false,
@@ -22,9 +22,9 @@
           "pnp_bridge_component_name": "R700",
           "pnp_bridge_adapter_id": "impinj-reader-r700",
           "pnp_bridge_adapter_config": {
-              "hostname": "192.168.1.14",
-              "username": "root",
-              "password": "impinj"
+              "hostname": "",
+              "username": "",
+              "password": ""
           }
       }
   ]
