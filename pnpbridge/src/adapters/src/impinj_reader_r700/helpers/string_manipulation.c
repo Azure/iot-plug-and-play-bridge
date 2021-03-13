@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-Str_Trim_Data 
+char * 
 Str_Trim(
   char *orig_str
   ) 
@@ -13,11 +13,8 @@ Str_Trim(
     strcpy(trimmed_str, orig_str);
   //   trimmed_str[strLength]='\0';  // not needed with strcpy
 
-    Str_Trim_Data *output = malloc(sizeof(Str_Trim_Data));
+    char * output = trimmed_str;
 
-    output->strPtr = trimmed_str;
-    output->strLength = strLength;
-
-    return *output;
+    return output;
   }
 

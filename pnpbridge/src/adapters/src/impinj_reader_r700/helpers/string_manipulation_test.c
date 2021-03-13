@@ -13,13 +13,13 @@ void main() {
     strcat(build_str_url_always, "compHostname");
     strcat(build_str_url_always, str_basepath);  
 
-    Str_Trim_Data testOutput = Str_Trim(build_str_url_always);
+    char * testOutput = Str_Trim(build_str_url_always);
 
     printf("\n");
-    printf("String: %s\n", (char*)testOutput.strPtr);
-    printf("  Size: %d\n", testOutput.strLength);
+    printf("String: %s\n", testOutput);
+    printf("  Size: %ld\n", strlen(testOutput));
 
-    free(testOutput.strPtr);
+    free(testOutput);
     // free(testOutput);
 
     return;
