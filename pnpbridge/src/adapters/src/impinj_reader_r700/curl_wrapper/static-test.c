@@ -36,7 +36,7 @@
 /* curl stuff */ 
 #include "curl_wrapper.h"
 
-#define USEC_DELAY 1
+#define USEC_DELAY 100
 
 int main(void)
 {
@@ -58,8 +58,8 @@ int main(void)
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}");
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}"); // this should result in an error response from reader
+  fprintf(stdout, "    Response (expected error): %s\n", res);  
 
   usleep(USEC_DELAY);
 
@@ -73,8 +73,8 @@ int main(void)
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPost(static_session, "/profiles/inventory/presets/garbage_broken_path/start", "");
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticPost(static_session, "/profiles/inventory/presets/garbage_broken_path/start", "");   // this should result in an error response from reader
+  fprintf(stdout, "    Response (expected error): %s\n", res);  
 
   usleep(USEC_DELAY);
 

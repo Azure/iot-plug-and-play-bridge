@@ -67,7 +67,7 @@ curlStreamReadBufferChunk(
             session_data->bufferReadIndex = strlen(secondDataChunk)+1;
 
 
-            char * joinedDataChunkReturn = Str_Trim(joinedDataChunk).strPtr;
+            char * joinedDataChunkReturn = Str_Trim(joinedDataChunk);
 
             session_data->bufferReadCounter += firstChunkLength + strlen(secondDataChunk) + 1;
 
@@ -290,7 +290,7 @@ curlStaticInit(
   strcat(usrpwd_build, ":"); 
   strcat(usrpwd_build, password);
 
-  char* usrpwd = Str_Trim(usrpwd_build).strPtr;
+  char* usrpwd = Str_Trim(usrpwd_build);
 
   // Set session data values
   #define staticInitArraySize 10
@@ -373,7 +373,7 @@ CURL_Stream_Session_Data * curlStreamInit(
   strcat(usrpwd_build, ":"); 
   strcat(usrpwd_build, password);
 
-  char* usrpwd = Str_Trim(usrpwd_build).strPtr;
+  char* usrpwd = Str_Trim(usrpwd_build);
 
     
     // initialize session data structure
@@ -408,7 +408,7 @@ CURL_Stream_Session_Data * curlStreamInit(
   strcat(fullStreamUrl, session_data->basePath);
   strcat(fullStreamUrl, "/data/stream");
 
-  char* full_stream_endpoint = Str_Trim(fullStreamUrl).strPtr;
+  char* full_stream_endpoint = Str_Trim(fullStreamUrl);
 
   curl_easy_setopt(session_data->curlHandle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(session_data->curlHandle, CURLOPT_URL, full_stream_endpoint);
@@ -442,9 +442,9 @@ curlStaticGet(
   strcat(fullurl, session_data->basePath);
   strcat(fullurl, endpoint);
 
-  char* full_endpoint = Str_Trim(fullurl).strPtr;
+  char* full_endpoint = Str_Trim(fullurl);
 
-  // fprintf(stdout, " GET Endpoint: %s\n", full_endpoint); //DEBUG
+  fprintf(stdout, " GET Endpoint: %s\n", full_endpoint); //DEBUG
 
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
@@ -480,7 +480,7 @@ curlStaticPost(
   strcat(fullurl, session_data->basePath);
   strcat(fullurl, endpoint);
 
-  char* full_endpoint = Str_Trim(fullurl).strPtr;
+  char* full_endpoint = Str_Trim(fullurl);
 
   fprintf(stdout, " POST Endpoint: %s\n", full_endpoint);
 
@@ -564,7 +564,7 @@ curlStaticPut(
     strcat(fullurl, session_data->basePath);
     strcat(fullurl, endpoint);
 
-    char* full_endpoint = Str_Trim(fullurl).strPtr;
+    char* full_endpoint = Str_Trim(fullurl);
 
     fprintf(stdout, " PUT Endpoint: %s\n", full_endpoint);
 
