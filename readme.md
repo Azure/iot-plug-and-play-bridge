@@ -1,5 +1,4 @@
 # IoT Plug and Play bridge
->Note: IoT Plug and Play bridge has deprecated its use of [DTDL v1](https://github.com/Azure/opendigitaltwins-dtdl/tree/master/DTDL/v1-preview) and makes use of [DTDL v2](https://github.com/Azure/opendigitaltwins-dtdl) which [Azure Digital Twins](https://azure.microsoft.com/services/digital-twins/) and the [IoT Plug and Play Public preview refresh](https://docs.microsoft.com/azure/iot-pnp/overview-iot-plug-and-play-preview-updates) use. To converge the use of DTDL across Azure IoT Hub, Azure IoT Central, Azure Digital Twins, and other Azure services, DTDL is going through a set of breaking changes from v1 to v2.
 
 ## Introduction
 
