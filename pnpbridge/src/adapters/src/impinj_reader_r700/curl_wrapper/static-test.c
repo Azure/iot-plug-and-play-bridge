@@ -36,11 +36,11 @@
 /* curl stuff */ 
 #include "curl_wrapper.h"
 
-#define USEC_DELAY 100
+#define USEC_DELAY 1
 
 int main(void)
 {
-  char* res;
+  char * res;
 
   curlGlobalInit();
  
@@ -48,52 +48,79 @@ int main(void)
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/status");
+  res = curlStaticGet(static_session, "/status", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/profiles/inventory/presets");
+  res = curlStaticGet(static_session, "/profiles/inventory/presets", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}"); // this should result in an error response from reader
+  char * presetJson = malloc(sizeof(char)*10000);
+
+  res = curlStaticGet(static_session, "/profiles/inventory/presets/default", PRINT_DEBUG_MSGS_ON);
+  fprintf(stdout, "    Response: %s\n", res);
+
+  strcpy(presetJson, res);
+
+  res = curlStaticPut(static_session, "/profiles/inventory/presets/test", presetJson, PRINT_DEBUG_MSGS_ON);
+  fprintf(stdout, "    Response: %s\n", res);
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticGet(static_session, "/profiles/inventory/presets", PRINT_DEBUG_MSGS_ON);
+  fprintf(stdout, "    Response: %s\n", res);
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}", PRINT_DEBUG_MSGS_ON); // this should result in an error response from reader
   fprintf(stdout, "    Response (expected error): %s\n", res);  
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 10}");
+  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 10}", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/http-stream");
+  res = curlStaticGet(static_session, "/http-stream", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPost(static_session, "/profiles/inventory/presets/garbage_broken_path/start", "");   // this should result in an error response from reader
+  res = curlStaticPost(static_session, "/profiles/inventory/presets/garbage_broken_path/start", "", PRINT_DEBUG_MSGS_ON);   // this should result in an error response from reader
   fprintf(stdout, "    Response (expected error): %s\n", res);  
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPost(static_session, "/profiles/inventory/presets/basic_inventory/start", "");
+  res = curlStaticPost(static_session, "/profiles/inventory/presets/test/start", "", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/status");
+  res = curlStaticGet(static_session, "/status", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPost(static_session, "/profiles/stop", "");
+  res = curlStaticPost(static_session, "/profiles/stop", "", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/status");
+  res = curlStaticGet(static_session, "/status", PRINT_DEBUG_MSGS_ON);
+  fprintf(stdout, "    Response: %s\n", res);
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticDelete(static_session, "/profiles/inventory/presets/test", PRINT_DEBUG_MSGS_ON);
+  fprintf(stdout, "    Response: %s\n", res);
+
+  usleep(USEC_DELAY);
+
+  res = curlStaticGet(static_session, "/profiles/inventory/presets", PRINT_DEBUG_MSGS_ON);
   fprintf(stdout, "    Response: %s\n", res);
 
   usleep(USEC_DELAY);
@@ -101,6 +128,8 @@ int main(void)
   curlStaticCleanup(static_session);
 
   curlGlobalCleanup();
+
+  free(presetJson);
  
   return 0;
 }

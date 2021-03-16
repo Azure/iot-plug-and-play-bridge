@@ -102,7 +102,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_ReportDeviceStateAsync(
     const char * ComponentName)
     {
         PIMPINJ_READER device = PnpComponentHandleGetContext(PnpComponentHandle);
-        char * result = curlStaticGet(device->curl_static_session, "/status");
+        char * result = curlStaticGet(device->curl_static_session, "/status", PRINT_DEBUG_MSGS_OFF);
         return ImpinjReader_ReportPropertyAsync(PnpComponentHandle, ComponentName, "deviceStatus", result);
     }
 
@@ -125,7 +125,7 @@ char * ImpinjReader_CreateJsonResponse(
         }
         strcat(jsonToSendStr, " }");
 
-        char * response = Str_Trim(jsonToSendStr).strPtr;
+        char * response = Str_Trim(jsonToSendStr);
         
         // example JSON string: "{ \"status\": 12, \"description\": \"leds blinking\" }";
 
@@ -223,7 +223,7 @@ int ImpinjReader_TelemetryWorker(
 
         statusNoTimePrev = statusNoTime;
 
-        status = curlStaticGet(device->curl_static_session, "/status");
+        status = curlStaticGet(device->curl_static_session, "/status", PRINT_DEBUG_MSGS_OFF);
 
         JSON_Value * jsonValueStatus = json_parse_string(status);
         JSON_Object * jsonObjectStatus = json_value_get_object(jsonValueStatus);
@@ -238,7 +238,7 @@ int ImpinjReader_TelemetryWorker(
         
         int uSecInit = clock();
         int uSecTimer = 0;
-        int uSecTarget = 10000;
+        int uSecTarget = 50000;
 
         while (uSecTimer < uSecTarget)
         {
@@ -420,7 +420,7 @@ ImpinjReader_CreatePnpComponent(
     strcat(build_str_url_always, compHostname);
     strcat(build_str_url_always, str_basepath);   
 
-    char* http_basepath = Str_Trim(build_str_url_always).strPtr;
+    char* http_basepath = Str_Trim(build_str_url_always);
 
     /* initialize cURL sessions */
     CURL_Static_Session_Data *curl_static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
@@ -609,9 +609,9 @@ int ImpinjReader_ProcessCommand(
         strcat(startPresetEndpoint_build, "/profiles/inventory/presets/");
         strcat(startPresetEndpoint_build, json_value_get_string(CommandValue));
         strcat(startPresetEndpoint_build, "/start");
-        char *startPresetEndpoint = Str_Trim(startPresetEndpoint_build).strPtr;
+        char *startPresetEndpoint = Str_Trim(startPresetEndpoint_build);
 
-        char* res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "");
+        char* res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "", PRINT_DEBUG_MSGS_ON);
 
         char * response = ImpinjReader_CreateJsonResponse("cmdResponse", res);
 
@@ -623,7 +623,7 @@ int ImpinjReader_ProcessCommand(
     else if (strcmp(CommandName, "stopPreset") == 0)
     {
 
-        char* res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "");
+        char* res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "", PRINT_DEBUG_MSGS_ON);
 
         char * response = ImpinjReader_CreateJsonResponse("cmdResponse", res);
         

@@ -56,7 +56,7 @@ int main(void)
   stream_session = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   char * response;
-  response = curlStaticPost(static_session, "/profiles/inventory/presets/basic_inventory/start", "");  // start basic_inventory preset
+  response = curlStaticPost(static_session, "/profiles/inventory/presets/default/start", "", PRINT_DEBUG_MSGS_ON);  // start basic_inventory preset
   fprintf(stdout, "\n curlStaticPost() Response: %s", response);
 
   curlStreamSpawnReaderThread(stream_session);
@@ -87,7 +87,7 @@ int main(void)
     mSecTimer = clock() - mSecInit;
   }
 
-  response = curlStaticPost(static_session, "/profiles/stop", "");  // stop preset
+  response = curlStaticPost(static_session, "/profiles/stop", "", PRINT_DEBUG_MSGS_ON);  // stop preset
   fprintf(stdout, "\n curlStaticPost() Response: %s", response);
 
   curlStreamStopThread(stream_session);

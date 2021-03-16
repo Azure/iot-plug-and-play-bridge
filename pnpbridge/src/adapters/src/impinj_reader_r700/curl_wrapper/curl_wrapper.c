@@ -335,7 +335,7 @@ curlStaticInit(
 // test curl configuration
   char* response;
 
-  response = curlStaticGet(session_data, "/status");
+  response = curlStaticGet(session_data, "/status", 1);
       
   fprintf(stdout, "\nInitialization test Call: %s\n", response);
 
@@ -425,7 +425,8 @@ CURL_Stream_Session_Data * curlStreamInit(
 char*
 curlStaticGet(
   CURL_Static_Session_Data *session_data, 
-  char *endpoint
+  char *endpoint, 
+  int printDebugMsgs
   ) 
   {
   
@@ -444,7 +445,9 @@ curlStaticGet(
 
   char* full_endpoint = Str_Trim(fullurl);
 
-  fprintf(stdout, " GET Endpoint: %s\n", full_endpoint); //DEBUG
+  if (printDebugMsgs) {
+    fprintf(stdout, " GET Endpoint: %s\n", full_endpoint); //DEBUG
+  }
 
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
@@ -465,7 +468,8 @@ char*
 curlStaticPost(
   CURL_Static_Session_Data *session_data, 
   char *endpoint, 
-  char *postData
+  char *postData, 
+  int printDebugMsgs
   ) {
   
   CURL *static_handle = session_data->curlHandle;
@@ -482,7 +486,9 @@ curlStaticPost(
 
   char* full_endpoint = Str_Trim(fullurl);
 
-  fprintf(stdout, " POST Endpoint: %s\n", full_endpoint);
+  if (printDebugMsgs) {
+    fprintf(stdout, " POST Endpoint: %s\n", full_endpoint); //DEBUG
+  }
 
   curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
   curl_easy_setopt(static_handle, CURLOPT_POST, 1);
@@ -544,7 +550,8 @@ char*
 curlStaticPut(
   CURL_Static_Session_Data *session_data, 
   char *endpoint, 
-  char *putData
+  char *putData, 
+  int printDebugMsgs
   ) {
 
     CURL *static_handle = session_data->curlHandle;
@@ -566,7 +573,9 @@ curlStaticPut(
 
     char* full_endpoint = Str_Trim(fullurl);
 
-    fprintf(stdout, " PUT Endpoint: %s\n", full_endpoint);
+    if (printDebugMsgs) {
+      fprintf(stdout, " PUT Endpoint: %s\n", full_endpoint); //DEBUG
+    }
 
     curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
     curl_easy_setopt(static_handle, CURLOPT_READFUNCTION, curlStaticDataWriteCallback);
@@ -577,12 +586,58 @@ curlStaticPut(
     CURLcode res = curl_easy_perform(static_handle);
 
     if(res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed in curlStaticPost: %s\n",
+        fprintf(stderr, "curl_easy_perform() failed in curlStaticPut: %s\n",
           curl_easy_strerror(res));
     }
 
     return session_data->readCallbackData; // TODO: implement error handling
   }
+
+char*
+curlStaticDelete(
+  CURL_Static_Session_Data *session_data, 
+  char *endpoint, 
+  int printDebugMsgs
+  ) 
+  {
+
+  CURL *static_handle = session_data->curlHandle;
+
+  char* startPtr = session_data->readCallbackData;
+
+  memset(startPtr, '\0', STATIC_READ_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));  //re-initialize memory space
+
+  session_data->readCallbackDataLength = 0;
+
+  char fullurl[1000] = "";
+
+  strcat(fullurl, session_data->basePath);
+  strcat(fullurl, endpoint);
+
+  char* full_endpoint = Str_Trim(fullurl);
+
+  if (printDebugMsgs) {
+    fprintf(stdout, " DEL Endpoint: %s\n", full_endpoint); //DEBUG
+  }
+
+  curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1); // to ensure it's not set to PUT or POST
+  curl_easy_setopt(static_handle, CURLOPT_CUSTOMREQUEST, "DELETE");  // set to custom op "DELETE"
+  curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+
+  CURLcode res;
+
+  res = curl_easy_perform(static_handle);
+
+  if(res != CURLE_OK) {
+    fprintf(stderr, "curl_easy_perform() failed in curlStaticDelete: %s\n",
+      curl_easy_strerror(res));
+  }
+
+  curl_easy_setopt(static_handle, CURLOPT_CUSTOMREQUEST, NULL);  // must set CURLOPT_CUSTOMREQUEST back to NULL, or will continue with "DELETE" in other requests
+
+  return session_data->readCallbackData;
+}
+
 
 void 
 curlStaticCleanup(
