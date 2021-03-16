@@ -110,6 +110,7 @@ char * ImpinjReader_CreateJsonResponse(
     char * propertyName, 
     char * propertyValue)
     {
+         
         char jsonFirstChar = '{';
         char jsonToSendStr[2000] = "";
 
@@ -206,11 +207,13 @@ int ImpinjReader_TelemetryWorker(
       
     long count = 0;
 
-    char * status = (char *)malloc(sizeof(char*)*1000);
-    char * statusNoTimePrev = (char *)malloc(sizeof(char*)*1000);
-    char * statusNoTime = (char *)malloc(sizeof(char*)*1000);
+    #define STATUS_CHAR_SIZE 1000
 
-    // Report telemetry every 5 seconds till we are asked to stop
+    char * status = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
+    char * statusNoTimePrev = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
+    char * statusNoTime = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
+
+    // Report telemetry until we are asked to stop
     while (true) {
 
         if (device->ShuttingDown)
@@ -218,12 +221,12 @@ int ImpinjReader_TelemetryWorker(
             return IOTHUB_CLIENT_OK;
         }
 
-        // LogInfo("Telemetry Worker Iteration %d: ", count); 
+        // LogInfo("Telemetry Worker Iteration %d: ", count); // DEBUG
         count++;
 
         statusNoTimePrev = statusNoTime;
 
-        status = curlStaticGet(device->curl_static_session, "/status", PRINT_DEBUG_MSGS_OFF);
+        status = curlStaticGet(device->curl_static_session, "/status", PRINT_DEBUG_MSGS_OFF);  // query current reader status
 
         JSON_Value * jsonValueStatus = json_parse_string(status);
         JSON_Object * jsonObjectStatus = json_value_get_object(jsonValueStatus);
@@ -233,14 +236,14 @@ int ImpinjReader_TelemetryWorker(
 
         if(strcmp(statusNoTime, statusNoTimePrev)!=0) {  // send status update only on change in status
             LogInfo("Status Update: %s", status);
-            // ImpinjReader_ReportDeviceStateAsync(componentHandle, device->ComponentName);
+            ImpinjReader_ReportDeviceStateAsync(componentHandle, device->ComponentName);
         }
         
         int uSecInit = clock();
         int uSecTimer = 0;
         int uSecTarget = 50000;
 
-        while (uSecTimer < uSecTarget)
+        while (uSecTimer < uSecTarget) // read out and send all events in buffer until target time, then loop back around after status update check
         {
             if (device->ShuttingDown)
             {
@@ -251,7 +254,7 @@ int ImpinjReader_TelemetryWorker(
             // Sleep for X msec
             ThreadAPI_Sleep(100);
             uSecTimer = clock() - uSecInit;
-            // LogInfo("Worker Thread Timer: %d, Target: %d", uSecTimer, uSecTarget);
+            // LogInfo("Worker Thread Timer: %d, Target: %d", uSecTimer, uSecTarget);  // DEBUG
         }
     }
 
@@ -312,13 +315,18 @@ ImpinjReader_SendTelemetryMessagesAsync(
     
     int uSecInit = clock();
     int uSecTimer = 0;
-    int uSecTarget = 5000;
+    int uSecTarget = 5000;  // target time to continually send buffered messages before returning to caller
+    float bufferLevel = 0;
 
     while (uSecTimer < uSecTarget) {  // pull messages out of buffer for target time, then return to calling function
 
         CURL_Stream_Read_Data read_data = curlStreamReadBufferChunk(device->curl_stream_session);
 
-        if (read_data.dataChunk == NULL) {  // if no data in buffer, stop reading and return to calling function
+        bufferLevel = (float)100 * (float)(read_data.remainingData + read_data.dataChunkSize) / (float)(device->curl_stream_session->dataBufferSize);
+
+        // LogInfo("Stream Buffer Level: %2.1f percent.", bufferLevel);
+
+        if (read_data.dataChunk == NULL) {  // if no data in buffer, stop reading and return to calling function immediately
             // LogInfo("No data returned from stream buffer.");
             IoTHubMessage_Destroy(messageHandle);
             return IOTHUB_CLIENT_OK;
@@ -334,9 +342,11 @@ ImpinjReader_SendTelemetryMessagesAsync(
 
             count++;
 
-            LogInfo("TELEMETRY Message %d: %s", count, oneMessage);
-  
-            char * currentMessage = ImpinjReader_CreateJsonResponse("streamReadEvent", oneMessage); // TODO: Parameterize this property name
+            LogInfo("TELEMETRY Message %d: %s", count, oneMessage); //DEBUG
+
+            char currentMessage[1000];
+
+            sprintf(currentMessage, "{\"%s\":%s}", "streamReadEvent", oneMessage);
 
             if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, currentMessage)) == NULL)
             {
@@ -476,7 +486,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_StartPnpComponent(
     curlStreamSpawnReaderThread(device->curl_stream_session);
 
     // Report Device State Async
-    // result = ImpinjReader_ReportPropertyAsync(PnpComponentHandle, device->SensorState->componentName);
+    result = ImpinjReader_ReportDeviceStateAsync(PnpComponentHandle, device->SensorState->componentName);
 
     // Create a thread to periodically publish telemetry
     if (ThreadAPI_Create(&device->WorkerHandle, ImpinjReader_TelemetryWorker, PnpComponentHandle) != THREADAPI_OK) {
@@ -605,27 +615,31 @@ int ImpinjReader_ProcessCommand(
     if (strcmp(CommandName, "startPreset") == 0)
     {
 
-        char startPresetEndpoint_build[100] = "";
-        strcat(startPresetEndpoint_build, "/profiles/inventory/presets/");
-        strcat(startPresetEndpoint_build, json_value_get_string(CommandValue));
-        strcat(startPresetEndpoint_build, "/start");
-        char *startPresetEndpoint = Str_Trim(startPresetEndpoint_build);
+        char startPresetEndpoint[200];
+
+        sprintf(startPresetEndpoint, "/profiles/inventory/presets/%s/start", json_value_get_string(CommandValue));
 
         char* res = curlStaticPost(ImpinjReader->curl_static_session, startPresetEndpoint, "", PRINT_DEBUG_MSGS_ON);
 
-        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", res);
+        char response[1000];
+
+        sprintf(response, "{\"%s\":\"%s\"}", "cmdResponse", res);
 
         LogInfo("Sending %s Response: %s", CommandName, response);
         // char * response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
-        
+
         return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, response);
+
+        
     }
     else if (strcmp(CommandName, "stopPreset") == 0)
     {
 
         char* res = curlStaticPost(ImpinjReader->curl_static_session, "/profiles/stop", "", PRINT_DEBUG_MSGS_ON);
 
-        char * response = ImpinjReader_CreateJsonResponse("cmdResponse", res);
+        char response[1000];
+
+        sprintf(response, "{\"%s\": \"%s\"}", "cmdResponse", res);
         
         LogInfo("Sending %s Response: %s", CommandName, response);
 

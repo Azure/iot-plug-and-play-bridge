@@ -61,11 +61,9 @@ curlStreamReadBufferChunk(
             char * secondDataChunk = session_data->dataBuffer;
             int fullJoinedLength = strlen(firstDataChunk) + strlen(secondDataChunk);
             char * joinedDataChunk = (char*)malloc(sizeof(char)*fullJoinedLength);
-            strcat(joinedDataChunk, firstDataChunk);
-            strcat(joinedDataChunk, secondDataChunk);
+            sprintf(joinedDataChunk, "%s%s", firstDataChunk, secondDataChunk);
 
             session_data->bufferReadIndex = strlen(secondDataChunk)+1;
-
 
             char * joinedDataChunkReturn = Str_Trim(joinedDataChunk);
 
@@ -285,12 +283,8 @@ curlStaticInit(
   }
 
   // build user:password string for cURL
-  char usrpwd_build[256] = "";
-  strcat(usrpwd_build, username); 
-  strcat(usrpwd_build, ":"); 
-  strcat(usrpwd_build, password);
-
-  char* usrpwd = Str_Trim(usrpwd_build);
+  char usrpwd[256];
+  sprintf(usrpwd, "%s:%s", username, password);
 
   // Set session data values
   #define staticInitArraySize 10
@@ -368,13 +362,9 @@ CURL_Stream_Session_Data * curlStreamInit(
   }
 
   // build user:password string for cURL
-  char usrpwd_build[256] = "";
-  strcat(usrpwd_build, username); 
-  strcat(usrpwd_build, ":"); 
-  strcat(usrpwd_build, password);
+  char usrpwd[256];
 
-  char* usrpwd = Str_Trim(usrpwd_build);
-
+  sprintf(usrpwd, "%s:%s", username, password);
     
     // initialize session data structure
     CURL_Stream_Session_Data *session_data = malloc(sizeof(CURL_Stream_Session_Data));
@@ -403,16 +393,13 @@ CURL_Stream_Session_Data * curlStreamInit(
   curl_easy_setopt(stream_handle, CURLOPT_SSL_VERIFYSTATUS, EnableVerify);
   curl_easy_setopt(stream_handle, CURLOPT_VERBOSE, verboseOutput);
 
-  char fullStreamUrl[1000] = "";
-  
-  strcat(fullStreamUrl, session_data->basePath);
-  strcat(fullStreamUrl, "/data/stream");
+  char fullStreamUrl[1000];
 
-  char* full_stream_endpoint = Str_Trim(fullStreamUrl);
+  sprintf(fullStreamUrl, "%s/data/stream", session_data->basePath);
 
   curl_easy_setopt(session_data->curlHandle, CURLOPT_HTTPGET, 1);
-  curl_easy_setopt(session_data->curlHandle, CURLOPT_URL, full_stream_endpoint);
-  fprintf(stdout, " STREAM Endpoint: %s\n", full_stream_endpoint);
+  curl_easy_setopt(session_data->curlHandle, CURLOPT_URL, fullStreamUrl);
+  fprintf(stdout, " STREAM Endpoint: %s\n", fullStreamUrl);
 
 // initialize multi handle
   session_data->multiHandle = curl_multi_init();
@@ -438,19 +425,18 @@ curlStaticGet(
 
   session_data->readCallbackDataLength = 0;
 
-  char fullurl[1000] = "";
+  char fullurl[1000];
 
-  strcat(fullurl, session_data->basePath);
-  strcat(fullurl, endpoint);
+  sprintf(fullurl, "%s%s", session_data->basePath, endpoint);
 
-  char* full_endpoint = Str_Trim(fullurl);
+  // char* full_endpoint = Str_Trim(fullurl);
 
   if (printDebugMsgs) {
-    fprintf(stdout, " GET Endpoint: %s\n", full_endpoint); //DEBUG
+    fprintf(stdout, " GET Endpoint: %s\n", fullurl); //DEBUG
   }
 
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1);
-  curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+  curl_easy_setopt(static_handle, CURLOPT_URL, fullurl);
 
   CURLcode res;
 
@@ -479,18 +465,15 @@ curlStaticPost(
   memset(startPtr, '\0', STATIC_READ_CALLBACK_DATA_BUFFER_SIZE * sizeof(char));
   session_data->readCallbackDataLength = 0;
 
-  char fullurl[1000] = "";
+  char fullurl[1000];
 
-  strcat(fullurl, session_data->basePath);
-  strcat(fullurl, endpoint);
-
-  char* full_endpoint = Str_Trim(fullurl);
+  sprintf(fullurl, "%s%s", session_data->basePath, endpoint);
 
   if (printDebugMsgs) {
-    fprintf(stdout, " POST Endpoint: %s\n", full_endpoint); //DEBUG
+    fprintf(stdout, " POST Endpoint: %s\n", fullurl); //DEBUG
   }
 
-  curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+  curl_easy_setopt(static_handle, CURLOPT_URL, fullurl);
   curl_easy_setopt(static_handle, CURLOPT_POST, 1);
   curl_easy_setopt(static_handle, CURLOPT_POSTFIELDS, postData);
 
@@ -566,18 +549,15 @@ curlStaticPut(
     memcpy(session_data->writeCallbackData, putData, strlen(putData)*sizeof(char));
     session_data->writeCallbackDataLength = strlen(putData);
 
-    char fullurl[1000] = "";
+    char fullurl[1000];
 
-    strcat(fullurl, session_data->basePath);
-    strcat(fullurl, endpoint);
-
-    char* full_endpoint = Str_Trim(fullurl);
+    sprintf(fullurl, "%s%s", session_data->basePath, endpoint);
 
     if (printDebugMsgs) {
-      fprintf(stdout, " PUT Endpoint: %s\n", full_endpoint); //DEBUG
+      fprintf(stdout, " PUT Endpoint: %s\n", fullurl); //DEBUG
     }
 
-    curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+    curl_easy_setopt(static_handle, CURLOPT_URL, fullurl);
     curl_easy_setopt(static_handle, CURLOPT_READFUNCTION, curlStaticDataWriteCallback);
     curl_easy_setopt(static_handle, CURLOPT_READDATA, (void *)session_data);
     curl_easy_setopt(static_handle, CURLOPT_UPLOAD, 1L);
@@ -609,20 +589,17 @@ curlStaticDelete(
 
   session_data->readCallbackDataLength = 0;
 
-  char fullurl[1000] = "";
+  char fullurl[1000];
 
-  strcat(fullurl, session_data->basePath);
-  strcat(fullurl, endpoint);
-
-  char* full_endpoint = Str_Trim(fullurl);
+  sprintf(fullurl, "%s%s", session_data->basePath, endpoint);
 
   if (printDebugMsgs) {
-    fprintf(stdout, " DEL Endpoint: %s\n", full_endpoint); //DEBUG
+    fprintf(stdout, " DEL Endpoint: %s\n", fullurl); //DEBUG
   }
 
   curl_easy_setopt(static_handle, CURLOPT_HTTPGET, 1); // to ensure it's not set to PUT or POST
   curl_easy_setopt(static_handle, CURLOPT_CUSTOMREQUEST, "DELETE");  // set to custom op "DELETE"
-  curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
+  curl_easy_setopt(static_handle, CURLOPT_URL, fullurl);
 
   CURLcode res;
 

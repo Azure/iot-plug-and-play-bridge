@@ -63,7 +63,7 @@ int main(void)
 
   clock_t mSecInit = clock();
 
-  clock_t mSecTarget = 15000;
+  clock_t mSecTarget = 150000000;
 
   clock_t mSecTimer = 0;
 
