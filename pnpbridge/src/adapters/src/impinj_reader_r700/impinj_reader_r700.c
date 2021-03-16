@@ -346,7 +346,7 @@ ImpinjReader_SendTelemetryMessagesAsync(
 
             char currentMessage[1000];
 
-            sprintf(currentMessage, "{\"%s\":%s}", "streamReadEvent", oneMessage);
+            sprintf(currentMessage, "{\"%s\":%s}", "readerEvent", oneMessage);
 
             if ((messageHandle = PnP_CreateTelemetryMessageHandle(device->SensorState->componentName, currentMessage)) == NULL)
             {
@@ -355,7 +355,7 @@ ImpinjReader_SendTelemetryMessagesAsync(
             else if ((result = ImpinjReader_RouteSendEventAsync(PnpComponentHandle, messageHandle,
                     ImpinjReader_TelemetryCallback, device)) != IOTHUB_CLIENT_OK)
             {
-                LogError("Impinj Reader Adapter:: SampleEnvironmentalSensor_RouteSendEventAsync failed, error=%d", result);
+                LogError("Impinj Reader Adapter:: ImpinjReader_RouteSendEventAsync failed, error=%d", result);
             }
 
             oneMessage = strtok(NULL, MESSAGE_SPLIT_DELIMITER);  // continue splitting until all messages are sent individually
@@ -566,10 +566,10 @@ void ImpinjReader_OnPropertyCallback(
     void* ClientHandle
 )
 // {
-//     SampleEnvironmentalSensor_ProcessPropertyUpdate(userContextCallback, PropertyName, PropertyValue, version, PnpComponentHandle);
+//     ImpinjReader_ProcessPropertyUpdate(userContextCallback, PropertyName, PropertyValue, version, PnpComponentHandle);
 // }
 
-// void SampleEnvironmentalSensor_ProcessPropertyUpdate(
+// void ImpinjReader_ProcessPropertyUpdate(
 //     void * ClientHandle,
 //     const char* PropertyName,
 //     JSON_Value* PropertyValue,
@@ -648,11 +648,28 @@ int ImpinjReader_ProcessCommand(
         return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, response);
         
     }
+    else if (strcmp(CommandName, "rebootDevice") == 0)
+    {
+
+        char* res = curlStaticPost(ImpinjReader->curl_static_session, "/system/reboot", "", PRINT_DEBUG_MSGS_ON);
+
+        char response[1000];
+
+        sprintf(response, "{\"%s\": \"%s\"}", "cmdResponse", res);
+        
+        LogInfo("Sending %s Response: %s", CommandName, response);
+
+        // char * response = "{ \"status\": 12, \"description\": \"leds blinking\" }";
+        
+        return ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, response);
+        
+    }
     else
     {
         // If the command is not implemented by this interface, by convention we return a 404 error to server.
         LogError("Impinj Reader Adapter:: Command name <%s> is not associated with this interface", CommandName);
-        return 0; // SampleEnvironmentalSensor_SetCommandResponse(CommandResponse, CommandResponseSize, sampleEnviromentalSensor_NotImplemented);
+        ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, impinjReader_NotImplemented);
+        return 0; 
     }
 }
 
