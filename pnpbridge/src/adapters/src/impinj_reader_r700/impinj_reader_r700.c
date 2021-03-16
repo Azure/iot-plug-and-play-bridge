@@ -106,33 +106,6 @@ IOTHUB_CLIENT_RESULT ImpinjReader_ReportDeviceStateAsync(
         return ImpinjReader_ReportPropertyAsync(PnpComponentHandle, ComponentName, "deviceStatus", result);
     }
 
-char * ImpinjReader_CreateJsonResponse(
-    char * propertyName, 
-    char * propertyValue)
-    {
-         
-        char jsonFirstChar = '{';
-        char jsonToSendStr[2000] = "";
-
-        strcat(jsonToSendStr, "{ \"");
-        strcat(jsonToSendStr, propertyName);
-        strcat(jsonToSendStr, "\": ");
-        if (propertyValue[0] != jsonFirstChar) {
-            strcat(jsonToSendStr, "\"");
-        }
-        strcat(jsonToSendStr, propertyValue);
-        if (propertyValue[0] != jsonFirstChar) {
-            strcat(jsonToSendStr, "\"");
-        }
-        strcat(jsonToSendStr, " }");
-
-        char * response = Str_Trim(jsonToSendStr);
-        
-        // example JSON string: "{ \"status\": 12, \"description\": \"leds blinking\" }";
-
-        return response;
-    }
-
 IOTHUB_CLIENT_RESULT ImpinjReader_ReportPropertyAsync(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char * ComponentName, 
@@ -578,26 +551,28 @@ void ImpinjReader_OnPropertyCallback(
 {
     
     LogInfo("Processing Property: %s", PropertyName);
-    if (strcmp(PropertyName, impinjReader_property_testPropertyString) == 0)
+    if (strcmp(PropertyName, "hostname") == 0)
     {
         ImpinjReader_ProcessProperty(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
-    }
-    // if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
-    // {
-    //     SampleEnvironmentalSensor_CustomerNameCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
-    // }
-    // else if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyBrightness) == 0)
-    // {
-    //     SampleEnvironmentalSensor_BrightnessCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
-    // }
-    // else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
-    // {
-    //     const char * PropertyValueString = json_value_get_string(PropertyValue);
-    //     size_t PropertyValueLen = strlen(PropertyValueString);
+        char* res = curlStaticPut(ImpinjReader->curl_static_session, "/system/hostname", json_value_get_string(PropertyValue), PRINT_DEBUG_MSGS_ON);
 
-    //     LogInfo("Environmental Sensor Adapter:: Property name <%s>, last reported value=<%.*s>",
-    //         PropertyName, (int)PropertyValueLen, PropertyValueString);
-    // }
+    }
+    if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
+    {
+        SampleEnvironmentalSensor_CustomerNameCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+    }
+    else if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyBrightness) == 0)
+    {
+        SampleEnvironmentalSensor_BrightnessCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+    }
+    else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
+    {
+        const char * PropertyValueString = json_value_get_string(PropertyValue);
+        size_t PropertyValueLen = strlen(PropertyValueString);
+
+        LogInfo("Environmental Sensor Adapter:: Property name <%s>, last reported value=<%.*s>",
+            PropertyName, (int)PropertyValueLen, PropertyValueString);
+    }
     else
     {
         // If the property is not implemented by this interface, presently we only record a log message but do not have a mechanism to report back to the service
