@@ -1,0 +1,40 @@
+# Upgrade Description File
+#
+# This file contains the settings used by the upgrade generation tool
+# to produce an Impinj firmware upgrade file.
+[Description]
+
+# Version is a 4 part number in decimal with each part limited to
+# 0-255. It is the version of the upgrade file to be generated.
+Version = 1.2.3.4
+
+# Valid Reader Hardware is a 3 part number in decimal representing
+# the reader model and major/minor revisions on which the upgrade may be
+# loaded. Each field may be replaced by the wildcard '*' or '255',
+# which matches any.
+#   Format = aaa.bbb.ccc
+#     aaa - Model number
+#     bbb - Major revision
+#     ccc - Minor revision
+Valid Reader Hardware = R700
+
+# File System Layout is an value used by the reader to determine how
+# the upgrade partition should be loaded to flash. Currently the only
+# supported layout version is 10.
+File System Layout = 10
+
+# Input Directory is the top-level directory of the filesystem to
+# create. The files under this directory will be available on the
+# reader under /cust after the upgrade is loaded.
+Input Directory = ./cap
+
+# Encrypt the upgrade filesystem content. Note this will be
+# decrypted when the upgrade file is processed by the reader.
+# The default is 'False' (don't encrypt)
+#Encrypt = True
+
+# Use the expanded NAND Flash partition sizes available on
+# all Revolution based readers and gateways with PCBAs equal or
+# greater than v5.00.
+# The default is 'False' (build for all PCBAs).
+#ExpandedNAND = True
