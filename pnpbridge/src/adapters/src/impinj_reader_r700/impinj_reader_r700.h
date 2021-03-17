@@ -86,6 +86,13 @@ void ImpinjReader_OnPropertyCallback(
     int version,
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
 
+void ImpinjReader_ProcessPropertyUpdate(
+    void * ClientHandle,
+    const char* PropertyName,
+    JSON_Value* PropertyValue,
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
+
 int ImpinjReader_OnCommandCallback(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char* CommandName,

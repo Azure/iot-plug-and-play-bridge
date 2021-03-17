@@ -110,13 +110,53 @@ IOTHUB_CLIENT_RESULT ImpinjReader_ReportPropertyAsync(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char * ComponentName, 
     char * propertyName, 
-    char * propertyValue) 
+    char * propertyValue
+    ) 
     {
         IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
         STRING_HANDLE jsonToSend = NULL;
 
 
         if ((jsonToSend = PnP_CreateReportedProperty(ComponentName, propertyName, propertyValue)) == NULL)
+        {
+            LogError("Unable to build reported property response for propertyName=%s, propertyValue=%s", propertyName, propertyValue);
+        }
+        else
+        {
+            const char* jsonToSendStr = STRING_c_str(jsonToSend);
+            size_t jsonToSendStrLen = strlen(jsonToSendStr);
+
+            if ((iothubClientResult = ImpinjReader_RouteReportedState(NULL, PnpComponentHandle, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                ImpinjReader_PropertyCallback, (void*)propertyName)) != IOTHUB_CLIENT_OK)
+            {
+                LogError("Impinj Reader:: Unable to send reported state for property=%s, error=%d",
+                                    propertyName, iothubClientResult);
+            }
+            else
+            {
+                LogInfo("Impinj Reader:: Sending device information property to IoTHub. propertyName=%s", //, propertyValue=%s",
+                            propertyName); //, propertyValue);
+            }
+
+            STRING_delete(jsonToSend);
+        }
+
+        return iothubClientResult;
+    }
+
+IOTHUB_CLIENT_RESULT ImpinjReader_ReportWritablePropertyAsync(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char * ComponentName, 
+    char * propertyName, 
+    char * propertyValue, 
+    const char* description, 
+    int version) 
+    {
+        IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
+        STRING_HANDLE jsonToSend = NULL;
+
+
+        if ((jsonToSend = PnP_CreateReportedPropertyWithStatus(ComponentName, propertyName, propertyValue, PNP_STATUS_SUCCESS, "success!", version)) == NULL)
         {
             LogError("Unable to build reported property response for propertyName=%s, propertyValue=%s", propertyName, propertyValue);
         }
@@ -538,41 +578,52 @@ void ImpinjReader_OnPropertyCallback(
     int version,
     void* ClientHandle
 )
-// {
-//     ImpinjReader_ProcessPropertyUpdate(userContextCallback, PropertyName, PropertyValue, version, PnpComponentHandle);
-// }
-
-// void ImpinjReader_ProcessPropertyUpdate(
-//     void * ClientHandle,
-//     const char* PropertyName,
-//     JSON_Value* PropertyValue,
-//     int version,
-//     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
 {
-    
+    ImpinjReader_ProcessPropertyUpdate(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+}
+
+void ImpinjReader_ProcessPropertyUpdate(
+    void * ClientHandle,
+    const char* PropertyName,
+    JSON_Value* PropertyValue,
+    int version,
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+{
+    PIMPINJ_READER device = PnpComponentHandleGetContext(PnpComponentHandle);
+
+    const char * PropertyValueString = json_value_get_string(PropertyValue);
+    char propValStr[100];
+    strcpy(propValStr, PropertyValueString);
+ 
     LogInfo("Processing Property: %s", PropertyName);
     if (strcmp(PropertyName, "hostname") == 0)
     {
         ImpinjReader_ProcessProperty(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
-        char* res = curlStaticPut(ImpinjReader->curl_static_session, "/system/hostname", json_value_get_string(PropertyValue), PRINT_DEBUG_MSGS_ON);
+        char * res = curlStaticPut(device->curl_static_session, "/system/hostname", propValStr, PRINT_DEBUG_MSGS_ON);
+        char * checkVal = curlStaticGet(device->curl_static_session, "/system/hostname", PRINT_DEBUG_MSGS_OFF);
+        LogInfo("Current hostname: %s", checkVal);
+        ImpinjReader_ReportWritablePropertyAsync(PnpComponentHandle, device->ComponentName, "hostname", checkVal, "success", version);
+    }
+    else if (strcmp(PropertyName, "systemTime") == 0)
+    {
+        ImpinjReader_ProcessProperty(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+        char* res = curlStaticPut(device->curl_static_session, "/system/time", propValStr, PRINT_DEBUG_MSGS_ON);
+        char * checkVal = curlStaticGet(device->curl_static_session, "/system/time", PRINT_DEBUG_MSGS_OFF);
+        LogInfo("Current system time: %s", checkVal);
+        ImpinjReader_ReportWritablePropertyAsync(PnpComponentHandle, device->ComponentName, "systemTime", checkVal, "success", version);
+    }
+    // else if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyBrightness) == 0)
+    // {
+    //     SampleEnvironmentalSensor_BrightnessCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
+    // }
+    // else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
+    // {
+    //     const char * PropertyValueString = json_value_get_string(PropertyValue);
+    //     size_t PropertyValueLen = strlen(PropertyValueString);
 
-    }
-    if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyCustomerName) == 0)
-    {
-        SampleEnvironmentalSensor_CustomerNameCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
-    }
-    else if (strcmp(PropertyName, sampleEnvironmentalSensorPropertyBrightness) == 0)
-    {
-        SampleEnvironmentalSensor_BrightnessCallback(ClientHandle, PropertyName, PropertyValue, version, PnpComponentHandle);
-    }
-    else if (strcmp(PropertyName, sampleDeviceStateProperty) == 0)
-    {
-        const char * PropertyValueString = json_value_get_string(PropertyValue);
-        size_t PropertyValueLen = strlen(PropertyValueString);
-
-        LogInfo("Environmental Sensor Adapter:: Property name <%s>, last reported value=<%.*s>",
-            PropertyName, (int)PropertyValueLen, PropertyValueString);
-    }
+    //     LogInfo("Environmental Sensor Adapter:: Property name <%s>, last reported value=<%.*s>",
+    //         PropertyName, (int)PropertyValueLen, PropertyValueString);
+    // }
     else
     {
         // If the property is not implemented by this interface, presently we only record a log message but do not have a mechanism to report back to the service
