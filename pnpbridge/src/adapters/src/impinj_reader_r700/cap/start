@@ -1,6 +1,6 @@
 #!/bin/bash
 
 while true; do
-    /cust/example
+    /cust/pnpbridge_bin
     sleep 1
 done
