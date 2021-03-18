@@ -567,8 +567,8 @@
                     }
                   },
                   {
-                    "name": "disconnected ",
-                    "enumValue": "disconnected ",
+                    "name": "disconnected",
+                    "enumValue": "disconnected",
                     "displayName": {
                       "en": "Disconnected"
                     }
