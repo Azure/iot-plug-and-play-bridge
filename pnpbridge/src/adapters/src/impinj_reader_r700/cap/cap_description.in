@@ -26,7 +26,7 @@ File System Layout = 10
 # Input Directory is the top-level directory of the filesystem to
 # create. The files under this directory will be available on the
 # reader under /cust after the upgrade is loaded.
-Input Directory = ./cap
+Input Directory = ./build/cap
 
 # Encrypt the upgrade filesystem content. Note this will be
 # decrypted when the upgrade file is processed by the reader.

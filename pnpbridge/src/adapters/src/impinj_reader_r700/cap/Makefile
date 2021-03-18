@@ -12,13 +12,17 @@ else
     P = @true
 endif
 
-ETK_DIR		?= $(abspath $(lastword $(MAKEFILE_LIST))/../../../)
+#ETK_DIR		?= $(abspath $(lastword $(MAKEFILE_LIST))/../../../)
+ETK_DIR ?= $(shell cat ./../support_files/ETKpath.txt)
+# ETK_DIR ?= /home/kwenner/impinj/etk/r700/7.5.0_Octane_Embedded_Development_Tools
 TOOLCHAIN_DIR	= $(ETK_DIR)/arm-toolchain
 export PATH	:= $(TOOLCHAIN_DIR)/bin/:$(PATH)
 CROSS_COMPILE	?= arm-none-linux-gnueabihf-
 
-CAP	= cap.upgx
-CAP_DIR	= cap
+CAP_NAME = azure_pnpbridge_impinj_r700.upgx
+BUILD_DIR = build
+CAP_UPGX = $(BUILD_DIR)/$(CAP_NAME)
+CAP_DIR	= $(BUILD_DIR)/cap
 CAP_DSC	= cap_description.in
 SYS_DIR	= $(CAP_DIR)/sys
 CFG_SRC	= reader.conf
@@ -33,17 +37,17 @@ LDFLAGS	+= -static \
 	   -l:libcrypto.a \
 	   -l:libpthread.a \
 	   -l:libdl.a
-OBJS	= main.o
-TARGET	= example
+OBJS	= $(BUILD_DIR)/main.o
+TARGET	= $(BUILD_DIR)/example
 INCDIR	= -I$(TOOLCHAIN_DIR)/arm-buildroot-linux-gnueabihf/sysroot/usr/include/
 
-all: $(CAP)
+all: $(CAP_UPGX)
 
-$(CAP): $(TARGET) $(CFG_DST) $(CAP_DSC) $(START) | $(CAP_DIR)
+$(CAP_UPGX): $(TARGET) $(CFG_DST) $(CAP_DSC) $(START) | $(CAP_DIR)
 	$P '  GEN		CAP'
 	$E cp $(TARGET) $(CAP_DIR)/
 	$E cp $(START) $(CAP_DIR)/
-	$E $(ETK_DIR)/cap_gen.sh -d $(CAP_DSC) -o $(CAP)
+	$E $(ETK_DIR)/cap_gen.sh -d $(CAP_DSC) -o $(CAP_UPGX)
 
 $(CFG_DST): $(CFG_SRC) | $(SYS_DIR)
 	$P '  CP		CONF'
@@ -56,7 +60,7 @@ $(TARGET): $(OBJS)
 	$P '  LD		TARGET'
 	$E $(CXX) -o $@ $^ $(LDFLAGS)
 
-%.o: %.cpp
+$(BUILD_DIR)/%.o: %.cpp $(CAP_DIR)
 	$P '  CXX 		$@'
 	$E $(CXX) -c -o $@ $^ $(INCDIR) $(CFLAGS)
 
@@ -65,7 +69,7 @@ clean:
 	$P '  RM		TARGET'
 	$E rm -rf $(TARGET)
 	$P '  RM		CAP_DIR'
-	$E rm -rf $(CAP_DIR)
+	$E rm -rf $(BUILD_DIR)
 	$P '  RM		CAP'
 	$E rm -rf $(CAP)
 	$P '  RM		OBJS'
