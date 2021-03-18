@@ -127,27 +127,31 @@ curlStreamStopThread(
 char*
 curlStaticGet(
   CURL_Static_Session_Data *session_data, 
-  char *endpoint
+  char *endpoint,
+  int *statusCode
   );
 
 char*
 curlStaticPost(
   CURL_Static_Session_Data *session_data, 
   char *endpoint, 
-  char *postData
+  char *postData,
+  int *statusCode
   );
 
 char*
 curlStaticPut(
   CURL_Static_Session_Data *session_data, 
   char *endpoint, 
-  char *putData
+  char *putData,
+  int *statusCode
   );
 
 char*
 curlStaticDelete(
   CURL_Static_Session_Data *session_data, 
-  char *endpoint
+  char *endpoint,
+  int *statusCode
   );
 
 void 
@@ -162,3 +166,10 @@ curlStreamCleanup(
 
 void 
 curlGlobalCleanup();
+
+size_t
+curlStaticDataWriteCallback(
+    void *write_data,
+    size_t size,
+    size_t nmemb,
+    void *userp);

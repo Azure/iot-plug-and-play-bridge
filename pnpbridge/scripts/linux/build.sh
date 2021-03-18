@@ -10,8 +10,8 @@ log_dir=$build_root
 run_e2e_tests=OFF
 run_sfc_tests=OFF
 run_longhaul_tests=OFF
-build_amqp=ON
-build_http=ON
+build_amqp=OFF
+build_http=OFF
 build_mqtt=ON
 no_blob=OFF
 run_unittests=OFF
@@ -23,7 +23,7 @@ toolchainfile=" "
 cmake_install_prefix=" "
 no_logging=OFF
 prov_auth=ON #OFF
-prov_use_tpm_simulator=ON #OFF
+prov_use_tpm_simulator=OFF
 use_edge_modules=ON #OFF
 
 usage ()

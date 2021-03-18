@@ -141,7 +141,7 @@ IOTHUB_CLIENT_RESULT BluetoothSensor_CreatePnpComponent(
     }
 
     PnpComponentHandleSetContext(PnpComponentHandle, newDeviceAdapter.get());
-    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, BluetoothSensorDeviceAdapterBase::OnPropertyCallback);
+    PnpComponentHandleSetPropertyPatchCallback(PnpComponentHandle, BluetoothSensorDeviceAdapterBase::OnPropertyCallback);
     PnpComponentHandleSetCommandCallback(PnpComponentHandle, BluetoothSensorDeviceAdapterBase::OnCommandCallback);
 
     // PnP interface now owns the pointer

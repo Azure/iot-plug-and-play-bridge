@@ -1727,7 +1727,7 @@ SerialPnp_CreatePnpComponent(
     }
 
     PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
-    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, SerialPnp_PropertyUpdateHandler);
+    PnpComponentHandleSetPropertyPatchCallback(BridgeComponentHandle, SerialPnp_PropertyUpdateHandler);
     PnpComponentHandleSetCommandCallback(BridgeComponentHandle, SerialPnp_CommandUpdateHandler);
 
 exit:
