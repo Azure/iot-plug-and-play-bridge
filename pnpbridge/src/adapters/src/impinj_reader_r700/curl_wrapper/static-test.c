@@ -41,6 +41,7 @@
 int main(void)
 {
   char * res;
+  int httpStatus;
 
   curlGlobalInit();
  
@@ -48,80 +49,80 @@ int main(void)
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/status", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/status", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/profiles/inventory/presets", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/profiles/inventory/presets", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
   char * presetJson = malloc(sizeof(char)*10000);
 
-  res = curlStaticGet(static_session, "/profiles/inventory/presets/default", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/profiles/inventory/presets/default", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   strcpy(presetJson, res);
 
-  res = curlStaticPut(static_session, "/profiles/inventory/presets/test", presetJson, PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticPut(static_session, "/profiles/inventory/presets/test", presetJson, &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/profiles/inventory/presets", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/profiles/inventory/presets", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}", PRINT_DEBUG_MSGS_ON); // this should result in an error response from reader
-  fprintf(stdout, "    Response (expected error): %s\n", res);  
+  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 0}", &httpStatus); // this should result in an error response from reader
+  fprintf(stdout, "    HTTP Status: %d\n    Response (expected error): %s\n", httpStatus, res);  
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 10}", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticPut(static_session, "/http-stream", "{\"eventBufferSize\": 0,\"eventPerSecondLimit\": 0,\"eventAgeLimitMinutes\": 10}", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/http-stream", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/http-stream", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPost(static_session, "/profiles/inventory/presets/garbage_broken_path/start", "", PRINT_DEBUG_MSGS_ON);   // this should result in an error response from reader
-  fprintf(stdout, "    Response (expected error): %s\n", res);  
+  res = curlStaticPost(static_session, "/profiles/inventory/presets/garbage_broken_path/start", "", &httpStatus);   // this should result in an error response from reader
+  fprintf(stdout, "    HTTP Status: %d\n    Response (expected error): %s\n", httpStatus, res);  
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPost(static_session, "/profiles/inventory/presets/test/start", "", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticPost(static_session, "/profiles/inventory/presets/test/start", "", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/status", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/status", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticPost(static_session, "/profiles/stop", "", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticPost(static_session, "/profiles/stop", "", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/status", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/status", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticDelete(static_session, "/profiles/inventory/presets/test", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticDelete(static_session, "/profiles/inventory/presets/test", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 
-  res = curlStaticGet(static_session, "/profiles/inventory/presets", PRINT_DEBUG_MSGS_ON);
-  fprintf(stdout, "    Response: %s\n", res);
+  res = curlStaticGet(static_session, "/profiles/inventory/presets", &httpStatus);
+  fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
 
   usleep(USEC_DELAY);
 

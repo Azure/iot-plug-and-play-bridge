@@ -51,9 +51,9 @@ add_library(${PROJECT_NAME} STATIC
 set(pnp_bridge_common_libs
     pnpbridge
     iothub_client 
-    iothub_client_http_transport
-    iothub_client_amqp_transport
-    iothub_client_amqp_ws_transport
+#    iothub_client_http_transport
+#    iothub_client_amqp_transport
+#    iothub_client_amqp_ws_transport
     iothub_client_mqtt_transport
     iothub_client_mqtt_ws_transport
     parson

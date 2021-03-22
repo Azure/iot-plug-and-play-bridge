@@ -2,4 +2,4 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 add_subdirectory(console)
-add_subdirectory(service)
+# add_subdirectory(service)

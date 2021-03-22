@@ -91,7 +91,7 @@ IOTHUB_CLIENT_RESULT Camera_CreatePnpComponent(
     PnpComponentHandleSetContext(
         PnpComponentHandle,
         static_cast<void*>(newCameraDevice.get()));
-    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate);
+    PnpComponentHandleSetPropertyPatchCallback(PnpComponentHandle, CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessPropertyUpdate);
     PnpComponentHandleSetCommandCallback(PnpComponentHandle, CameraIotPnpDeviceAdapter::CameraPnpCallback_ProcessCommandUpdate);
 
     // Interface context now owns object

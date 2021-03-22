@@ -8,8 +8,8 @@
 #define VERIFY_CERTS_OFF 0
 #define VERIFY_CERTS_ON 1
 
-#define PRINT_DEBUG_MSGS_OFF 0
-#define PRINT_DEBUG_MSGS_ON 1
+// #define PRINT_DEBUG_MSGS_OFF 0
+// #define PRINT_DEBUG_MSGS_ON 1
 
 typedef struct CURL_Static_Session_Data {
   CURL *curlHandle;
@@ -130,31 +130,31 @@ curlStreamStopThread(
 char*
 curlStaticGet(
   CURL_Static_Session_Data *session_data, 
-  char *endpoint, 
-  int printDebugMsgs
+  char *endpoint,
+  int *statusCode
   );
 
 char*
 curlStaticPost(
   CURL_Static_Session_Data *session_data, 
   char *endpoint, 
-  char *postData, 
-  int printDebugMsgs
+  char *postData,
+  int *statusCode
   );
 
 char*
 curlStaticPut(
   CURL_Static_Session_Data *session_data, 
   char *endpoint, 
-  char *putData, 
-  int printDebugMsgs
+  char *putData,
+  int *statusCode
   );
 
 char*
 curlStaticDelete(
   CURL_Static_Session_Data *session_data, 
-  char *endpoint, 
-  int printDebugMsgs
+  char *endpoint,
+  int *statusCode
   );
 
 void 
@@ -169,3 +169,10 @@ curlStreamCleanup(
 
 void 
 curlGlobalCleanup();
+
+size_t
+curlStaticDataWriteCallback(
+    void *write_data,
+    size_t size,
+    size_t nmemb,
+    void *userp);

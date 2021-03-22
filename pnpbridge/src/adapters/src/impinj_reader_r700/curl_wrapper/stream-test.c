@@ -48,6 +48,7 @@ int main(void)
   char * http_username = "root";
   char * http_password = "impinj";
   char * http_basepath = "https://192.168.1.14/api/v1";
+  int httpStatus;
 
   CURL_Static_Session_Data *static_session;
   static_session = curlStaticInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
@@ -56,14 +57,14 @@ int main(void)
   stream_session = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   char * response;
-  response = curlStaticPost(static_session, "/profiles/inventory/presets/default/start", "", PRINT_DEBUG_MSGS_ON);  // start basic_inventory preset
-  fprintf(stdout, "\n curlStaticPost() Response: %s", response);
+  response = curlStaticPost(static_session, "/profiles/inventory/presets/default/start", "", &httpStatus);  // start basic_inventory preset
+  fprintf(stdout, " \nHTTP Status: %d\n curlStaticPost() Response: %s", httpStatus, response);
 
   curlStreamSpawnReaderThread(stream_session);
 
   clock_t mSecInit = clock();
 
-  clock_t mSecTarget = 150000000;
+  clock_t mSecTarget = 15000;
 
   clock_t mSecTimer = 0;
 
@@ -87,8 +88,8 @@ int main(void)
     mSecTimer = clock() - mSecInit;
   }
 
-  response = curlStaticPost(static_session, "/profiles/stop", "", PRINT_DEBUG_MSGS_ON);  // stop preset
-  fprintf(stdout, "\n curlStaticPost() Response: %s", response);
+  response = curlStaticPost(static_session, "/profiles/stop", "", &httpStatus);  // stop preset
+  fprintf(stdout, " \nHTTP Status: %d\n curlStaticPost() Response: %s", httpStatus, response);
 
   curlStreamStopThread(stream_session);
 

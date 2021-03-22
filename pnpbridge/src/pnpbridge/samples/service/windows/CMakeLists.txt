@@ -63,9 +63,9 @@ include_directories(../../deps/azure-iot-sdk-c-pnp/c-utility/pal/windows)
 set(pnp_bridge_common_libs
     aziotsharedutil
     iothub_client
-    iothub_client_http_transport
-    iothub_client_amqp_transport
-    iothub_client_amqp_ws_transport
+#    iothub_client_http_transport
+#    iothub_client_amqp_transport
+#    iothub_client_amqp_ws_transport
     iothub_client_mqtt_transport
     iothub_client_mqtt_ws_transport
     parson

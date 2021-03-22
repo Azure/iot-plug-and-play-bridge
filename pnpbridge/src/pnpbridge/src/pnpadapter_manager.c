@@ -708,10 +708,16 @@ void PnpAdapterManager_DeviceTwinCallback(
     else if ((g_PnpBridge->PnpMgr != NULL))
     {
         LogInfo("Processing property update for the device or module twin");
+
+        if (updateState == DEVICE_TWIN_UPDATE_COMPLETE)
+        {
+            PnpAdapterManager_RoutePropertyCompleteCallback(payload, size);
+        }
+
         // Invoke PnP_ProcessTwinData to actualy process the data. PnP_ProcessTwinData uses a visitor pattern to parse
-        // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyCallback on each element.
-        if (!PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
-                g_PnpBridge->PnpMgr->NumComponents, PnpAdapterManager_RoutePropertyCallback, userContextCallback))
+        // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyPatchCallback on each element.
+        else if (!PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
+                g_PnpBridge->PnpMgr->NumComponents, PnpAdapterManager_RoutePropertyPatchCallback, userContextCallback))
         {
             // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)
             // there is no action we can take beyond logging.
@@ -725,8 +731,8 @@ void PnpAdapterManager_DeviceTwinCallback(
 
 }
 
-// PnpAdapterManager_RoutePropertyCallback is the callback function that the PnP helper layer invokes per property update.
-static void PnpAdapterManager_RoutePropertyCallback(
+// PnpAdapterManager_RoutePropertyPatchCallback is the callback function that the PnP helper layer invokes per property update.
+static void PnpAdapterManager_RoutePropertyPatchCallback(
     const char* componentName,
     const char* propertyName,
     JSON_Value* propertyValue,
@@ -740,11 +746,40 @@ static void PnpAdapterManager_RoutePropertyCallback(
         PPNPADAPTER_COMPONENT_TAG componentHandle = PnpAdapterManager_GetComponentHandleFromComponentName(componentName, strlen(componentName));
         if (componentHandle != NULL)
         {
-            componentHandle->processPropertyUpdate(componentHandle, propertyName, propertyValue, version, userContextCallback);
+            componentHandle->processPropertyPatch(componentHandle, propertyName, propertyValue, version, userContextCallback);
         }
         else
         {
             LogInfo("Pnp Bridge does not have a suitable adapter to route %s's property update callback to at this time.", componentName);
+        }
+    }
+}
+
+// PnpAdapterManager_RoutePropertyPatchCallback is the callback function that the PnP helper layer invokes per property update.
+static void PnpAdapterManager_RoutePropertyCompleteCallback(
+    const unsigned char* payload,
+    size_t size)
+{
+    if ((g_PnpBridge != NULL) && (g_PnpBridge->PnpMgr != NULL))
+    {
+        LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
+
+        while (NULL != adapterListItem) {
+
+            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
+
+            LIST_ITEM_HANDLE componentHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->PnpComponentList);
+            while (NULL != componentHandleItem)
+            {
+                PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
+
+                if (componentHandle->processPropertyComplete)
+                {
+                    componentHandle->processPropertyComplete(componentHandle, payload, size, NULL);
+                }
+                componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
+            }
+            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
         }
     }
 }
