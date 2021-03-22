@@ -1,11 +1,27 @@
+# working directory changes between = /iot-plug-and-play-bridge/pnpbridge/
+#                                &  = /iot-plug-and-play-bridge/pnpbridge/cmake/pnpbridge_linux/CMakeFiles/CMakeTmp/
+# so need to detect CWD and change relative path to ETKpath.txt file appropriately (toolchain file is read multiple times)
+
+get_filename_component(CWD_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)  # strip full path from CWD, store name of dir in CWD_NAME
+
+if(${CWD_NAME} STREQUAL "pnpbridge")
+    file(STRINGS "src/adapters/src/impinj_reader_r700/support_files/ETKpath.txt" ETK_PATH) # relative path to ETKpath.txt from /iot-plug-and-play-bridge/pnpbridge/
+else()
+    file(STRINGS "../../../../src/adapters/src/impinj_reader_r700/support_files/ETKpath.txt" ETK_PATH) # relative path to ETKpath.txt from /iot-plug-and-play-bridge/pnpbridge/cmake/pnpbridge_linux/CMakeFiles/CMakeTmp/
+endif()
+
+message(STATUS "ETK Path:")
+message(STATUS ${ETK_PATH})
+
 include(CMakeForceCompiler)
 
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR armv7l)
 
-set(CMAKE_SYSROOT /home/kwenner/impinj/etk/r700/7.5.0_Octane_Embedded_Development_Tools/arm-toolchain/arm-buildroot-linux-gnueabihf/sysroot)
+# May need to update relative paths/names for different versions of Impinj ETK, as gcc/g++ binaries are updated.
+set(CMAKE_SYSROOT ${ETK_PATH}/arm-toolchain/arm-buildroot-linux-gnueabihf/sysroot)
 
-set(tools /home/kwenner/impinj/etk/r700/7.5.0_Octane_Embedded_Development_Tools/arm-toolchain)
+set(tools ${ETK_PATH}/arm-toolchain)
 set(CMAKE_C_COMPILER ${tools}/bin/arm-none-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER ${tools}/bin/arm-none-linux-gnueabihf-c++)
 
