@@ -1,1 +1,1 @@
-/home/kwenner/arm-toolchains/r700/7.3.0_Octane_Embedded_Development_Tools/arm-toolchain/bin/arm-linux-gnueabihf-gcc -g curl-test-main.c curl_wrapper.c -lcurl -o curl-test-main-r700 -lpthread
+/home/kwenner/impinj/etk/r700/7.5.0_Octane_Embedded_Development_Tools/arm-toolchain/bin/arm-none-linux-gnueabihf-gcc -g string_manipulation_test.c string_manipulation.c -o build/string_manipulation_test-r700 
