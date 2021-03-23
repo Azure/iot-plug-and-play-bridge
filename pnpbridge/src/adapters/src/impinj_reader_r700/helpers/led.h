@@ -9,8 +9,7 @@ typedef enum _LED_TARGET
     SYSTEM_RED,
     SYSTEM_GREEN,
     INVENTORY, 
-    UPGRADE,
-    UNSUPPORTED
+    UPGRADE
 } LED_TARGET;
 
 typedef struct _IMPINJ_R700_LED
