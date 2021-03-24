@@ -217,7 +217,7 @@
                   "schema": {
                     "@type": "Array",
                     "elementSchema": {
-                      "@type":"Object",
+                      "@type": "Object",
                       "fields": [
                         {
                           "name": "memoryBank",
@@ -744,7 +744,7 @@
             }
           },
           {
-            "name": "status",
+            "name": "deviceStatus",
             "displayName": {
               "en": "Status"
             },
@@ -1057,33 +1057,7 @@
             "description": {
               "en": "The QoS level of the MQTT connection. "
             },
-            "schema": {
-              "@type": "Enum",
-              "valueSchema": "integer",
-              "enumValues": [
-                {
-                  "name": "qos0",
-                  "enumValue": 0,
-                  "displayName": {
-                    "en": "QoS 0: At most once delivery"
-                  }
-                },
-                {
-                  "name": "qos1",
-                  "enumValue": 1,
-                  "displayName": {
-                    "en": "QoS 1: At least once delivery"
-                  }
-                },
-                {
-                  "name": "qos2",
-                  "enumValue": 2,
-                  "displayName": {
-                    "en": "QoS 2: Exactly once delivery"
-                  }
-                }
-              ]
-            }
+            "schema": "dtmi:impinj:Mqtt:QoS;1"
           },
           {
             "name": "eventTopic",
@@ -1153,7 +1127,7 @@
             "description": {
               "en": "The QoS to use when publishing this device's “Last Will and Testament.” See eventQualityOfService for details on how the different quality of service levels affect message transmission."
             },
-            "schema": "integer"
+            "schema": "dtmi:impinj:Mqtt:QoS;1"
           }
         ]
       }
@@ -1332,10 +1306,20 @@
       },
       "response": {
         "@type": "CommandPayload",
-        "name": "PresesIds",
+        "name": "PresetsIds",
         "schema": {
-          "@type": "Array",
-          "elementSchema": "string"
+          "@type": "Object",
+          "fields": [
+            {
+              "name": "presetIds",
+              "displayName": "Preset IDs",
+              "description": "List of Preset IDs",
+              "schema": {
+                "@type": "Array",
+                "elementSchema": "string"
+              }
+            }
+          ]
         }
       }
     },
@@ -1382,7 +1366,7 @@
         "en": "Create or replace inventory presets"
       },
       "description": {
-        "en": "Creates or replaces a user-defined inventory preset. Presets with names that begin with ‘default' or ‘impinj' may not be created or replaced."
+        "en": "Creates or replaces a user-defined inventory preset. Presets with names that begin with 'default' or 'impinj' may not be created or replaced."
       },
       "request": {
         "@type": "CommandPayload",
@@ -2355,6 +2339,34 @@
   ],
   "schemas": [
     {
+      "@id": "dtmi:impinj:Mqtt:QoS;1",
+      "@type": "Enum",
+      "valueSchema": "integer",
+      "enumValues": [
+        {
+          "name": "qos0",
+          "enumValue": 0,
+          "displayName": {
+            "en": "QoS 0: At most once delivery"
+          }
+        },
+        {
+          "name": "qos1",
+          "enumValue": 1,
+          "displayName": {
+            "en": "QoS 1: At least once delivery"
+          }
+        },
+        {
+          "name": "qos2",
+          "enumValue": 2,
+          "displayName": {
+            "en": "QoS 2: Exactly once delivery"
+          }
+        }
+      ]
+    },
+    {
       "@id": "dtmi:impinj:R700:Status;1",
       "@type": "Object",
       "fields": [
@@ -2393,7 +2405,7 @@
           }
         },
         {
-          "name": "status",
+          "name": "deviceStatus",
           "displayName": {
             "en": "Status"
           },
@@ -3385,7 +3397,7 @@
       "@type": "Object",
       "fields": [
         {
-          "name": "status",
+          "name": "upgradeStatus",
           "displayName": {
             "en": "Status"
           },

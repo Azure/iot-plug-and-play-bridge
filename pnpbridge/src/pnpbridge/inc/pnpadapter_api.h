@@ -53,11 +53,10 @@ extern "C"
         void* userContextCallback);
 
     // Process Property Update for DEVICE_TWIN_UPDATE_COMPLETE Callback
-    typedef void(*PNPBRIDGE_COMPONENT_PROPERTY_COMPLETE_CALLBACK)(
+    typedef bool(*PNPBRIDGE_COMPONENT_PROPERTY_COMPLETE_CALLBACK)(
         PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
-        const unsigned char* payload,
-        size_t size,
-        void* userContextCallback);
+        JSON_Value *payload,
+        void *userContextCallback);
 
     /*
     * @brief    Create is the adapter callback which allocates and initializes the adapter 

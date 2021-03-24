@@ -679,13 +679,14 @@ const char * BridgeState
     IoTHubMessage_Destroy(messageHandle);
 }
 
-
 void PnpAdapterManager_DeviceTwinCallback(
     DEVICE_TWIN_UPDATE_STATE updateState,
     const unsigned char* payload,
     size_t size,
     void* userContextCallback)
 {
+    bool bProcessed = false;
+
     if (g_PnpBridge->IoTClientType == PNP_BRIDGE_IOT_TYPE_RUNTIME_MODULE && g_PnpBridge->PnpMgr == NULL)
     {
         if (PnP_ProcessModuleTwinConfigProperty(updateState, payload, size, 
@@ -711,13 +712,11 @@ void PnpAdapterManager_DeviceTwinCallback(
 
         if (updateState == DEVICE_TWIN_UPDATE_COMPLETE)
         {
-            PnpAdapterManager_RoutePropertyCompleteCallback(payload, size);
+            bProcessed = PnpAdapterManager_RoutePropertyCompleteCallback(payload, size, userContextCallback);
         }
 
-        // Invoke PnP_ProcessTwinData to actualy process the data. PnP_ProcessTwinData uses a visitor pattern to parse
-        // the JSON and then visit each property, invoking PnpAdapterManager_RoutePropertyPatchCallback on each element.
-        else if (!PnP_ProcessTwinData(updateState, payload, size, (const char**) g_PnpBridge->PnpMgr->ComponentsInModel,
-                g_PnpBridge->PnpMgr->NumComponents, PnpAdapterManager_RoutePropertyPatchCallback, userContextCallback))
+        if (bProcessed == false && !PnP_ProcessTwinData(updateState, payload, size, (const char **)g_PnpBridge->PnpMgr->ComponentsInModel,
+                                                        g_PnpBridge->PnpMgr->NumComponents, PnpAdapterManager_RoutePropertyPatchCallback, userContextCallback))
         {
             // If we're unable to parse the JSON for any reason (typically because the JSON is malformed or we ran out of memory)
             // there is no action we can take beyond logging.
@@ -756,32 +755,50 @@ static void PnpAdapterManager_RoutePropertyPatchCallback(
 }
 
 // PnpAdapterManager_RoutePropertyPatchCallback is the callback function that the PnP helper layer invokes per property update.
-static void PnpAdapterManager_RoutePropertyCompleteCallback(
-    const unsigned char* payload,
-    size_t size)
+static bool PnpAdapterManager_RoutePropertyCompleteCallback(
+    const unsigned char *payload,
+    size_t size,
+    void *userContextCallback)
 {
+    bool bRet = false;
+    JSON_Value *payload_json = NULL;
+
     if ((g_PnpBridge != NULL) && (g_PnpBridge->PnpMgr != NULL))
     {
         LIST_ITEM_HANDLE adapterListItem = singlylinkedlist_get_head_item(g_PnpBridge->PnpMgr->PnpAdapterHandleList);
 
-        while (NULL != adapterListItem) {
-
-            PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
-
-            LIST_ITEM_HANDLE componentHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->PnpComponentList);
-            while (NULL != componentHandleItem)
+        if ((payload_json = json_parse_string(payload)) != NULL)
+        {
+            while (NULL != adapterListItem)
             {
-                PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
+                PPNP_ADAPTER_CONTEXT_TAG adapterHandle = (PPNP_ADAPTER_CONTEXT_TAG)singlylinkedlist_item_get_value(adapterListItem);
 
-                if (componentHandle->processPropertyComplete)
+                LIST_ITEM_HANDLE componentHandleItem = singlylinkedlist_get_head_item(adapterHandle->adapter->PnpComponentList);
+                while (NULL != componentHandleItem && bRet == false)
                 {
-                    componentHandle->processPropertyComplete(componentHandle, payload, size, NULL);
+                    PPNPADAPTER_COMPONENT_TAG componentHandle = (PPNPADAPTER_COMPONENT_TAG)singlylinkedlist_item_get_value(componentHandleItem);
+
+                    if (componentHandle->processPropertyComplete)
+                    {
+                        bRet = componentHandle->processPropertyComplete(componentHandle, payload_json, userContextCallback);
+                    }
+                    componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
                 }
-                componentHandleItem = singlylinkedlist_get_next_item(componentHandleItem);
+                adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
             }
-            adapterListItem = singlylinkedlist_get_next_item(adapterListItem);
+        }
+        else
+        {
+            LogError("Failed to parse Device Twin Payload %p", payload_json);
         }
     }
+
+    if (payload_json)
+    {
+        json_value_free(payload_json);
+    }
+
+    return bRet;
 }
 
 static void PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation(
