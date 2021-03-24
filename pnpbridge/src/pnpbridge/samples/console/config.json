@@ -5,12 +5,12 @@
       "root_interface_model_id": "dtmi:impinj:FixedReader;1",
       "auth_parameters": {
           "auth_type": "symmetric_key",
-          "symmetric_key": "g60RtAtWtGTmEihj5Id9BvWx5JuJL18xjPk+DlDs5T+i9ITPzmUcJEYlE7aVaf75n0MPFz7yXtadJLz8aXg4jQ=="
+          "symmetric_key": ""
       },
       "dps_parameters": {
           "global_prov_uri": "global.azure-devices-provisioning.net",
-          "id_scope": "0ne00235E69",
-          "device_id": "R700"
+          "id_scope": "",
+          "device_id": ""
       }
   },
     "pnp_bridge_debug_trace": false,
@@ -22,7 +22,7 @@
             "pnp_bridge_component_name": "R700",
             "pnp_bridge_adapter_id": "impinj-reader-r700",
             "pnp_bridge_adapter_config": {
-                "hostname": "192.168.120.101",
+                "hostname": "",
                 "username": "root",
                 "password": "impinj"
             }
