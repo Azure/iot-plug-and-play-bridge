@@ -290,6 +290,8 @@ int ImpinjReader_TelemetryWorker(
 {
     PNPBRIDGE_COMPONENT_HANDLE componentHandle = (PNPBRIDGE_COMPONENT_HANDLE)context;
     PIMPINJ_READER device                      = PnpComponentHandleGetContext(componentHandle);
+    int count = 0;
+    char ledVal = '0';
 
     LogInfo("R700 : %s() enter", __FUNCTION__);
 

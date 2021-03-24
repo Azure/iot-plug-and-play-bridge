@@ -5,6 +5,7 @@
 #include "helpers/pnp_property.h"
 #include "helpers/pnp_command.h"
 #include "helpers/pnp_telemetry.h"
+#include "helpers/led.h"
 
 /****************************************************************
 A callback for Property Update (DEVICE_TWIN_UPDATE_COMPLETE)
@@ -131,6 +132,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
 
+    writeLed(SYSTEM_GREEN, LED_OFF);
     curl_global_cleanup(); // cleanup cURL globally
 
     return IOTHUB_CLIENT_OK;
