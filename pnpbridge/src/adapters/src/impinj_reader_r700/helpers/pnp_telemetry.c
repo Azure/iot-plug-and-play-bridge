@@ -1,4 +1,5 @@
 #include "pnp_telemetry.h"
+#include "led.h"
 
 char* CreateTelemetryMessage(
     char* MessageData)
@@ -7,6 +8,8 @@ char* CreateTelemetryMessage(
     JSON_Object* jsonObj_Message;
     JSON_Value* jsonVal_Message_Content = NULL;
     char* messageData                   = NULL;
+    long count = 0;
+    char ledVal = '0';
 
     if ((jsonVal_Message = json_value_init_object()) == NULL)
     {
@@ -292,8 +295,18 @@ int ImpinjReader_TelemetryWorker(
 
     while (true)
     {
+        if (count % 2)
+        {
+            ledVal = LED_ON;
+        }
+        else ledVal = LED_OFF;
+
+        writeLed(SYSTEM_GREEN, ledVal);
+        count++;
+
         if (device->ShuttingDown)
         {
+            writeLed(SYSTEM_GREEN, LED_OFF);
             goto exit;
         }
         int uSecInit   = clock();
@@ -304,7 +317,8 @@ int ImpinjReader_TelemetryWorker(
         {
             if (device->ShuttingDown)
             {
-                return IOTHUB_CLIENT_OK;
+                writeLed(SYSTEM_GREEN, LED_OFF);
+                break;
             }
 
             ProcessReaderTelemetry(componentHandle);
