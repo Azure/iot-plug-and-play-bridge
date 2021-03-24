@@ -165,9 +165,10 @@ extern "C"
         void* userContextCallback);
 
     // PnpAdapterManager_RoutePropertyCompleteCallback is the callback function that the PnP helper layer routes per property update for DEVICE_TWIN_UPDATE_COMPLETE.
-    static void PnpAdapterManager_RoutePropertyCompleteCallback(
-        const unsigned char* payload,
-        size_t size);
+    static bool PnpAdapterManager_RoutePropertyCompleteCallback(
+        const unsigned char *payload,
+        size_t size,
+        void *userContextCallback);
 
     static void PnpAdapterManager_ResumePnpBridgeAdapterAndComponentCreation(
         JSON_Value* pnpBridgeConfig);
