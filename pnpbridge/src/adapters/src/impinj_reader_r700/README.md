@@ -2,9 +2,9 @@
 
 Included in this folder are the source files for an adapter extension to the Azure IoT Plug-and-Play (PnP) Bridge which allows the Impinj R700 RFID Fixed Reader to communicate with Azure IoT cloud services. 
 
-The latest compiled versions of this to use with Impinj R700 readers can be found here: ~insert link~
+The latest compiled versions of this to use with Impinj R700 readers can be found here: TBD
 
-The adapter itself communicates with the Reader Configuration REST API on the R700 and exposes the functionality of this API to the Azure cloud interfaces via an included Device Digitial Twin Model.  Information on the available functionality on the R700 as exposed by the Reader Configuration REST API can be found here: https://platform.impinj.com/site/docs/reader_api/index.gsp
+The adapter itself communicates with the Reader Configuration REST API on the R700 and exposes the functionality of this API to the Azure cloud interfaces via an included Device Digitial Twin Model.  Information on the available functionality on the R700 as exposed by the Reader Configuration REST API can be found here: [Impinj Reader Configuration REST API](https://platform.impinj.com/site/docs/reader_api/index.gsp)
 
 ---
 ## **Purpose**
@@ -16,7 +16,7 @@ These open-source files are provided so that users may modify and extend the ada
 
 ### **Setup Source Code {#setup-source}**
 
-For all build targets, first you will need to go through the setup steps outlined in the PnP Bridge general documentation to clone the PnP Bridge repository and all submodules into the proper locations.  See those instructions here: [Build](https://docs.microsoft.com/en-us/azure/iot-pnp/howto-build-deploy-extend-pnp-bridge#build-and-run-the-bridge-on-an-iot-device-or-gateway)
+For all build targets, first you will need to go through the setup steps outlined in the PnP Bridge general documentation to clone the PnP Bridge repository and all submodules into the proper locations.  See those instructions here: [Build and run the bridge on an IoT device or gateway](https://docs.microsoft.com/en-us/azure/iot-pnp/howto-build-deploy-extend-pnp-bridge#build-and-run-the-bridge-on-an-iot-device-or-gateway)
 
 ### **Build Binaries**
 
@@ -33,7 +33,7 @@ This PnP Bridge and corresponding R700 adapter can be compiled to run on the R70
 - Compile to run on R700 (ARM)
   - Build Setup 
     1. Begin as outlined in [Setup Source Code](#setup-source).
-    2. Download Impinj R700 Embedded Development Tools (Impinj R700 ETK) from: https://support.impinj.com/hc/en-us/articles/360011676720-Impinj-R700-Reader-Documents-Downloads
+    2. Download Impinj R700 Embedded Development Tools (Impinj R700 ETK) from: [Impinj R700 Reader Documents & Downloads](https://support.impinj.com/hc/en-us/articles/360011676720-Impinj-R700-Reader-Documents-Downloads)
         - Be sure to download the Embedded Development Tools version to match the R700 reader firmware version you are using.
     3. Install Impinj R700 Embedded Development Tools to build machine and note absolute path of installed files. 
        - Install means copy ETK ZIP file to destination folder on build machine, and unzip with: >`tar zxfv <filename>`
@@ -53,13 +53,13 @@ This PnP Bridge and corresponding R700 adapter can be compiled to run on the R70
 - In all cases, run the `pnpbridge_bin` build export to start the PnP Bridge console application.  This application looks for a `config.json` configuration file next to it on disk.  (See [Configuration](#configuration))
 
   - Linux/x86: run the `pnpbridge_bin` executable.  (See Build Outputs for location)
-  - R700 (ARM): (two options, not steps - do 1 or 2)
+  - R700 (ARM): (two options, not steps)
     1. copy the `pnpbridge_bin` executable and `config.json` to the reader via FTP, and then run `pnpbridge_bin`. It is recommended to copy and run under the `/cust/` folder on the reader. 
     2. install the `azure_pnpbridge_impinj_r700.upgx` CAP upgrade file to the reader.  This .upgx file includes `pnpbridge_bin` and `config.json`, and will cause the PnP Bridge application to start automatically after the reader boots.
 
 ### **Configuration {#configuration}**
 
-The PnP Bridge Application requires a config.json file to specify connection parameters to the Azure cloud and device connection/communication parameters.  More general PnP Bridge configuration information can be found here: link?
+The PnP Bridge Application requires a config.json file to specify connection parameters to the Azure cloud and device connection/communication parameters.  More general PnP Bridge configuration information can be found here: [Configure a bridge](https://docs.microsoft.com/en-us/azure/iot-pnp/howto-build-deploy-extend-pnp-bridge#configure-a-bridge)
 
 - Impinj R700 - To configure a connection between an Impinj R700 Reader and the Azure cloud services follow these steps:
     1. Configure the Impinj R700 reader to use the **Impinj IoT Device Interface**.  This is important as the Reader Configuration REST API (included in the Impinj IoT Device Interface) is used by the PnP Bridge adapter to control the reader operations.  
