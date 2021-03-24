@@ -11,6 +11,7 @@
 #include "curl_wrapper/curl_wrapper.h"
 #include <string.h>
 #include "helpers/string_manipulation.h"
+#include "helpers/led.h"
 
 /****************************************************************
 Helper function
@@ -734,6 +735,7 @@ int ImpinjReader_TelemetryWorker(
     PIMPINJ_READER device = PnpComponentHandleGetContext(componentHandle);
     int httpStatus;
     long count = 0;
+    char ledVal = '0';
 
     char *status = (char *)malloc(sizeof(char *) * 1000);
     char *statusNoTimePrev = (char *)malloc(sizeof(char *) * 1000);
@@ -742,8 +744,18 @@ int ImpinjReader_TelemetryWorker(
     // Report telemetry every 5 seconds till we are asked to stop
     while (true)
     {
+        if (count % 2)
+        {
+            ledVal = LED_ON;
+        }
+        else ledVal = LED_OFF;
+
+        writeLed(SYSTEM_GREEN, ledVal);
+        count++;
+        
         if (device->ShuttingDown)
         {
+            writeLed(SYSTEM_GREEN, LED_OFF);
             return IOTHUB_CLIENT_OK;
         }
 
@@ -2089,6 +2101,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
 
+    writeLed(SYSTEM_GREEN, LED_OFF);
     curl_global_cleanup(); // cleanup cURL globally
 
     return IOTHUB_CLIENT_OK;
