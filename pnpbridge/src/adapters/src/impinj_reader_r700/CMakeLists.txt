@@ -21,6 +21,7 @@ set(pnpbridge_adapters_c_files
     ./helpers/pnp_property.c
     ./helpers/pnp_command.c
     ./helpers/pnp_telemetry.c
+    ./helpers/led.c
 )
 
 set(pnpbridge_adapters_h_files
@@ -32,6 +33,7 @@ set(pnpbridge_adapters_h_files
     ./helpers/pnp_property.h
     ./helpers/pnp_command.h
     ./helpers/pnp_telemetry.h
+    ./helpers/led.h
 )
 
 add_definitions("-D_UNICODE") 
