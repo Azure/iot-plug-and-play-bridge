@@ -10,7 +10,7 @@ else()
     file(STRINGS "../../../../src/adapters/src/impinj_reader_r700/support_files/ETKpath.txt" ETK_PATH) # relative path to ETKpath.txt from /iot-plug-and-play-bridge/pnpbridge/cmake/pnpbridge_linux/CMakeFiles/CMakeTmp/
 endif()
 
-message(STATUS "ETK Path:")
+message(STATUS "ETK Path (if this is wrong, update \"pnpbridge/src/adapters/src/impinj_reader_r700/support_files/ETKpath.txt\" with absolute path to R700 ETK on your system):")
 message(STATUS ${ETK_PATH})
 
 include(CMakeForceCompiler)
