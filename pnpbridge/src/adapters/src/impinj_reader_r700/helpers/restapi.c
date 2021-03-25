@@ -97,11 +97,21 @@ ImpinjReader_RequestGet(
 #ifdef DEBUG_REST
     LogInfo("R700 : Curl %s >> Endpoint \"%s\"", api, endpoint);
 #endif
-    jsonResult = curlStaticGet(Device->curl_static_session, endpoint, HttpStatus);
+
+    if (R700_Request->Request == READER_STATUS_GET_POLL)
+    {
+        // use separate polling endpoint
+    }
+    else
+    {
+        jsonResult = curlStaticGet(Device->curl_static_session, endpoint, HttpStatus);
+    }
+
     // LogInfo("R700 : Curl %s << Status %d", api, *HttpStatus);
 
     switch (R700_Request->Request)
     {
+        case READER_STATUS_GET_POLL:
         case READER_STATUS_GET:
         case READER_STATUS:
             jsonVal = ImpinjReader_Convert_DeviceStatus(jsonResult);
