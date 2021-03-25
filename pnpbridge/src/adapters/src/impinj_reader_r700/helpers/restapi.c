@@ -639,7 +639,9 @@ ImpinjReader_Convert_DeviceStatus(
     JSON_Value* jsonVal_deviceStatus  = NULL;
     JSON_Object* jsonObj_deviceStatus = NULL;
 
+#ifdef DEBUG_REST
     LogJsonPrettyStr("R700 : %s enter", Json_String, __FUNCTION__);
+#endif
 
     if ((jsonVal_deviceStatus = json_parse_string(Json_String)) == NULL)
     {

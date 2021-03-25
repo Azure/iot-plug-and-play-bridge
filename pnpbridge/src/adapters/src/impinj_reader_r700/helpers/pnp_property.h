@@ -31,6 +31,14 @@ void OnPropertyPatchCallback(
     void* ClientHandle);
 
 IOTHUB_CLIENT_RESULT
+UpdateReadOnlyReportPropertyEx(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* ComponentName,
+    char* PropertyName,
+    JSON_Value* JsonVal_Property,
+    bool Verbose);
+
+IOTHUB_CLIENT_RESULT
 UpdateReadOnlyReportProperty(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char* ComponentName,

@@ -221,17 +221,21 @@ ReportedPropertyCallback(
 Processes Read Only Property Update
 ****************************************************************/
 IOTHUB_CLIENT_RESULT
-UpdateReadOnlyReportProperty(
+UpdateReadOnlyReportPropertyEx(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char* ComponentName,
     char* PropertyName,
-    JSON_Value* JsonVal_Property)
+    JSON_Value* JsonVal_Property,
+    bool Verbose)
 {
     IOTHUB_CLIENT_RESULT iothubClientResult = IOTHUB_CLIENT_OK;
     STRING_HANDLE jsonToSend                = NULL;
     char* propertyValue                     = NULL;
 
-    LogJsonPretty("R700 : %s() enter", JsonVal_Property, __FUNCTION__);
+    if (Verbose)
+    {
+        LogJsonPretty("R700 : %s() enter", JsonVal_Property, __FUNCTION__);
+    }
 
     if ((propertyValue = json_serialize_to_string(JsonVal_Property)) == NULL)
     {
@@ -273,6 +277,15 @@ UpdateReadOnlyReportProperty(
     return iothubClientResult;
 }
 
+IOTHUB_CLIENT_RESULT
+UpdateReadOnlyReportProperty(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* ComponentName,
+    char* PropertyName,
+    JSON_Value* JsonVal_Property)
+{
+    return UpdateReadOnlyReportPropertyEx(PnpComponentHandle, ComponentName, PropertyName, JsonVal_Property, true);
+}
 /****************************************************************
 Processes Writable Property
 ****************************************************************/

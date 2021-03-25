@@ -127,7 +127,7 @@ typedef struct _IMPINJ_R700_REST
 } IMPINJ_R700_REST, *PIMPINJ_R700_REST;
 
 static IMPINJ_R700_REST R700_REST_LIST[] = {
-    {READER_STATUS_GET_POLL, GET, "/status", "ReaderStatus"},
+    {READER_STATUS_GET_POLL, READONLY, GET, "/status", "ReaderStatus"},
     {READER_STATUS_GET, COMMAND, GET, "/status", "GetReaderStatus"},
     {READER_STATUS, READONLY, GET, "/status", "ReaderStatus"},
     {HTTP_STREAM, WRITABLE, PUT, "/http-stream", "StreamConfiguration"},
