@@ -706,7 +706,6 @@
         "en": "The reader's current status."
       },
       "schema": {
-        "@id": "dtmi:impinj:R700:Status;1",
         "@type": "Object",
         "fields": [
           {
@@ -2231,7 +2230,6 @@
         "en": "The application programming interface (API) that is currently being used to control the reader RFID operations."
       },
       "schema": {
-        "@id": "dtmi:impinj:R700:System:Rfid:interface:RfidInterface;1",
         "@type": "Object",
         "fields": [
           {
