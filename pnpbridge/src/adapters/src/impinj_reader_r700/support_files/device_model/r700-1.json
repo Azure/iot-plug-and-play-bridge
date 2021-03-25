@@ -894,7 +894,7 @@
       "name": "GetReaderStatus",
       "comment": "GET /status",
       "displayName": {
-        "en": "Get Reader Status"
+        "en": "Retrieve Reader Status"
       },
       "description": {
         "en": "Retrieve the reader's current status."
@@ -1259,7 +1259,7 @@
       "name": "StopPreset",
       "comment": "POST /profiles/stop",
       "displayName": {
-        "en": "Stop profile"
+        "en": "Stop Profile"
       },
       "description": {
         "en": "Stops the currently running profile preset. If no preset is currently running, this is a no-op."
@@ -1403,7 +1403,7 @@
       "name": "DeletePresetId",
       "comment": "DELETE /profiles/inventory/presets/{presetId}",
       "displayName": {
-        "en": "Delete inventory presets"
+        "en": "Delete Inventory Presets"
       },
       "description": {
         "en": "Removes a user-defined settings preset for executing inventory."
@@ -1801,7 +1801,7 @@
       "writable": false,
       "comment": "GET /system/network/interfaces",
       "displayName": {
-        "en": "IoT Device Interface /system/network/interfaces"
+        "en": "Network Interface"
       },
       "description": {
         "en": "Retrieves the available network interfaces and their current network information."
@@ -1813,7 +1813,7 @@
           "schema": "string"
         },
         "mapValue": {
-          "name": "NetworkInterface",
+          "name": "NetworkInterfaceValue",
           "schema": "dtmi:impinj:R700:System:Network:Interfaces:NetworkInterface;1"
         }
       }
@@ -1823,8 +1823,9 @@
       "@type": "Property",
       "name": "PowerConfiguration",
       "writable": false,
+      "comment": "GET /system/power",
       "displayName": {
-        "en": "IoT Device Interface /system/power"
+        "en": "Power Configuration"
       },
       "description": {
         "en": "Retrieves the current power configuration on the reader."
@@ -1861,7 +1862,7 @@
       "name": "SetPowerConfiguration",
       "comment": "PUT /system/power",
       "displayName": {
-        "en": "IoT Device Interface /system/power"
+        "en": "Set Power Configuration"
       },
       "description": {
         "en": "Retrieves the current power configuration on the reader."
@@ -2306,7 +2307,7 @@
       "@type": "Command",
       "name": "SetTimeInfo",
       "displayName": {
-        "en": "Retrieve System time and uptime"
+        "en": "Set System time and uptime"
       },
       "description": {
         "en": "Retrieves information about system time and uptime. System time is in UTC and RFC-3339 compliant format. Uptime indicates how long the system has been running in seconds."
@@ -3514,7 +3515,7 @@
               "schema": "string"
             },
             "mapValue": {
-              "name": "NetworkAddress",
+              "name": "NetworkAddressValue",
               "schema": "dtmi:impinj:R700:System:Network:Interfaces:NetworkInterface:NetworkAddress;1"
             }
           }
