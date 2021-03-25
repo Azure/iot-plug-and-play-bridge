@@ -1,4 +1,5 @@
 #include "pnp_telemetry.h"
+#include "pnp_property.h"
 #include "led.h"
 
 char* CreateTelemetryMessage(
@@ -295,6 +296,12 @@ int ImpinjReader_TelemetryWorker(
 
     LogInfo("R700 : %s() enter", __FUNCTION__);
 
+    #define STATUS_CHAR_SIZE 1000
+
+    char * status = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
+    char * statusNoTimePrev = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
+    char * statusNoTime = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
+
     while (true)
     {
         if (count % 2)
@@ -305,6 +312,26 @@ int ImpinjReader_TelemetryWorker(
 
         writeLed(SYSTEM_GREEN, ledVal);
         count++;
+
+        statusNoTimePrev = statusNoTime;
+
+        JSON_Value *jsonValueStatus = NULL;
+        int httpStatus;
+        PIMPINJ_R700_REST r700_GetStatusRequest = &R700_REST_LIST[2];
+
+        jsonValueStatus = ImpinjReader_RequestGet(device, r700_GetStatusRequest, NULL, &httpStatus);  // Get Reader Status from Reader.
+
+        status = json_serialize_to_string(jsonValueStatus); // serialize status with time, since we are removing the time field from the JSON object
+
+        JSON_Object * jsonObjectStatus = json_value_get_object(jsonValueStatus);
+        json_object_remove(jsonObjectStatus, "time");  // remove "time" field before compare (time always changes)
+
+        statusNoTime = json_serialize_to_string(jsonValueStatus);
+
+        if(strcmp(statusNoTime, statusNoTimePrev)!=0) {  // send status update only on change in status
+            LogInfo("Status Update: %s", status);
+            UpdateReadOnlyReportProperty(componentHandle, device->ComponentName, r700_GetStatusRequest->Name, json_parse_string(status));
+        }
 
         if (device->ShuttingDown)
         {
@@ -331,6 +358,9 @@ int ImpinjReader_TelemetryWorker(
 
 exit:
     LogInfo("R700 : %s() exit", __FUNCTION__);
+    free(status);
+    free(statusNoTime);
+    free(statusNoTimePrev);
     ThreadAPI_Exit(0);
     return IOTHUB_CLIENT_OK;
 }

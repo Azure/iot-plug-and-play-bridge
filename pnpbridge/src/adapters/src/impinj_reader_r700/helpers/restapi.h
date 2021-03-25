@@ -62,8 +62,9 @@ static const char g_antennaConfigFilters[]                        = "filters";
 #define R700_PRESET_ID_LENGTH 128 + 32
 
 #define R700_REST_REQUEST_VALUES              \
-    READER_STATUS_GET,                        \
+        READER_STATUS_GET,                    \
         READER_STATUS,                        \
+        READER_STATUS_POLL,                   \
         HTTP_STREAM,                          \
         MQTT,                                 \
         KAFKA,                                \
@@ -128,6 +129,7 @@ typedef struct _IMPINJ_R700_REST
 static IMPINJ_R700_REST R700_REST_LIST[] = {
     {READER_STATUS_GET, COMMAND, GET, "/status", "GetReaderStatus"},
     {READER_STATUS, READONLY, GET, "/status", "ReaderStatus"},
+    {READER_STATUS_POLL, READONLY, GET, "/status", "ReaderStatus"},
     {HTTP_STREAM, WRITABLE, PUT, "/http-stream", "StreamConfiguration"},
     {MQTT, WRITABLE, PUT, "/mqtt", "MqttConfiguration"},
     {KAFKA, WRITABLE, PUT, "/kafka", "KafkaConfiguration"},

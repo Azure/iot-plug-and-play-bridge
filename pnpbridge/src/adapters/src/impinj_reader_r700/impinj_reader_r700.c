@@ -113,6 +113,7 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpComponent(
                 {
                     curlStreamCleanup(device->curl_stream_session);
                     curlStaticCleanup(device->curl_static_session);
+                    curlStaticCleanup(device->curl_polling_session);
                     free(device->curl_static_session);
                 }
                 free(device->SensorState->customerName);
@@ -200,6 +201,7 @@ ImpinjReader_CreatePnpComponent(
     char *http_basepath = Str_Trim(build_str_url_always);
 
     /* initialize cURL sessions */
+    CURL_Static_Session_Data *curl_polling_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
     CURL_Static_Session_Data *curl_static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
     CURL_Stream_Session_Data *curl_stream_session = curlStreamInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
@@ -222,6 +224,7 @@ ImpinjReader_CreatePnpComponent(
 
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
+    device->curl_polling_session = curl_polling_session;
     device->curl_static_session = curl_static_session;
     device->curl_stream_session = curl_stream_session;
     device->ComponentName = ComponentName;

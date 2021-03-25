@@ -467,7 +467,7 @@ char* curlStaticGet(
     char* full_endpoint = NULL;
     mallocAndStrcpy_s(&full_endpoint, fullurl);
 
-    LogInfo("R700 : GET Endpoint: '%s'", full_endpoint);   //DEBUG
+    // LogInfo("R700 : GET Endpoint: '%s'", full_endpoint);   //DEBUG
 
     curl_easy_setopt(static_handle, CURLOPT_URL, full_endpoint);
     curl_easy_setopt(static_handle, CURLOPT_POST, 0L);
