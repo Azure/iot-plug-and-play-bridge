@@ -1137,7 +1137,7 @@ Modbus_CreatePnpComponent(
     }
 
     PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
-    PnpComponentHandleSetPropertyPatchCallback(BridgeComponentHandle, ModbusPnp_PropertyHandler);
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, ModbusPnp_PropertyHandler);
     PnpComponentHandleSetCommandCallback(BridgeComponentHandle, ModbusPnp_CommandHandler);
 
 exit:

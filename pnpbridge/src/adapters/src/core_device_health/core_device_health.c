@@ -578,7 +578,7 @@ CoreDevice_CreatePnpComponent(
     }
 
     PnpComponentHandleSetContext(BridgeComponentHandle, deviceContext);
-    PnpComponentHandleSetPropertyPatchCallback(BridgeComponentHandle, CoreDevice_ProcessPropertyUpdate);
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, CoreDevice_ProcessPropertyUpdate);
     PnpComponentHandleSetCommandCallback(BridgeComponentHandle, CoreDevice_ProcessCommandUpdate);
 
 exit:

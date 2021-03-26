@@ -168,7 +168,7 @@ MqttPnp_CreatePnpComponent(
     context->s_ProtocolHandler->Initialize(&context->s_ConnectionManager, adapterConfig);
 
     PnpComponentHandleSetContext(PnpComponentHandle, context);
-    PnpComponentHandleSetPropertyPatchCallback(PnpComponentHandle, MqttPnp_OnPnpPropertyCallback);
+    PnpComponentHandleSetPropertyUpdateCallback(PnpComponentHandle, MqttPnp_OnPnpPropertyCallback);
     PnpComponentHandleSetCommandCallback(PnpComponentHandle, MqttPnp_OnPnpCommandCallback);
 
     return IOTHUB_CLIENT_OK;
