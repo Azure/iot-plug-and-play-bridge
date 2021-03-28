@@ -8,8 +8,7 @@
 #define R700_RESTAPI_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include <parson.h>
@@ -32,10 +31,10 @@ extern "C"
 
 static const char impinjReader_property_system_region_selectableRegions[] = "selectableRegions";
 
-static const char g_presetSchemaFormat[] = "{\"PresetScheme\":%s}";
-static const char g_presetsFormat[] = "{\"PresetsIds\":%s}";
-static const char g_emptyCommandResponse[] = "{}";
-static const char g_successResponse[] = "Operation Success";
+static const char g_presetSchemaFormat[]         = "{\"PresetScheme\":%s}";
+static const char g_presetsFormat[]              = "{\"PresetsIds\":%s}";
+static const char g_emptyCommandResponse[]       = "{}";
+static const char g_successResponse[]            = "Operation Success";
 static const char g_errorResponseToDescription[] = "%s %s %s";
 static const char g_unsupportedApiResponse[]     = "{\"status\":\"API Not Supported\"}";
 static const char g_notImplementedApiResponse[]  = "{\"status\":\"API Not Implemented\"}";
@@ -44,11 +43,11 @@ static const char g_notImplementedApiResponse[]  = "{\"status\":\"API Not Implem
 static const char g_kafkaBootstraps[] = "bootstraps";
 
 // For Error Response
-static const char g_errorResponseMessage[] = "message";
+static const char g_errorResponseMessage[]           = "message";
 static const char g_errorResponseInvalidPropertyId[] = "invalidPropertyId";
-static const char g_errorResponseDetail[] = "detail";
-static const char g_responseFormat[] = "{\"message\":\"%s\"}";
-static const char g_NotSupportedMessage[] = "\"Not Supported\"";
+static const char g_errorResponseDetail[]            = "detail";
+static const char g_responseFormat[]                 = "{\"message\":\"%s\"}";
+static const char g_NotSupportedMessage[]            = "\"Not Supported\"";
 // For Status Response
 static const char g_statusResponseMessage[] = "message";
 
@@ -57,12 +56,12 @@ static const char g_presetId[] = "presetId";
 static const char g_presetObjectJSON[] = "presetObjectJSON";
 
 // Preset ID configuration
-static const char g_presetObject[] = "presetObject";
-static const char g_presetObjectAntennaConfigs[] = "presetObject.antennaConfigs";
+static const char g_presetObject[]                                = "presetObject";
+static const char g_presetObjectAntennaConfigs[]                  = "presetObject.antennaConfigs";
 static const char g_presetObjectAntennaConfigsTagAuthentication[] = "tagAuthentication";
-static const char g_presetObjectAntennaConfigsPowerSweeping[] = "powerSweeping";
-static const char g_antennaConfigFiltering[] = "filtering";
-static const char g_antennaConfigFilters[] = "filters";
+static const char g_presetObjectAntennaConfigsPowerSweeping[]     = "powerSweeping";
+static const char g_antennaConfigFiltering[]                      = "filtering";
+static const char g_antennaConfigFilters[]                        = "filters";
 
 #define R700_PRESET_ID_LENGTH 128 + 32
 
@@ -171,43 +170,43 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"}
 };
 
-JSON_Value *
+JSON_Value*
 ImpinjReader_RequestDelete(
     PIMPINJ_READER Device,
     PIMPINJ_R700_REST R700_Request,
-    const char *Parameter,
-    int *HttpStatus);
+    const char* Parameter,
+    int* HttpStatus);
 
-JSON_Value *
+JSON_Value*
 ImpinjReader_RequestGet(
     PIMPINJ_READER Device,
     PIMPINJ_R700_REST R700_Request,
-    const char *Parameter,
-    int *HttpStatus);
+    const char* Parameter,
+    int* HttpStatus);
 
-JSON_Value *
+JSON_Value*
 ImpinjReader_RequestPut(
     PIMPINJ_READER Device,
     PIMPINJ_R700_REST R700_Request,
-    const char *Parameter,
-    const char *Body,
-    int *HttpStatus);
+    const char* Parameter,
+    const char* Body,
+    int* HttpStatus);
 
-JSON_Value *
+JSON_Value*
 ImpinjReader_RequestPost(
     PIMPINJ_READER Device,
     PIMPINJ_R700_REST R700_Request,
-    const char *Parameter,
-    int *HttpStatus);
+    const char* Parameter,
+    int* HttpStatus);
 
-const char *
+const char*
 ImpinjReader_ProcessResponse(
-    IMPINJ_R700_REST *RestRequest,
-    JSON_Value *JsonVal_Response,
+    IMPINJ_R700_REST* RestRequest,
+    JSON_Value* JsonVal_Response,
     int HttpStatus);
 
-char *ImpinjReader_ProcessErrorResponse(
-    JSON_Value *JsonVal_ErrorResponse,
+char* ImpinjReader_ProcessErrorResponse(
+    JSON_Value* JsonVal_ErrorResponse,
     R700_DTDL_TYPE DtdlType);
 
 #ifdef __cplusplus
