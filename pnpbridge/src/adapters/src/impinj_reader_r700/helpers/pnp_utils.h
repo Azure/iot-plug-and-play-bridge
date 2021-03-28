@@ -52,6 +52,9 @@ GetObjectStringFromPayload(
     JSON_Value* Payload,
     const char* ParamName);
 
+void GetFirmwareVersion(
+    PIMPINJ_READER Reader);
+
 #ifdef __cplusplus
 }
 #endif

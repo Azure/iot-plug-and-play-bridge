@@ -35,6 +35,13 @@ ImpinjReader_RequestDelete(
 
     LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
 
+    if (Device->ApiVersion < R700_Request->ApiVersion)
+    {
+        LogError("R700 : API not supported.  Supported version %s", MU_ENUM_TO_STRING(R700_REST_VERSION, Device->ApiVersion));
+        *HttpStatus = R700_STATUS_NOT_ALLOWED;
+        return NULL;
+    }
+
     if (Parameter)
     {
         snprintf(endPointBuffer, sizeof(endPointBuffer), R700_Request->EndPoint, Parameter);
@@ -58,7 +65,6 @@ ImpinjReader_RequestDelete(
 
     return jsonVal;
 }
-
 
 JSON_Value*
 ImpinjReader_RequestGet(
@@ -84,6 +90,14 @@ ImpinjReader_RequestGet(
 #ifdef DEBUG_REST
     LogInfo("R700 : %s() enter. API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
 #endif
+
+    if (Device->ApiVersion < R700_Request->ApiVersion)
+    {
+        LogError("R700 : API not supported.  Supported version %s", MU_ENUM_TO_STRING(R700_REST_VERSION, Device->ApiVersion));
+        *HttpStatus = R700_STATUS_NOT_ALLOWED;
+        return NULL;
+    }
+
     if (Parameter)
     {
         snprintf(endPointBuffer, sizeof(endPointBuffer), R700_Request->EndPoint, Parameter);
@@ -97,7 +111,7 @@ ImpinjReader_RequestGet(
 #ifdef DEBUG_REST
     LogInfo("R700 : Curl %s >> Endpoint \"%s\"", api, endpoint);
 #endif
-    
+
     if (R700_Request->Request == READER_STATUS_POLL)
     {
         jsonResult = curlStaticGet(Device->curl_polling_session, endpoint, HttpStatus);
@@ -106,7 +120,7 @@ ImpinjReader_RequestGet(
     {
         jsonResult = curlStaticGet(Device->curl_static_session, endpoint, HttpStatus);
     }
-    
+
     // LogInfo("R700 : Curl %s << Status %d", api, *HttpStatus);
 
     switch (R700_Request->Request)
@@ -181,6 +195,13 @@ ImpinjReader_RequestPut(
     LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
 #endif
 
+    if (Device->ApiVersion < R700_Request->ApiVersion)
+    {
+        LogError("R700 : API not supported.  Supported version %s", MU_ENUM_TO_STRING(R700_REST_VERSION, Device->ApiVersion));
+        *HttpStatus = R700_STATUS_NOT_ALLOWED;
+        return NULL;
+    }
+
     if (Parameter)
     {
         snprintf(endPointBuffer, sizeof(endPointBuffer), R700_Request->EndPoint, Parameter);
@@ -243,6 +264,13 @@ ImpinjReader_RequestPost(
 #ifdef DEBUG_REST
     LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
 #endif
+
+    if (Device->ApiVersion < R700_Request->ApiVersion)
+    {
+        LogError("R700 : API not supported.  Supported version %s", MU_ENUM_TO_STRING(R700_REST_VERSION, Device->ApiVersion));
+        *HttpStatus = R700_STATUS_NOT_ALLOWED;
+        return NULL;
+    }
 
     if (R700_Request->Request == PROFILES_START)
     {
@@ -559,7 +587,7 @@ ImpinjReader_Convert_NetworkInterface(
     JSON_Object* jsonObj_NetworkInterfaces_Map;
     char buffer[32];
 
-    LogJsonPrettyStr("R700 : %s enter", Json_String, __FUNCTION__);
+    LogJsonPrettyStr("R700 : %s() enter", Json_String, __FUNCTION__);
 
     if ((jsonVal_NetworkInterfaces = json_parse_string(Json_String)) == NULL)
     {
@@ -639,9 +667,9 @@ ImpinjReader_Convert_DeviceStatus(
     JSON_Value* jsonVal_deviceStatus  = NULL;
     JSON_Object* jsonObj_deviceStatus = NULL;
 
-    #ifdef DEBUG_REST
-        LogJsonPrettyStr("R700 : %s enter", Json_String, __FUNCTION__);
-    #endif
+#ifdef DEBUG_REST
+    LogJsonPrettyStr("R700 : %s() enter", Json_String, __FUNCTION__);
+#endif
 
     if ((jsonVal_deviceStatus = json_parse_string(Json_String)) == NULL)
     {
@@ -679,7 +707,7 @@ ImpinjReader_Convert_UpgradeStatus(
     JSON_Value* jsonVal_deviceStatus  = NULL;
     JSON_Object* jsonObj_deviceStatus = NULL;
 
-    LogJsonPrettyStr("R700 : %s enter", Json_String, __FUNCTION__);
+    LogJsonPrettyStr("R700 : %s() enter", Json_String, __FUNCTION__);
 
     if ((jsonVal_deviceStatus = json_parse_string(Json_String)) == NULL)
     {
