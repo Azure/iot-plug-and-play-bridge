@@ -169,6 +169,7 @@ ImpinjReader_CreatePnpComponent(
     char *compHostname;
     char *http_user;
     char *http_pass;
+    char *http_basepath;
 
     compHostname = (char *)json_object_dotget_string(AdapterComponentConfig, "hostname");
     http_user = (char *)json_object_dotget_string(AdapterComponentConfig, "username");
@@ -198,7 +199,7 @@ ImpinjReader_CreatePnpComponent(
     strcat(build_str_url_always, compHostname);
     strcat(build_str_url_always, str_basepath);
 
-    char *http_basepath = Str_Trim(build_str_url_always);
+    mallocAndStrcpy_s(&http_basepath, build_str_url_always);
 
     /* initialize cURL sessions */
     CURL_Static_Session_Data *curl_polling_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
