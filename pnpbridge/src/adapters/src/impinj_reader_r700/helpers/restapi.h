@@ -95,6 +95,8 @@ static const char g_antennaConfigFilters[]                        = "filters";
         SYSTEM_TIME,                          \
         SYSTEM_TIME_GET,                      \
         SYSTEM_TIME_SET,                      \
+        SYSTEM_TIME_NTP,                      \
+        SYSTEM_TIME_NTP_SET,                  \
         R700_REST_MAX
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
@@ -161,6 +163,8 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_TIME, READONLY, GET, "/system/time", "TimeInfo"},
     {V1_3, SYSTEM_TIME_GET, COMMAND, GET, "/system/time", "GetTimeInfo"},
     {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"},
+    {V1_4, SYSTEM_TIME_NTP, WRITABLE, PUT, "/system/time/ntp", "Ntp"},
+    {V1_4, SYSTEM_TIME_NTP_SET, COMMAND, PUT, "/system/time/ntp", "SetNtp"},
 };
 
 JSON_Value*
