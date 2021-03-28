@@ -205,6 +205,7 @@ void OnPropertyPatchCallback(
                                    NULL,
                                    Version);
         }
+
         if (payload)
         {
             json_free_serialized_string(payload);

@@ -88,7 +88,7 @@ ImpinjReader_RequestGet(
     char api[] = "GET";
 
 #ifdef DEBUG_REST
-    LogInfo("R700 : %s() enter. API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
+    LogInfo("R700 : %s() enter. API=%s API Ver=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request), MU_ENUM_TO_STRING(R700_REST_VERSION, R700_Request->ApiVersion));
 #endif
 
     if (Device->ApiVersion < R700_Request->ApiVersion)
