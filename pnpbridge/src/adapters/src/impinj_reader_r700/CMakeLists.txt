@@ -15,7 +15,6 @@ compileAsC99()
 set(pnpbridge_adapters_c_files
     ./impinj_reader_r700.c
     ./curl_wrapper/curl_wrapper.c
-    ./helpers/string_manipulation.c
     ./helpers/pnp_utils.c
     ./helpers/restapi.c
     ./helpers/pnp_property.c
@@ -27,7 +26,6 @@ set(pnpbridge_adapters_c_files
 set(pnpbridge_adapters_h_files
     ./impinj_reader_r700.h
     ./curl_wrapper/curl_wrapper.h
-    ./helpers/string_manipulation.h
     ./helpers/pnp_utils.h
     ./helpers/restapi.h
     ./helpers/pnp_property.h
