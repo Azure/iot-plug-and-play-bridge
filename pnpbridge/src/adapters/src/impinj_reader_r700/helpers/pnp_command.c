@@ -273,9 +273,9 @@ char* PreProcessTagPresenceResponse(
     JSON_Object* jsonObj_Tag;
     size_t count;
     int i;
-        char tagQueryBuffer[1024] = {0};
-        char tagAntennaNumber[3]  = {0};
-        char* tagQueryBufferPtr   = &tagQueryBuffer[0];
+    char tagQueryBuffer[1024] = {0};
+    char tagAntennaNumber[3]  = {0};
+    char* tagQueryBufferPtr   = &tagQueryBuffer[0];
     char* returnBuffer = NULL;
 
     if ((jsonObj_Tag = json_value_get_object(Payload)) == NULL)

@@ -120,7 +120,7 @@ void LogJsonPrettyStr(
     char* bufferJson         = NULL;
     char* bufferPtr;
     size_t json_Size = 0;
-    JSON_Value *jsonValue;
+    JSON_Value* jsonValue;
 
     va_list argList;
     int len;
@@ -556,13 +556,13 @@ void GetFirmwareVersion(
 {
     // get firmware version
     PIMPINJ_R700_REST r700_GetStatusRequest = &R700_REST_LIST[SYSTEM_IMAGE];
-    JSON_Value *jsonVal_Image = NULL;
-    JSON_Value *jsonVal_Firmware = NULL;
-    JSON_Object *jsonObj_Image;
+    JSON_Value* jsonVal_Image               = NULL;
+    JSON_Value* jsonVal_Firmware            = NULL;
+    JSON_Object* jsonObj_Image;
     int httpStatus;
-    const char *firmware = NULL;
+    const char* firmware = NULL;
     int i;
-    char *jsonResult;
+    char* jsonResult;
 
     Reader->ApiVersion = V_Unknown;
 
@@ -582,14 +582,14 @@ void GetFirmwareVersion(
     }
     else
     {
-        long major[4] = {0, 0, 0, 0};
-        char *next = (char *)firmware;
+        long major[4]                = {0, 0, 0, 0};
+        char* next                   = (char*)firmware;
         R700_REST_VERSION apiVersion = V1_0;
 
         for (i = 0; i < 4 && *next != '\0'; i++)
         {
             major[i] = strtol(next, &next, 10);
-            next = next + 1;
+            next     = next + 1;
         }
 
         for (i = 0; i < sizeof(IMPINJ_R700_API_MAPPING) / sizeof(IMPINJ_R700_API_VERSION); i++)

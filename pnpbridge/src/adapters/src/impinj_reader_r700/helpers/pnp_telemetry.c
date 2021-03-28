@@ -9,8 +9,8 @@ char* CreateTelemetryMessage(
     JSON_Object* jsonObj_Message;
     JSON_Value* jsonVal_Message_Content = NULL;
     char* messageData                   = NULL;
-    long count = 0;
-    char ledVal = '0';
+    long count                          = 0;
+    char ledVal                         = '0';
 
     if ((jsonVal_Message = json_value_init_object()) == NULL)
     {
@@ -291,16 +291,16 @@ int ImpinjReader_TelemetryWorker(
 {
     PNPBRIDGE_COMPONENT_HANDLE componentHandle = (PNPBRIDGE_COMPONENT_HANDLE)context;
     PIMPINJ_READER device                      = PnpComponentHandleGetContext(componentHandle);
-    int count = 0;
-    char ledVal = '0';
+    int count                                  = 0;
+    char ledVal                                = '0';
 
     LogInfo("R700 : %s() enter", __FUNCTION__);
 
-    #define STATUS_CHAR_SIZE 1000
+#define STATUS_CHAR_SIZE 1000
 
-    char * status = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
-    char * statusNoTimePrev = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
-    char * statusNoTime = (char *)malloc(sizeof(char)*STATUS_CHAR_SIZE);
+    char* status           = (char*)malloc(sizeof(char) * STATUS_CHAR_SIZE);
+    char* statusNoTimePrev = (char*)malloc(sizeof(char) * STATUS_CHAR_SIZE);
+    char* statusNoTime     = (char*)malloc(sizeof(char) * STATUS_CHAR_SIZE);
 
     while (true)
     {
@@ -308,27 +308,29 @@ int ImpinjReader_TelemetryWorker(
         {
             ledVal = LED_ON;
         }
-        else ledVal = LED_OFF;
+        else
+            ledVal = LED_OFF;
 
         writeLed(SYSTEM_GREEN, ledVal);
         count++;
 
         statusNoTimePrev = statusNoTime;
 
-        JSON_Value *jsonValueStatus = NULL;
+        JSON_Value* jsonValueStatus = NULL;
         int httpStatus;
         PIMPINJ_R700_REST r700_GetStatusRequest = &R700_REST_LIST[2];
 
-        jsonValueStatus = ImpinjReader_RequestGet(device, r700_GetStatusRequest, NULL, &httpStatus);  // Get Reader Status from Reader.
+        jsonValueStatus = ImpinjReader_RequestGet(device, r700_GetStatusRequest, NULL, &httpStatus);   // Get Reader Status from Reader.
 
-        status = json_serialize_to_string(jsonValueStatus); // serialize status with time, since we are removing the time field from the JSON object
+        status = json_serialize_to_string(jsonValueStatus);   // serialize status with time, since we are removing the time field from the JSON object
 
-        JSON_Object * jsonObjectStatus = json_value_get_object(jsonValueStatus);
-        json_object_remove(jsonObjectStatus, "time");  // remove "time" field before compare (time always changes)
+        JSON_Object* jsonObjectStatus = json_value_get_object(jsonValueStatus);
+        json_object_remove(jsonObjectStatus, "time");   // remove "time" field before compare (time always changes)
 
         statusNoTime = json_serialize_to_string(jsonValueStatus);
 
-        if(strcmp(statusNoTime, statusNoTimePrev)!=0) {  // send status update only on change in status
+        if (strcmp(statusNoTime, statusNoTimePrev) != 0)
+        {   // send status update only on change in status
             LogInfo("Status Update: %s", status);
             UpdateReadOnlyReportProperty(componentHandle, device->ComponentName, r700_GetStatusRequest->Name, json_parse_string(status));
         }
