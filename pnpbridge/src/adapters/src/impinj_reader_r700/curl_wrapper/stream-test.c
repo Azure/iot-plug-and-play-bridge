@@ -38,7 +38,6 @@
 // #include <curl/curl.h>
 
 /* helpers */
-#include "../helpers/string_manipulation.h"
 
 int main(void)
 {
