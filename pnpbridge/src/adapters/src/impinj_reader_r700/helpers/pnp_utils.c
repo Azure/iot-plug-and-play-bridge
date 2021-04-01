@@ -1,4 +1,5 @@
 #include "pnp_utils.h"
+#include "restapi.h"
 
 /****************************************************************
 Helper function
@@ -113,27 +114,113 @@ void LogJsonPrettyStr(
     const char* MsgFormat,
     char* JsonString, ...)
 {
-    JSON_Value* jsonVal_Payload;
+    JSON_Value_Type jsonType = JSONError;
+    char local_Buffer[128]   = {0};
+    char* bufferFormat       = NULL;
+    char* bufferJson         = NULL;
+    char* bufferPtr;
+    size_t json_Size = 0;
+    JSON_Value* jsonValue;
+
     va_list argList;
+    int len;
+    int written;
+    JSON_Object* jsonObj  = NULL;
+    JSON_Array* jsonArray = NULL;
 
     if (JsonString == NULL)
     {
-        jsonVal_Payload = NULL;
+        jsonValue = NULL;
     }
-    else if ((jsonVal_Payload = json_parse_string(JsonString)) == NULL)
+    else if ((jsonValue = json_parse_string(JsonString)) == NULL)
     {
         LogError("R700 : Failed to allocation JSON Value for log. %s", JsonString);
     }
+    else if ((jsonType = json_value_get_type(jsonValue)) == JSONError)
+    {
+        LogInfo("R700 : Unable to retrieve JSON type");
+    }
+    else if (jsonType == JSONNull)
+    {
+        LogInfo("R700 : JSON is Null type");
+    }
+    else if ((jsonType == JSONObject) && (jsonObj = json_value_get_object(jsonValue)) == NULL)
+    {
+        // Only supports JSONObject
+        LogInfo("R700 : Unable to retrieve JSON object");
+    }
+    else if ((jsonType == JSONArray) && (jsonArray = json_value_get_array(jsonValue)) == NULL)
+    {
+        // Only supports JSONObject
+        LogInfo("R700 : Unable to retrieve JSON array");
+    }
+    else if ((json_Size = json_serialization_size_pretty(jsonValue)) == 0)
+    {
+        LogError("R700 : Unable to retrieve buffer size of serialization");
+    }
+    else if ((bufferJson = json_serialize_to_string_pretty(jsonValue)) == NULL)
+    {
+        LogError("R700 : Unabled to serialize JSON payload");
+    }
 
     va_start(argList, JsonString);
-    LogJsonPretty(MsgFormat, jsonVal_Payload, argList);
+    len = vsnprintf(NULL, 0, MsgFormat, argList);
     va_end(argList);
 
-    if (jsonVal_Payload)
+    if (len < 0)
     {
-        json_value_free(jsonVal_Payload);
+        LogError("R700 : Unnable to determine buffer size");
+    }
+    else
+    {
+        len = len + 1 + json_Size + 1;   // for null and CR
+
+        if (len > sizeof(local_Buffer))
+        {
+            bufferFormat = malloc(len);
+        }
+        else
+        {
+            bufferFormat = &local_Buffer[0];
+        }
+    }
+
+    va_start(argList, JsonString);
+    written = vsnprintf(bufferFormat, len, MsgFormat, argList);
+    va_end(argList);
+
+    if (written < 0)
+    {
+        LogError("R700 : Unnable to format with JSON");
+        goto exit;
+    }
+
+    if (bufferJson != NULL)
+    {
+        bufferPtr = bufferFormat + written;
+        written   = snprintf(bufferPtr, len - written, "\r\n%s", bufferJson);
+    }
+
+    LogInfo("%s", bufferFormat);
+
+exit:
+
+    if (bufferFormat != &local_Buffer[0])
+    {
+        free(bufferFormat);
+    }
+
+    if (bufferJson != NULL)
+    {
+        json_free_serialized_string(bufferJson);
+    }
+
+    if (jsonValue)
+    {
+        json_value_free(jsonValue);
     }
 }
+
 
 /****************************************************************
 Removes specified JSON Array from JSON string
@@ -461,3 +548,67 @@ GetObjectStringFromPayload(
     return stringValue;
 }
 
+/****************************************************************
+Get Firmware Version from reader
+****************************************************************/
+void GetFirmwareVersion(
+    PIMPINJ_READER Reader)
+{
+    // get firmware version
+    PIMPINJ_R700_REST r700_GetStatusRequest = &R700_REST_LIST[SYSTEM_IMAGE];
+    JSON_Value* jsonVal_Image               = NULL;
+    JSON_Value* jsonVal_Firmware            = NULL;
+    JSON_Object* jsonObj_Image;
+    int httpStatus;
+    const char* firmware = NULL;
+    int i;
+    char* jsonResult;
+
+    Reader->ApiVersion = V_Unknown;
+
+    jsonResult = curlStaticGet(Reader->curl_static_session, r700_GetStatusRequest->EndPoint, &httpStatus);
+
+    if ((jsonVal_Image = json_parse_string(jsonResult)) == NULL)
+    {
+        LogInfo("R700 :  Unable to retrieve JSON Value for Image information from reader");
+    }
+    else if ((jsonObj_Image = json_value_get_object(jsonVal_Image)) == NULL)
+    {
+        LogInfo("R700 :  Unable to retrieve JSON Object for Image information");
+    }
+    else if ((firmware = json_object_get_string(jsonObj_Image, "primaryFirmware")) == NULL)
+    {
+        LogInfo("R700 :  Unable to retrieve primaryFirmware");
+    }
+    else
+    {
+        long major[4]                = {0, 0, 0, 0};
+        char* next                   = (char*)firmware;
+        R700_REST_VERSION apiVersion = V1_0;
+
+        for (i = 0; i < 4 && *next != '\0'; i++)
+        {
+            major[i] = strtol(next, &next, 10);
+            next     = next + 1;
+        }
+
+        for (i = 0; i < sizeof(IMPINJ_R700_API_MAPPING) / sizeof(IMPINJ_R700_API_VERSION); i++)
+        {
+            if (major[0] < IMPINJ_R700_API_MAPPING[i].Firmware.major)
+            {
+                continue;
+            }
+            else if (major[1] < IMPINJ_R700_API_MAPPING[i].Firmware.minor)
+            {
+                continue;
+            }
+            else
+            {
+                apiVersion = IMPINJ_R700_API_MAPPING[i].RestVersion;
+            }
+        }
+
+        LogInfo("R700 : REST API Version %s\r\n", MU_ENUM_TO_STRING(R700_REST_VERSION, apiVersion));
+        Reader->ApiVersion = apiVersion;
+    }
+}

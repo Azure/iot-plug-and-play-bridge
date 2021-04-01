@@ -6,7 +6,7 @@
     {
       "@type": "Component",
       "name": "R700",
-      "schema": "dtmi:impinj:R700;1"
+      "schema": "dtmi:impinj:R700;13"
     }
   ],
   "@context": "dtmi:dtdl:context;2"

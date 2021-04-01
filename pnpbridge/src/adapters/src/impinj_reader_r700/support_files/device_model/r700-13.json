@@ -1,5 +1,5 @@
 {
-  "@id": "dtmi:impinj:R700;1",
+  "@id": "dtmi:impinj:R700;13",
   "displayName": {
     "en": "Impinj R700"
   },
@@ -1353,7 +1353,7 @@
         "description": {
           "en": "The detailed configuration of the specified preset."
         },
-        "schema": "dtmi:Impinj:profiles:inventory:presetData;1"
+        "schema": "dtmi:Impinj:Profiles:Inventory:Presets:InventoryRequest;1"
       }
     },
     {
@@ -1391,7 +1391,7 @@
               "description": {
                 "en": "The value of the preset you wish to create or replace."
               },
-              "schema": "dtmi:Impinj:R700:profiles:inventory:Presets:InventoryRequest;1"
+              "schema": "dtmi:Impinj:Profiles:Inventory:Presets:InventoryRequest;1"
             }
           ]
         }
@@ -2627,7 +2627,7 @@
       ]
     },
     {
-      "@id": "dtmi:Impinj:R700:profiles:inventory:Presets:InventoryRequest;1",
+      "@id": "dtmi:Impinj:Profiles:Inventory:Presets:InventoryRequest;1",
       "@type": "Object",
       "fields": [
         {
@@ -2994,15 +2994,12 @@
         },
         {
           "name": "antennaConfigs",
+          "comment": "Keep this with minimum required field",
           "schema": {
             "@type": "Array",
             "elementSchema": {
               "@type": "Object",
               "fields": [
-                {
-                  "name": "antennaName",
-                  "schema": "string"
-                },
                 {
                   "name": "antennaPort",
                   "schema": "integer"
@@ -3066,228 +3063,6 @@
                 {
                   "name": "estimatedTagPopulation",
                   "schema": "integer"
-                },
-                {
-                  "name": "filtering",
-                  "schema": {
-                    "@type": "Object",
-                    "fields": [
-                      {
-                        "name": "filters",
-                        "schema": {
-                          "@type": "Array",
-                          "elementSchema": {
-                            "@type": "Object",
-                            "fields": [
-                              {
-                                "name": "action",
-                                "schema": {
-                                  "@type": "Enum",
-                                  "valueSchema": "string",
-                                  "enumValues": [
-                                    {
-                                      "name": "include",
-                                      "enumValue": "include",
-                                      "displayName": {
-                                        "en": "include"
-                                      }
-                                    },
-                                    {
-                                      "name": "exclude",
-                                      "enumValue": "exclude",
-                                      "displayName": {
-                                        "en": "exclude"
-                                      }
-                                    }
-                                  ]
-                                }
-                              },
-                              {
-                                "name": "tagMemoryBank",
-                                "schema": {
-                                  "@type": "Enum",
-                                  "valueSchema": "string",
-                                  "enumValues": [
-                                    {
-                                      "name": "epc",
-                                      "enumValue": "epc",
-                                      "displayName": {
-                                        "en": "epc"
-                                      }
-                                    },
-                                    {
-                                      "name": "tid",
-                                      "enumValue": "tid",
-                                      "displayName": {
-                                        "en": "tid"
-                                      }
-                                    },
-                                    {
-                                      "name": "user",
-                                      "enumValue": "user",
-                                      "displayName": {
-                                        "en": "user"
-                                      }
-                                    }
-                                  ]
-                                }
-                              },
-                              {
-                                "name": "bitOffset",
-                                "schema": "integer"
-                              },
-                              {
-                                "name": "mask",
-                                "schema": "string"
-                              },
-                              {
-                                "name": "maskLength",
-                                "schema": "integer"
-                              }
-                            ]
-                          }
-                        }
-                      },
-                      {
-                        "name": "filterLink",
-                        "schema": {
-                          "@type": "Enum",
-                          "valueSchema": "string",
-                          "enumValues": [
-                            {
-                              "name": "union",
-                              "enumValue": "union",
-                              "displayName": {
-                                "en": "union"
-                              }
-                            },
-                            {
-                              "name": "intersection",
-                              "enumValue": "intersection",
-                              "displayName": {
-                                "en": "intersection"
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                {
-                  "name": "powerSweeping",
-                  "schema": {
-                    "@type": "Object",
-                    "fields": [
-                      {
-                        "name": "minimumPowerCdbm",
-                        "schema": "integer"
-                      },
-                      {
-                        "name": "stepSizeCdb",
-                        "schema": "integer"
-                      }
-                    ]
-                  }
-                },
-                {
-                  "name": "fastId",
-                  "schema": {
-                    "@type": "Enum",
-                    "valueSchema": "string",
-                    "enumValues": [
-                      {
-                        "name": "disabled",
-                        "enumValue": "disabled",
-                        "displayName": {
-                          "en": "Disabled"
-                        }
-                      },
-                      {
-                        "name": "enabled",
-                        "enumValue": "enabled",
-                        "displayName": {
-                          "en": "Enabled"
-                        }
-                      }
-                    ]
-                  }
-                },
-                {
-                  "name": "receiveSensitivityDbm",
-                  "schema": "integer"
-                },
-                {
-                  "name": "tagAuthentication",
-                  "schema": {
-                    "@type": "Object",
-                    "fields": [
-                      {
-                        "name": "messageHex",
-                        "schema": "string"
-                      }
-                    ]
-                  }
-                },
-                {
-                  "name": "tagMemoryReads",
-                  "schema": {
-                    "@type": "Array",
-                    "elementSchema": {
-                      "@type": "Object",
-                      "fields": [
-                        {
-                          "name": "memoryBank",
-                          "schema": {
-                            "@type": "Enum",
-                            "valueSchema": "string",
-                            "enumValues": [
-                              {
-                                "name": "epc",
-                                "enumValue": "epc",
-                                "displayName": {
-                                  "en": "epc"
-                                }
-                              },
-                              {
-                                "name": "tid",
-                                "enumValue": "tid",
-                                "displayName": {
-                                  "en": "tid"
-                                }
-                              },
-                              {
-                                "name": "user",
-                                "enumValue": "user",
-                                "displayName": {
-                                  "en": "user"
-                                }
-                              },
-                              {
-                                "name": "reserved",
-                                "enumValue": "reserved",
-                                "displayName": {
-                                  "en": "reserved"
-                                }
-                              }
-                            ]
-                          }
-                        },
-                        {
-                          "name": "wordOffset",
-                          "schema": "integer"
-                        },
-                        {
-                          "name": "wordCount",
-                          "schema": "integer"
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "name": "tagAccessPasswordHex",
-                  "schema": "string"
                 }
               ]
             }

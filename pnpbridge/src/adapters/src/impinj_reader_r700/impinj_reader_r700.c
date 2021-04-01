@@ -1,11 +1,12 @@
 #include "impinj_reader_r700.h"
-#include "helpers/string_manipulation.h"
 #include "helpers/restapi.h"
 #include "helpers/pnp_utils.h"
 #include "helpers/pnp_property.h"
 #include "helpers/pnp_command.h"
 #include "helpers/pnp_telemetry.h"
 #include "helpers/led.h"
+
+MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(R700_REST_VERSION, R700_REST_VERSION_VALUES);
 
 /****************************************************************
 A callback for Property Update (DEVICE_TWIN_UPDATE_COMPLETE)
@@ -22,8 +23,7 @@ bool ImpinjReader_OnPropertyCompleteCallback(
 /****************************************************************
 A callback for Property Update (DEVICE_TWIN_UPDATE_PARTIAL)
 ****************************************************************/
-void
-ImpinjReader_OnPropertyPatchCallback(
+void ImpinjReader_OnPropertyPatchCallback(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
     const char* PropertyName,
     JSON_Value* PropertyValue,
@@ -134,19 +134,19 @@ IOTHUB_CLIENT_RESULT ImpinjReader_DestroyPnpAdapter(
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
 
     writeLed(SYSTEM_GREEN, LED_OFF);
-    curl_global_cleanup(); // cleanup cURL globally
+    curl_global_cleanup();   // cleanup cURL globally
 
     return IOTHUB_CLIENT_OK;
 }
 
 IOTHUB_CLIENT_RESULT ImpinjReader_CreatePnpAdapter(
-    const JSON_Object *AdapterGlobalConfig,
+    const JSON_Object* AdapterGlobalConfig,
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterGlobalConfig);
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
 
-    curl_global_init(CURL_GLOBAL_DEFAULT); // initialize cURL globally
+    curl_global_init(CURL_GLOBAL_DEFAULT);   // initialize cURL globally
 
     return IOTHUB_CLIENT_OK;
 }
@@ -154,25 +154,26 @@ IOTHUB_CLIENT_RESULT ImpinjReader_CreatePnpAdapter(
 IOTHUB_CLIENT_RESULT
 ImpinjReader_CreatePnpComponent(
     PNPBRIDGE_ADAPTER_HANDLE AdapterHandle,
-    const char *ComponentName,
-    const JSON_Object *AdapterComponentConfig,
+    const char* ComponentName,
+    const JSON_Object* AdapterComponentConfig,
     PNPBRIDGE_COMPONENT_HANDLE BridgeComponentHandle)
 {
     AZURE_UNREFERENCED_PARAMETER(AdapterComponentConfig);
     AZURE_UNREFERENCED_PARAMETER(AdapterHandle);
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
-    PIMPINJ_READER device = NULL;
+    PIMPINJ_READER device       = NULL;
 
     /* print component creation message */
     char compCreateStr[] = "Creating Impinj Reader component: ";
 
-    char *compHostname;
-    char *http_user;
-    char *http_pass;
+    char* compHostname;
+    char* http_user;
+    char* http_pass;
+    char* http_basepath;
 
-    compHostname = (char *)json_object_dotget_string(AdapterComponentConfig, "hostname");
-    http_user = (char *)json_object_dotget_string(AdapterComponentConfig, "username");
-    http_pass = (char *)json_object_dotget_string(AdapterComponentConfig, "password");
+    compHostname = (char*)json_object_dotget_string(AdapterComponentConfig, "hostname");
+    http_user    = (char*)json_object_dotget_string(AdapterComponentConfig, "username");
+    http_pass    = (char*)json_object_dotget_string(AdapterComponentConfig, "password");
 
     strcat(compCreateStr, ComponentName);
     strcat(compCreateStr, "\n       Hostname: ");
@@ -184,13 +185,13 @@ ImpinjReader_CreatePnpComponent(
     {
         LogError("ComponentName=%s is too long.  Maximum length is=%d", ComponentName, PNP_MAXIMUM_COMPONENT_LENGTH);
         BridgeComponentHandle = NULL;
-        result = IOTHUB_CLIENT_ERROR;
+        result                = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
 
     /* initialize base HTTP strings */
 
-    char str_http[] = "https://";
+    char str_http[]     = "https://";
     char str_basepath[] = "/api/v1";
 
     char build_str_url_always[100] = "";
@@ -198,12 +199,12 @@ ImpinjReader_CreatePnpComponent(
     strcat(build_str_url_always, compHostname);
     strcat(build_str_url_always, str_basepath);
 
-    char *http_basepath = Str_Trim(build_str_url_always);
+    mallocAndStrcpy_s(&http_basepath, build_str_url_always);
 
     /* initialize cURL sessions */
-    CURL_Static_Session_Data *curl_polling_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
-    CURL_Static_Session_Data *curl_static_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
-    CURL_Stream_Session_Data *curl_stream_session = curlStreamInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+    CURL_Static_Session_Data* curl_polling_session = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+    CURL_Static_Session_Data* curl_static_session  = curlStaticInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+    CURL_Stream_Session_Data* curl_stream_session  = curlStreamInit(http_user, http_pass, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
     device = calloc(1, sizeof(IMPINJ_READER));
     if (NULL == device)
@@ -225,9 +226,11 @@ ImpinjReader_CreatePnpComponent(
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
     device->curl_polling_session = curl_polling_session;
-    device->curl_static_session = curl_static_session;
-    device->curl_stream_session = curl_stream_session;
-    device->ComponentName = ComponentName;
+    device->curl_static_session  = curl_static_session;
+    device->curl_stream_session  = curl_stream_session;
+    device->ComponentName        = ComponentName;
+
+    GetFirmwareVersion(device);
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
     PnpComponentHandleSetPropertyPatchCallback(BridgeComponentHandle, ImpinjReader_OnPropertyPatchCallback);
@@ -239,10 +242,10 @@ exit:
 }
 
 PNP_ADAPTER ImpinjReaderR700 = {
-    .identity = "impinj-reader-r700",
-    .createAdapter = ImpinjReader_CreatePnpAdapter,
-    .createPnpComponent = ImpinjReader_CreatePnpComponent,
-    .startPnpComponent = ImpinjReader_StartPnpComponent,
-    .stopPnpComponent = ImpinjReader_StopPnpComponent,
+    .identity            = "impinj-reader-r700",
+    .createAdapter       = ImpinjReader_CreatePnpAdapter,
+    .createPnpComponent  = ImpinjReader_CreatePnpComponent,
+    .startPnpComponent   = ImpinjReader_StartPnpComponent,
+    .stopPnpComponent    = ImpinjReader_StopPnpComponent,
     .destroyPnpComponent = ImpinjReader_DestroyPnpComponent,
-    .destroyAdapter = ImpinjReader_DestroyPnpAdapter};
+    .destroyAdapter      = ImpinjReader_DestroyPnpAdapter};

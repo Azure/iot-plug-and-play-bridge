@@ -164,7 +164,7 @@ EnvironmentSensor_CreatePnpComponent(
     mallocAndStrcpy_s(&device->SensorState->componentName, ComponentName);
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
-    PnpComponentHandleSetPropertyPatchCallback(BridgeComponentHandle, EnvironmentSensor_ProcessPropertyUpdate);
+    PnpComponentHandleSetPropertyUpdateCallback(BridgeComponentHandle, EnvironmentSensor_ProcessPropertyUpdate);
     PnpComponentHandleSetCommandCallback(BridgeComponentHandle, EnvironmentalSensor_ProcessCommand);
 
 exit:

@@ -65,6 +65,13 @@ int OnCommandCallback(
 
             LogInfo("R700 : Found Command %s : Property %s", CommandName, r700_Request->Name);
 
+            if (device->ApiVersion < r700_Request->ApiVersion)
+            {
+                LogError("R700 : Unsupported API. Please upgrade firmware");
+                httpStatus = R700_STATUS_NOT_ALLOWED;
+                break;
+            }
+
             switch (r700_Request->Request)
             {
                 case PROFILES_INVENTORY_PRESETS_ID_SET:
@@ -134,6 +141,9 @@ int OnCommandCallback(
             case R700_STATUS_NOT_CONFLICT:
             case R700_STATUS_INTERNAL_ERROR:
                 restResponse = ImpinjReader_ProcessErrorResponse(jsonVal_RestResponse, r700_Request->DtdlType);
+                break;
+            case R700_STATUS_NOT_ALLOWED:
+                mallocAndStrcpy_s(&restResponse, g_unsupportedApiResponse);
                 break;
         }
     }
@@ -263,10 +273,10 @@ char* PreProcessTagPresenceResponse(
     JSON_Object* jsonObj_Tag;
     size_t count;
     int i;
-        char tagQueryBuffer[1024] = {0};
-        char tagAntennaNumber[3]  = {0};
-        char* tagQueryBufferPtr   = &tagQueryBuffer[0];
-    char* returnBuffer = NULL;
+    char tagQueryBuffer[1024] = {0};
+    char tagAntennaNumber[3]  = {0};
+    char* tagQueryBufferPtr   = &tagQueryBuffer[0];
+    char* returnBuffer        = NULL;
 
     if ((jsonObj_Tag = json_value_get_object(Payload)) == NULL)
     {

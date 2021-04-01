@@ -250,6 +250,8 @@ extern "C"
         PNPBRIDGE_COMPONENT_PROPERTY_PATCH_CALLBACK, PropertyUpdateCallback
     );
 
+    #define PnpComponentHandleSetPropertyUpdateCallback PnpComponentHandleSetPropertyPatchCallback
+
     /**
     * @brief    PnpComponentHandleSetPropertyCompleteCallback sets property update callback on the
     *           component handle to manage cloud to device property updates per component for DEVICE_TWIN_UPDATE_COMPLETE.

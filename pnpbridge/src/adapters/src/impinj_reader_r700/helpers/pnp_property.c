@@ -82,7 +82,7 @@ bool OnPropertyCompleteCallback(
         int status                          = PNP_STATUS_SUCCESS;
 
         // Device Twin may not have properties for this component right after provisioning
-        if ((jsonObj_Desired_Component = json_object_get_object(jsonObj_Desired, device->ComponentName)) == NULL)
+        if (device->ComponentName != NULL && (jsonObj_Desired_Component = json_object_get_object(jsonObj_Desired, device->ComponentName)) == NULL)
         {
             LogInfo("R700 : Unable to retrieve desired JSON Object for Component %s", device->ComponentName);
         }
@@ -92,6 +92,13 @@ bool OnPropertyCompleteCallback(
             PIMPINJ_R700_REST r700_Request = &R700_REST_LIST[i];
             jsonVal_Rest                   = NULL;
             jsonValue_Desired_Value        = NULL;
+
+            if (device->ApiVersion < r700_Request->ApiVersion)
+            {
+                LogError("R700 : Unsupported API. Please upgrade firmware");
+                status = R700_STATUS_NOT_ALLOWED;
+                break;
+            }
 
             switch (r700_Request->DtdlType)
             {
@@ -163,32 +170,41 @@ void OnPropertyPatchCallback(
 
     if (r700_Request != NULL)
     {
-        payload = json_serialize_to_string(JsonVal_Property);
-
-        if (r700_Request->RestType == PUT)
+        if (device->ApiVersion < r700_Request->ApiVersion)
         {
-            jsonVal_Rest = ImpinjReader_RequestPut(device, r700_Request, NULL, payload, &httpStatus);
+            LogError("R700 : Unsupported API. Please upgrade firmware");
         }
-        else if (r700_Request->RestType == POST)
+        else if ((payload = json_serialize_to_string(JsonVal_Property)) == NULL)
         {
-            jsonVal_Rest = ImpinjReader_RequestPost(device, r700_Request, payload, &httpStatus);
-        }
-        else if (r700_Request->RestType == DELETE)
-        {
-            jsonVal_Rest = ImpinjReader_RequestDelete(device, r700_Request, payload, &httpStatus);
+            LogError("R700 : Unabled to serialize JSON for Property");
         }
         else
         {
-            LogError("R700 : Unknown Request %d", r700_Request->Request);
-            assert(false);
-        }
+            if (r700_Request->RestType == PUT)
+            {
+                jsonVal_Rest = ImpinjReader_RequestPut(device, r700_Request, NULL, payload, &httpStatus);
+            }
+            else if (r700_Request->RestType == POST)
+            {
+                jsonVal_Rest = ImpinjReader_RequestPost(device, r700_Request, payload, &httpStatus);
+            }
+            else if (r700_Request->RestType == DELETE)
+            {
+                jsonVal_Rest = ImpinjReader_RequestDelete(device, r700_Request, payload, &httpStatus);
+            }
+            else
+            {
+                LogError("R700 : Unknown Request %d", r700_Request->Request);
+                assert(false);
+            }
 
-        UpdateWritableProperty(PnpComponentHandle,
-                               r700_Request,
-                               jsonVal_Rest,
-                               httpStatus,
-                               NULL,
-                               Version);
+            UpdateWritableProperty(PnpComponentHandle,
+                                   r700_Request,
+                                   jsonVal_Rest,
+                                   httpStatus,
+                                   NULL,
+                                   Version);
+        }
 
         if (payload)
         {
@@ -286,7 +302,6 @@ UpdateReadOnlyReportProperty(
 {
     return UpdateReadOnlyReportPropertyEx(PnpComponentHandle, ComponentName, PropertyName, JsonVal_Property, true);
 }
-
 /****************************************************************
 Processes Writable Property
 ****************************************************************/

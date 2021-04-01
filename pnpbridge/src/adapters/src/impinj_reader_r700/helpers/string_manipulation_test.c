@@ -13,7 +13,9 @@ void main() {
     strcat(build_str_url_always, "compHostname");
     strcat(build_str_url_always, str_basepath);  
 
-    char * testOutput = Str_Trim(build_str_url_always);
+    char * testOutput;
+
+    mallocAndStrcpy_s(&testOutput, build_str_url_always);
 
     printf("\n");
     printf("String: %s\n", testOutput);

@@ -7,4 +7,5 @@
 /PnpBridge/src/PnpBridge/x64/Debug
 /PnpBridge/src/PnpBridge/PnpBridge.sln
 /pnpbridge/cmake
+/pnpbridge/deps
 .vscode

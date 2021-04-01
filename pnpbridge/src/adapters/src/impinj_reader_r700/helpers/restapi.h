@@ -17,16 +17,16 @@ extern "C" {
 #include "../impinj_reader_r700.h"
 #include "pnp_utils.h"
 
-#define R700_STATUS_OK 200
-#define R700_STATUS_CREATED 201
-#define R700_STATUS_ACCEPTED 202   // StatusResponse
-#define R700_STATUS_NO_CONTENT 204
-#define R700_STATUS_BAD_REQUEST 400      // ErrorResponse
-#define R700_STATUS_FORBIDDEN 403        // ErrorResponse
-#define R700_STATUS_NOT_FOUND 404        // ErrorResponse
-#define R700_STATUS_NOT_CONFLICT 409     // ErrorResponse
-#define R700_STATUS_INTERNAL_ERROR 500   // ErrorResponse
-
+#define R700_STATUS_OK             200
+#define R700_STATUS_CREATED        201
+#define R700_STATUS_ACCEPTED       202 // StatusResponse
+#define R700_STATUS_NO_CONTENT     204
+#define R700_STATUS_BAD_REQUEST    400 // ErrorResponse
+#define R700_STATUS_FORBIDDEN      403 // ErrorResponse
+#define R700_STATUS_NOT_FOUND      404 // ErrorResponse
+#define R700_STATUS_NOT_ALLOWED    405 // ErrorResponse
+#define R700_STATUS_NOT_CONFLICT   409 // ErrorResponse
+#define R700_STATUS_INTERNAL_ERROR 500 // ErrorResponse
 
 static const char impinjReader_property_system_region_selectableRegions[] = "selectableRegions";
 
@@ -35,6 +35,7 @@ static const char g_presetsFormat[]              = "{\"PresetsIds\":%s}";
 static const char g_emptyCommandResponse[]       = "{}";
 static const char g_successResponse[]            = "Operation Success";
 static const char g_errorResponseToDescription[] = "%s %s %s";
+static const char g_unsupportedApiResponse[]     = "{\"status\":\"API Not supported\"}";
 
 // Array in Kafka payload
 static const char g_kafkaBootstraps[] = "bootstraps";
@@ -62,7 +63,7 @@ static const char g_antennaConfigFilters[]                        = "filters";
 #define R700_PRESET_ID_LENGTH 128 + 32
 
 #define R700_REST_REQUEST_VALUES              \
-        READER_STATUS_GET,                    \
+    READER_STATUS_GET,                        \
         READER_STATUS,                        \
         READER_STATUS_POLL,                   \
         HTTP_STREAM,                          \
@@ -94,6 +95,8 @@ static const char g_antennaConfigFilters[]                        = "filters";
         SYSTEM_TIME,                          \
         SYSTEM_TIME_GET,                      \
         SYSTEM_TIME_SET,                      \
+        SYSTEM_TIME_NTP,                      \
+        SYSTEM_TIME_NTP_SET,                  \
         R700_REST_MAX
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
@@ -119,6 +122,7 @@ typedef enum _R700_REST_TYPE
 
 typedef struct _IMPINJ_R700_REST
 {
+    R700_REST_VERSION ApiVersion;
     R700_REST_REQUEST Request;
     R700_DTDL_TYPE DtdlType;
     R700_REST_TYPE RestType;
@@ -127,38 +131,40 @@ typedef struct _IMPINJ_R700_REST
 } IMPINJ_R700_REST, *PIMPINJ_R700_REST;
 
 static IMPINJ_R700_REST R700_REST_LIST[] = {
-    {READER_STATUS_GET, COMMAND, GET, "/status", "GetReaderStatus"},
-    {READER_STATUS, READONLY, GET, "/status", "ReaderStatus"},
-    {READER_STATUS_POLL, READONLY, GET, "/status", "ReaderStatus"},
-    {HTTP_STREAM, WRITABLE, PUT, "/http-stream", "StreamConfiguration"},
-    {MQTT, WRITABLE, PUT, "/mqtt", "MqttConfiguration"},
-    {KAFKA, WRITABLE, PUT, "/kafka", "KafkaConfiguration"},
-    {PROFILES, READONLY, GET, "/profiles", "Profiles"},
-    {PROFILES_STOP, COMMAND, POST, "/profiles/stop", "StopPreset"},
-    {PROFILES_INVENTORY_PRESETS_SCHEMA, COMMAND, GET, "/profiles/inventory/presets-schema", "PresetsSchema"},
-    {PROFILES_INVENTORY_PRESETS_IDS, COMMAND, GET, "/profiles/inventory/presets", "Presets"},
-    {PROFILES_INVENTORY_PRESETS_ID_GET, COMMAND, GET, "/profiles/inventory/presets/%s", "GetPresetId"},
-    {PROFILES_INVENTORY_PRESETS_ID_SET, COMMAND, PUT, "/profiles/inventory/presets/%s", "SetPresetId"},
-    {PROFILES_INVENTORY_PRESETS_ID_DELETE, COMMAND, DELETE, "/profiles/inventory/presets/%s", "DeletePresetId"},
-    {PROFILES_START, COMMAND, POST, "/profiles/inventory/presets/%s/start", "StartPreset"},
-    {PROFILES_INVENTORY_TAG, COMMAND, GET, "/profiles/inventory/tag%s", "TagPresenceResponse"},
-    {SYSTEM, READONLY, GET, "/system", "SystemInfo"},
-    {SYSTEM_HOSTNAME, WRITABLE, PUT, "/system/hostname", "Hostname"},
-    {SYSTEM_IMAGE, READONLY, GET, "/system/image", "SystemImage"},
-    {SYSTEM_IMAGE_UPGRADE_UPLOAD, COMMAND, POST, "/system/image/upgrade", "UpgradeUpload"},
-    {SYSTEM_IMAGE_UPGRADE, READONLY, GET, "/system/image/upgrade", "UpgradeStatus"},
-    {SYSTEM_IMAGE_UPGRADE_GET, COMMAND, GET, "/system/image/upgrade", "GetUpgradeStatus"},
-    {SYSTEM_NETORK_INTERFACES, READONLY, GET, "/system/network/interfaces", "NetworkInterface"},
-    {SYSTEM_POWER, READONLY, GET, "/system/power", "PowerConfiguration"},
-    {SYSTEM_POWER_SET, COMMAND, PUT, "/system/power", "SetPowerConfiguration"},
-    {SYSTEM_REGION, WRITABLE, PUT, "/system/region", "RegionInfo"},
-    {SYSTEM_REGION_GET, COMMAND, GET, "/system/region", "GetRegionInfo"},
-    {SYSTEM_REBOOT, COMMAND, POST, "/system/reboot", "Reboot"},
-    {SYSTEM_RFID_LLRP, READONLY, GET, "/system/rfid/llrp", "LlrpStatus"},
-    {SYSTEM_RFID_INTERFACE, WRITABLE, PUT, "/system/rfid/interface", "RfidInterface"},
-    {SYSTEM_TIME, READONLY, GET, "/system/time", "TimeInfo"},
-    {SYSTEM_TIME_GET, COMMAND, GET, "/system/time", "GetTimeInfo"},
-    {SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"},
+    {V1_0, READER_STATUS_GET, COMMAND, GET, "/status", "GetReaderStatus"},
+    {V1_0, READER_STATUS, READONLY, GET, "/status", "ReaderStatus"},
+    {V1_0, READER_STATUS_POLL, READONLY, GET, "/status", "ReaderStatus"},
+    {V1_0, HTTP_STREAM, WRITABLE, PUT, "/http-stream", "StreamConfiguration"},
+    {V1_0, MQTT, WRITABLE, PUT, "/mqtt", "MqttConfiguration"},
+    {V1_2, KAFKA, WRITABLE, PUT, "/kafka", "KafkaConfiguration"},
+    {V1_0, PROFILES, READONLY, GET, "/profiles", "Profiles"},
+    {V1_0, PROFILES_STOP, COMMAND, POST, "/profiles/stop", "StopPreset"},
+    {V1_0, PROFILES_INVENTORY_PRESETS_SCHEMA, COMMAND, GET, "/profiles/inventory/presets-schema", "PresetsSchema"},
+    {V1_0, PROFILES_INVENTORY_PRESETS_IDS, COMMAND, GET, "/profiles/inventory/presets", "Presets"},
+    {V1_0, PROFILES_INVENTORY_PRESETS_ID_GET, COMMAND, GET, "/profiles/inventory/presets/%s", "GetPresetId"},
+    {V1_0, PROFILES_INVENTORY_PRESETS_ID_SET, COMMAND, PUT, "/profiles/inventory/presets/%s", "SetPresetId"},
+    {V1_0, PROFILES_INVENTORY_PRESETS_ID_DELETE, COMMAND, DELETE, "/profiles/inventory/presets/%s", "DeletePresetId"},
+    {V1_0, PROFILES_START, COMMAND, POST, "/profiles/inventory/presets/%s/start", "StartPreset"},
+    {V1_2, PROFILES_INVENTORY_TAG, COMMAND, GET, "/profiles/inventory/tag%s", "TagPresenceResponse"},
+    {V1_3, SYSTEM, READONLY, GET, "/system", "SystemInfo"},
+    {V1_3, SYSTEM_HOSTNAME, WRITABLE, PUT, "/system/hostname", "Hostname"},
+    {V1_3, SYSTEM_IMAGE, READONLY, GET, "/system/image", "SystemImage"},
+    {V1_3, SYSTEM_IMAGE_UPGRADE_UPLOAD, COMMAND, POST, "/system/image/upgrade", "UpgradeUpload"},
+    {V1_3, SYSTEM_IMAGE_UPGRADE, READONLY, GET, "/system/image/upgrade", "UpgradeStatus"},
+    {V1_3, SYSTEM_IMAGE_UPGRADE_GET, COMMAND, GET, "/system/image/upgrade", "GetUpgradeStatus"},
+    {V1_3, SYSTEM_NETORK_INTERFACES, READONLY, GET, "/system/network/interfaces", "NetworkInterface"},
+    {V1_3, SYSTEM_POWER, READONLY, GET, "/system/power", "PowerConfiguration"},
+    {V1_3, SYSTEM_POWER_SET, COMMAND, PUT, "/system/power", "SetPowerConfiguration"},
+    {V1_3, SYSTEM_REGION, WRITABLE, PUT, "/system/region", "RegionInfo"},
+    {V1_3, SYSTEM_REGION_GET, COMMAND, GET, "/system/region", "GetRegionInfo"},
+    {V1_3, SYSTEM_REBOOT, COMMAND, POST, "/system/reboot", "Reboot"},
+    {V1_3, SYSTEM_RFID_LLRP, READONLY, GET, "/system/rfid/llrp", "LlrpStatus"},
+    {V1_3, SYSTEM_RFID_INTERFACE, WRITABLE, PUT, "/system/rfid/interface", "RfidInterface"},
+    {V1_3, SYSTEM_TIME, READONLY, GET, "/system/time", "TimeInfo"},
+    {V1_3, SYSTEM_TIME_GET, COMMAND, GET, "/system/time", "GetTimeInfo"},
+    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"},
+    {V1_4, SYSTEM_TIME_NTP, WRITABLE, PUT, "/system/time/ntp", "Ntp"},
+    {V1_4, SYSTEM_TIME_NTP_SET, COMMAND, PUT, "/system/time/ntp", "SetNtp"},
 };
 
 JSON_Value*
