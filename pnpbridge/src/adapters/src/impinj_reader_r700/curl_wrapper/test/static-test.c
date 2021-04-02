@@ -34,7 +34,7 @@
 #include <unistd.h>
  
 /* curl stuff */ 
-#include "curl_wrapper.h"
+#include "../curl_wrapper.h"
 
 #define USEC_DELAY 1
 

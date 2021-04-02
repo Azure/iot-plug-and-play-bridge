@@ -34,7 +34,7 @@
 #include <unistd.h>
  
 /* curl stuff */ 
-#include "curl_wrapper.h"
+#include "../curl_wrapper.h"
 // #include <curl/curl.h>
 
 /* helpers */
@@ -82,7 +82,7 @@ int main(void)
         fprintf(stdout, "\n  STREAM READ( DATA SIZE: %d, DATA REMAINING %d): %s", read_data.dataChunkSize, read_data.remainingData, read_data.dataChunk);
       }
 
-    usleep(1000000);
+    usleep(10000000);
 
     mSecTimer = clock() - mSecInit;
   }
