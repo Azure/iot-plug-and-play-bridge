@@ -53,6 +53,13 @@ int OnCommandCallback(
 
     LogJsonPretty("R700 : %s() enter.  Command Name='%s'", CommandValue, __FUNCTION__, CommandName);
 
+    // special case for Antenna Configuration
+    if (strcmp(CommandName, R700_REST_LIST[PROFILES_INVENTORY_PRESETS_ANTENNA_CONFIG].Name) == 0)
+    {
+        return ProcessAntennaConfig(PnpComponentHandle, CommandName, CommandValue, CommandResponse, CommandResponseSize);
+        //return ProcessAntennaConfig(PnpComponentHandle, CommandName, CommandValue, CommandResponse, CommandResponseSize);
+    }
+
     for (i = 0; i < R700_REST_MAX; i++)
     {
         if (R700_REST_LIST[i].DtdlType != COMMAND)
