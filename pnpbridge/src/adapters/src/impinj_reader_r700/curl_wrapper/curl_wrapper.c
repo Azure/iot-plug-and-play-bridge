@@ -9,7 +9,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
-//#define DEBUG_CURL
+// #define DEBUG_CURL
 
 void curlGlobalInit()
 {
@@ -257,6 +257,7 @@ curlStaticInit(
     static_handle       = curl_easy_init();
     char* username_copy = NULL;
     char* password_copy = NULL;
+    char* basePath_copy = NULL;
 
 #define STATIC_READ_CALLBACK_DATA_BUFFER_SIZE 10000
 
@@ -277,15 +278,14 @@ curlStaticInit(
 
     // build user:password string for cURL
     char usrpwd_build[256] = "";
-    strcat(usrpwd_build, username);
-    strcat(usrpwd_build, ":");
-    strcat(usrpwd_build, password);
+    sprintf(usrpwd_build, "%s:%s", username, password);
 
     char* usrpwd = NULL;
 
     mallocAndStrcpy_s(&usrpwd, usrpwd_build);
     mallocAndStrcpy_s(&username_copy, username);
     mallocAndStrcpy_s(&password_copy, password);
+    mallocAndStrcpy_s(&basePath_copy, basePath);
 
 // Set session data values
 #define staticInitArraySize 10
@@ -309,8 +309,8 @@ curlStaticInit(
     session_data->usernameLength          = strlen(username_copy);
     session_data->password                = password_copy;
     session_data->passwordLength          = strlen(password_copy);
-    session_data->basePath                = basePath;
-    session_data->basePathLength          = strlen(basePath);
+    session_data->basePath                = basePath_copy;
+    session_data->basePathLength          = strlen(basePath_copy);
     session_data->readCallbackData        = read_callback_data;
     session_data->readCallbackDataLength  = 0;
     session_data->readCallbackBufferSize  = STATIC_READ_CALLBACK_DATA_BUFFER_SIZE;
@@ -354,6 +354,7 @@ CURL_Stream_Session_Data* curlStreamInit(
     stream_handle       = curl_easy_init();
     char* username_copy = NULL;
     char* password_copy = NULL;
+    char* basePath_copy = NULL;
 
 #define STREAM_DATA_BUFFER_SIZE 100000
 
@@ -374,14 +375,13 @@ CURL_Stream_Session_Data* curlStreamInit(
 
     // build user:password string for cURL
     char usrpwd_build[256] = "";
-    strcat(usrpwd_build, username);
-    strcat(usrpwd_build, ":");
-    strcat(usrpwd_build, password);
+    sprintf(usrpwd_build, "%s:%s", username, password);
 
     char* usrpwd = NULL;
     mallocAndStrcpy_s(&usrpwd, usrpwd_build);
     mallocAndStrcpy_s(&username_copy, username);
     mallocAndStrcpy_s(&password_copy, password);
+    mallocAndStrcpy_s(&basePath_copy, basePath);
 
     // initialize session data structure
     CURL_Stream_Session_Data* session_data = malloc(sizeof(CURL_Stream_Session_Data));
@@ -392,8 +392,8 @@ CURL_Stream_Session_Data* curlStreamInit(
     session_data->usernameLength      = strlen(username_copy);
     session_data->password            = password_copy;
     session_data->passwordLength      = strlen(password_copy);
-    session_data->basePath            = basePath;
-    session_data->basePathLength      = strlen(basePath);
+    session_data->basePath            = basePath_copy;
+    session_data->basePathLength      = strlen(basePath_copy);
     session_data->dataBuffer          = streamBuffer;
     session_data->dataBufferSize      = STREAM_DATA_BUFFER_SIZE;
     session_data->bufferReadIndex     = 0;
