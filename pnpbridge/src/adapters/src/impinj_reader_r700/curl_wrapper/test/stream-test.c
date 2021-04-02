@@ -63,7 +63,7 @@ int main(void)
 
   clock_t mSecInit = clock();
 
-  clock_t mSecTarget = 15000;
+  clock_t mSecTarget = 50000;
 
   clock_t mSecTimer = 0;
 
@@ -71,7 +71,7 @@ int main(void)
 
   while (mSecTimer < mSecTarget) {
     
-    fprintf(stdout, "\nWait Thread( Timer: %d uSec, Target: %d uSec): Reading Stream Data Out...", (int)mSecTimer, (int)mSecTarget);
+    fprintf(stdout, "\n*************** Wait Thread( Timer: %d uSec, Target: %d uSec): Reading Stream Data Out... **********************************", (int)mSecTimer, (int)mSecTarget);
 
     int remainingData = 1;
     while (remainingData > 0) // read all data out of buffer, exit on empty buffer
@@ -82,7 +82,7 @@ int main(void)
         fprintf(stdout, "\n  STREAM READ( DATA SIZE: %d, DATA REMAINING %d): %s", read_data.dataChunkSize, read_data.remainingData, read_data.dataChunk);
       }
 
-    usleep(10000000);
+    usleep(1000000);
 
     mSecTimer = clock() - mSecInit;
   }
