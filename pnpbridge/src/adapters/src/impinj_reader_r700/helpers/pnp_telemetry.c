@@ -293,14 +293,16 @@ int ImpinjReader_TelemetryWorker(
     PIMPINJ_READER device                      = PnpComponentHandleGetContext(componentHandle);
     int count                                  = 0;
     char ledVal                                = '0';
+    JSON_Value* jsonValueStatus                = NULL;
+    JSON_Object* jsonObjectStatus              = NULL;
+    JSON_Value* jsonValueStatusNotime          = NULL;
+    JSON_Object* jsonObjectStatusNotime        = NULL;
+    PIMPINJ_R700_REST r700_GetStatusRequest    = &R700_REST_LIST[READER_STATUS_POLL];
+
+    char* statusNoTimePrev = NULL;
+    char* statusNoTime     = NULL;
 
     LogInfo("R700 : %s() enter", __FUNCTION__);
-
-#define STATUS_CHAR_SIZE 1000
-
-    char* status           = (char*)malloc(sizeof(char) * STATUS_CHAR_SIZE);
-    char* statusNoTimePrev = (char*)malloc(sizeof(char) * STATUS_CHAR_SIZE);
-    char* statusNoTime     = (char*)malloc(sizeof(char) * STATUS_CHAR_SIZE);
 
     while (true)
     {
@@ -314,25 +316,43 @@ int ImpinjReader_TelemetryWorker(
         writeLed(SYSTEM_GREEN, ledVal);
         count++;
 
-        statusNoTimePrev = statusNoTime;
+        if (statusNoTimePrev)
+        {
+            json_free_serialized_string(statusNoTimePrev);
+        }
 
-        JSON_Value* jsonValueStatus = NULL;
+        statusNoTimePrev = statusNoTime;
+        statusNoTime     = NULL;
+
         int httpStatus;
-        PIMPINJ_R700_REST r700_GetStatusRequest = &R700_REST_LIST[2];
 
         jsonValueStatus = ImpinjReader_RequestGet(device, r700_GetStatusRequest, NULL, &httpStatus);   // Get Reader Status from Reader.
 
-        status = json_serialize_to_string(jsonValueStatus);   // serialize status with time, since we are removing the time field from the JSON object
+        if (httpStatus < R700_STATUS_BAD_REQUEST)
+        {
 
-        JSON_Object* jsonObjectStatus = json_value_get_object(jsonValueStatus);
-        json_object_remove(jsonObjectStatus, "time");   // remove "time" field before compare (time always changes)
+            jsonObjectStatus       = json_value_get_object(jsonValueStatus);
+            jsonValueStatusNotime  = json_value_deep_copy(jsonValueStatus);
+            jsonObjectStatusNotime = json_value_get_object(jsonValueStatusNotime);
 
-        statusNoTime = json_serialize_to_string(jsonValueStatus);
+            json_object_remove(jsonObjectStatusNotime, "time");   // remove "time" field before compare (time always changes)
 
-        if (strcmp(statusNoTime, statusNoTimePrev) != 0)
-        {   // send status update only on change in status
-            LogInfo("Status Update: %s", status);
-            UpdateReadOnlyReportProperty(componentHandle, device->ComponentName, r700_GetStatusRequest->Name, json_parse_string(status));
+            statusNoTime = json_serialize_to_string(jsonValueStatusNotime);
+
+            json_value_free(jsonValueStatusNotime);
+            jsonValueStatusNotime = NULL;
+
+            if (statusNoTime != NULL && statusNoTimePrev != NULL && strcmp(statusNoTime, statusNoTimePrev) != 0)
+            {   // send status update only on change in status
+                LogJsonPretty("Status Update: ", jsonValueStatus);
+                UpdateReadOnlyReportProperty(componentHandle, device->ComponentName, r700_GetStatusRequest->Name, jsonValueStatus);
+            }
+        }
+
+        if (jsonValueStatus)
+        {
+            json_value_free(jsonValueStatus);
+            jsonValueStatus = NULL;
         }
 
         if (device->ShuttingDown)
@@ -359,10 +379,17 @@ int ImpinjReader_TelemetryWorker(
     }
 
 exit:
+    if (statusNoTime)
+    {
+        json_free_serialized_string(statusNoTime);
+    }
+
+    if (jsonValueStatus)
+    {
+        json_value_free(jsonValueStatus);
+    }
+
     LogInfo("R700 : %s() exit", __FUNCTION__);
-    free(status);
-    free(statusNoTime);
-    free(statusNoTimePrev);
     ThreadAPI_Exit(0);
     return IOTHUB_CLIENT_OK;
 }
