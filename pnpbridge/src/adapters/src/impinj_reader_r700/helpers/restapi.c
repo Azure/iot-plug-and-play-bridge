@@ -228,7 +228,7 @@ ImpinjReader_RequestPut(
         bodyToSend = (char*)Body;
     }
 #ifdef DEBUG_REST
-    LogInfo("R700 : Curl %s Body %p >> Endpoint '%s'", api, endpoint, bodyToSend);
+    LogInfo("R700 : Curl %s Body %s >> Endpoint '%s'", api, bodyToSend, endpoint);
 #endif
     jsonResult = curlStaticPut(Device->curl_static_session, endpoint, bodyToSend, HttpStatus);
     // LogInfo("R700 : Curl %s << Status %d", api, *HttpStatus);

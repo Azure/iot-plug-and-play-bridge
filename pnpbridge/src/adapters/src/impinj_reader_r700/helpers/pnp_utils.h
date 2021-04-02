@@ -19,6 +19,43 @@ extern "C" {
 
 static const char g_separator[] = "\r\n================================\r\n";
 
+#define MAX_ANTENNA_PORT   4
+#define MAX_PRESET         5
+#define MAX_ANTENNA_CONFIG 255
+#define MAX_PRESETID_LENGTH 128 + 1
+
+// typedef struct _ANTENNA_PRESET
+// {
+//     char PresetId[MAX_PRESETID_LENGTH];
+//     JSON_Value* AntennaConfig;
+// } ANTENNA_PRESET, *PANTENNA_PRESET;
+
+// typedef struct _ANTENNA_PORT
+// {
+//     ANTENNA_PRESET Preset[MAX_PRESET];
+// } ANTENNA_PORT, *PANTENNA_PORT;
+
+// typedef struct _ANTENNA_PORTS
+// {
+//     ANTENNA_PORT Port[MAX_ANTENNA_PORT];
+// } ANTENNA_PORTS, *PANTENNA_PORTS;
+
+// typedef struct _ANTENNA_PORTS
+// {
+//     ANTENNA_PORT Port[MAX_ANTENNA_PORT];
+// } ANTENNA_PORTS, *PANTENNA_PORTS;
+
+typedef struct _ANTENNA_PRESET
+{
+    char PresetId[MAX_PRESETID_LENGTH];
+    JSON_Value* AntennaConfig[MAX_ANTENNA_PORT];
+} ANTENNA_PRESET, *PANTENNA_PRESET;
+
+typedef struct _ANTENNA_CONFIG
+{
+    ANTENNA_PRESET Preset[MAX_PRESET];
+} ANTENNA_CONFIG, *PANTENNA_CONFIG;
+
 void LogJsonPretty(
     const char* MsgFormat,
     JSON_Value* JsonValue, ...);
@@ -52,8 +89,25 @@ GetObjectStringFromPayload(
     JSON_Value* Payload,
     const char* ParamName);
 
+int ProcessAntennaConfig(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize);
+
+bool CleanAntennaConfig(
+    JSON_Object* jsonObj_AntennaConfig);
+
 void GetFirmwareVersion(
     PIMPINJ_READER Reader);
+
+int PopulateAntennaSettings(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    const char* CommandName,
+    JSON_Value* CommandValue,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize);
 
 #ifdef __cplusplus
 }

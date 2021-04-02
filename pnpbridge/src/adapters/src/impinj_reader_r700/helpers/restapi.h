@@ -129,7 +129,7 @@ typedef struct _IMPINJ_R700_REST
     R700_DTDL_TYPE DtdlType;
     R700_REST_TYPE RestType;
     char EndPoint[R700_ENDPONT_LENGTH];
-    char Name[32];
+    char Name[64];
 } IMPINJ_R700_REST, *PIMPINJ_R700_REST;
 
 static IMPINJ_R700_REST R700_REST_LIST[] = {
@@ -166,8 +166,10 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_TIME, READONLY, GET, "/system/time", "TimeInfo"},
     {V1_3, SYSTEM_TIME_GET, COMMAND, GET, "/system/time", "GetTimeInfo"},
     {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"},
+#ifdef V14TEST
     {V1_4, SYSTEM_TIME_NTP, WRITABLE, PUT, "/system/time/ntp", "Ntp"},
     {V1_4, SYSTEM_TIME_NTP_SET, COMMAND, PUT, "/system/time/ntp", "SetNtp"},
+#endif
 };
 
 JSON_Value*

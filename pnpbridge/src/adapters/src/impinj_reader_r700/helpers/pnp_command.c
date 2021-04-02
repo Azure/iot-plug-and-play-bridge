@@ -51,7 +51,14 @@ int OnCommandCallback(
     const char* responseString       = NULL;
     PIMPINJ_R700_REST r700_Request   = NULL;
 
-    LogJsonPretty("R700 : %s() enter.  Command Name=%s", CommandValue, __FUNCTION__, CommandName);
+    LogJsonPretty("R700 : %s() enter.  Command Name='%s'", CommandValue, __FUNCTION__, CommandName);
+
+    // special case for Antenna Configuration
+    if (strcmp(CommandName, R700_REST_LIST[PROFILES_INVENTORY_PRESETS_ANTENNA_CONFIG].Name) == 0)
+    {
+        return ProcessAntennaConfig(PnpComponentHandle, CommandName, CommandValue, CommandResponse, CommandResponseSize);
+        //return ProcessAntennaConfig(PnpComponentHandle, CommandName, CommandValue, CommandResponse, CommandResponseSize);
+    }
 
     for (i = 0; i < R700_REST_MAX; i++)
     {
@@ -220,9 +227,6 @@ char* PreProcessSetPresetIdPayload(
     }
     else
     {
-        JSON_Object* jsonObj_TagAuthentication = NULL;
-        JSON_Object* jsonObj_PowerSweeping     = NULL;
-
         if ((jsonVal_PresetObject = json_object_get_value(jsonOjb_PresetId, g_presetObject)) == NULL)
         {
             LogError("R700 : Unable to retrieve %s for Set Preset Id payload JSON.", g_presetObject);
@@ -234,34 +238,7 @@ char* PreProcessSetPresetIdPayload(
             for (i = 0; i < arrayCount; i++)
             {
                 JSON_Object* jsonObj_AntennaConfig = json_array_get_object(jsonArray_AntennaConfig, i);
-                JSON_Object* jsonObj_Filtering     = json_object_get_object(jsonObj_AntennaConfig, g_antennaConfigFiltering);
-
-                if (jsonObj_Filtering)
-                {
-                    JSON_Array* jsonArray_Filters = json_object_get_array(jsonObj_Filtering, g_antennaConfigFilters);
-
-                    if (jsonArray_Filters == NULL)
-                    {
-                        json_object_remove(jsonObj_AntennaConfig, g_antennaConfigFiltering);
-                    }
-                }
-                // Remove empty tagAuthentication
-                if ((jsonObj_TagAuthentication = json_object_get_object(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsTagAuthentication)) != NULL)
-                {
-                    if (json_object_get_count(jsonObj_TagAuthentication) == 0)
-                    {
-                        json_object_remove(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsTagAuthentication);
-                    }
-                }
-
-                // Remove empty powerSweeping
-                if ((jsonObj_PowerSweeping = json_object_get_object(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsPowerSweeping)) != NULL)
-                {
-                    if (json_object_get_count(jsonObj_TagAuthentication) == 0)
-                    {
-                        json_object_remove(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsPowerSweeping);
-                    }
-                }
+                CleanAntennaConfig(jsonObj_AntennaConfig);
             }
         }
     }
