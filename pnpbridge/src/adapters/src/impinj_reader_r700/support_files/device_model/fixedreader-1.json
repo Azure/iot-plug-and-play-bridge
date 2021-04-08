@@ -9,6 +9,7 @@
   },
   "contents": [
     {
+      "@id": "dtmi:impinj:FixedReader:R700;1",
       "@type": "Component",
       "name": "R700",
       "schema": "dtmi:impinj:R700;13"
