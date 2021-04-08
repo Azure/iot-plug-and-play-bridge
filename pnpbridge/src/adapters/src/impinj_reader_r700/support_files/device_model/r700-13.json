@@ -3,6 +3,9 @@
   "displayName": {
     "en": "Impinj R700"
   },
+	"description": {
+		"en": "R700 IoT Plug and Play Bridge"
+	},
   "@context": [
     "dtmi:dtdl:context;2"
   ],
