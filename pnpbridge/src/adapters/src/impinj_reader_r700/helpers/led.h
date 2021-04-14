@@ -9,7 +9,10 @@ typedef enum _LED_TARGET
     SYSTEM_RED,
     SYSTEM_GREEN,
     INVENTORY, 
-    UPGRADE
+    UPGRADE, 
+    GPO0, 
+    GPO1,
+    GPO2
 } LED_TARGET;
 
 typedef struct _IMPINJ_R700_LED
@@ -18,7 +21,7 @@ typedef struct _IMPINJ_R700_LED
     char sysfsPath[255];
 } IMPINJ_R700_LED, *PIMPINJ_R700_LED;
 
-#define LED_LIST_SIZE 5
+#define LED_LIST_SIZE 8
 
 static IMPINJ_R700_LED R700_LED_LIST[] =
 {
@@ -27,6 +30,9 @@ static IMPINJ_R700_LED R700_LED_LIST[] =
     {SYSTEM_GREEN,  "/sys/devices/platform/leds/leds/status-green/brightness"},
     {INVENTORY,     "/sys/devices/platform/leds/leds/inventory-status/brightness"},
     {UPGRADE,       "/sys/devices/platform/leds/leds/upgrade-status/brightness"},
+    {GPO0,          "/dev/gpio/gpo-mux/ext-gpo-0/value"},
+    {GPO1,          "/dev/gpio/gpo-mux/ext-gpo-1/value"},
+    {GPO2,          "/dev/gpio/gpo-mux/ext-gpo-2/value"}
 };
 
 void writeLed(LED_TARGET ledTarget, char value);
