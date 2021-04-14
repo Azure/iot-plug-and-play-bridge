@@ -1,2 +1,1 @@
-/home/kwenner/impinj/etk/r700/7.5.0_Octane_Embedded_Development_Tools/arm-toolchain/bin/arm-none-linux-gnueabihf-gcc -g string_manipulation_test.c string_manipulation.c -o build/string_manipulation_test-r700 
 /home/kwenner/impinj/etk/r700/7.5.0_Octane_Embedded_Development_Tools/arm-toolchain/bin/arm-none-linux-gnueabihf-gcc -g led_test.c led.c -o build/led_test-r700 
