@@ -164,7 +164,7 @@ ImpinjReader_CreatePnpComponent(
     PIMPINJ_READER device       = NULL;
 
     /* print component creation message */
-    char compCreateStr[] = "Creating Impinj Reader component: ";
+    char compCreateStr[128] = {0};
 
     char* compHostname;
     char* http_user;
@@ -175,6 +175,7 @@ ImpinjReader_CreatePnpComponent(
     http_user    = (char*)json_object_dotget_string(AdapterComponentConfig, "username");
     http_pass    = (char*)json_object_dotget_string(AdapterComponentConfig, "password");
 
+    strcat(compCreateStr, "Creating Impinj Reader component: ");
     strcat(compCreateStr, ComponentName);
     strcat(compCreateStr, "\n       Hostname: ");
     strcat(compCreateStr, compHostname);
@@ -188,6 +189,8 @@ ImpinjReader_CreatePnpComponent(
         result                = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
+
+    LogInfo("%d", __LINE__);
 
     /* initialize base HTTP strings */
 
