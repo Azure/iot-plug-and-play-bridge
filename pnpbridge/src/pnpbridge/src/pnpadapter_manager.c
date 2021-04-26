@@ -612,7 +612,7 @@ int PnpAdapterManager_DeviceMethodCallback(
         LogError("Unable to allocate twin buffer");
         result = PNP_STATUS_INTERNAL_ERROR;
     }
-    else if ((commandValue = json_parse_string(jsonStr)) == NULL)
+    else if ((commandValue = json_value_init_string(jsonStr)) == NULL)
     {
         LogError("Unable to parse twin JSON");
         result = PNP_STATUS_INTERNAL_ERROR;
