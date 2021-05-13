@@ -25,7 +25,7 @@
             "pnp_bridge_component_name": "R700",
             "pnp_bridge_adapter_id": "impinj-reader-r700",
             "pnp_bridge_adapter_config": {
-                "hostname": "",
+                "hostname": "localhost",
                 "username": "root",
                 "password": "impinj"
             }
