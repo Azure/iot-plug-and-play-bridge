@@ -1056,7 +1056,7 @@
             "description": {
               "en": "The QoS level of the MQTT connection. "
             },
-            "schema": "dtmi:impinj:Mqtt:QoS;1"
+            "schema": "dtmi:impinj:R700:Mqtt:QoS;1"
           },
           {
             "name": "eventTopic",
@@ -1126,7 +1126,7 @@
             "description": {
               "en": "The QoS to use when publishing this device's “Last Will and Testament.” See eventQualityOfService for details on how the different quality of service levels affect message transmission."
             },
-            "schema": "dtmi:impinj:Mqtt:QoS;1"
+            "schema": "dtmi:impinj:R700:Mqtt:QoS;1"
           }
         ]
       }
@@ -1353,7 +1353,7 @@
         "description": {
           "en": "The detailed configuration of the specified preset."
         },
-        "schema": "dtmi:Impinj:Profiles:Inventory:Presets:InventoryRequest;1"
+        "schema": "dtmi:impinj:R700:Profiles:Inventory:Presets:InventoryRequest;1"
       }
     },
     {
@@ -1391,7 +1391,7 @@
               "description": {
                 "en": "The value of the preset you wish to create or replace."
               },
-              "schema": "dtmi:Impinj:Profiles:Inventory:Presets:InventoryRequest;1"
+              "schema": "dtmi:impinj:R700:Profiles:Inventory:Presets:InventoryRequest;1"
             }
           ]
         }
@@ -2338,7 +2338,7 @@
   ],
   "schemas": [
     {
-      "@id": "dtmi:impinj:Mqtt:QoS;1",
+      "@id": "dtmi:impinj:R700:Mqtt:QoS;1",
       "@type": "Enum",
       "valueSchema": "integer",
       "enumValues": [
@@ -2627,7 +2627,7 @@
       ]
     },
     {
-      "@id": "dtmi:Impinj:Profiles:Inventory:Presets:InventoryRequest;1",
+      "@id": "dtmi:impinj:R700:Profiles:Inventory:Presets:InventoryRequest;1",
       "@type": "Object",
       "fields": [
         {
@@ -3583,7 +3583,7 @@
       ]
     },
     {
-      "@id": "dtmi:Impinj:antennaConfig;1",
+      "@id": "dtmi:impinj:R700:antennaConfig;1",
       "@type": "Object",
       "fields": [
         {
