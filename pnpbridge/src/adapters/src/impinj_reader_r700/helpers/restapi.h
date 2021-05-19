@@ -51,6 +51,7 @@ static const char g_statusResponseMessage[] = "message";
 
 // Preset ID command payload
 static const char g_presetId[] = "presetId";
+static const char g_presetObjectJSON[] = "presetObjectJSON";
 
 // Preset ID configuration
 static const char g_presetObject[]                                = "presetObject";
@@ -75,6 +76,7 @@ static const char g_antennaConfigFilters[]                        = "filters";
         PROFILES_INVENTORY_PRESETS_IDS,       \
         PROFILES_INVENTORY_PRESETS_ID_GET,    \
         PROFILES_INVENTORY_PRESETS_ID_SET,    \
+        PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH,    \
         PROFILES_INVENTORY_PRESETS_ID_DELETE, \
         PROFILES_START,                       \
         PROFILES_INVENTORY_TAG,               \
@@ -143,6 +145,7 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_0, PROFILES_INVENTORY_PRESETS_IDS, COMMAND, GET, "/profiles/inventory/presets", "Presets"},
     {V1_0, PROFILES_INVENTORY_PRESETS_ID_GET, COMMAND, GET, "/profiles/inventory/presets/%s", "GetPresetId"},
     {V1_0, PROFILES_INVENTORY_PRESETS_ID_SET, COMMAND, PUT, "/profiles/inventory/presets/%s", "SetPresetId"},
+    {V1_0, PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH, COMMAND, PUT, "/profiles/inventory/presets/%s", "SetPresetIdPassthrough"},
     {V1_0, PROFILES_INVENTORY_PRESETS_ID_DELETE, COMMAND, DELETE, "/profiles/inventory/presets/%s", "DeletePresetId"},
     {V1_0, PROFILES_START, COMMAND, POST, "/profiles/inventory/presets/%s/start", "StartPreset"},
     {V1_2, PROFILES_INVENTORY_TAG, COMMAND, GET, "/profiles/inventory/tag%s", "TagPresenceResponse"},

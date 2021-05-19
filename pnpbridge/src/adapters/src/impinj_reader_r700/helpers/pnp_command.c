@@ -59,7 +59,7 @@ int OnCommandCallback(
         {
             continue;
         }
-        else if (strcmp(CommandName, R700_REST_LIST[i].Name) == 0)
+        else if (strcmp(CommandName, R700_REST_LIST[i].Name) == 0)  // find command name from list 
         {
             r700_Request = &R700_REST_LIST[i];
 
@@ -78,6 +78,12 @@ int OnCommandCallback(
                     // Receive Preset ID
                     restParameter = (char*)GetStringFromPayload(CommandValue, g_presetId);
                     restBody      = PreProcessSetPresetIdPayload(CommandValue);
+                    break;
+                
+                case PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH:
+                    // Receive Preset ID
+                    restParameter = (char*)GetStringFromPayload(CommandValue, g_presetId);
+                    restBody      = (char*)GetStringFromPayload(CommandValue, g_presetObjectJSON);
                     break;
 
                 case PROFILES_INVENTORY_PRESETS_ID_GET:

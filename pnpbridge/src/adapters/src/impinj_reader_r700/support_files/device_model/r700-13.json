@@ -1398,6 +1398,47 @@
       }
     },
     {
+      "@id": "dtmi:impinj:R700:Profiles:Inventory:Presets:PresetsId:SetPassthrough;1",
+      "@type": "Command",
+      "name": "SetPresetIdPassthrough",
+      "comment": "PUT /profiles/inventory/presets/{presetId}",
+      "displayName": {
+        "en": "Create or replace inventory presets with raw JSON string value"
+      },
+      "description": {
+        "en": "Creates or replaces a user-defined inventory preset. Presets with names that begin with 'default' or 'impinj' may not be created or replaced.  This method uses a raw (unparsed) JSON string as the command payload."
+      },
+      "request": {
+        "@type": "CommandPayload",
+        "name": "presetsIdParam",
+        "schema": {
+          "@type": "Object",
+          "fields": [
+            {
+              "name": "presetId",
+              "displayName": {
+                "en": "Preset ID"
+              },
+              "description": {
+                "en": "The name of a preset."
+              },
+              "schema": "string"
+            },
+            {
+              "name": "presetObjectJSON",
+              "displayName": {
+                "en": "Preset Object JSON"
+              },
+              "description": {
+                "en": "The value of the preset you wish to create or replace, in raw JSON string form."
+              },
+              "schema": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
       "@id": "dtmi:impinj:R700:Profiles:Inventory:Presets:PresetsId:Delete;1",
       "@type": "Command",
       "name": "DeletePresetId",
