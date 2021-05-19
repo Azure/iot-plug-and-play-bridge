@@ -570,15 +570,15 @@ void GetFirmwareVersion(
 
     if ((jsonVal_Image = json_parse_string(jsonResult)) == NULL)
     {
-        LogInfo("R700 :  Unable to retrieve JSON Value for Image information from reader");
+        LogInfo("R700 :  Unable to retrieve JSON Value for Image information from reader.  Check that HTTPS is enabled.");
     }
     else if ((jsonObj_Image = json_value_get_object(jsonVal_Image)) == NULL)
     {
-        LogInfo("R700 :  Unable to retrieve JSON Object for Image information");
+        LogInfo("R700 :  Unable to retrieve JSON Object for Image information. Check that HTTPS is enabled.");
     }
     else if ((firmware = json_object_get_string(jsonObj_Image, "primaryFirmware")) == NULL)
     {
-        LogInfo("R700 :  Unable to retrieve primaryFirmware");
+        LogInfo("R700 :  Unable to retrieve primaryFirmware.  Check that HTTPS is enabled.");
     }
     else
     {
