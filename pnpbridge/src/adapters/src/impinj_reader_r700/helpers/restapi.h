@@ -66,7 +66,7 @@ static const char g_antennaConfigFilters[]                        = "filters";
 #define R700_PRESET_ID_LENGTH 128 + 32
 
 #define R700_REST_REQUEST_VALUES              \
-    READER_STATUS_GET,                        \
+        READER_STATUS_GET,                    \
         READER_STATUS,                        \
         READER_STATUS_POLL,                   \
         HTTP_STREAM,                          \
