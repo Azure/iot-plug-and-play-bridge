@@ -52,6 +52,9 @@ GetObjectStringFromPayload(
     JSON_Value* Payload,
     const char* ParamName);
 
+bool CleanAntennaConfig(
+    JSON_Object* jsonObj_AntennaConfig);
+
 void GetFirmwareVersion(
     PIMPINJ_READER Reader);
 

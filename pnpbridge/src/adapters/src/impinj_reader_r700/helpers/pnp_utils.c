@@ -1,5 +1,6 @@
 #include "pnp_utils.h"
 #include "restapi.h"
+#include "pnp_command.h"
 
 /****************************************************************
 Helper function
@@ -522,6 +523,48 @@ GetStringFromPayload(
 
     return stringValue;
 }
+
+
+//
+// Remove empty objects from Antenna Configuration
+//
+bool CleanAntennaConfig(
+    JSON_Object* jsonObj_AntennaConfig)
+{
+    JSON_Object* jsonObj_Filtering         = json_object_get_object(jsonObj_AntennaConfig, g_antennaConfigFiltering);
+    JSON_Object* jsonObj_TagAuthentication = NULL;
+    JSON_Object* jsonObj_PowerSweeping     = NULL;
+
+    if (jsonObj_Filtering)
+    {
+        JSON_Array* jsonArray_Filters = json_object_get_array(jsonObj_Filtering, g_antennaConfigFilters);
+
+        if (jsonArray_Filters == NULL)
+        {
+            json_object_remove(jsonObj_AntennaConfig, g_antennaConfigFiltering);
+        }
+    }
+    // Remove empty tagAuthentication
+    if ((jsonObj_TagAuthentication = json_object_get_object(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsTagAuthentication)) != NULL)
+    {
+        if (json_object_get_count(jsonObj_TagAuthentication) == 0)
+        {
+            json_object_remove(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsTagAuthentication);
+        }
+    }
+
+    // Remove empty powerSweeping
+    if ((jsonObj_PowerSweeping = json_object_get_object(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsPowerSweeping)) != NULL)
+    {
+        if (json_object_get_count(jsonObj_TagAuthentication) == 0)
+        {
+            json_object_remove(jsonObj_AntennaConfig, g_presetObjectAntennaConfigsPowerSweeping);
+        }
+    }
+
+    return true;
+}
+
 
 const char*
 GetObjectStringFromPayload(

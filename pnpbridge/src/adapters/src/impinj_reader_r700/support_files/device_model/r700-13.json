@@ -3,6 +3,9 @@
   "displayName": {
     "en": "Impinj R700"
   },
+  "description": {
+    "en": "R700 IoT Plug and Play Bridge"
+  },
   "@context": [
     "dtmi:dtdl:context;2"
   ],
@@ -1266,33 +1269,6 @@
       }
     },
     {
-      "@id": "dtmi:impinj:R700:Profiles:Inventory:PresetsSchema;1",
-      "@type": "Command",
-      "name": "PresetsSchema",
-      "comment": "GET /profiles/inventory/presets-schema",
-      "displayName": {
-        "en": "Presets Schema"
-      },
-      "description": {
-        "en": "the reader-specific JSON schema used to validate inventory presets. This is a good way to determine reader capabilities such as max transmit power or available RF modes."
-      },
-      "response": {
-        "@type": "CommandPayload",
-        "name": "schemaResponse",
-        "schema": {
-          "@type": "Map",
-          "mapKey": {
-            "name": "PresetScheme",
-            "schema": "string"
-          },
-          "mapValue": {
-            "name": "PresetSchemaValue",
-            "schema": "string"
-          }
-        }
-      }
-    },
-    {
       "@id": "dtmi:impinj:R700:Profiles:Inventory:Presets;1",
       "@type": "Command",
       "name": "Presets",
@@ -2364,17 +2340,6 @@
         },
         "schema": "dateTime"
       }
-    },
-    {
-      "@id": "dtmi:impinj:R700:eventData;1",
-      "@type": [
-        "Telemetry"
-      ],
-      "displayName": {
-        "en": "Event Data"
-      },
-      "name": "eventData",
-      "schema": "string"
     }
   ],
   "schemas": [

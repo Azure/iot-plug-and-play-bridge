@@ -9,7 +9,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
-// #define DEBUG_CURL
+//#define DEBUG_CURL
 
 void curlGlobalInit()
 {
