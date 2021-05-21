@@ -190,8 +190,6 @@ ImpinjReader_CreatePnpComponent(
         goto exit;
     }
 
-    LogInfo("%d", __LINE__);
-
     /* initialize base HTTP strings */
 
     char str_http[]     = "https://";

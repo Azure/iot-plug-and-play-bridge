@@ -102,20 +102,8 @@ bool OnPropertyCompleteCallback(
 
             switch (r700_Request->DtdlType)
             {
-                LogError("R700 : Unsupported API. Please upgrade firmware");
-                status = R700_STATUS_NOT_ALLOWED;
-                break;
-            }
-
-            switch (r700_Request->DtdlType)
-            {
-            case COMMAND:
-                break;
-
-            case READONLY:
-                jsonVal_Rest = ImpinjReader_RequestGet(device, r700_Request, NULL, &status);
-                UpdateReadOnlyReportProperty(PnpComponentHandle, device->ComponentName, r700_Request->Name, jsonVal_Rest);
-                break;
+                case COMMAND:
+                    break;
 
                 case READONLY:
                     jsonVal_Rest = ImpinjReader_RequestGet(device, r700_Request, NULL, &status);
