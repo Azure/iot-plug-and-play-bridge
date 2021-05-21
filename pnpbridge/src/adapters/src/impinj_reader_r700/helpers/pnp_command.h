@@ -31,11 +31,6 @@ char* PreProcessSetPresetIdPayload(
 char* PreProcessTagPresenceResponse(
     JSON_Value* Payload);
 
-int ImpinjReader_SetCommandResponse(
-    unsigned char** CommandResponse,
-    size_t* CommandResponseSize,
-    const unsigned char* ResponseData);
-
 #ifdef __cplusplus
 }
 #endif
