@@ -167,9 +167,7 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_RFID_INTERFACE, WRITABLE, PUT, "/system/rfid/interface", "RfidInterface"},
     {V1_3, SYSTEM_TIME, READONLY, GET, "/system/time", "TimeInfo"},
     {V1_3, SYSTEM_TIME_GET, COMMAND, GET, "/system/time", "GetTimeInfo"},
-    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"},
-    {V1_4, SYSTEM_TIME_NTP, WRITABLE, PUT, "/system/time/ntp", "Ntp"},
-    {V1_4, SYSTEM_TIME_NTP_SET, COMMAND, PUT, "/system/time/ntp", "SetNtp"},
+    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"}
 };
 
 JSON_Value*
