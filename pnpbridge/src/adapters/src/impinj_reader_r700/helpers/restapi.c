@@ -279,6 +279,11 @@ ImpinjReader_RequestPost(
         endpoint = (char*)&endPointData;
         postData = NULL;
     }
+    else if (R700_Request->Request == SYSTEM_IMAGE_UPGRADE_UPLOAD)
+    {
+        *HttpStatus = R700_STATUS_NOT_IMPLEMENTED;
+        return jsonVal;
+    }
     else
     {
         endpoint = R700_Request->EndPoint;

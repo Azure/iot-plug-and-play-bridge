@@ -151,6 +151,9 @@ int OnCommandCallback(
             case R700_STATUS_NOT_ALLOWED:
                 mallocAndStrcpy_s(&restResponse, g_unsupportedApiResponse);
                 break;
+            case R700_STATUS_NOT_IMPLEMENTED:
+                mallocAndStrcpy_s(&restResponse, g_notImplementedApiResponse);
+                break;
         }
     }
 

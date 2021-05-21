@@ -17,16 +17,17 @@ extern "C" {
 #include "../impinj_reader_r700.h"
 #include "pnp_utils.h"
 
-#define R700_STATUS_OK             200
-#define R700_STATUS_CREATED        201
-#define R700_STATUS_ACCEPTED       202 // StatusResponse
-#define R700_STATUS_NO_CONTENT     204
-#define R700_STATUS_BAD_REQUEST    400 // ErrorResponse
-#define R700_STATUS_FORBIDDEN      403 // ErrorResponse
-#define R700_STATUS_NOT_FOUND      404 // ErrorResponse
-#define R700_STATUS_NOT_ALLOWED    405 // ErrorResponse
-#define R700_STATUS_NOT_CONFLICT   409 // ErrorResponse
-#define R700_STATUS_INTERNAL_ERROR 500 // ErrorResponse
+#define R700_STATUS_OK              200
+#define R700_STATUS_CREATED         201
+#define R700_STATUS_ACCEPTED        202 // StatusResponse
+#define R700_STATUS_NO_CONTENT      204
+#define R700_STATUS_BAD_REQUEST     400 // ErrorResponse
+#define R700_STATUS_FORBIDDEN       403 // ErrorResponse
+#define R700_STATUS_NOT_FOUND       404 // ErrorResponse
+#define R700_STATUS_NOT_ALLOWED     405 // ErrorResponse
+#define R700_STATUS_NOT_CONFLICT    409 // ErrorResponse
+#define R700_STATUS_INTERNAL_ERROR  500 // ErrorResponse
+#define R700_STATUS_NOT_IMPLEMENTED 501 // ErrorResponse
 
 static const char impinjReader_property_system_region_selectableRegions[] = "selectableRegions";
 
@@ -35,7 +36,8 @@ static const char g_presetsFormat[]              = "{\"PresetsIds\":%s}";
 static const char g_emptyCommandResponse[]       = "{}";
 static const char g_successResponse[]            = "Operation Success";
 static const char g_errorResponseToDescription[] = "%s %s %s";
-static const char g_unsupportedApiResponse[]     = "{\"status\":\"API Not supported\"}";
+static const char g_unsupportedApiResponse[]     = "{\"status\":\"API Not Supported\"}";
+static const char g_notImplementedApiResponse[]  = "{\"status\":\"API Not Implemented\"}";
 
 // Array in Kafka payload
 static const char g_kafkaBootstraps[] = "bootstraps";
@@ -165,9 +167,7 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_RFID_INTERFACE, WRITABLE, PUT, "/system/rfid/interface", "RfidInterface"},
     {V1_3, SYSTEM_TIME, READONLY, GET, "/system/time", "TimeInfo"},
     {V1_3, SYSTEM_TIME_GET, COMMAND, GET, "/system/time", "GetTimeInfo"},
-    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"},
-    {V1_4, SYSTEM_TIME_NTP, WRITABLE, PUT, "/system/time/ntp", "Ntp"},
-    {V1_4, SYSTEM_TIME_NTP_SET, COMMAND, PUT, "/system/time/ntp", "SetNtp"},
+    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"}
 };
 
 JSON_Value*
