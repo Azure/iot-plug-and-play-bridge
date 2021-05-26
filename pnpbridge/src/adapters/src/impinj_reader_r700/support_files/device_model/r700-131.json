@@ -1274,7 +1274,7 @@
       "name": "Presets",
       "comment": "GET /profiles/inventory/presets",
       "displayName": {
-        "en": "Regtrieve inventory presets"
+        "en": "Retrieve inventory presets"
       },
       "description": {
         "en": "Retrieves the available presets for running inventory."
@@ -3225,6 +3225,16 @@
               }
             ]
           }
+        }, 
+        {
+          "name": "message",
+          "displayName": {
+            "en": "Message"
+          },
+          "description": {
+            "en": "Indicates what state the upgrade process is in."
+          },
+          "schema": "string"
         }
       ]
     },
