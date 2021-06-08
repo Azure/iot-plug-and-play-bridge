@@ -1,5 +1,5 @@
 {
-  "@id": "dtmi:impinj:FixedReader;1",
+  "@id": "dtmi:impinj:FixedReader;11",
   "@type": "Interface",
   "displayName": {
     "en": "Pnp Bridge Root Interface Model for Impinj R700"
@@ -11,7 +11,7 @@
     {
       "@type": "Component",
       "name": "R700",
-      "schema": "dtmi:impinj:R700;13"
+      "schema": "dtmi:impinj:R700;131"
     }
   ],
   "@context": "dtmi:dtdl:context;2"
