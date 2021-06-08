@@ -152,6 +152,10 @@ ImpinjReader_RequestGet(
         case SYSTEM_IMAGE_UPGRADE_GET:
             jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
             break;
+        
+        case SYSTEM_IMAGE_UPGRADE:
+            jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
+            break;
 
         case SYSTEM_NETORK_INTERFACES: {
             // need to convert arrays to Map
