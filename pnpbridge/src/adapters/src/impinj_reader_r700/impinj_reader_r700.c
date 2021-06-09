@@ -50,7 +50,7 @@ int ImpinjReader_OnCommandCallback(
 
     ret = OnCommandCallback(PnpComponentHandle, CommandName, CommandValue, CommandResponse, CommandResponseSize);
 
-    LogInfo("R700 : %s() exit", __FUNCTION__);
+    LogInfo("R700 : %s() exit : ret = %d", __FUNCTION__, ret);
     return ret;
 }
 
@@ -233,6 +233,9 @@ ImpinjReader_CreatePnpComponent(
 
     GetFirmwareVersion(device);
 
+    // Make sure REST API interface is enabled.
+    CheckInterfaceType(device);
+
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
     PnpComponentHandleSetPropertyPatchCallback(BridgeComponentHandle, ImpinjReader_OnPropertyPatchCallback);
     PnpComponentHandleSetPropertyCompleteCallback(BridgeComponentHandle, ImpinjReader_OnPropertyCompleteCallback);
@@ -249,4 +252,5 @@ PNP_ADAPTER ImpinjReaderR700 = {
     .startPnpComponent   = ImpinjReader_StartPnpComponent,
     .stopPnpComponent    = ImpinjReader_StopPnpComponent,
     .destroyPnpComponent = ImpinjReader_DestroyPnpComponent,
-    .destroyAdapter      = ImpinjReader_DestroyPnpAdapter};
+    .destroyAdapter      = ImpinjReader_DestroyPnpAdapter
+    };

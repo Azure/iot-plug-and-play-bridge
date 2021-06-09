@@ -58,50 +58,63 @@ typedef struct CURL_Stream_Read_Data
     int remainingData;   //data remaining in buffer
 } CURL_Stream_Read_Data;
 
+typedef struct _DOWNLOAD_DATA
+{
+    char url[1025];
+    char scheme[10];      // http, ftp, etc
+    char hostname[256];   // 255 for DNS name max + NULL
+    char port[6];
+    char username[256];
+    char password[256];
+    char path[1025];
+    char outFileName[FILENAME_MAX];
+    int statusCode;
+} DOWNLOAD_DATA, *PDOWNLOAD_DATA;
+
+typedef struct _UPLOAD_DATA
+{
+    const uint8_t* readptr;
+    size_t sizeleft;
+} UPLOAD_DATA;
+
 void curlGlobalInit();
 
 void curlStreamBufferReadout(
     CURL_Stream_Session_Data* session_data);
 
-size_t
-curlStaticDataReadCallback(
+size_t curlStaticDataReadCallback(
     void* contents,
     size_t size,
     size_t nmemb,
     void* userp);
 
-size_t
-curlStreamDataReadCallback(
+size_t curlStreamDataReadCallback(
     void* contents,
     size_t size,
     size_t nmemb,
     void* userp);
 
-size_t
-curlDummyCallback(
+size_t curlDummyCallback(
     void* contents,
     size_t size,
     size_t nmemb,
     void* userp);
 
-CURL_Static_Session_Data*
-curlStaticInit(
+CURL_Static_Session_Data* curlStaticInit(
     const char* username,
     const char* password,
     char* basePath,
     int EnableVerify,
     long verboseOutput);
 
-CURL_Stream_Session_Data*
-curlStreamInit(
+CURL_Stream_Session_Data* curlStreamInit(
     const char* username,
     const char* password,
     char* basePath,
     int EnableVerify,
     long verboseOutput);
 
-CURL_Stream_Read_Data
-curlStreamReadBufferChunk(
+CURL_Stream_Read_Data curlStreamReadBufferChunk(
     CURL_Stream_Session_Data* session_data);
 
 void* curlStreamReader(
@@ -124,6 +137,12 @@ char* curlStaticPost(
     char* postData,
     int* statusCode);
 
+char* curlPostUploadFile(
+    CURL_Static_Session_Data* session_data,
+    char* endpoint,
+    PDOWNLOAD_DATA Download_Data,
+    int* statusCode);
+
 char* curlStaticPut(
     CURL_Static_Session_Data* session_data,
     char* endpoint,
@@ -143,9 +162,11 @@ void curlStreamCleanup(
 
 void curlGlobalCleanup();
 
-size_t
-curlStaticDataWriteCallback(
+size_t curlStaticDataWriteCallback(
     void* write_data,
     size_t size,
     size_t nmemb,
     void* userp);
+
+int curlGetDownload(
+    PDOWNLOAD_DATA UrlData);

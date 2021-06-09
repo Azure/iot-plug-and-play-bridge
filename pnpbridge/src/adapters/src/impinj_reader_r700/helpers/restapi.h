@@ -52,7 +52,7 @@ static const char g_NotSupportedMessage[]            = "\"Not Supported\"";
 static const char g_statusResponseMessage[] = "message";
 
 // Preset ID command payload
-static const char g_presetId[] = "presetId";
+static const char g_presetId[]         = "presetId";
 static const char g_presetObjectJSON[] = "presetObjectJSON";
 
 // Preset ID configuration
@@ -63,44 +63,48 @@ static const char g_presetObjectAntennaConfigsPowerSweeping[]     = "powerSweepi
 static const char g_antennaConfigFiltering[]                      = "filtering";
 static const char g_antennaConfigFilters[]                        = "filters";
 
+// Upgrade Firmware
+static const char g_upgradeFile[] = "upgradeFile";
+
+
 #define R700_PRESET_ID_LENGTH 128 + 32
 
-#define R700_REST_REQUEST_VALUES              \
-        READER_STATUS_GET,                    \
-        READER_STATUS,                        \
-        READER_STATUS_POLL,                   \
-        HTTP_STREAM,                          \
-        MQTT,                                 \
-        KAFKA,                                \
-        PROFILES,                             \
-        PROFILES_STOP,                        \
-        PROFILES_INVENTORY_PRESETS_SCHEMA,    \
-        PROFILES_INVENTORY_PRESETS_IDS,       \
-        PROFILES_INVENTORY_PRESETS_ID_GET,    \
-        PROFILES_INVENTORY_PRESETS_ID_SET,    \
-        PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH,    \
-        PROFILES_INVENTORY_PRESETS_ID_DELETE, \
-        PROFILES_START,                       \
-        PROFILES_INVENTORY_TAG,               \
-        SYSTEM,                               \
-        SYSTEM_HOSTNAME,                      \
-        SYSTEM_IMAGE,                         \
-        SYSTEM_IMAGE_UPGRADE_UPLOAD,          \
-        SYSTEM_IMAGE_UPGRADE,                 \
-        SYSTEM_IMAGE_UPGRADE_GET,             \
-        SYSTEM_NETORK_INTERFACES,             \
-        SYSTEM_POWER,                         \
-        SYSTEM_POWER_SET,                     \
-        SYSTEM_REGION,                        \
-        SYSTEM_REGION_GET,                    \
-        SYSTEM_REBOOT,                        \
-        SYSTEM_RFID_LLRP,                     \
-        SYSTEM_RFID_INTERFACE,                \
-        SYSTEM_TIME,                          \
-        SYSTEM_TIME_GET,                      \
-        SYSTEM_TIME_SET,                      \
-        SYSTEM_TIME_NTP,                      \
-        SYSTEM_TIME_NTP_SET,                  \
+#define R700_REST_REQUEST_VALUES                       \
+        READER_STATUS_GET,                             \
+        READER_STATUS,                                 \
+        READER_STATUS_POLL,                            \
+        HTTP_STREAM,                                   \
+        MQTT,                                          \
+        KAFKA,                                         \
+        PROFILES,                                      \
+        PROFILES_STOP,                                 \
+        PROFILES_INVENTORY_PRESETS_SCHEMA,             \
+        PROFILES_INVENTORY_PRESETS_IDS,                \
+        PROFILES_INVENTORY_PRESETS_ID_GET,             \
+        PROFILES_INVENTORY_PRESETS_ID_SET,             \
+        PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH, \
+        PROFILES_INVENTORY_PRESETS_ID_DELETE,          \
+        PROFILES_START,                                \
+        PROFILES_INVENTORY_TAG,                        \
+        SYSTEM,                                        \
+        SYSTEM_HOSTNAME,                               \
+        SYSTEM_IMAGE,                                  \
+        SYSTEM_IMAGE_UPGRADE_UPLOAD,                   \
+        SYSTEM_IMAGE_UPGRADE,                          \
+        SYSTEM_IMAGE_UPGRADE_GET,                      \
+        SYSTEM_NETORK_INTERFACES,                      \
+        SYSTEM_POWER,                                  \
+        SYSTEM_POWER_SET,                              \
+        SYSTEM_REGION,                                 \
+        SYSTEM_REGION_GET,                             \
+        SYSTEM_REBOOT,                                 \
+        SYSTEM_RFID_LLRP,                              \
+        SYSTEM_RFID_INTERFACE,                         \
+        SYSTEM_TIME,                                   \
+        SYSTEM_TIME_GET,                               \
+        SYSTEM_TIME_SET,                               \
+        SYSTEM_TIME_NTP,                               \
+        SYSTEM_TIME_NTP_SET,                           \
         R700_REST_MAX
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
@@ -118,6 +122,7 @@ typedef enum _R700_REST_TYPE
     GET,
     PUT,
     POST,
+    POST_UPLOAD,
     DELETE,
     UNSUPPORTED_REST,
 } R700_REST_TYPE;
@@ -154,7 +159,7 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM, READONLY, GET, "/system", "SystemInfo"},
     {V1_3, SYSTEM_HOSTNAME, WRITABLE, PUT, "/system/hostname", "Hostname"},
     {V1_3, SYSTEM_IMAGE, READONLY, GET, "/system/image", "SystemImage"},
-    {V1_3, SYSTEM_IMAGE_UPGRADE_UPLOAD, COMMAND, POST, "/system/image/upgrade", "UpgradeUpload"},
+    {V1_3, SYSTEM_IMAGE_UPGRADE_UPLOAD, COMMAND, POST_UPLOAD, "/system/image/upgrade", "UpgradeUpload"},
     {V1_3, SYSTEM_IMAGE_UPGRADE, READONLY, GET, "/system/image/upgrade", "UpgradeStatus"},
     {V1_3, SYSTEM_IMAGE_UPGRADE_GET, COMMAND, GET, "/system/image/upgrade", "GetUpgradeStatus"},
     {V1_3, SYSTEM_NETORK_INTERFACES, READONLY, GET, "/system/network/interfaces", "NetworkInterface"},
@@ -167,8 +172,7 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_RFID_INTERFACE, WRITABLE, PUT, "/system/rfid/interface", "RfidInterface"},
     {V1_3, SYSTEM_TIME, READONLY, GET, "/system/time", "TimeInfo"},
     {V1_3, SYSTEM_TIME_GET, COMMAND, GET, "/system/time", "GetTimeInfo"},
-    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"}
-};
+    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, "/system/time", "SetTimeInfo"}};
 
 JSON_Value*
 ImpinjReader_RequestDelete(
@@ -197,6 +201,13 @@ ImpinjReader_RequestPost(
     PIMPINJ_READER Device,
     PIMPINJ_R700_REST R700_Request,
     const char* Parameter,
+    int* HttpStatus);
+
+JSON_Value*
+ImpinjReader_RequestPostUpload(
+    PIMPINJ_READER Device,
+    PIMPINJ_R700_REST R700_Request,
+    PDOWNLOAD_DATA Download_Data,
     int* HttpStatus);
 
 const char*

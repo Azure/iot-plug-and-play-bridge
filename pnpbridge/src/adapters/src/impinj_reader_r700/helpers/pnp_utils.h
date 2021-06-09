@@ -17,8 +17,6 @@ extern "C" {
 #include "azure_c_shared_utility/xlogging.h"
 #include "../impinj_reader_r700.h"
 
-static const char g_separator[] = "\r\n================================\r\n";
-
 void LogJsonPretty(
     const char* MsgFormat,
     JSON_Value* JsonValue, ...);
@@ -57,6 +55,12 @@ bool CleanAntennaConfig(
 
 void GetFirmwareVersion(
     PIMPINJ_READER Reader);
+
+void CheckInterfaceType(
+    PIMPINJ_READER Reader);
+
+PDOWNLOAD_DATA DownloadFile(
+    const char* Url);
 
 #ifdef __cplusplus
 }

@@ -50,6 +50,7 @@ int OnCommandCallback(
     char* restParameter              = NULL;
     const char* responseString       = NULL;
     PIMPINJ_R700_REST r700_Request   = NULL;
+    PDOWNLOAD_DATA download_Data     = NULL;
 
     LogJsonPretty("R700 : %s() enter.  Command Name='%s'", CommandValue, __FUNCTION__, CommandName);
 
@@ -59,7 +60,7 @@ int OnCommandCallback(
         {
             continue;
         }
-        else if (strcmp(CommandName, R700_REST_LIST[i].Name) == 0)  // find command name from list 
+        else if (strcmp(CommandName, R700_REST_LIST[i].Name) == 0)   // find command name from list
         {
             r700_Request = &R700_REST_LIST[i];
 
@@ -79,7 +80,7 @@ int OnCommandCallback(
                     restParameter = (char*)GetStringFromPayload(CommandValue, g_presetId);
                     restBody      = PreProcessSetPresetIdPayload(CommandValue);
                     break;
-                
+
                 case PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH:
                     // Receive Preset ID
                     restParameter = (char*)GetStringFromPayload(CommandValue, g_presetId);
@@ -103,6 +104,13 @@ int OnCommandCallback(
                     // takes JSON payload for REST API Body
                     restBody = json_serialize_to_string(CommandValue);
                     break;
+
+                case SYSTEM_REBOOT:
+                    break;
+
+                case SYSTEM_IMAGE_UPGRADE_UPLOAD:
+                    download_Data = ProcessImageUpgradeUpload(CommandValue);
+                    break;
             }
 
             // Call REST API
@@ -116,6 +124,9 @@ int OnCommandCallback(
                     break;
                 case POST:
                     jsonVal_RestResponse = ImpinjReader_RequestPost(device, r700_Request, restParameter, &httpStatus);
+                    break;
+                case POST_UPLOAD:
+                    jsonVal_RestResponse = ImpinjReader_RequestPostUpload(device, r700_Request, download_Data, &httpStatus);
                     break;
                 case DELETE:
                     jsonVal_RestResponse = ImpinjReader_RequestDelete(device, r700_Request, restParameter, &httpStatus);
@@ -326,4 +337,25 @@ char* PreProcessTagPresenceResponse(
     }
 
     return returnBuffer;
+}
+
+PDOWNLOAD_DATA ProcessImageUpgradeUpload(
+    JSON_Value* Payload)
+{
+    const char* url              = NULL;
+    PDOWNLOAD_DATA download_Data = NULL;
+
+    LogInfo("R700 : ProcessImageUpgradeUpload");
+
+    if (json_value_get_type(Payload) != JSONString)
+    {
+        LogError("R700 : JSON field %s is not string", g_upgradeFile);
+    }
+    else
+    {
+        url           = json_value_get_string(Payload);
+        download_Data = DownloadFile(url);
+    }
+
+    return download_Data;
 }

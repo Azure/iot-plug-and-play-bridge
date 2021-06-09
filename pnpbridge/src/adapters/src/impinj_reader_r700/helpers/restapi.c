@@ -3,7 +3,8 @@
 
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
 
-//#define DEBUG_REST
+#define DEBUG_REST
+//#define DEBUG_REST_STATUS
 
 JSON_Value*
 ImpinjReader_Convert_NetworkInterface(
@@ -11,7 +12,8 @@ ImpinjReader_Convert_NetworkInterface(
 
 JSON_Value*
 ImpinjReader_Convert_DeviceStatus(
-    char* Json_String);
+    char* Json_String,
+    bool bLog);
 
 JSON_Value*
 ImpinjReader_Convert_UpgradeStatus(
@@ -85,10 +87,19 @@ ImpinjReader_RequestGet(
 
     char buffer[R700_PRESET_ID_LENGTH];
 
+#ifdef DEBUG_REST
+    bool bLog;
     char api[] = "GET";
 
-#ifdef DEBUG_REST
-    LogInfo("R700 : %s() enter. API=%s API Ver=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request), MU_ENUM_TO_STRING(R700_REST_VERSION, R700_Request->ApiVersion));
+#ifdef DEBUG_REST_STATUS
+    bLog = true;
+#else
+    bLog = (R700_Request->Request != READER_STATUS_POLL);
+#endif
+    if (bLog)
+    {
+        LogInfo("R700 : %s() enter. API=%s API Ver=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request), MU_ENUM_TO_STRING(R700_REST_VERSION, R700_Request->ApiVersion));
+    }
 #endif
 
     if (Device->ApiVersion < R700_Request->ApiVersion)
@@ -109,7 +120,10 @@ ImpinjReader_RequestGet(
     }
 
 #ifdef DEBUG_REST
-    LogInfo("R700 : Curl %s >> Endpoint \"%s\"", api, endpoint);
+    if (bLog)
+    {
+        LogInfo("R700 : Curl %s >> Endpoint \"%s\"", api, endpoint);
+    }
 #endif
 
     if (R700_Request->Request == READER_STATUS_POLL)
@@ -128,7 +142,7 @@ ImpinjReader_RequestGet(
         case READER_STATUS_POLL:
         case READER_STATUS_GET:
         case READER_STATUS:
-            jsonVal = ImpinjReader_Convert_DeviceStatus(jsonResult);
+            jsonVal = ImpinjReader_Convert_DeviceStatus(jsonResult, bLog);
             break;
 
         case KAFKA:
@@ -152,7 +166,7 @@ ImpinjReader_RequestGet(
         case SYSTEM_IMAGE_UPGRADE_GET:
             jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
             break;
-        
+
         case SYSTEM_IMAGE_UPGRADE:
             jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
             break;
@@ -193,9 +207,9 @@ ImpinjReader_RequestPut(
     char* endpoint      = R700_Request->EndPoint;
     JSON_Value* jsonVal = NULL;
     char endPointBuffer[128];
-    char api[] = "PUT";
 
 #ifdef DEBUG_REST
+    char api[] = "PUT";
     LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
 #endif
 
@@ -283,10 +297,9 @@ ImpinjReader_RequestPost(
         endpoint = (char*)&endPointData;
         postData = NULL;
     }
-    else if (R700_Request->Request == SYSTEM_IMAGE_UPGRADE_UPLOAD)
+    else if (R700_Request->Request == SYSTEM_REBOOT)
     {
-        *HttpStatus = R700_STATUS_NOT_IMPLEMENTED;
-        return jsonVal;
+        // Rebooting the device.  Stop polling thread
     }
     else
     {
@@ -308,6 +321,51 @@ ImpinjReader_RequestPost(
 
     return jsonVal;
 }
+
+JSON_Value*
+ImpinjReader_RequestPostUpload(
+    PIMPINJ_READER Device,
+    PIMPINJ_R700_REST R700_Request,
+    PDOWNLOAD_DATA Download_Data,
+    int* HttpStatus)
+{
+    char* jsonResult;
+    JSON_Value* jsonVal = NULL;
+
+#ifdef DEBUG_REST
+    char api[] = "POST Upload File";
+    LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
+#endif
+
+    if (Device->ApiVersion < R700_Request->ApiVersion)
+    {
+        LogError("R700 : API not supported.  Supported version %s", MU_ENUM_TO_STRING(R700_REST_VERSION, Device->ApiVersion));
+        *HttpStatus = R700_STATUS_NOT_ALLOWED;
+        return NULL;
+    }
+
+    // if (R700_Request->Request == SYSTEM_IMAGE_UPGRADE_UPLOAD)
+    // {
+    //     *HttpStatus = R700_STATUS_NOT_IMPLEMENTED;
+    //     return jsonVal;
+    // }
+#ifdef DEBUG_REST
+    LogInfo("R700 : Curl %s >> Endpoint \"%s\"", api, R700_Request->EndPoint);
+#endif
+
+    jsonResult = curlPostUploadFile(Device->curl_static_session, R700_Request->EndPoint, Download_Data, HttpStatus);
+    LogInfo("R700 : Curl %s << Status %d", api, *HttpStatus);
+
+    // if (*HttpStatus >= R700_STATUS_BAD_REQUEST)
+    // {
+    //     LogJsonPretty("R700 : Warn : %s HttpStatus %d Response Payload", jsonVal, api, *HttpStatus);
+    // }
+
+    // jsonVal = json_parse_string(jsonResult);
+
+    return jsonVal;
+}
+
 
 /****************************************************************
 Process REST API Response
@@ -670,14 +728,18 @@ Command response containing "status" confused IoT Explorer
 ****************************************************************/
 JSON_Value*
 ImpinjReader_Convert_DeviceStatus(
-    char* Json_String)
+    char* Json_String,
+    bool bLog)
 {
     const char* deviceStatus          = NULL;
     JSON_Value* jsonVal_deviceStatus  = NULL;
     JSON_Object* jsonObj_deviceStatus = NULL;
 
 #ifdef DEBUG_REST
-    LogJsonPrettyStr("R700 : %s() enter", Json_String, __FUNCTION__);
+    if (bLog)
+    {
+        LogJsonPrettyStr("R700 : %s() enter", Json_String, __FUNCTION__);
+    }
 #endif
 
     if ((jsonVal_deviceStatus = json_parse_string(Json_String)) == NULL)

@@ -1,6 +1,13 @@
 #include "pnp_utils.h"
 #include "restapi.h"
 #include "pnp_command.h"
+#include <strings.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 /****************************************************************
 Helper function
@@ -598,7 +605,7 @@ void GetFirmwareVersion(
     PIMPINJ_READER Reader)
 {
     // get firmware version
-    PIMPINJ_R700_REST r700_GetStatusRequest = &R700_REST_LIST[SYSTEM_IMAGE];
+    PIMPINJ_R700_REST r700_GetSystemImageRequest = &R700_REST_LIST[SYSTEM_IMAGE];
     JSON_Value* jsonVal_Image               = NULL;
     JSON_Value* jsonVal_Firmware            = NULL;
     JSON_Object* jsonObj_Image;
@@ -609,7 +616,7 @@ void GetFirmwareVersion(
 
     Reader->ApiVersion = V_Unknown;
 
-    jsonResult = curlStaticGet(Reader->curl_static_session, r700_GetStatusRequest->EndPoint, &httpStatus);
+    jsonResult = curlStaticGet(Reader->curl_static_session, r700_GetSystemImageRequest->EndPoint, &httpStatus);
 
     if ((jsonVal_Image = json_parse_string(jsonResult)) == NULL)
     {
@@ -654,4 +661,269 @@ void GetFirmwareVersion(
         LogInfo("R700 : REST API Version %s\r\n", MU_ENUM_TO_STRING(R700_REST_VERSION, apiVersion));
         Reader->ApiVersion = apiVersion;
     }
+}
+
+/****************************************************************
+Get Interface Type
+****************************************************************/
+void CheckInterfaceType(
+    PIMPINJ_READER Reader)
+{
+    // get firmware version
+    PIMPINJ_R700_REST r700_GetSetInterfaceRequest = &R700_REST_LIST[SYSTEM_RFID_INTERFACE];
+    JSON_Value* jsonVal_Interface           = NULL;
+    JSON_Object* jsonObj_Interface;
+    int httpStatus;
+    const char* interface = NULL;
+    char* jsonResult;
+
+    jsonResult = curlStaticGet(Reader->curl_static_session, r700_GetSetInterfaceRequest->EndPoint, &httpStatus);
+
+    if ((jsonVal_Interface = json_parse_string(jsonResult)) == NULL)
+    {
+        LogInfo("R700 :  Unable to retrieve JSON Value for Image information from reader.  Check that HTTPS is enabled.");
+    }
+    else if ((jsonObj_Interface = json_value_get_object(jsonVal_Interface)) == NULL)
+    {
+        LogInfo("R700 :  Unable to retrieve JSON Object for Image information. Check that HTTPS is enabled.");
+    }
+    else if ((interface = json_object_get_string(jsonObj_Interface, "rfidInterface")) == NULL)
+    {
+        LogInfo("R700 :  Unable to retrieve rfidInterface.  Check that HTTPS is enabled.");
+    }
+    else
+    {
+        LogInfo("R700 : Current Interface is %s\r\n", interface);
+        if (strcmp(interface, "llrp") == 0)
+        {
+            char* jsonResultSet;
+            LogInfo("R700 : Setting to REST API");
+            char body[] = "{\"rfidInterface\":\"rest\"}";
+            jsonResultSet = curlStaticPut(Reader->curl_static_session, r700_GetSetInterfaceRequest->EndPoint, body, &httpStatus);
+
+        }
+    }
+}
+
+PDOWNLOAD_DATA ParseUrl(const char* Url)
+{
+    PDOWNLOAD_DATA pUrl_Data = (PDOWNLOAD_DATA)calloc(1, sizeof(DOWNLOAD_DATA));
+    const char* pStart;
+    char* pEnd;
+    char* pSeparator;
+    int length;
+
+    pStart = Url;
+
+    // scheme
+    pEnd = strstr(pStart, "://");
+    if (pEnd == 0)
+    {
+        goto errorExit;
+    }
+
+    strncpy(pUrl_Data->url, pStart, strlen(pStart));
+    LogInfo("R700 : Url %s", pUrl_Data->url);
+
+    length = pEnd - pStart;
+
+    strncpy(pUrl_Data->scheme, pStart, length);
+    pUrl_Data->scheme[length] = 0;
+
+    LogInfo("R700 : Scheme %s", pUrl_Data->scheme);
+
+    pStart = pEnd + 3;   // for ://
+
+    // check if user name & password are specified
+    // http://username:password@example.com
+    //
+    pEnd = strchr(pStart, '@');
+    if (pEnd)
+    {
+        pSeparator = strchr(pStart, ':');
+        if (pSeparator && pSeparator < pEnd)
+        {   // username:password
+            length = pSeparator - pStart;
+
+            if (length > 255)
+            {
+                LogError("R700 : User Name too long : Length %d", length);
+                goto errorExit;
+            }
+
+            strncpy(pUrl_Data->username, pStart, length);
+            pUrl_Data->username[length] = 0;
+
+            length = pEnd - pSeparator;
+
+            if (length > 255)
+            {
+                LogError("R700 : Password too long : Length %d", length);
+                goto errorExit;
+            }
+            strncpy(pUrl_Data->password, pSeparator + 1, length - 1);
+            pUrl_Data->password[length - 1] = 0;
+        }
+        else
+        {   // only username
+            length = pEnd - pStart;
+
+            if (length > 255)
+            {
+                LogError("R700 : User Name too long : Length %d", length);
+                goto errorExit;
+            }
+
+            strncpy(pUrl_Data->username, pStart, length);
+            pUrl_Data->username[length] = 0;
+        }
+
+        LogInfo("R700 : User Name %s", pUrl_Data->username);
+        LogInfo("R700 : Password  %s", pUrl_Data->password);
+
+        pStart = pEnd + 1;   // for @
+    }
+
+    // Hostname
+    pEnd = strchr(pStart, '/');
+    if (pEnd == NULL)
+    {
+        LogError("R700 : Upgrade File URL does not contain path");
+        goto errorExit;
+    }
+    else
+    {
+        pSeparator = strchr(pStart, ':');
+        if (pSeparator && pSeparator < pEnd)
+        {
+            // contains port number
+            // Copy Host Name
+            length = pSeparator - pStart;
+            if (length > 255)
+            {
+                LogError("R700 : Host Name too long : Length %d", length);
+                goto errorExit;
+            }
+            strncpy(pUrl_Data->hostname, pStart, length);
+            pUrl_Data->hostname[length] = 0;
+
+            // Port number
+            length = pEnd - pSeparator - 1;
+            if (length > 5)
+            {
+                LogError("R700 : Port Number too long : Length %d", length);
+                goto errorExit;
+            }
+            strncpy(pUrl_Data->port, pSeparator + 1, length);
+            pUrl_Data->port[length] = 0;
+        }
+        else
+        {
+            // Only Host Name
+            length = pEnd - pStart;
+            if (length > 255)
+            {
+                LogError("R700 : Host Name too long : Length %d", length);
+                goto errorExit;
+            }
+            strncpy(pUrl_Data->hostname, pStart, length);
+            pUrl_Data->hostname[length] = 0;
+        }
+        LogInfo("R700 : Host Name %s", pUrl_Data->hostname);
+        LogInfo("R700 : Port Number %s", pUrl_Data->port);
+    }
+
+    pStart = pEnd + 1;   // for /
+
+    length = strlen(pStart);
+
+    if (length == 0 || length > 1024)
+    {
+        LogError("R700 : URL Path too short or too long : Length %d", length);
+        goto errorExit;
+    }
+    strncpy(pUrl_Data->path, pStart, length);
+    pUrl_Data->path[length] = 0;
+
+    LogInfo("R700 : URL Path %s", pUrl_Data->path);
+
+    // get file name
+    pSeparator = strrchr(pStart, '/');
+    sprintf(pUrl_Data->outFileName, "/tmp/%s", pSeparator + 1);
+
+    LogInfo("R700 : Output File %s", pUrl_Data->outFileName);
+
+    return pUrl_Data;
+
+errorExit:
+
+    if (pUrl_Data)
+    {
+        free(pUrl_Data);
+    }
+
+    return NULL;
+}
+
+PDOWNLOAD_DATA DownloadFile(const char* Url)
+{
+    struct addrinfo* addrInfo;
+    struct sockaddr_in* socketAddrHost;
+    struct sockaddr_in socketAddrClient;
+    char* hostAddr;
+    int sock;
+    PDOWNLOAD_DATA pUrl_Data;
+    int statusCode = R700_STATUS_INTERNAL_ERROR;
+
+    pUrl_Data = ParseUrl(Url);
+
+    if (pUrl_Data == NULL)
+    {
+        goto exit;
+    }
+
+    statusCode = curlGetDownload(pUrl_Data);
+
+    LogInfo("R700 : Download %d", statusCode);
+
+    if (statusCode == R700_STATUS_OK)
+    {
+        // Upload File
+    }
+    else
+    {
+        //
+    }
+
+    // if (0 != getaddrinfo(pUrl_Data->hostname, NULL, NULL, &addrInfo))
+    // {
+    //     LogError("R700 : Error in resolving hostname %s\n", pUrl_Data->hostname);
+    //     goto exit;
+    // }
+
+    // // Resolve host address as string
+    // socketAddrHost = (struct sockaddr_in*)addrInfo->ai_addr;
+    // hostAddr   = inet_ntoa(socketAddrHost->sin_addr);
+
+    // LogInfo("R700 : Download Host Address %s", hostAddr);
+
+    // // Create a socket of stream type
+    // sock = socket(AF_INET, SOCK_STREAM, 0);
+    // if (sock < 0)
+    // {
+    //     perror("Error opening channel");
+    //     goto exit;
+    // }
+
+    // // Define properties required to connect to the socket
+    // bzero(&socketAddrClient, sizeof(socketAddrClient));
+    // socketAddrClient.sin_family      = AF_INET;
+    // socketAddrClient.sin_addr.s_addr = inet_addr(hostAddr);
+    // socketAddrClient.sin_port        = htons(80);
+
+exit:
+
+    close(sock);
+
+    return pUrl_Data;
 }

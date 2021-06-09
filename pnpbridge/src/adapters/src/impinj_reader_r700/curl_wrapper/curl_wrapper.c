@@ -6,12 +6,14 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <assert.h>
+#include <unistd.h>
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 //#define DEBUG_CURL
 
-void curlGlobalInit()
+void
+curlGlobalInit()
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 }
@@ -115,7 +117,8 @@ curlStreamReadBufferChunk(
     }
 }
 
-void curlStreamBufferReadout(
+void
+curlStreamBufferReadout(
     CURL_Stream_Session_Data* session_data)
 {
 
@@ -233,13 +236,15 @@ curlStreamReader(
     LogInfo("R700 : %s() exit : cURL stream reader thread shut down.", __FUNCTION__);
 }
 
-int curlStreamSpawnReaderThread(
+int
+curlStreamSpawnReaderThread(
     CURL_Stream_Session_Data* session_data)
 {
     session_data->threadData.thread_ref = pthread_create(&(session_data->threadData.tid), NULL, curlStreamReader, (void*)session_data);
 }
 
-int curlStreamStopThread(
+int
+curlStreamStopThread(
     CURL_Stream_Session_Data* session_data)
 {
     session_data->threadData.stopFlag = 1;
@@ -342,7 +347,8 @@ curlStaticInit(
     return session_data;
 }
 
-CURL_Stream_Session_Data* curlStreamInit(
+CURL_Stream_Session_Data* 
+curlStreamInit(
     const char* username,
     const char* password,
     char* basePath,
@@ -440,7 +446,8 @@ CURL_Stream_Session_Data* curlStreamInit(
     return session_data;
 }
 
-char* curlStaticGet(
+char*
+curlStaticGet(
     CURL_Static_Session_Data* session_data,
     char* endpoint,
     int* statusCode)
@@ -480,7 +487,8 @@ char* curlStaticGet(
 
     if (res != CURLE_OK)
     {
-        LogError("R700 : curl_easy_perform() failed in curlStaticGet: %s (CurlCode %d HttpStatus %ld)",
+        LogError("R700 : curl_easy_perform() failed in %s: %s (CurlCode %d HttpStatus %ld)",
+                 __FUNCTION__,
                  curl_easy_strerror(res),
                  res,
                  http_code);
@@ -503,7 +511,8 @@ char* curlStaticGet(
     }
 }
 
-char* curlStaticPut(
+char*
+curlStaticPut(
     CURL_Static_Session_Data* session_data,
     char* endpoint,
     char* putData,
@@ -553,7 +562,8 @@ char* curlStaticPut(
 
     if (res != CURLE_OK)
     {
-        LogError("R700 : curl_easy_perform() failed in curlStaticGet: %s (CurlCode %d HttpStatus %ld)",
+        LogError("R700 : curl_easy_perform() failed in %s: %s (CurlCode %d HttpStatus %ld)",
+                 __FUNCTION__,
                  curl_easy_strerror(res),
                  res,
                  http_code);
@@ -576,7 +586,8 @@ char* curlStaticPut(
     }
 }
 
-char* curlStaticPost(
+char*
+curlStaticPost(
     CURL_Static_Session_Data* session_data,
     char* endpoint,
     char* postData,
@@ -623,7 +634,8 @@ char* curlStaticPost(
 
     if (res != CURLE_OK)
     {
-        LogError("R700 : curl_easy_perform() failed in curlStaticGet: %s (CurlCode %d HttpStatus %ld)",
+        LogError("R700 : curl_easy_perform() failed in %s: %s (CurlCode %d HttpStatus %ld)",
+                 __FUNCTION__,
                  curl_easy_strerror(res),
                  res,
                  http_code);
@@ -646,7 +658,165 @@ char* curlStaticPost(
     }
 }
 
-char* curlStaticDelete(
+static size_t 
+curlUploadCallback(void* dest, size_t size, size_t nmemb, void* userp)
+{
+    LogInfo("R700 : Upload Callback size %ld", size);
+
+    UPLOAD_DATA* uploadData = (UPLOAD_DATA*)userp;
+    if (uploadData->sizeleft == 0)
+        return 0;
+
+    size_t buffer_size = size * nmemb;
+    size_t copySize    = uploadData->sizeleft;
+
+    if (copySize > buffer_size)
+    {
+        copySize = buffer_size;
+    }
+
+    memcpy(dest, uploadData->readptr, copySize);
+
+    uploadData->readptr += copySize;
+    uploadData->sizeleft -= copySize;
+    return copySize;
+}
+
+char*
+curlPostUploadFile(
+    CURL_Static_Session_Data* session_data,
+    char* endpoint,
+    PDOWNLOAD_DATA Download_Data,
+    int* statusCode)
+{
+    assert(statusCode != NULL);
+
+    CURL* curl;
+    long http_code      = 500;
+    char fullurl[1000]  = "";
+    char* full_endpoint = NULL;
+    FILE* fp;
+    size_t len;
+    UPLOAD_DATA callback_Data;
+    char* usrpwd = NULL;
+
+    struct curl_httppost* formpost = NULL;
+    struct curl_httppost* lastptr  = NULL;
+    struct curl_slist* headerlist  = NULL;
+    static const char buf[]        = "Expect:";
+
+#ifdef DEBUG_CURL
+    LogInfo("R700 : %s %s", __FUNCTION__, endpoint);
+#endif
+
+    curl = curl_easy_init();
+
+    if (curl)
+    {
+        // build user:password string for cURL
+        char usrpwd_build[256] = "";
+        sprintf(usrpwd_build, "%s:%s", session_data->username, session_data->password);
+
+        mallocAndStrcpy_s(&usrpwd, usrpwd_build);
+
+        curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME,
+                     "cache-control:", CURLFORM_COPYCONTENTS, "no-cache",
+                     CURLFORM_END);
+
+
+        curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME,
+                     "content-type:", CURLFORM_COPYCONTENTS, "multipart/form-data",
+                     CURLFORM_END);
+
+
+        curl_easy_setopt(curl, CURLOPT_USERPWD, usrpwd);
+
+        strcat(fullurl, session_data->basePath);
+        strcat(fullurl, endpoint);
+        mallocAndStrcpy_s(&full_endpoint, fullurl);
+        curl_easy_setopt(curl, CURLOPT_URL, full_endpoint);
+
+        if (access(Download_Data->outFileName, F_OK) != 0)
+        {
+            LogError("R700 : Upload File missing");
+            goto exit;
+        }
+
+        fp = fopen(Download_Data->outFileName, "rb");
+        fseek(fp, 0, SEEK_END);
+        len = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        uint8_t* buffer = (uint8_t*)calloc(1, len);
+        fread(buffer, 1, len, fp);
+        fclose(fp);
+
+        curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME,
+                     "file",
+                     CURLFORM_BUFFER, "data", CURLFORM_BUFFERPTR, buffer,
+                     CURLFORM_BUFFERLENGTH, len, CURLFORM_END);
+
+        headerlist = curl_slist_append(headerlist, buf);
+
+        callback_Data.readptr  = buffer;
+        callback_Data.sizeleft = len;
+
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, curlUploadCallback);
+        curl_easy_setopt(curl, CURLOPT_READDATA, (void*)&callback_Data);
+
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)len);
+
+        LogInfo("R700 : POST Upload Endpoint: %s File %s Size %ld", full_endpoint, Download_Data->outFileName, len);
+
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+        if (strncmp(fullurl, "https:", 6) == 0)
+        {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        }
+
+        CURLcode res;
+
+        res = curl_easy_perform(curl);
+        curl_slist_free_all(headerlist);
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+        if (res != CURLE_OK)
+        {
+            LogError("R700 : curl_easy_perform() failed in %s: %s (CurlCode %d HttpStatus %ld)",
+                     __FUNCTION__,
+                     curl_easy_strerror(res),
+                     res,
+                     http_code);
+        }
+
+        curl_easy_cleanup(curl);
+        curl_formfree(formpost);
+        *statusCode = (int)http_code;
+    }
+
+exit:
+
+    if (full_endpoint)
+    {
+        free(full_endpoint);
+    }
+
+    if (usrpwd)
+    {
+        free(usrpwd);
+    }
+
+    return NULL;
+}
+
+char*
+curlStaticDelete(
     CURL_Static_Session_Data* session_data,
     char* endpoint,
     int* statusCode)
@@ -683,7 +853,8 @@ char* curlStaticDelete(
 
     if (res != CURLE_OK)
     {
-        LogError("R700 : curl_easy_perform() failed in curlStaticDelete: %s (CurlCode %d HttpStatus %ld)",
+        LogError("R700 : curl_easy_perform() failed in %s: %s (CurlCode %d HttpStatus %ld)",
+                 __FUNCTION__,
                  curl_easy_strerror(res),
                  res,
                  http_code);
@@ -748,7 +919,8 @@ curlStaticDataWriteCallback(
     }
 }
 
-void curlStaticCleanup(
+void
+curlStaticCleanup(
     CURL_Static_Session_Data* session_data)
 {
     curl_easy_cleanup(session_data->curlHandle);
@@ -773,7 +945,8 @@ void curlStaticCleanup(
     free(session_data);
 }
 
-void curlStreamCleanup(
+void
+curlStreamCleanup(
     CURL_Stream_Session_Data* session_data)
 {
     session_data->threadData.thread_ref = pthread_join(session_data->threadData.tid, NULL);
@@ -800,7 +973,59 @@ void curlStreamCleanup(
     free(session_data);
 }
 
-void curlGlobalCleanup()
+void
+curlGlobalCleanup()
 {
     curl_global_cleanup();
+}
+
+int
+curlGetDownload(
+    PDOWNLOAD_DATA UrlData)
+{
+#ifdef DEBUG_CURL
+    LogInfo("R700 : %s %s", __FUNCTION__, endpoint);
+#endif
+    CURL* curl;
+    FILE* fp;
+    long http_code = 500;
+    CURLcode res;
+
+    curl = curl_easy_init();
+
+    if (curl)
+    {
+
+        if (access(UrlData->outFileName, F_OK) == 0)
+        {
+            // file exists.  Delete
+            LogInfo("R700 : Delete File %s", UrlData->outFileName);
+            remove(UrlData->outFileName);
+        }
+
+        fp = fopen(UrlData->outFileName, "wb");
+        curl_easy_setopt(curl, CURLOPT_URL, UrlData->url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        curl_easy_setopt(curl, CURLOPT_POST, 0L);
+        res = curl_easy_perform(curl);
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+        if (res != CURLE_OK)
+        {
+            LogError("R700 : curl_easy_perform() failed in %s: %s (CurlCode %d HttpStatus %ld)",
+                     __FUNCTION__,
+                     curl_easy_strerror(res),
+                     res,
+                     http_code);
+        }
+
+
+        curl_easy_cleanup(curl);
+        fclose(fp);
+    }
+
+    return http_code;
+    // LogInfo("R700 : GET Endpoint: '%s'", full_endpoint);   //DEBUG
 }

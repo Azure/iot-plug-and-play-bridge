@@ -31,6 +31,9 @@ char* PreProcessSetPresetIdPayload(
 char* PreProcessTagPresenceResponse(
     JSON_Value* Payload);
 
+PDOWNLOAD_DATA ProcessImageUpgradeUpload(
+    JSON_Value* Payload);
+
 #ifdef __cplusplus
 }
 #endif
