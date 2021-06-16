@@ -1,6 +1,7 @@
 #include "pnp_utils.h"
 #include "restapi.h"
 #include "pnp_command.h"
+#include "pnp_property.h"
 #include <strings.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -8,14 +9,18 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#include <sys/time.h>
+#include <signal.h>
+#include <time.h>
+#include <pthread.h>
 /****************************************************************
 Helper function
 
 Print outs JSON payload with indent
 Works only with JSONObject
 ****************************************************************/
-void LogJsonPretty(
+void
+LogJsonPretty(
     const char* MsgFormat,
     JSON_Value* JsonValue, ...)
 {
@@ -118,7 +123,8 @@ exit:
     return;
 }
 
-void LogJsonPrettyStr(
+void
+LogJsonPrettyStr(
     const char* MsgFormat,
     char* JsonString, ...)
 {
@@ -393,7 +399,8 @@ JSONArray2DtdlMap(
 /****************************************************************
 Converts DTDL Map to JSON Array
 ****************************************************************/
-char* DtdlMap2JSONArray(
+char*
+DtdlMap2JSONArray(
     const char* Payload,
     const char* ArrayName)
 {
@@ -535,7 +542,8 @@ GetStringFromPayload(
 //
 // Remove empty objects from Antenna Configuration
 //
-bool CleanAntennaConfig(
+bool
+CleanAntennaConfig(
     JSON_Object* jsonObj_AntennaConfig)
 {
     JSON_Object* jsonObj_Filtering         = json_object_get_object(jsonObj_AntennaConfig, g_antennaConfigFiltering);
@@ -601,13 +609,14 @@ GetObjectStringFromPayload(
 /****************************************************************
 Get Firmware Version from reader
 ****************************************************************/
-void GetFirmwareVersion(
+void
+GetFirmwareVersion(
     PIMPINJ_READER Reader)
 {
     // get firmware version
     PIMPINJ_R700_REST r700_GetSystemImageRequest = &R700_REST_LIST[SYSTEM_IMAGE];
-    JSON_Value* jsonVal_Image               = NULL;
-    JSON_Value* jsonVal_Firmware            = NULL;
+    JSON_Value* jsonVal_Image                    = NULL;
+    JSON_Value* jsonVal_Firmware                 = NULL;
     JSON_Object* jsonObj_Image;
     int httpStatus;
     const char* firmware = NULL;
@@ -658,56 +667,103 @@ void GetFirmwareVersion(
             }
         }
 
-        LogInfo("R700 : REST API Version %s\r\n", MU_ENUM_TO_STRING(R700_REST_VERSION, apiVersion));
+        LogInfo("R700 : REST API Version %s", MU_ENUM_TO_STRING(R700_REST_VERSION, apiVersion));
         Reader->ApiVersion = apiVersion;
+    }
+
+    if (jsonVal_Image)
+    {
+        json_value_free(jsonVal_Image);
     }
 }
 
 /****************************************************************
 Get Interface Type
 ****************************************************************/
-void CheckInterfaceType(
+void
+CheckRfidInterfaceType(
     PIMPINJ_READER Reader)
 {
-    // get firmware version
-    PIMPINJ_R700_REST r700_GetSetInterfaceRequest = &R700_REST_LIST[SYSTEM_RFID_INTERFACE];
-    JSON_Value* jsonVal_Interface           = NULL;
-    JSON_Object* jsonObj_Interface;
-    int httpStatus;
-    const char* interface = NULL;
-    char* jsonResult;
+    JSON_Value* jsonVal_Interface  = NULL;
+    JSON_Object* jsonObj_Interface = NULL;
+    int httpStatus                 = 500;
+    const char* interface          = NULL;
+    char jsonResult[64]            = {0};
+    PUPGRADE_DATA upgradeData      = NULL;
+    bool bSwitchToRest             = true;
 
-    jsonResult = curlStaticGet(Reader->curl_static_session, r700_GetSetInterfaceRequest->EndPoint, &httpStatus);
+    upgradeData = ImpinjReader_Init_UpgradeData(Reader, R700_REST_LIST[SYSTEM_RFID_INTERFACE].EndPoint);
 
-    if ((jsonVal_Interface = json_parse_string(jsonResult)) == NULL)
+    if (upgradeData)
     {
-        LogInfo("R700 :  Unable to retrieve JSON Value for Image information from reader.  Check that HTTPS is enabled.");
-    }
-    else if ((jsonObj_Interface = json_value_get_object(jsonVal_Interface)) == NULL)
-    {
-        LogInfo("R700 :  Unable to retrieve JSON Object for Image information. Check that HTTPS is enabled.");
-    }
-    else if ((interface = json_object_get_string(jsonObj_Interface, "rfidInterface")) == NULL)
-    {
-        LogInfo("R700 :  Unable to retrieve rfidInterface.  Check that HTTPS is enabled.");
-    }
-    else
-    {
-        LogInfo("R700 : Current Interface is %s\r\n", interface);
-        if (strcmp(interface, "llrp") == 0)
+        httpStatus = curlGet(&upgradeData->urlData, jsonResult);
+
+        if (IsSuccess(httpStatus))
         {
-            char* jsonResultSet;
-            LogInfo("R700 : Setting to REST API");
-            char body[] = "{\"rfidInterface\":\"rest\"}";
-            jsonResultSet = curlStaticPut(Reader->curl_static_session, r700_GetSetInterfaceRequest->EndPoint, body, &httpStatus);
+            if ((jsonVal_Interface = json_parse_string(jsonResult)) == NULL)
+            {
+                LogInfo("R700 :  Unable to retrieve JSON Value for RFID Interface from reader.  Check that HTTPS is enabled.");
+            }
+            else if ((jsonObj_Interface = json_value_get_object(jsonVal_Interface)) == NULL)
+            {
+                LogInfo("R700 :  Unable to retrieve JSON Object for RFID Interface. Check that HTTPS is enabled.");
+            }
+            else if ((interface = json_object_get_string(jsonObj_Interface, "rfidInterface")) == NULL)
+            {
+                LogInfo("R700 :  Unable to retrieve 'rfidInterface' from JSON paylod : %s.", jsonResult);
+            }
+            else
+            {
+                LogInfo("R700 : Current Interface is '%s'", interface);
 
+                if (strcmp(interface, "rest") == 0)
+                {
+                    bSwitchToRest               = false;
+                    Reader->Flags.IsRESTEnabled = 1;
+                }
+                else
+                {
+                    Reader->Flags.IsRESTEnabled = 0;
+                }
+            }
+
+            free(upgradeData);
         }
+
+        if (bSwitchToRest)
+        {
+            LogInfo("R700 : Setting to REST API");
+            char payload[] = "{\"rfidInterface\":\"rest\"}";
+
+            upgradeData = ImpinjReader_Init_UpgradeData(Reader, R700_REST_LIST[SYSTEM_RFID_INTERFACE].EndPoint);
+
+            if (upgradeData)
+            {
+                httpStatus = curlPut(&upgradeData->urlData, payload);
+                LogInfo("R700 : REST API set %d", httpStatus);
+                free(upgradeData);
+            }
+
+            if (httpStatus == R700_STATUS_NO_CONTENT)
+            {
+                ThreadAPI_Sleep(3000);
+                // success
+                Reader->Flags.IsRESTEnabled = 1;
+            }
+        }
+    }
+
+    if (jsonVal_Interface)
+    {
+        json_value_free(jsonVal_Interface);
     }
 }
 
-PDOWNLOAD_DATA ParseUrl(const char* Url)
+PUPGRADE_DATA
+ParseUrl(
+    const char* Url)
 {
-    PDOWNLOAD_DATA pUrl_Data = (PDOWNLOAD_DATA)calloc(1, sizeof(DOWNLOAD_DATA));
+    PUPGRADE_DATA upgradeData = (PUPGRADE_DATA)calloc(1, sizeof(UPGRADE_DATA));
     const char* pStart;
     char* pEnd;
     char* pSeparator;
@@ -722,15 +778,15 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
         goto errorExit;
     }
 
-    strncpy(pUrl_Data->url, pStart, strlen(pStart));
-    LogInfo("R700 : Url %s", pUrl_Data->url);
+    strncpy(upgradeData->urlData.url, pStart, strlen(pStart));
+    //LogInfo("R700 : ParseUrl %s", upgradeData->urlData.url);
 
     length = pEnd - pStart;
 
-    strncpy(pUrl_Data->scheme, pStart, length);
-    pUrl_Data->scheme[length] = 0;
+    strncpy(upgradeData->urlData.scheme, pStart, length);
+    upgradeData->urlData.scheme[length] = 0;
 
-    LogInfo("R700 : Scheme %s", pUrl_Data->scheme);
+    // LogInfo("R700 : Scheme %s", upgradeData->urlData.scheme);
 
     pStart = pEnd + 3;   // for ://
 
@@ -751,8 +807,8 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
                 goto errorExit;
             }
 
-            strncpy(pUrl_Data->username, pStart, length);
-            pUrl_Data->username[length] = 0;
+            strncpy(upgradeData->urlData.username, pStart, length);
+            upgradeData->urlData.username[length] = 0;
 
             length = pEnd - pSeparator;
 
@@ -761,8 +817,8 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
                 LogError("R700 : Password too long : Length %d", length);
                 goto errorExit;
             }
-            strncpy(pUrl_Data->password, pSeparator + 1, length - 1);
-            pUrl_Data->password[length - 1] = 0;
+            strncpy(upgradeData->urlData.password, pSeparator + 1, length - 1);
+            upgradeData->urlData.password[length - 1] = 0;
         }
         else
         {   // only username
@@ -774,12 +830,12 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
                 goto errorExit;
             }
 
-            strncpy(pUrl_Data->username, pStart, length);
-            pUrl_Data->username[length] = 0;
+            strncpy(upgradeData->urlData.username, pStart, length);
+            upgradeData->urlData.username[length] = 0;
         }
 
-        LogInfo("R700 : User Name %s", pUrl_Data->username);
-        LogInfo("R700 : Password  %s", pUrl_Data->password);
+        //LogInfo("R700 : User Name %s", upgradeData->urlData.username);
+        //LogInfo("R700 : Password  %s", upgradeData->urlData.password);
 
         pStart = pEnd + 1;   // for @
     }
@@ -804,8 +860,8 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
                 LogError("R700 : Host Name too long : Length %d", length);
                 goto errorExit;
             }
-            strncpy(pUrl_Data->hostname, pStart, length);
-            pUrl_Data->hostname[length] = 0;
+            strncpy(upgradeData->urlData.hostname, pStart, length);
+            upgradeData->urlData.hostname[length] = 0;
 
             // Port number
             length = pEnd - pSeparator - 1;
@@ -814,8 +870,8 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
                 LogError("R700 : Port Number too long : Length %d", length);
                 goto errorExit;
             }
-            strncpy(pUrl_Data->port, pSeparator + 1, length);
-            pUrl_Data->port[length] = 0;
+            strncpy(upgradeData->urlData.port, pSeparator + 1, length);
+            upgradeData->urlData.port[length] = 0;
         }
         else
         {
@@ -826,11 +882,11 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
                 LogError("R700 : Host Name too long : Length %d", length);
                 goto errorExit;
             }
-            strncpy(pUrl_Data->hostname, pStart, length);
-            pUrl_Data->hostname[length] = 0;
+            strncpy(upgradeData->urlData.hostname, pStart, length);
+            upgradeData->urlData.hostname[length] = 0;
         }
-        LogInfo("R700 : Host Name %s", pUrl_Data->hostname);
-        LogInfo("R700 : Port Number %s", pUrl_Data->port);
+        // LogInfo("R700 : Host Name %s", upgradeData->urlData.>hostname);
+        // LogInfo("R700 : Port Number %s", upgradeData->urlData.port);
     }
 
     pStart = pEnd + 1;   // for /
@@ -842,88 +898,328 @@ PDOWNLOAD_DATA ParseUrl(const char* Url)
         LogError("R700 : URL Path too short or too long : Length %d", length);
         goto errorExit;
     }
-    strncpy(pUrl_Data->path, pStart, length);
-    pUrl_Data->path[length] = 0;
+    strncpy(upgradeData->urlData.path, pStart, length);
+    upgradeData->urlData.path[length] = 0;
 
-    LogInfo("R700 : URL Path %s", pUrl_Data->path);
+    // LogInfo("R700 : URL Path %s", upgradeData->urlData.path);
 
     // get file name
     pSeparator = strrchr(pStart, '/');
-    sprintf(pUrl_Data->outFileName, "/tmp/%s", pSeparator + 1);
+    sprintf(upgradeData->downloadFileName, "/tmp/%s", pSeparator + 1);
 
-    LogInfo("R700 : Output File %s", pUrl_Data->outFileName);
+    // LogInfo("R700 : Output File %s", upgradeData->downloadFileName);
 
-    return pUrl_Data;
+    return upgradeData;
 
 errorExit:
 
-    if (pUrl_Data)
+    if (upgradeData)
     {
-        free(pUrl_Data);
+        free(upgradeData);
     }
 
     return NULL;
 }
 
-PDOWNLOAD_DATA DownloadFile(const char* Url)
+PUPGRADE_DATA
+DownloadFile(
+    const char* Url,
+    int IsAutoReboot)
 {
     struct addrinfo* addrInfo;
     struct sockaddr_in* socketAddrHost;
     struct sockaddr_in socketAddrClient;
     char* hostAddr;
     int sock;
-    PDOWNLOAD_DATA pUrl_Data;
-    int statusCode = R700_STATUS_INTERNAL_ERROR;
+    PUPGRADE_DATA upgradeData;
 
-    pUrl_Data = ParseUrl(Url);
+    upgradeData = ParseUrl(Url);
 
-    if (pUrl_Data == NULL)
+    if (upgradeData == NULL)
     {
         goto exit;
     }
 
-    statusCode = curlGetDownload(pUrl_Data);
+    LogInfo("R700 : Downloading Upgrade Firmware %s to %s", upgradeData->urlData.url, upgradeData->downloadFileName);
 
-    LogInfo("R700 : Download %d", statusCode);
+    upgradeData->isAutoReboot = IsAutoReboot;
 
-    if (statusCode == R700_STATUS_OK)
+    if (strcmp(upgradeData->urlData.scheme, "https") == 0)
     {
-        // Upload File
+        upgradeData->statusCode = curlGetDownload(upgradeData);
     }
     else
     {
+        // Imcomplete.  We can download using socket..
         //
+        // if (0 != getaddrinfo(upgradeData->urlData.hostname, NULL, NULL, &addrInfo))
+        // {
+        //     LogError("R700 : Error in resolving hostname %s\n", upgradeData->urlData.hostname);
+        //     goto exit;
+        // }
+
+        // // Resolve host address as string
+        // socketAddrHost = (struct sockaddr_in*)addrInfo->ai_addr;
+        // hostAddr   = inet_ntoa(socketAddrHost->sin_addr);
+
+        // LogInfo("R700 : Download Host Address %s", hostAddr);
+
+        // // Create a socket of stream type
+        // sock = socket(AF_INET, SOCK_STREAM, 0);
+        // if (sock < 0)
+        // {
+        //     perror("Error opening channel");
+        //     goto exit;
+        // }
+
+        // // Define properties required to connect to the socket
+        // bzero(&socketAddrClient, sizeof(socketAddrClient));
+        // socketAddrClient.sin_family      = AF_INET;
+        // socketAddrClient.sin_addr.s_addr = inet_addr(hostAddr);
+        // socketAddrClient.sin_port        = htons(80);
+
+        close(sock);
     }
-
-    // if (0 != getaddrinfo(pUrl_Data->hostname, NULL, NULL, &addrInfo))
-    // {
-    //     LogError("R700 : Error in resolving hostname %s\n", pUrl_Data->hostname);
-    //     goto exit;
-    // }
-
-    // // Resolve host address as string
-    // socketAddrHost = (struct sockaddr_in*)addrInfo->ai_addr;
-    // hostAddr   = inet_ntoa(socketAddrHost->sin_addr);
-
-    // LogInfo("R700 : Download Host Address %s", hostAddr);
-
-    // // Create a socket of stream type
-    // sock = socket(AF_INET, SOCK_STREAM, 0);
-    // if (sock < 0)
-    // {
-    //     perror("Error opening channel");
-    //     goto exit;
-    // }
-
-    // // Define properties required to connect to the socket
-    // bzero(&socketAddrClient, sizeof(socketAddrClient));
-    // socketAddrClient.sin_family      = AF_INET;
-    // socketAddrClient.sin_addr.s_addr = inet_addr(hostAddr);
-    // socketAddrClient.sin_port        = htons(80);
 
 exit:
 
-    close(sock);
+    LogInfo("R700 : Download Upgrade Firmware : Status = %d", upgradeData->statusCode);
 
-    return pUrl_Data;
+    return upgradeData;
+}
+
+int
+RebootWorker(
+    void* context)
+{
+    PIMPINJ_R700_REST r700_Reboot                 = &R700_REST_LIST[SYSTEM_REBOOT];
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle = (PNPBRIDGE_COMPONENT_HANDLE)context;
+    PIMPINJ_READER reader                         = PnpComponentHandleGetContext(PnpComponentHandle);
+    struct timeval curtime;
+    struct timespec timeout;
+    int rc;
+    PUPGRADE_DATA upgradeData = (PUPGRADE_DATA)calloc(1, sizeof(UPGRADE_DATA));
+    int httpStatus;
+    bool ret = false;
+    R700_UPGRADE_STATUS upgradeStatus;
+
+    LogInfo("R700 : %s() enter", __FUNCTION__);
+
+    if (upgradeData)
+    {
+        if (reader->Flags.IsUpgradePending)
+        {
+            LogInfo("R700 : RebootWorker() Upgrade Pending...");
+            // Reboot scheduled for auto reboot for firmware upgrade
+
+            if (reader->UpgradeWorkerHandle != NULL)
+            {
+                LogInfo("R700 : Waiting for UpgradeWorker()");
+                ThreadAPI_Join(reader->UpgradeWorkerHandle, NULL);
+                LogInfo("R700 : UpgradeWorker() completed");
+            }
+        }
+        else
+        {
+            // Reboot the device in response to reboot command.
+            // Give 5 sec so we can send response to the command.
+
+            ThreadAPI_Sleep(5000);
+        }
+
+        if (reader->Flags.IsRunningLocal == 0)
+        {
+            // Not running local
+            // Stop curl sessions
+            ImpinjReader_Uninitialize_CurlSessions(reader);
+        }
+
+        // send POST /system/reboot
+        strcpy(upgradeData->urlData.url, reader->baseUrl);
+        strcat(upgradeData->urlData.url, r700_Reboot->EndPoint);
+        strcpy(upgradeData->urlData.username, reader->username);
+        strcpy(upgradeData->urlData.password, reader->password);
+
+        httpStatus = curlPost(&upgradeData->urlData);
+
+        if (!IsSuccess(httpStatus))
+        {
+            LogError("R700 : Failed to reboot reader.  Status %d", httpStatus);
+            goto errorExit;
+        }
+        else if (reader->Flags.IsRunningLocal == 0)
+        {
+            int i;
+
+            // After FW upgrade, LLRP interface will be set to LLRP.
+            reader->Flags.IsRESTEnabled = 0;
+
+            // Wait for 1 min
+            ThreadAPI_Sleep(60000);
+
+            // wait for reader up to 5 min
+            if (!ImpinjReader_WaitForReader(reader, 300 / 10))
+            {
+                LogError("R700 : Device not ready after reboot");
+                goto errorExit;
+            }
+
+            // give a reader 5 sec to settle.
+            ThreadAPI_Sleep(5000);
+
+            // Wait for HTTPS interface to be available, up to 3 min
+            if (!ImpinjReader_WaitForHttps(reader, 300 / 10))
+            {
+                LogError("R700 : HTTPS interface not ready after reboot");
+                goto errorExit;
+            }
+
+            reader->Flags.IsRebootPending = 0;
+
+            CheckRfidInterfaceType(reader);
+            ImpinjReader_Initialize_CurlSessions(reader);
+            GetFirmwareVersion(reader);
+            ImpinjReader_StartWorkers(PnpComponentHandle);
+
+            // We should request Get Twin to refresh twin after reboot.
+            // Need to a way to call IoTHubDeviceClient_GetTwinAsync()..
+
+            for (i = 0; i < (sizeof(R700_REST_LIST) / sizeof(IMPINJ_R700_REST)); i++)
+            {
+                PIMPINJ_R700_REST r700_Request = &R700_REST_LIST[i];
+                JSON_Value* jsonVal_Rest       = NULL;
+                int status                     = PNP_STATUS_SUCCESS;
+
+                if (r700_Request->DtdlType != READONLY)
+                {
+                    continue;
+                }
+
+                jsonVal_Rest = ImpinjReader_RequestGet(reader, r700_Request, NULL, &status);
+
+                if (IsSuccess(status))
+                {
+                    UpdateReadOnlyReportProperty(PnpComponentHandle, reader->SensorState->componentName, r700_Request->Name, jsonVal_Rest);
+                }
+
+                if (jsonVal_Rest)
+                {
+                    json_value_free(jsonVal_Rest);
+                }
+            }
+        }
+    }
+    else
+    {
+        LogError("R700 : Failed to allocate CURL_REQUEST_DATA for reboot");
+        goto errorExit;
+    }
+
+    reader->RebootWorkerHandle    = NULL;
+    reader->Flags.IsRebootPending = 0;
+    ThreadAPI_Exit(0);
+    return 0;
+
+errorExit:
+
+    reader->RebootWorkerHandle    = NULL;
+    reader->Flags.IsRebootPending = 0;
+    ThreadAPI_Exit(1);
+    return 1;
+}
+
+bool
+ScheduleRebootWorker(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+{
+    PIMPINJ_READER reader = PnpComponentHandleGetContext(PnpComponentHandle);
+    if (ThreadAPI_Create(&reader->RebootWorkerHandle, RebootWorker, PnpComponentHandle) != THREADAPI_OK)
+    {
+        LogError("ThreadAPI_Create for RebootWorker() failed");
+        reader->RebootWorkerHandle = NULL;
+        return false;
+    }
+
+    reader->Flags.IsRebootPending = 1;
+
+    return true;
+}
+
+int
+UpgradeWorker(
+    void* context)
+{
+    PIMPINJ_R700_REST r700_UpgradeStatus          = &R700_REST_LIST[SYSTEM_IMAGE_UPGRADE];
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle = (PNPBRIDGE_COMPONENT_HANDLE)context;
+    PIMPINJ_READER reader                         = PnpComponentHandleGetContext(PnpComponentHandle);
+    R700_UPGRADE_STATUS upgradeStatusCurrnet      = UNKNOWN;
+    R700_UPGRADE_STATUS upgradeStatusPrevious     = UNKNOWN;
+    JSON_Value* jsonVal_UpgradeStatus;
+
+    LogInfo("R700 : %s() enter", __FUNCTION__);
+
+    while (reader->Flags.IsUpgradePending == 1)
+    {
+        upgradeStatusCurrnet = CheckUpgardeStatus(reader, &jsonVal_UpgradeStatus);
+
+        if (upgradeStatusCurrnet != upgradeStatusPrevious)
+        {
+            JSON_Value* jsonVal_UpgradeStatusConverted;
+            char* upgradeStatusString      = json_serialize_to_string(jsonVal_UpgradeStatus);
+            jsonVal_UpgradeStatusConverted = ImpinjReader_Convert_UpgradeStatus(json_serialize_to_string(jsonVal_UpgradeStatus));
+            UpdateReadOnlyReportProperty(PnpComponentHandle, reader->SensorState->componentName, r700_UpgradeStatus->Name, jsonVal_UpgradeStatusConverted);
+            json_value_free(jsonVal_UpgradeStatusConverted);
+            json_free_serialized_string(upgradeStatusString);
+            upgradeStatusPrevious = upgradeStatusCurrnet;
+        }
+
+        json_value_free(jsonVal_UpgradeStatus);
+        ThreadAPI_Sleep(3000);
+    }
+
+    reader->UpgradeWorkerHandle = NULL;
+    ThreadAPI_Exit(0);
+    return 0;
+}
+
+bool
+ScheduleUpgradeWorker(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle)
+{
+    PIMPINJ_READER reader = PnpComponentHandleGetContext(PnpComponentHandle);
+
+    if (ThreadAPI_Create(&reader->UpgradeWorkerHandle, UpgradeWorker, PnpComponentHandle) != THREADAPI_OK)
+    {
+        LogError("ThreadAPI_Create for UpgradeWorker() failed");
+        reader->UpgradeWorkerHandle = NULL;
+        return false;
+    }
+
+    return true;
+}
+
+int
+ProcessReboot(
+    PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
+    unsigned char** CommandResponse,
+    size_t* CommandResponseSize)
+{
+    int httpStatus        = PNP_STATUS_INTERNAL_ERROR;
+    PIMPINJ_READER reader = PnpComponentHandleGetContext(PnpComponentHandle);
+
+    if (!ScheduleRebootWorker(PnpComponentHandle))
+    {
+        LogError("ThreadAPI_Create failed");
+        goto ErrorExit;
+    }
+
+    httpStatus = ImpinjReader_SetCommandResponse(CommandResponse, CommandResponseSize, &g_rebootSuccessResponse[0]);
+
+
+    // by returning, a response to command will be sent back to the caller
+    return httpStatus;
+
+ErrorExit:
+
+    return httpStatus;
 }

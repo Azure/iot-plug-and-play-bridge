@@ -1771,8 +1771,31 @@
       },
       "request": {
         "@type": "CommandPayload",
-        "name": "upgradeFile",
-        "schema": "string"
+        "schema": {
+          "@type": "Object",
+          "fields": [
+            {
+              "name": "upgradeFile",
+              "displayName": {
+                "en": "File Path (URL)"
+              },
+              "description": {
+                "en": "URL of upgrade firmware bin file."
+              },
+              "schema": "string"
+            },
+            {
+              "name": "autoReboot",
+              "displayName": {
+                "en": "Automatic Reboot"
+              },
+              "description": {
+                "en": "Automatically reboot after upgrade."
+              },
+              "schema": "boolean"
+            }
+          ]
+        }
       },
       "response": {
         "@type": "CommandPayload",
