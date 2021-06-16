@@ -1771,6 +1771,7 @@
       },
       "request": {
         "@type": "CommandPayload",
+        "name": "Request",
         "schema": {
           "@type": "Object",
           "fields": [
