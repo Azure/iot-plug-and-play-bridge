@@ -124,6 +124,10 @@ bool
 ImpinjReader_Uninitialize_CurlSessions(
     PIMPINJ_READER Reader);
 
+bool
+ImpinjReader_IsLocal(
+    PIMPINJ_READER Reader);
+
 #ifdef __cplusplus
 }
 #endif

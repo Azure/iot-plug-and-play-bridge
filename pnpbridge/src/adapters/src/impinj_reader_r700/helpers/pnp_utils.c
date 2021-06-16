@@ -1040,7 +1040,11 @@ RebootWorker(
         strcpy(upgradeData->urlData.username, reader->username);
         strcpy(upgradeData->urlData.password, reader->password);
 
+        LogInfo("R700 : Rebooting");
+
         httpStatus = curlPost(&upgradeData->urlData);
+
+        reader->Flags.IsRebootPending = 0;
 
         if (!IsSuccess(httpStatus))
         {
@@ -1052,7 +1056,7 @@ RebootWorker(
             int i;
 
             // After FW upgrade, LLRP interface will be set to LLRP.
-            reader->Flags.IsRESTEnabled = 0;
+            reader->Flags.AsUSHORT = 0;
 
             // Wait for 1 min
             ThreadAPI_Sleep(60000);
@@ -1074,10 +1078,9 @@ RebootWorker(
                 goto errorExit;
             }
 
-            reader->Flags.IsRebootPending = 0;
-
             CheckRfidInterfaceType(reader);
             ImpinjReader_Initialize_CurlSessions(reader);
+            ImpinjReader_IsLocal(reader);
             GetFirmwareVersion(reader);
             ImpinjReader_StartWorkers(PnpComponentHandle);
 

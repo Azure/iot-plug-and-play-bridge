@@ -84,7 +84,7 @@ ProcessReaderTelemetry(
                 LogError("R700 : ProcessReaderTelemetry failed, error=%d", result);
             }
 
-Reboot Pending : 
+            // continue splitting until all messages are sent individually
             oneMessage = strtok(NULL, MESSAGE_SPLIT_DELIMITER);
         }
         uSecTimer = clock() - uSecInit;
