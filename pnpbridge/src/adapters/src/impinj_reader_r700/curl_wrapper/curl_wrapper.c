@@ -911,7 +911,7 @@ curlGetDownload(
 
         if (headers != NULL)
         {
-            curl_slist_free_all(headers);
+            //curl_slist_free_all(headers);
         }
         curl_easy_cleanup(curl);
 
@@ -979,7 +979,7 @@ curlGet(
 
         if (headers != NULL)
         {
-            curl_slist_free_all(headers);
+            //curl_slist_free_all(headers);
         }
         curl_easy_cleanup(curl);
     }
@@ -1016,7 +1016,7 @@ curlPost(
 
         if (headers != NULL)
         {
-            curl_slist_free_all(headers);
+            //curl_slist_free_all(headers);
         }
         curl_easy_cleanup(curl);
     }
@@ -1054,7 +1054,7 @@ curlPut(
 
         if (headers != NULL)
         {
-            curl_slist_free_all(headers);
+            //curl_slist_free_all(headers);
         }
         curl_easy_cleanup(curl);
     }
@@ -1171,7 +1171,7 @@ curlPostUploadFile(
 
         if (headers != NULL)
         {
-            curl_slist_free_all(headers);
+            //curl_slist_free_all(headers);
         }
         curl_easy_cleanup(curl);
         curl_formfree(formpost);
