@@ -1,7 +1,8 @@
 
 # Documentation for the IoT Plug and Play bridge
 
-To get started with a simple example and learn more, view the [Reference Documentation](https://www.aka.ms/iot-pnp-bridge-docs).
+To get started with a simple example and learn more, see [How to connect an IoT Plug and Play bridge to IoT Hub](/pnpbridge/docs/quick_start.md).
+
 ## IoT Plug and Play bridge Components
 
 ![A diagram that outlines the structure of the IoT Plug and Play bridge. It consists of an adapter manager, and pnp bridge adapters that bind devices/peripherals to Azure Digital Twin Interfaces.](/pnpbridge/docs/Pictures/AzurePnPBridgeComponents.png)
