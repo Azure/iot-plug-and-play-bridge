@@ -16,7 +16,7 @@ Version = 0.1.0.0
 #     aaa - Model number
 #     bbb - Major revision
 #     ccc - Minor revision
-Valid Reader Hardware = R700
+Valid Reader Hardware = R***
 
 # File System Layout is an value used by the reader to determine how
 # the upgrade partition should be loaded to flash. Currently the only
