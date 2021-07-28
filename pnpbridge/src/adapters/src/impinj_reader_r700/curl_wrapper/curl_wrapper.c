@@ -356,7 +356,7 @@ CURL_Stream_Session_Data* curlStreamInit(
     char* password_copy = NULL;
     char* basePath_copy = NULL;
 
-#define STREAM_DATA_BUFFER_SIZE 100000
+#define STREAM_DATA_BUFFER_SIZE 10000000
 
     char* streamBuffer;
 
