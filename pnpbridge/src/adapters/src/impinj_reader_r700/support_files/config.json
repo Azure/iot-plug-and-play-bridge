@@ -4,7 +4,7 @@
       "connection_type_hub" : "connection_string",
       "connection_string" : "",
       "connection_type" : "dps",
-      "root_interface_model_id": "dtmi:impinj:FixedReader;11",
+      "root_interface_model_id": "dtmi:impinj:FixedReader;12",
       "auth_parameters": {
           "auth_type": "symmetric_key",
           "symmetric_key_hub": "",
