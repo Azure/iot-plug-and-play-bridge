@@ -50,10 +50,10 @@ int main(void)
   int httpStatus;
 
   CURL_Static_Session_Data *static_session;
-  static_session = curlStaticInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+  static_session = curlStaticInit(http_username, http_password, http_basepath, Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   CURL_Stream_Session_Data *stream_session;
-  stream_session = curlStreamInit(http_username, http_password, http_basepath, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+  stream_session = curlStreamInit(http_username, http_password, http_basepath, Session_Stream, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   char * response;
   response = curlStaticPost(static_session, "/profiles/inventory/presets/default/start", "", &httpStatus);  // start basic_inventory preset

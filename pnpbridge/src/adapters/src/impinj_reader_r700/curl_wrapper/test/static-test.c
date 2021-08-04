@@ -45,7 +45,7 @@ int main(void)
 
   curlGlobalInit();
  
-  CURL_Static_Session_Data *static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+  CURL_Static_Session_Data *static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   usleep(USEC_DELAY);
 
