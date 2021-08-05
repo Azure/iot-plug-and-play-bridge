@@ -22,6 +22,7 @@ BUILD_DIR = build
 PNPBRIDGE_FOLDER = ./../../../../../
 PNP_BIN = $(PNPBRIDGE_FOLDER)/cmake/pnpbridge_linux/src/pnpbridge/samples/console/pnpbridge_bin
 CONFIG_JSON = ../support_files/config.json
+UPGRADE_SCRIPT = cust_app_upgrade
 CAP_UPGX = $(BUILD_DIR)/$(CAP_NAME)
 CAP_DIR	= $(BUILD_DIR)/cap
 CAP_DSC	= cap_description.in
@@ -29,6 +30,7 @@ SYS_DIR	= $(CAP_DIR)/sys
 CFG_SRC	= reader.conf
 CFG_DST	= $(SYS_DIR)/$(CFG_SRC)
 START	= start
+
 # CXX	:= $(CROSS_COMPILE)g++
 # CFLAGS	+= -g -Wall -Wextra
 # LDFLAGS	+= -static \
@@ -43,11 +45,12 @@ START	= start
 
 all: $(CAP_UPGX)
 
-$(CAP_UPGX): $(PNP_BIN) $(CONFIG_JSON) $(CFG_DST) $(CAP_DSC) $(START) | $(CAP_DIR)
+$(CAP_UPGX): $(PNP_BIN) $(CONFIG_JSON) $(CFG_DST) $(CAP_DSC) $(START) $(UPGRADE_SCRIPT) | $(CAP_DIR)
 	$P '  GEN		CAP'
 	$E cp $(PNP_BIN) $(CAP_DIR)/
 	$E cp $(CONFIG_JSON) $(CAP_DIR)/
 	$E cp $(START) $(CAP_DIR)/
+	$E cp $(UPGRADE_SCRIPT) $(CAP_DIR)/
 	$E $(ETK_DIR)/cap_gen.sh -d $(CAP_DSC) -o $(CAP_UPGX)
 
 $(CFG_DST): $(CFG_SRC) | $(SYS_DIR)
