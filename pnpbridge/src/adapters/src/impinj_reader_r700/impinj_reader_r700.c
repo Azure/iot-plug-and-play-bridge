@@ -611,8 +611,8 @@ ImpinjReader_CreatePnpAdapter(
     curl_global_init(CURL_GLOBAL_DEFAULT);   // initialize cURL globally
 
     // Enable HTTPS on reader RShell
-    char * enableRShellCmd = "rshell -c \"config network https enable\"";
-    system(enableRShellCmd);
+    char * enableHttpsRShellCmd = "rshell -c \"config network https enable\"";
+    system(enableHttpsRShellCmd);
     ThreadAPI_Sleep(1000);
 
     return IOTHUB_CLIENT_OK;
