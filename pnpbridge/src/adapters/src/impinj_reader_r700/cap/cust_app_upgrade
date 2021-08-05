@@ -1,0 +1,23 @@
+#!/bin/sh
+
+event=$1
+echo "cust upgrade script enters"
+echo "my SOP version is $primary_sop_vsn"
+echo "my CAP version is $primary_cap_vsn"
+test ! -z $secondary_sop_vsn && echo "There is an old SOP of version $secondary_sop_vsn"
+test ! -z $secondary_cap_vsn && echo "There is an old CAP of version $secondary_cap_vsn"
+if [ $event = "cdr" ] ; then
+    echo "Reader restored its default configuration"
+
+    # do something
+elif [ $event = "upg" ] ; then
+    echo "Reader just had an upgrade"
+    echo "My old CAP version is $secondary_cap_vsn"
+    cust_dir=$2
+    old_cust_dir=$3
+
+# copy some config from old app
+    if [ -f $old_cust_dir/config.json ] ; then
+       cp $old_cust_dir/config.json $cust_dir/config_cust.json
+    fi
+fi
