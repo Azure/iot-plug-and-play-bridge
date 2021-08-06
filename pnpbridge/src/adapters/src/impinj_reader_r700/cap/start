@@ -1,6 +1,10 @@
 #!/bin/bash
 
+if [ -f /cust/azure_pnpbridge/config_cust.json ] ; then
+    /cust/azure_pnpbridge/support_files/config_update-arm
+fi
+
 while true; do
-    /cust/pnpbridge_bin
+    /cust/azure_pnpbridge/pnpbridge_bin
     sleep 1
 done
