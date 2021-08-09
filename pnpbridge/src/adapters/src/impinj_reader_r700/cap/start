@@ -5,6 +5,6 @@ if [ -f /cust/azure_pnpbridge/config.json ] ; then
 fi
 
 while true; do
-    /cust/azure_pnpbridge/pnpbridge_bin
+    /cust/azure_pnpbridge/pnpbridge_bin /cust/azure_pnpbridge/config.json
     sleep 1
 done

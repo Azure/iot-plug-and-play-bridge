@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 
   // Check if file exists
   string line;
-  ifstream myfile ("../test/config.json");
+  ifstream myfile (argv[1]);
   if (myfile.is_open())
   {
     myfile.close();
