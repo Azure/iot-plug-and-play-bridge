@@ -18,6 +18,6 @@ elif [ $event = "upg" ] ; then
 
 # copy some config from old app
     if [ -f $old_cust_dir/azure_pnpbridge/config.json ] ; then
-       cp $old_cust_dir/azure_pnpbridge/config.json $cust_dir/config_cust.json
+       cp -f $old_cust_dir/azure_pnpbridge/config.json $cust_dir/azure_pnpbridge/config.json
     fi
 fi

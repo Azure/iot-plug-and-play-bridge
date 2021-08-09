@@ -38,7 +38,7 @@ CONFIG_UPDATE_ARM = $(CONFIG_UPDATE)/build/config_update-arm
 all: $(CAP_UPGX)
 
 $(CAP_UPGX): $(PNP_BIN) $(CONFIG_JSON) $(CFG_DST) $(CAP_DSC) $(START) $(UPGRADE_SCRIPT) $(CONFIG_UPDATE_ARM) $(CAP_SUPPORT_DIR) | $(CAP_DIR) 
-	$P '  GEN		CAP'
+	$P '  Generating CAP file...'
 	$E cp $(PNP_BIN) $(CAP_PNPBRIDGE_DIR)/
 	$E cp $(CONFIG_JSON) $(CAP_PNPBRIDGE_DIR)/
 	$E cp $(START) $(CAP_DIR)/

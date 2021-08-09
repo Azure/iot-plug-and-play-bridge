@@ -34,18 +34,19 @@ CPPFLAGS	+= -g
 INCDIR	= -I$(TOOLCHAIN_DIR)/arm-buildroot-linux-gnueabihf/sysroot/usr/include/
 
 all: $(CONFIG_UPDATE_X64) $(CONFIG_UPDATE_ARM)
+	$P '  Building config_update...'
 
 $(CONFIG_UPDATE_ARM): $(PARSON_O_ARM)
-	$(CPP_ARM) -g $(CONFIG_UPDATE) $(PARSON_O_ARM) -o $(CONFIG_UPDATE_ARM)
+	$E $(CPP_ARM) -g $(CONFIG_UPDATE) $(PARSON_O_ARM) -o $(CONFIG_UPDATE_ARM)
 
 $(PARSON_O_ARM): $(OBJ_DIR)
-	$(CC_ARM) $(PARSON) -c -o $(PARSON_O_ARM)
+	$E $(CC_ARM) $(PARSON) -c -o $(PARSON_O_ARM)
 
 $(CONFIG_UPDATE_X64): $(PARSON_O_X64)
-	$(CPP) -g $(CONFIG_UPDATE) $(PARSON_O_X64) -o $(CONFIG_UPDATE_X64)
+	$E $(CPP) -g $(CONFIG_UPDATE) $(PARSON_O_X64) -o $(CONFIG_UPDATE_X64)
 
 $(PARSON_O_X64): $(OBJ_DIR)
-	$(CC) $(PARSON) -c -o $(PARSON_O_X64)
+	$E $(CC) $(PARSON) -c -o $(PARSON_O_X64)
 
 $(BUILD_DIR) $(OBJ_DIR):
 	$E mkdir -p $@
