@@ -20,6 +20,14 @@ PCONNECTION_PARAMETERS PnpBridgeConfig_GetConnectionDetails(JSON_Object* Connect
             goto exit;
         }
 
+        // Get MQTT keepalive interval (seconds)
+        connParams->keepalivePeriodSeconds = json_object_get_number(ConnectionParams, PNP_CONFIG_CONNECTION_KEEP_ALIVE_PERIOD_SEC);
+        if (0 == connParams->keepalivePeriodSeconds) {
+            LogInfo("%s is missing in config.  Using default of 30 sec", PNP_CONFIG_CONNECTION_KEEP_ALIVE_PERIOD_SEC);
+            connParams->keepalivePeriodSeconds = 30;
+        }
+        else LogInfo("Connection keepalive period: %.2f sec", connParams->keepalivePeriodSeconds);
+
         // Evaluate the connection_type
         {
             const char* connectionTypeStr = json_object_get_string(ConnectionParams, PNP_CONFIG_CONNECTION_TYPE);

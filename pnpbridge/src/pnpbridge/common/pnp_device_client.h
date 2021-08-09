@@ -51,6 +51,7 @@ typedef struct PNP_DEVICE_CONFIGURATION_TAG
     IOTHUB_CLIENT_DEVICE_TWIN_CALLBACK deviceTwinCallback;
     // User Agent String: User/Solution defined product identifuier sent to IoT Hub service
     const char * UserAgentString;
+    int keepalivePeriodSeconds;
 } PNP_DEVICE_CONFIGURATION;
 
 //

@@ -72,6 +72,7 @@ typedef struct _CONNECTION_PARAMETERS {
     IOTDEVICE_CONNECTION_TYPE ConnectionType;
     const char* RootInterfaceModelId;
     PNP_DEVICE_CONFIGURATION PnpDeviceConfiguration;
+    double keepalivePeriodSeconds;
 } CONNECTION_PARAMETERS, *PCONNECTION_PARAMETERS;
 
 typedef struct PNPBRIDGE_CONFIGURATION {

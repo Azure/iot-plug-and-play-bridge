@@ -54,6 +54,7 @@ IOTHUB_DEVICE_CLIENT_HANDLE PnP_CreateDeviceClientHandle(const PNP_DEVICE_CONFIG
     bool urlAutoEncodeDecode = true;
     int iothubInitResult;
     bool result;
+    int keepalivePeriodSeconds = 30;
 
     // Before invoking ANY IoT Hub or DPS functionality, IoTHub_Init must be invoked.
     if ((iothubInitResult = IoTHub_Init()) != 0)
@@ -99,6 +100,14 @@ IOTHUB_DEVICE_CLIENT_HANDLE PnP_CreateDeviceClientHandle(const PNP_DEVICE_CONFIG
         LogError("Unable to set auto Url encode option, error=%d", iothubResult);
         result = false;
     }
+
+    // Set MQTT keepalive interval (seconds)
+    else if ((iothubResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_KEEP_ALIVE, &keepalivePeriodSeconds)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("Unable to set keep alive option, error=%d", iothubResult);
+        result = false;
+    }
+
 #ifdef SET_TRUSTED_CERT
     // Setting the Trusted Certificate.  This is only necessary on systems without built in certificate stores.
     else if ((iothubResult = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_TRUSTED_CERT, certificates)) != IOTHUB_CLIENT_OK)
