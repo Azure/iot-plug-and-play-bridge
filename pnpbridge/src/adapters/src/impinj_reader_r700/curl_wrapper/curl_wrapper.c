@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <strings.h>
+
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
@@ -1186,3 +1187,4 @@ exit:
 
     return Buffer;
 }
+

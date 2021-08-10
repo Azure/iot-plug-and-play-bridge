@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #pragma once
 #include <curl/curl.h>
 #include <stdint.h>
@@ -243,3 +247,7 @@ curlWriteCallback(
     size_t size,
     size_t nmemb,
     void* userdata);
+
+#ifdef __cplusplus
+}
+#endif

@@ -2,6 +2,7 @@
 #include <fstream>
 #include "../../../../../../../deps/azure-iot-sdk-c-pnp/deps/parson/parson.h"
 #include <string.h>
+#include "./../../../curl_wrapper/curl_wrapper.h"
 
 using namespace std;
 
@@ -31,6 +32,52 @@ string jsonObjectDotGetString(
     jsonObjectString = string(jsonObjectStringConst);
     return jsonObjectStringConst;
   }
+
+string parseMacAddress(string systemNetworkInterfaces) {
+  int interfaceCount;
+  JSON_Value* jsonValue;
+  JSON_Object* jsonObject; 
+  JSON_Array* jsonArray;
+  jsonValue = json_parse_string(systemNetworkInterfaces.c_str());
+  jsonObject = json_value_get_object(jsonValue);
+  jsonArray = json_object_get_array(jsonObject, "");
+  interfaceCount = json_array_get_count(jsonArray);
+  JSON_Object* jsonInterfaceObjects[interfaceCount];
+
+  // get/set device object pnp component parameters
+  for (int i = 0; i < interfaceCount; i++) {
+    jsonInterfaceObjects[i] = json_array_get_object(jsonArray, i);
+    cout << endl << "Interface" << i + 1 << ": " << jsonObjectDotGetString(jsonInterfaceObjects[i], "interfaceId") << endl;
+    cout << "   interfaceName: " << jsonObjectDotGetString(jsonInterfaceObjects[i], "interfaceName") << endl;
+    cout << "   intefaceType: " << jsonObjectDotGetString(jsonInterfaceObjects[i], "intefaceType") << endl;
+    cout << "   hardwareAddress: " << jsonObjectDotGetString(jsonInterfaceObjects[i], "hardwareAddress") << endl;
+  }
+  return (string)jsonObjectDotGetString(jsonInterfaceObjects[0], "hardwareAddress");
+}
+
+string generateDeviceName(string prefix) {
+  char * res;
+  int httpStatus;
+  JSON_Value* jsonValue;
+  string deviceName;
+  string macAddress;
+
+  curlGlobalInit();
+ 
+  CURL_Static_Session_Data *static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+
+  // res = curlStaticGet(static_session, "/system/network/interfaces", &httpStatus);
+  // fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
+
+  curlStaticCleanup(static_session);
+
+  curlGlobalCleanup();
+
+  // macAddress = parseMacAddress(string(res));
+
+  return prefix + macAddress;
+
+}
 
 int main(int argc, char* argv[]) {
 
@@ -96,12 +143,12 @@ int main(int argc, char* argv[]) {
         cout << "   >> Adapter ID: " << CURRENT_ADAPTER_ID << endl;
       }
 
-      // json_array_replace_value()
-
       cout << json_serialize_to_string_pretty(config) << endl; 
       json_serialize_to_file_pretty(config, argv[2]);
 
     }
+
+    cout << "Device Name: " << generateDeviceName("impinj-");
 
   }
 
