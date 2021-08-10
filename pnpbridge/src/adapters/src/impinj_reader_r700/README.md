@@ -79,7 +79,8 @@ The PnP Bridge Application requires a config.json file to specify connection par
     2. Update the `config.json` file next to `pnpbridge_bin` with the proper connection parameters.  The template `config.json` file can be found at `pnpbridge/src/adapters/src/impinj_reader_r700/support_files/config.json`
        - `config.json` contains several sections that are required in order to communicate with both the reader and the Azure cloud.
          - `"pnp_bridge_connection_parameters"` includes the connection parameters to the Azure cloud services.  This will vary depending on your setup of these services, but you will likely require the following:
-           - `"symmetric_key"` should be the primary key for device access.  If you are authenticating through a Device Provisioning Service (DPS), check the individual or group enrollment lists.
+           - `"symmetric_key"` should be the primary key for individual device access.  If you are authenticating through a Device Provisioning Service (DPS), check the individual enrollment lists.
+           - `"group_symmetric_key"` should be the primary key for group enrollment access.  If you are authenticating through a Device Provisioning Service (DPS), check the group enrollment lists.
            - `"id_scope"` is a code corresponding to the DPS instance.  
            - `"device_id"` dictates the name/ID of the connecting device as shown in IoT hub. 
          - `"pnp_bridge_interface_components"` is where all of the specific device adapter information is contained for the PnP Bridge to communicate with the local device.  For the Impinj R700 use case, we will only include information for one adapter, the Impinj Reader R700 adapter.  The configuration file included at `pnpbridge/src/adapters/src/impinj_reader_r700/support_files/config.json` has the template setup, but you will need to specify parameters under `"pnp_bridge_adapter_config"`:
