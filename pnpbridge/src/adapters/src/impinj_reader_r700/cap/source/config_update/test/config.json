@@ -14,7 +14,7 @@
       "dps_parameters": {
           "global_prov_uri": "global.azure-devices-provisioning.net",
           "id_scope": "ABCD1234",
-          "device_id": "test_device"
+          "device_id": ""
       }
   },
     "pnp_bridge_debug_trace": false,
@@ -26,7 +26,7 @@
             "pnp_bridge_component_name": "defaultComponent",
             "pnp_bridge_adapter_id": "defaultAdapterId",
             "pnp_bridge_adapter_config": {
-                "hostname": "localhost",
+                "hostname": "192.168.1.14",
                 "username": "root",
                 "password": "impinj"
             }
