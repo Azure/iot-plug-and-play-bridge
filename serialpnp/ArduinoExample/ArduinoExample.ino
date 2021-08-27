@@ -11,8 +11,7 @@ uint32_t g_LastSample = 0;
 // This function will be called by SerialPnP to both read and update the sample
 // rate of the temperature. The schema of the property data is `SerialPnPSchema_Int`
 // as defined on initialization, so the method signature is defined accordingly.
-void
-CbSampleRate(
+void CbSampleRate(
     int32_t     *input,
     int32_t     *output
 )
@@ -30,8 +29,7 @@ CbSampleRate(
 }
 
 // This function handles calibration and will return success or failure as a bool.
-void
-CbCalibrate(
+void CbCalibrate(
     int32_t     *inputTemperature,
     int32_t     *outputSuccess
 )
