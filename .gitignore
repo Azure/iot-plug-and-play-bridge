@@ -6,4 +6,11 @@
 /PnpBridge/src/PnpBridge/Debug
 /PnpBridge/src/PnpBridge/x64/Debug
 /PnpBridge/src/PnpBridge/PnpBridge.sln
+/PnPBridge/.vs
+/PnPBridge/out
+/PnPBridge/cmake
+/PnPBridge/CMakeSettings.json
+/cmake
+/out
+/deps
 .vscode
