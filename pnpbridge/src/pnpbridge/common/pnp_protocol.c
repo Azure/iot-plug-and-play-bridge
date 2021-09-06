@@ -216,6 +216,7 @@ static bool VisitDesiredObject(JSON_Object* desiredObject, const char** componen
         {
             const char* name = json_object_get_name(desiredObject, i);
             JSON_Value* value = json_object_get_value_at(desiredObject, i);
+            const char* component = componentsInModel[i];
 
             if (strcmp(name, g_IoTHubTwinDesiredVersion) == 0)
             {
@@ -233,7 +234,8 @@ static bool VisitDesiredObject(JSON_Object* desiredObject, const char** componen
             {
                 // If the child element is NOT an object OR its not a model the application knows about, this is a property of the model's root component.
                 // Invoke the application's passed in callback for it to process this property.
-                pnpPropertyCallback(NULL, name, value, version, userContextCallback);
+                //pnpPropertyCallback(NULL, name, value, version, userContextCallback);
+                pnpPropertyCallback(component, name, value, version, userContextCallback);
             }
         }
 

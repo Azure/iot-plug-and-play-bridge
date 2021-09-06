@@ -291,11 +291,15 @@ void SerialPnp_UnsolicitedPacket(
         }
         memcpy(event_name, packet + SERIALPNP_PACKET_NAME_OFFSET, rxNameLength);
         event_name[rxNameLength] = '\0';
-
         const EventDefinition* ev = SerialPnp_LookupEvent(device->InterfaceDefinitions, event_name, rxInterfaceId);
         if (!ev)
         {
-            LogError("Couldn't find event");
+            const char* msg = "Couldn't find event: ";
+            char* msg2 = malloc(strlen(msg) + strlen(event_name) + 1);
+            strcpy(msg2, msg);
+            strcat(msg2, event_name);
+            LogError(msg2);
+            free(msg2);
             free(event_name);
             return;
         }
@@ -328,7 +332,18 @@ void SerialPnp_UnsolicitedPacket(
     // Got a property update
     else if (SERIALPNP_PACKET_TYPE_PROPERTY_NOTIFICATION == packet[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
     {
-        // TODO
+        byte rxNameLength = packet[SERIALPNP_PACKET_NAME_LENGTH_OFFSET];
+
+        char* prop = malloc(sizeof(char) * (rxNameLength + 1));
+        memcpy(prop, packet + SERIALPNP_PACKET_NAME_OFFSET, rxNameLength);
+        prop[rxNameLength] = '\0';
+        const char* msg = "Serial Pnp Adapter: Got Property Update Notification. propertyName=";
+        char* msg2 = malloc(strlen(msg) + strlen(prop) + 1);
+        strcpy(msg2, msg);
+        strcat(msg2, prop);
+        LogInfo(msg2);
+        free(prop);
+        free(msg2);
     }
 }
 
@@ -1318,7 +1333,39 @@ static void SerialPnp_PropertyUpdateHandler(
     PSERIAL_DEVICE_CONTEXT deviceContext = PnpComponentHandleGetContext(PnpComponentHandle);
 
     STRING_HANDLE jsonToSend = NULL;
-    const char * PropertyValueString = json_value_get_string(PropertyValue);
+    // const char * PropertyValueString = json_value_get_string(PropertyValue);
+    char* PropertyValueString = NULL;
+    const char* propertyValueString;
+    if (json_value_get_type(PropertyValue) == JSONString)
+    {
+        propertyValueString = json_value_get_string(PropertyValue);
+        if (propertyValueString != NULL)
+        {
+            PropertyValueString = malloc(strlen(propertyValueString + 1));
+            strcpy(PropertyValueString, propertyValueString);
+        }
+        else
+        {
+            PropertyValueString = malloc(1);
+            PropertyValueString[0] = (char)0;
+        }
+        
+    }
+    else if (json_value_get_type(PropertyValue) == JSONNumber)
+    {
+        // If a number, assumes it to be an int.  2Do allow for decimals.
+        int iVal = (int) json_value_get_number(PropertyValue);
+        PropertyValueString = malloc(20);
+        sprintf(PropertyValueString, "%d", iVal);
+    }
+    else if (json_value_get_type(PropertyValue) == JSONBoolean)
+    {
+        bool iVal = json_value_get_boolean(PropertyValue);
+        PropertyValueString = malloc(5);
+        propertyValueString = (iVal == 1) ? "true" : "false";
+        strcpy(PropertyValueString, propertyValueString);
+    }
+  
     size_t PropertyValueLen = strlen(PropertyValueString);
 
     int propertyCount = 0;
@@ -1362,7 +1409,14 @@ static void SerialPnp_PropertyUpdateHandler(
                 STRING_delete(jsonToSend);
             }
         }
+        else
+        {            
+			LogError("((PropertyName != NULL) && (PropertyValueString != NULL) && (propertyCount > 0)) was false in SerialPnp_PropertyUpdateHandler()");        
+		}
+
     }
+    if (PropertyValueString != NULL)
+        free(PropertyValueString);
 }
 
 // SerialPnp_SetCommandResponse is a helper that fills out a PNP_CLIENT_COMMAND_RESPONSE
