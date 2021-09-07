@@ -291,6 +291,60 @@ void SerialPnp_UnsolicitedPacket(
         }
         memcpy(event_name, packet + SERIALPNP_PACKET_NAME_OFFSET, rxNameLength);
         event_name[rxNameLength] = '\0';
+
+#ifdef WIN32
+#ifdef ARDUINO_SERIAL
+        /************************************************************************
+
+                In serial_pnp.h
+                #define ARDUINO_SERIAL
+                2Do: Would be nice to infer it from from config.json
+
+                This enables top level (in ArduinoExample.ino) calls in the Arduino Serial example such as :
+                 SerialPnP_SendEventString("DEBUG", "hello");
+
+                 requires in the Arduino sample, SerialPnP.c :
+
+                void
+                SerialPnP_SendEventString(
+                    const char*     Name,
+                    const char*     Value
+                )
+                {
+                    SerialPnP_SendEventRaw(Name, (void*) Value, strlen(Value)+1);
+                }
+
+                and in header SerialPnP.h in the Arduino sample:
+
+                void
+                SerialPnP_SendEventString(
+                    const char*     Name,
+                    const char*     Value
+                );
+
+                This captures the packet dispays the value and disposes of it.
+                Use the Dummy event "DEBUG"
+                You don't do a create event for that.
+
+        ************************************************************************/
+
+        if (strncmp("DEBUG", event_name, 5) == 0)
+        {
+            char* rxDataStrn = malloc(1 + sizeof(byte) * rxDataSize);
+            memcpy(rxDataStrn, packet + SERIALPNP_PACKET_NAME_OFFSET + rxNameLength, rxDataSize);
+            rxDataStrn[rxDataSize] = '\0';
+            char* msg = malloc(strlen("== DEBUG: ") + strlen(rxDataStrn) + 1);
+            strcpy(msg, "== DEBUG: ");
+            strcat(msg, rxDataStrn);
+            LogInfo(msg);
+            free(msg);
+            free(rxDataStrn);
+            free(event_name);
+            return;
+        }
+#endif //ARDUINO_SERIAL
+#endif //WIN32
+
         const EventDefinition* ev = SerialPnp_LookupEvent(device->InterfaceDefinitions, event_name, rxInterfaceId);
         if (!ev)
         {

@@ -4,6 +4,9 @@
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/condition.h"
 
+// Nb: Arduino code only for Win32
+#define ARDUINO_SERIAL
+
 #define MAX_BUFFER_SIZE 4096
 
 #define SERIALPNP_RESET_OR_DESCRIPTOR_MAX_RETRIES 3

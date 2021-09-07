@@ -81,7 +81,6 @@ STRING_HANDLE PnP_CreateReportedPropertyWithStatus(const char* componentName, co
 void PnP_ParseCommandName(const char* deviceMethodName, unsigned const char** componentName, size_t* componentNameSize, const char** pnpCommandName)
 {
     const char* separator;
-
     if ((separator = strchr(deviceMethodName, g_commandSeparator)) != NULL)
     {
         // If a separator character is present in the device method name, then a command on a subcomponent of 

@@ -602,10 +602,8 @@ int PnpAdapterManager_DeviceMethodCallback(
 
     // PnP APIs do not set userContextCallback for device method callbacks, ignore this
     AZURE_UNREFERENCED_PARAMETER(userContextCallback);
-
     // Parse the methodName into its PnP componentName and pnpCommandName.
     PnP_ParseCommandName(methodName, (const unsigned char**) (&componentName), &componentNameSize, &pnpCommandName);
-
     // Parse the JSON of the payload request.
     if ((jsonStr = PnP_CopyPayloadToString(payload, size)) == NULL)
     {
@@ -619,6 +617,34 @@ int PnpAdapterManager_DeviceMethodCallback(
     }
     else
     {
+        if (componentName == NULL)
+        {
+            // Get componentName from g_PnpBridge- 
+            if (g_PnpBridge != NULL)
+                if (g_PnpBridge->PnpMgr != NULL)
+                    if (g_PnpBridge->PnpMgr->ComponentsInModel != NULL)
+                    {
+                        int num = g_PnpBridge->PnpMgr->NumComponents;
+                        if (num > 0)
+                        {
+                            char* numStr = malloc(100);
+                            int index = 0;  // ?? Perhaps look for the method in all adapaters.
+                            componentName = ((const char**)g_PnpBridge->PnpMgr->ComponentsInModel)[index];
+                            sprintf(numStr, "Number of components in model=%d. Using first: %s", num, componentName);
+                            LogInfo(numStr);
+                            free(numStr);
+                            componentNameSize = strlen(componentName);
+                        }
+                        else
+                            LogInfo("No components found in model");
+                    }
+        }
+        if (componentName == NULL)
+        {
+            // Or just insert it. In this case serailpnp
+            componentName = "seriapnp";
+            componentNameSize = strlen(componentName);
+        }         
         if (componentName != NULL)
         {
             LogInfo("Received PnP command for component=%.*s, command=%s", (int)componentNameSize, componentName, pnpCommandName);
@@ -627,6 +653,7 @@ int PnpAdapterManager_DeviceMethodCallback(
             if (componentHandle != NULL)
             {
                 result = componentHandle->processCommand(componentHandle, pnpCommandName, commandValue, response, responseSize);
+                LogInfo("Command was processed.");
             }
             else
             {
@@ -634,7 +661,6 @@ int PnpAdapterManager_DeviceMethodCallback(
             }
         }
     }
-
     return result;
 }
 
