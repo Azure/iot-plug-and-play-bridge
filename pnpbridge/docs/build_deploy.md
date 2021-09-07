@@ -105,7 +105,7 @@ build.cmd
 
 Expect the previous command to take several minutes to run.
 
-Optionally, you can open the generated *pnpbridge\cmake\pnpbridge_x86\azure_iot_pnp_bridge.sln* solution file in Visual Studio to edit, rebuild, and debug the code.
+Optionally, you can **_THEN_** open the generated *pnpbridge\cmake\pnpbridge_x86\azure_iot_pnp_bridge.sln* solution file in Visual Studio to edit, rebuild, and debug the code. **_You need to do the command line build first._**
 
 > TIP:
 > This project uses CMAKE to generate the project files. Any modifications you make to the project in Visual Studio might be lost if the appropriate CMAKE files aren't updated.
