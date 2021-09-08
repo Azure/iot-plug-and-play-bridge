@@ -660,6 +660,8 @@ int PnpAdapterManager_DeviceMethodCallback(
                 LogInfo("Pnp Bridge does not have a suitable adapter to route %s's method twin callback to at this time.", componentName);
             }
         }
+        else
+            LogInfo("PnP Bridge: No Component for Device Command Callback for command=%s", pnpCommandName);
     }
     return result;
 }
