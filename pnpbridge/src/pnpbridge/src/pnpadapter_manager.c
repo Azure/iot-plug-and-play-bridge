@@ -639,12 +639,12 @@ int PnpAdapterManager_DeviceMethodCallback(
                             LogInfo("No components found in model");
                     }
         }
-        if (componentName == NULL)
-        {
-            // Or just insert it. In this case serailpnp
-            componentName = "seriapnp";
-            componentNameSize = strlen(componentName);
-        }         
+        ////if (componentName == NULL)
+        ////{
+        ////    // Or just insert it. In this case serailpnp
+        ////    componentName = "seriapnp";
+        ////    componentNameSize = strlen(componentName);
+        ////}         
         if (componentName != NULL)
         {
             LogInfo("Received PnP command for component=%.*s, command=%s", (int)componentNameSize, componentName, pnpCommandName);
