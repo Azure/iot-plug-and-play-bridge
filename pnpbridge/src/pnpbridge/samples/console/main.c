@@ -51,8 +51,19 @@ int main(int argc, char *argv[])
     }
     else
     {
+#define USEARDUINO
+#ifdef USEDEFAULT
         LogInfo("Using default configuration location");
-        mallocAndStrcpy_s(&ConfigurationFilePath, (const char*) "config.json");
+        mallocAndStrcpy_s(&ConfigurationFilePath, (const char*)"config.json");
+#endif
+#ifdef USEENV
+        LogInfo("Using configuration in Env Debug");
+        mallocAndStrcpy_s(&ConfigurationFilePath, (const char*)"M:\\iot-bridges\\Azure-Version-Works\\iot-plug-and-play-bridge\\pnpbridge\\cmake\\pnpbridge_x86\\src\\pnpbridge\\samples\\console\\Debug\\config.json");
+#endif
+#ifdef USEARDUINO
+        LogInfo("Using default configuration location");
+        mallocAndStrcpy_s(&ConfigurationFilePath, (const char*)"M:\\iot-bridges\\Azure-Version-Works\\iot-plug-and-play-bridge\\pnpbridge\\cmake\\pnpbridge_x86\\src\\pnpbridge\\samples\\console\\Debug\\arduino-config.json");
+#endif
     }
 
     PnpBridge_Main((const char*)ConfigurationFilePath);

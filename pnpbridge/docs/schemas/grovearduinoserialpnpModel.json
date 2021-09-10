@@ -1,0 +1,74 @@
+
+{
+  "@context": "dtmi:dtdl:context;2",
+  "@id": "dtmi:com:contoso:serialpnp;1",
+  "@type": "Interface",
+  "displayName": "Pnp Bridge Root Interface Model serialpnp",
+  "description": "Arduino Serial PnP",
+  "comment": "Serial PnP for Arduino",
+  
+  "contents": [
+    {
+      "@type": "Property",
+      "displayName": "Sample Rate",
+      "description": "Rate of temperature readings.",
+      "name": "sample_rate",
+      "schema": "integer",
+      "writable": true
+    },
+    {
+      "@type": [
+      "Telemetry", 
+      "Temperature"
+      ],
+      "description": "Current temperature on the device",
+      "displayName": "Temperature",
+      "name": "temperature",
+      "schema": "float",
+      "unit": "degreeCelsius"
+    },
+    {
+      "@type": "Command",
+      "name": "calibrate",
+      "description": "Calibrates the thermometer.",
+      "commandType": "synchronous",
+      "request": {
+          "name": "input",
+          "schema": "integer"
+      },
+      "response": {
+        "name": "calibrateResponse",
+        "schema": "integer"
+      }  
+    },
+    {
+      "@type": "Command",
+      "name": "calibration",
+      "comment": "Enable-disable sampling.",
+      "commandType": "synchronous" ,
+      "request": {
+        "name": "input",
+        "schema": "integer"
+      },
+      "response": {
+        "name": "output",
+        "schema": "integer"
+      }  
+    },
+    {
+      "@type": "Command",
+      "name": "toggle_state",
+      "comment": "Enable-disable sampling.",
+      "commandType": "synchronous" ,
+      "request": {
+        "name": "input",
+        "schema": "integer"
+      },
+      "response": {
+        "name": "output",
+        "schema": "integer"
+      }  
+    }
+  ]
+
+}
