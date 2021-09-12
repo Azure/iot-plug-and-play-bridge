@@ -17,6 +17,14 @@
       "writable": true
     },
     {
+      "@type": "Property",
+      "displayName": "Dummy",
+      "description": "Dummy readings.",
+      "name": "dummy",
+      "schema": "string",
+      "writable": false
+    },
+    {
       "@type": [
       "Telemetry", 
       "Temperature"
@@ -38,20 +46,6 @@
       },
       "response": {
         "name": "calibrateResponse",
-        "schema": "integer"
-      }  
-    },
-    {
-      "@type": "Command",
-      "name": "calibration",
-      "comment": "Enable-disable sampling.",
-      "commandType": "synchronous" ,
-      "request": {
-        "name": "input",
-        "schema": "integer"
-      },
-      "response": {
-        "name": "output",
         "schema": "integer"
       }  
     },

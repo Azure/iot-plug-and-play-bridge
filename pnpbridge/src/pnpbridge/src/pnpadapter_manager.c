@@ -641,7 +641,7 @@ int PnpAdapterManager_DeviceMethodCallback(
         }
         ////if (componentName == NULL)
         ////{
-        ////    // Or just insert it. In this case serailpnp
+        ////    // Or just insert it. In this case serialpnp
         ////    componentName = "seriapnp";
         ////    componentNameSize = strlen(componentName);
         ////}         

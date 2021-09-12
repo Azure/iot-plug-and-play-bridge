@@ -164,6 +164,14 @@ extern "C"
         char* TelemetryName,
         char* TelemetryData);
 
+    IOTHUB_CLIENT_RESULT SerialPnp_SendEventwithPropertiesAsync(
+        PSERIAL_DEVICE_CONTEXT DeviceContext,
+        char* TelemetryName,
+        char* TelemetryData,
+        char** props,
+        char** vals,
+        int num_props);
+
     // Serial Pnp Adapter Config
     #define PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT "com_port"
     #define PNP_CONFIG_ADAPTER_SERIALPNP_USEDEFAULT "use_com_device_interface"

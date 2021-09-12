@@ -99,6 +99,43 @@ void PnP_ParseCommandName(const char* deviceMethodName, unsigned const char** co
     }
 }
 
+IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetrywithPropertiesMessageHandle(const char* componentName, const char* telemetryData, char ** properties, char ** values, int num_properties)
+{
+    IOTHUB_MESSAGE_HANDLE messageHandle;
+    IOTHUB_MESSAGE_RESULT iothubMessageResult;
+    bool result;
+
+    if ((messageHandle = IoTHubMessage_CreateFromString(telemetryData)) == NULL)
+    {
+        LogError("IoTHubMessage_CreateFromString failed");
+        result = false;
+    }
+    // If the component will be used, then specify this as a property of the message.
+    else if ((componentName != NULL) && (iothubMessageResult = IoTHubMessage_SetProperty(messageHandle, PnP_TelemetryComponentProperty, componentName)) != IOTHUB_MESSAGE_OK)
+    {
+        LogError("IoTHubMessage_SetProperty=%s failed, error=%d", PnP_TelemetryComponentProperty, iothubMessageResult);
+        result = false;
+    }
+    else if ((componentName != NULL) && (num_properties > 0) && (iothubMessageResult = IoTHubMessage_SetProperties(messageHandle, properties, values, num_properties)) != IOTHUB_MESSAGE_OK)
+    {
+        LogError("IoTHubMessage_SetProperties=%s failed, error=%d", properties[0], iothubMessageResult);
+        result = false;
+    }
+    else
+    {
+        result = true;
+    }
+
+    if ((result == false) && (messageHandle != NULL))
+    {
+        IoTHubMessage_Destroy(messageHandle);
+        messageHandle = NULL;
+    }
+
+    return messageHandle;
+}
+
+
 IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetryMessageHandle(const char* componentName, const char* telemetryData) 
 {
     IOTHUB_MESSAGE_HANDLE messageHandle;
@@ -194,6 +231,8 @@ static bool VisitDesiredObject(JSON_Object* desiredObject, const char** componen
     int version;
     bool result;
 
+    const char* component = componentsInModel[0];
+
     if ((versionValue = json_object_get_value(desiredObject, g_IoTHubTwinDesiredVersion)) == NULL)
     {
         LogError("Cannot retrieve %s field for twin", g_IoTHubTwinDesiredVersion);
@@ -215,7 +254,10 @@ static bool VisitDesiredObject(JSON_Object* desiredObject, const char** componen
         {
             const char* name = json_object_get_name(desiredObject, i);
             JSON_Value* value = json_object_get_value_at(desiredObject, i);
-            const char* component = componentsInModel[i];
+            
+            //char* component = componentsInModel[i];
+
+
 
             if (strcmp(name, g_IoTHubTwinDesiredVersion) == 0)
             {
@@ -234,6 +276,16 @@ static bool VisitDesiredObject(JSON_Object* desiredObject, const char** componen
                 // If the child element is NOT an object OR its not a model the application knows about, this is a property of the model's root component.
                 // Invoke the application's passed in callback for it to process this property.
                 //pnpPropertyCallback(NULL, name, value, version, userContextCallback);
+                            // List of properties to ignore. Should get from local info.
+                /*int ii = strcmp("terget_device", name);
+                int iii = strcmp("target_device", name);
+                int iiii = strcmp("target", name);
+                bool check = ((ii * iii*iiii) == 0);
+                //if (check)
+                //{
+                //    LogInfo(" == Received invalid property: %s", name);
+                //    continue;
+                //}*/
                 pnpPropertyCallback(component, name, value, version, userContextCallback);
             }
         }

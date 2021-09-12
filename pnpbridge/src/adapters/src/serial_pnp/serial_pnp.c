@@ -276,6 +276,9 @@ void SerialPnp_UnsolicitedPacket(
     byte* packet,
     DWORD length)
 {
+    char** props = NULL;
+    char** vals = NULL;
+    int num_props = 0;
     // Got an event
     if (SERIALPNP_PACKET_TYPE_EVENT_NOTIFICATION == packet[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
     {
@@ -348,13 +351,14 @@ void SerialPnp_UnsolicitedPacket(
         const EventDefinition* ev = SerialPnp_LookupEvent(device->InterfaceDefinitions, event_name, rxInterfaceId);
         if (!ev)
         {
-            const char* msg = "Couldn't find event: ";
+/*            const char* msg = "Couldn't find event: ";
             char* msg2 = malloc(strlen(msg) + strlen(event_name) + 1);
             strcpy(msg2, msg);
             strcat(msg2, event_name);
             LogError(msg2);
             free(msg2);
-            free(event_name);
+            free(event_name)*/;
+            LogError("Couldn't find event: %s", event_name);
             return;
         }
 
@@ -378,7 +382,18 @@ void SerialPnp_UnsolicitedPacket(
         }
         LogInfo("%s: %s", ev->defintion.Name, rxstrdata);
 
-        SerialPnp_SendEventAsync(device, ev->defintion.Name, rxstrdata);
+        // Got to get this from the device:
+        num_props = 1;
+        char* prop = "dummy";
+        char* val = "A val";
+        props = malloc(sizeof(prop)* num_props);
+        props[0] = prop;
+        vals = malloc(sizeof(val)* num_props);
+        vals[0] = val;
+
+
+        //SerialPnp_SendEventAsync(device, ev->defintion.Name, rxstrdata);
+        SerialPnp_SendEventwithPropertiesAsync(device, ev->defintion.Name, rxstrdata, props,vals, num_props);
 
         free(event_name);
         free(rxData);
@@ -483,6 +498,7 @@ IOTHUB_CLIENT_RESULT SerialPnp_PropertyHandler(
 
     if (NULL == prop)
     {
+        LogInfo("NOTE: Ignoring Property Update from Device Twin for property %s as not in the Schema.", property);
         return IOTHUB_CLIENT_ERROR;
     }
 
@@ -1330,6 +1346,35 @@ void SerialPnp_SendEventCallback(
     LogInfo("SerialDataSendEventCallback called, result=%d, telemetry=%s", pnpSendEventStatus, (char*) userContextCallback);
 }
 
+IOTHUB_CLIENT_RESULT SerialPnp_SendEventwithPropertiesAsync(
+    PSERIAL_DEVICE_CONTEXT DeviceContext,
+    char* TelemetryName,
+    char* TelemetryData,
+    char** props ,
+    char** vals ,
+    int num_props )
+{
+    IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
+    IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
+
+    char telemetryMessageData[512] = { 0 };
+    sprintf(telemetryMessageData, "{\"%s\":%s}", TelemetryName, TelemetryData);
+
+    if ((messageHandle = PnP_CreateTelemetrywithPropertiesMessageHandle(DeviceContext->ComponentName, telemetryMessageData, props, vals, num_props)) == NULL)
+    {
+        LogError("Serial Pnp Adapter: PnP_CreateTelemetryMessageHandle failed.");
+    }
+    else if ((result = PnpBridgeClient_SendEventAsync(DeviceContext->ClientHandle, messageHandle,
+        SerialPnp_SendEventCallback, (void*)TelemetryName)) != IOTHUB_CLIENT_OK)
+    {
+        LogError("Serial Pnp Adapter: IoTHub client call to _SendEventAsync failed, error=%d", result);
+    }
+
+    IoTHubMessage_Destroy(messageHandle);
+
+    return result;
+}
+
 IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
     PSERIAL_DEVICE_CONTEXT DeviceContext,
     char* TelemetryName,
@@ -1338,11 +1383,15 @@ IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
 
+    char** props = NULL;
+    char** vals = NULL;
+    int num_props = 0;
+
 
     char telemetryMessageData[512] = { 0 };
     sprintf(telemetryMessageData, "{\"%s\":%s}", TelemetryName, TelemetryData);
 
-    if ((messageHandle = PnP_CreateTelemetryMessageHandle(DeviceContext->ComponentName, telemetryMessageData)) == NULL)
+    if ((messageHandle = PnP_CreateTelemetrywithPropertiesMessageHandle(DeviceContext->ComponentName, telemetryMessageData,props,vals,num_props)) == NULL)
     {
         LogError("Serial Pnp Adapter: PnP_CreateTelemetryMessageHandle failed.");
     }
@@ -1434,33 +1483,36 @@ static void SerialPnp_PropertyUpdateHandler(
         if ((PropertyName != NULL) && (PropertyValueString != NULL) && (propertyCount > 0))
         {
 
-            LogInfo("Serial Pnp Adapter: Processed property. PropertyUpdated = %.*s", (int)PropertyValueLen, PropertyValueString);
+            LogInfo("Serial Pnp Adapter: Processing property %s. Property update value = %.*s", PropertyName, (int)PropertyValueLen, PropertyValueString);
 
-            SerialPnp_PropertyHandler(deviceContext, PropertyName, (char*) PropertyValueString);
+            IOTHUB_CLIENT_RESULT result = SerialPnp_PropertyHandler(deviceContext, PropertyName, (char*) PropertyValueString);
 
-            if ((jsonToSend = PnP_CreateReportedProperty(deviceContext->ComponentName, PropertyName, PropertyValueString)) == NULL)
+            if (result == IOTHUB_CLIENT_OK)
             {
-                LogError("Serial Pnp Adapter: Unable to build reported property response for propertyName=%s, propertyValue=%s",
-                    PropertyName, PropertyValueString);
-            }
-            else
-            {
-                const char* jsonToSendStr = STRING_c_str(jsonToSend);
-                size_t jsonToSendStrLen = strlen(jsonToSendStr);
-
-                if ((iothubClientResult = PnpBridgeClient_SendReportedState((PNP_BRIDGE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
-                    NULL, NULL)) != IOTHUB_CLIENT_OK)
+                if ((jsonToSend = PnP_CreateReportedProperty(deviceContext->ComponentName, PropertyName, PropertyValueString)) == NULL)
                 {
-                    LogError("Serial Pnp Adapter: Unable to send reported state for device property=%s, error=%d",
-                        PropertyName, iothubClientResult);
+                    LogError("Serial Pnp Adapter: Unable to build reported property response for propertyName=%s, propertyValue=%s",
+                        PropertyName, PropertyValueString);
                 }
                 else
                 {
-                    LogInfo("Serial Pnp Adapter: Sending device information property to IoTHub. propertyName=%s, propertyValue=%s",
-                        PropertyName, PropertyValueString);
-                }
+                    const char* jsonToSendStr = STRING_c_str(jsonToSend);
+                    size_t jsonToSendStrLen = strlen(jsonToSendStr);
 
-                STRING_delete(jsonToSend);
+                    if ((iothubClientResult = PnpBridgeClient_SendReportedState((PNP_BRIDGE_CLIENT_HANDLE)userContextCallback, (const unsigned char*)jsonToSendStr, jsonToSendStrLen,
+                        NULL, NULL)) != IOTHUB_CLIENT_OK)
+                    {
+                        LogError("Serial Pnp Adapter: Unable to send reported state for device property=%s, error=%d",
+                            PropertyName, iothubClientResult);
+                    }
+                    else
+                    {
+                        LogInfo("Serial Pnp Adapter: Sent device information property to IoTHub. propertyName=%s, propertyValue=%s",
+                            PropertyName, PropertyValueString);
+                    }
+
+                    STRING_delete(jsonToSend);
+                }
             }
         }
         else
