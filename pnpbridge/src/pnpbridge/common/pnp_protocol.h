@@ -78,7 +78,7 @@ void PnP_ParseCommandName(const char* deviceMethodName, unsigned const char** co
 // The application itself needs to send this to IoTHub, using a function such as IoTHubDeviceClient_SendEventAsync.
 //
 IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetryMessageHandle(const char* componentName, const char* telemetryData);
-IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetrywithPropertiesMessageHandle(const char* componentName, const char* telemetryData, char** properties, char** values, int num_properties);
+IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetrywithPropertiesMessageHandle(const char* componentName, const char* telemetryData, JSON_Value* Properties);
 
 //
 // PnP_ProcessTwinData is invoked by the application when a device twin arrives to its device twin processing callback.

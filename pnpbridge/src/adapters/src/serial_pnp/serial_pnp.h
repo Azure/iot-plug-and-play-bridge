@@ -60,8 +60,16 @@ extern "C"
         Int,
         Long,
         Boolean,
-        String
+        String,
+        Void  // This allows for parameteless commands
     } Schema;
+
+    typedef enum SERIAL_PNP_RESPONSE
+    {
+        SERIAL_PNP_RESPONSE_ON = 250,
+        SERIAL_PNP_RESPONSE_OFF = 150
+    } SERIAL_PNP_RESPONSE;
+
 
     typedef struct FieldDefinition
     {
@@ -168,9 +176,7 @@ extern "C"
         PSERIAL_DEVICE_CONTEXT DeviceContext,
         char* TelemetryName,
         char* TelemetryData,
-        char** props,
-        char** vals,
-        int num_props);
+        JSON_Value* Properties);
 
     // Serial Pnp Adapter Config
     #define PNP_CONFIG_ADAPTER_SERIALPNP_COMPORT "com_port"

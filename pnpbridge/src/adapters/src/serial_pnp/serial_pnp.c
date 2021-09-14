@@ -178,6 +178,12 @@ byte* SerialPnp_StringSchemaToBinary(
     int* length)
 {
     byte* bd = NULL;
+
+    // Following allows for parameterless commands
+    if (schema == Void)
+    {
+        return bd;
+    }
     char* data = (char*)buffer;
 
     if ((Float == schema) || (Int == schema))
@@ -257,9 +263,24 @@ char* SerialPnp_BinarySchemaToString(
     {
         sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
     }
+    // These next two are values that should be returned from toggle_properties on Arduino 2Do ???
+    else if ((Int == schema) && (*(int*)Data == SERIAL_PNP_RESPONSE_ON))
+    {
+        // When set by toggle
+        sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
+    }
+    else if ((Int == schema) && (*(int*)Data == SERIAL_PNP_RESPONSE_OFF))
+    {
+        // When clear by toggle
+        sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
+    }
     else if (((Boolean == schema) && (1 == length)))
     {
         sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
+    }
+    else if (((Void == schema) ))
+    {
+        sprintf_s(rxstrdata, MAXRXSTRLEN, "");
     }
     else
     {
@@ -271,14 +292,53 @@ char* SerialPnp_BinarySchemaToString(
     return rxstrdata;
 }
 
+const PropertyDefinition* SerialPnp_LookupProperty(
+    SINGLYLINKEDLIST_HANDLE interfaceDefinitions,
+    const char* propertyName,
+    int InterfaceId)
+{
+    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(interfaceDefinitions);
+    const InterfaceDefinition* interfaceDef;
+
+    for (int i = 0; i < InterfaceId - 1; i++)
+    {
+        if (NULL == interfaceDefHandle)
+        {
+            return NULL;
+        }
+        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
+    }
+    interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
+    if (NULL == interfaceDef)
+    {
+        return NULL;
+    }
+
+    SINGLYLINKEDLIST_HANDLE property = interfaceDef->Properties;
+    LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(property);
+    const PropertyDefinition* ev;
+    while (NULL != eventDef)
+    {
+        ev = singlylinkedlist_item_get_value(eventDef);
+        if (strcmp(ev->defintion.Name, propertyName) == 0)
+        {
+            return ev;
+        }
+        eventDef = singlylinkedlist_get_next_item(eventDef);
+    }
+
+    return NULL;
+}
+
+
+JSON_Value* Properties = NULL;
+
 void SerialPnp_UnsolicitedPacket(
     PSERIAL_DEVICE_CONTEXT device,
     byte* packet,
     DWORD length)
 {
-    char** props = NULL;
-    char** vals = NULL;
-    int num_props = 0;
+;
     // Got an event
     if (SERIALPNP_PACKET_TYPE_EVENT_NOTIFICATION == packet[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
     {
@@ -330,18 +390,27 @@ void SerialPnp_UnsolicitedPacket(
                 You don't do a create event for that.
 
         ************************************************************************/
-
-        if (strncmp("DEBUG", event_name, 5) == 0)
+        if (strncmp("DEBUG", event_name, strlen("DEBUG")) == 0)
         {
             char* rxDataStrn = malloc(1 + sizeof(byte) * rxDataSize);
             memcpy(rxDataStrn, packet + SERIALPNP_PACKET_NAME_OFFSET + rxNameLength, rxDataSize);
             rxDataStrn[rxDataSize] = '\0';
-            char* msg = malloc(strlen("== DEBUG: ") + strlen(rxDataStrn) + 1);
-            strcpy(msg, "== DEBUG: ");
-            strcat(msg, rxDataStrn);
-            LogInfo(msg);
-            free(msg);
+            LogInfo("== DEBUG: %s",rxDataStrn);
             free(rxDataStrn);
+            free(event_name);
+            return;
+        }
+        else if (strncmp("CLEAR_PROPERTIES", event_name, strlen("CLEAR_PROPERTIES")) == 0)
+        {
+            if (Properties == NULL)
+            {
+                LogInfo("== CLEAR PROPERTIES: Already clear. Ignoring.");
+            }
+            else {
+                json_value_free(Properties);
+                Properties = NULL;
+                LogInfo("== CLEAR_PROPERTIES: %s", "");
+            }
             free(event_name);
             return;
         }
@@ -351,15 +420,42 @@ void SerialPnp_UnsolicitedPacket(
         const EventDefinition* ev = SerialPnp_LookupEvent(device->InterfaceDefinitions, event_name, rxInterfaceId);
         if (!ev)
         {
-/*            const char* msg = "Couldn't find event: ";
-            char* msg2 = malloc(strlen(msg) + strlen(event_name) + 1);
-            strcpy(msg2, msg);
-            strcat(msg2, event_name);
-            LogError(msg2);
-            free(msg2);
-            free(event_name)*/;
-            LogError("Couldn't find event: %s", event_name);
-            return;
+            const PropertyDefinition* pd = SerialPnp_LookupProperty(device->InterfaceDefinitions, event_name, rxInterfaceId);
+            if (!pd)
+            {
+                LogError("Couldn't find event or property: %s", event_name);
+                return;
+            }
+            else
+            {
+                //if(Properties == NULL)
+                    //Properties = json_value_init_array();
+
+                if (Properties == NULL)
+                    Properties = json_value_init_array();
+                //JSON_Object* jv;
+                char* rxDataStrn = malloc(1 + sizeof(byte) * rxDataSize);
+                memcpy(rxDataStrn, packet + SERIALPNP_PACKET_NAME_OFFSET + rxNameLength, rxDataSize);
+                rxDataStrn[rxDataSize] = '\0';
+
+                JSON_Array* leaves = json_value_get_array(Properties);
+                JSON_Value* leaf_value = json_value_init_object();
+                JSON_Object* leaf_object = json_value_get_object(leaf_value);
+                json_object_set_string(leaf_object, event_name, rxDataStrn);
+                json_array_append_value(leaves, leaf_value);
+
+                //JSON_Array*leaves2 = json_value_get_array(Properties);
+                //size_t num_procs = json_array_get_count(leaves);
+                for (int i = 0; i < json_array_get_count(leaves); i++) {
+                    JSON_Object * leaf2 = json_array_get_object(leaves, i);
+                    const char * name = json_object_get_name(leaf2,0);
+                    const char* val = json_object_get_string(leaf2,name);
+                    LogInfo("SerialPnp Property: %s Value: %s",name,val);
+                }
+
+                free(rxDataStrn);
+                return;
+            }
         }
 
         byte* rxData = malloc(sizeof(byte) * rxDataSize);
@@ -382,19 +478,8 @@ void SerialPnp_UnsolicitedPacket(
         }
         LogInfo("%s: %s", ev->defintion.Name, rxstrdata);
 
-        // Got to get this from the device:
-        num_props = 1;
-        char* prop = "dummy";
-        char* val = "A val";
-        props = malloc(sizeof(prop)* num_props);
-        props[0] = prop;
-        vals = malloc(sizeof(val)* num_props);
-        vals[0] = val;
-
-
         //SerialPnp_SendEventAsync(device, ev->defintion.Name, rxstrdata);
-        SerialPnp_SendEventwithPropertiesAsync(device, ev->defintion.Name, rxstrdata, props,vals, num_props);
-
+        SerialPnp_SendEventwithPropertiesAsync(device, ev->defintion.Name, rxstrdata, Properties);
         free(event_name);
         free(rxData);
     }
@@ -402,56 +487,12 @@ void SerialPnp_UnsolicitedPacket(
     else if (SERIALPNP_PACKET_TYPE_PROPERTY_NOTIFICATION == packet[SERIALPNP_PACKET_PACKET_TYPE_OFFSET])
     {
         byte rxNameLength = packet[SERIALPNP_PACKET_NAME_LENGTH_OFFSET];
-
         char* prop = malloc(sizeof(char) * (rxNameLength + 1));
         memcpy(prop, packet + SERIALPNP_PACKET_NAME_OFFSET, rxNameLength);
         prop[rxNameLength] = '\0';
-        const char* msg = "Serial Pnp Adapter: Got Property Update Notification. propertyName=";
-        char* msg2 = malloc(strlen(msg) + strlen(prop) + 1);
-        strcpy(msg2, msg);
-        strcat(msg2, prop);
-        LogInfo(msg2);
+        LogInfo("Serial Pnp Adapter: Got Property Update Notification. propertyName= %s", prop);
         free(prop);
-        free(msg2);
     }
-}
-
-const PropertyDefinition* SerialPnp_LookupProperty(
-    SINGLYLINKEDLIST_HANDLE interfaceDefinitions,
-    const char* propertyName,
-    int InterfaceId)
-{
-    LIST_ITEM_HANDLE interfaceDefHandle = singlylinkedlist_get_head_item(interfaceDefinitions);
-    const InterfaceDefinition* interfaceDef;
-
-    for (int i = 0; i < InterfaceId - 1; i++)
-    {
-        if (NULL == interfaceDefHandle)
-        {
-            return NULL;
-        }
-        interfaceDefHandle = singlylinkedlist_get_next_item(interfaceDefHandle);
-    }
-    interfaceDef = singlylinkedlist_item_get_value(interfaceDefHandle);
-    if (NULL == interfaceDef)
-    {
-        return NULL;
-    }
-
-    SINGLYLINKEDLIST_HANDLE property = interfaceDef->Properties;
-    LIST_ITEM_HANDLE eventDef = singlylinkedlist_get_head_item(property);
-    const PropertyDefinition* ev;
-    while (NULL != eventDef)
-    {
-        ev = singlylinkedlist_item_get_value(eventDef);
-        if (strcmp(ev->defintion.Name, propertyName) == 0)
-        {
-            return ev;
-        }
-        eventDef = singlylinkedlist_get_next_item(eventDef);
-    }
-
-    return NULL;
 }
 
 const CommandDefinition* SerialPnp_LookupCommand(
@@ -549,6 +590,7 @@ IOTHUB_CLIENT_RESULT SerialPnp_CommandHandler(
     Lock(serialDevice->CommandLock);
 
     const CommandDefinition* cmd = SerialPnp_LookupCommand(serialDevice->InterfaceDefinitions, command, 0);
+  
     byte* input = (byte*)data;
 
     if (NULL == cmd)
@@ -559,8 +601,14 @@ IOTHUB_CLIENT_RESULT SerialPnp_CommandHandler(
 
     // Otherwise serialize data
     int length = 0;
-    byte* inputPayload = SerialPnp_StringSchemaToBinary(cmd->RequestSchema, input, &length);
-    if (!inputPayload)
+    Schema schema = cmd->RequestSchema;
+    ///////////////////////////////////////////
+    // Following enables parameterless commands
+    if ( cmd->RequestSchema  == Invalid)
+       schema = Void;
+    ///////////////////////////////////////////
+    byte* inputPayload = SerialPnp_StringSchemaToBinary(schema, input, &length);
+    if ((!inputPayload)&& (schema != Void))
     {
         Unlock(serialDevice->CommandLock);
         return IOTHUB_CLIENT_ERROR;
@@ -1350,9 +1398,7 @@ IOTHUB_CLIENT_RESULT SerialPnp_SendEventwithPropertiesAsync(
     PSERIAL_DEVICE_CONTEXT DeviceContext,
     char* TelemetryName,
     char* TelemetryData,
-    char** props ,
-    char** vals ,
-    int num_props )
+    JSON_Value* _Properties)
 {
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
@@ -1360,7 +1406,7 @@ IOTHUB_CLIENT_RESULT SerialPnp_SendEventwithPropertiesAsync(
     char telemetryMessageData[512] = { 0 };
     sprintf(telemetryMessageData, "{\"%s\":%s}", TelemetryName, TelemetryData);
 
-    if ((messageHandle = PnP_CreateTelemetrywithPropertiesMessageHandle(DeviceContext->ComponentName, telemetryMessageData, props, vals, num_props)) == NULL)
+    if ((messageHandle = PnP_CreateTelemetrywithPropertiesMessageHandle(DeviceContext->ComponentName, telemetryMessageData, _Properties)) == NULL)
     {
         LogError("Serial Pnp Adapter: PnP_CreateTelemetryMessageHandle failed.");
     }
@@ -1383,15 +1429,10 @@ IOTHUB_CLIENT_RESULT SerialPnp_SendEventAsync(
     IOTHUB_CLIENT_RESULT result = IOTHUB_CLIENT_OK;
     IOTHUB_MESSAGE_HANDLE messageHandle = NULL;
 
-    char** props = NULL;
-    char** vals = NULL;
-    int num_props = 0;
-
-
     char telemetryMessageData[512] = { 0 };
     sprintf(telemetryMessageData, "{\"%s\":%s}", TelemetryName, TelemetryData);
 
-    if ((messageHandle = PnP_CreateTelemetrywithPropertiesMessageHandle(DeviceContext->ComponentName, telemetryMessageData,props,vals,num_props)) == NULL)
+    if ((messageHandle = PnP_CreateTelemetryMessageHandle(DeviceContext->ComponentName, telemetryMessageData)) == NULL)
     {
         LogError("Serial Pnp Adapter: PnP_CreateTelemetryMessageHandle failed.");
     }

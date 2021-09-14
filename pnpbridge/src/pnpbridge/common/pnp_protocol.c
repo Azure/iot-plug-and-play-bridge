@@ -7,6 +7,8 @@
 // JSON parsing library
 #include "parson.h"
 
+IOTHUB_MESSAGE_RESULT IoTHubMessage_SetProperties(IOTHUB_MESSAGE_HANDLE iotHubMessageHandle, JSON_Value* _property);
+
 // IoT core utility related header files
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
@@ -99,11 +101,14 @@ void PnP_ParseCommandName(const char* deviceMethodName, unsigned const char** co
     }
 }
 
-IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetrywithPropertiesMessageHandle(const char* componentName, const char* telemetryData, char ** properties, char ** values, int num_properties)
+IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetrywithPropertiesMessageHandle(const char* componentName, const char* telemetryData, JSON_Value* _Properties)
 {
     IOTHUB_MESSAGE_HANDLE messageHandle;
     IOTHUB_MESSAGE_RESULT iothubMessageResult;
     bool result;
+
+    JSON_Array* leaves = json_value_get_array(_Properties);
+    size_t num_properties = json_array_get_count(leaves);
 
     if ((messageHandle = IoTHubMessage_CreateFromString(telemetryData)) == NULL)
     {
@@ -116,9 +121,9 @@ IOTHUB_MESSAGE_HANDLE PnP_CreateTelemetrywithPropertiesMessageHandle(const char*
         LogError("IoTHubMessage_SetProperty=%s failed, error=%d", PnP_TelemetryComponentProperty, iothubMessageResult);
         result = false;
     }
-    else if ((componentName != NULL) && (num_properties > 0) && (iothubMessageResult = IoTHubMessage_SetProperties(messageHandle, properties, values, num_properties)) != IOTHUB_MESSAGE_OK)
+    else if ((componentName != NULL) && (num_properties > 0) && (iothubMessageResult = IoTHubMessage_SetProperties(messageHandle, _Properties)) != IOTHUB_MESSAGE_OK)
     {
-        LogError("IoTHubMessage_SetProperties=%s failed, error=%d", properties[0], iothubMessageResult);
+        LogError("IoTHubMessage_SetProperties failed, error=%d", iothubMessageResult);
         result = false;
     }
     else

@@ -25,6 +25,14 @@
       "writable": false
     },
     {
+      "@type": "Property",
+      "displayName": "XXXX",
+      "description": "Dummy xxxx.",
+      "name": "xxxx",
+      "schema": "string",
+      "writable": false
+    },
+    {
       "@type": [
       "Telemetry", 
       "Temperature"
@@ -62,6 +70,16 @@
         "name": "output",
         "schema": "integer"
       }  
+    },
+    {
+      "@type": "Command",
+      "name": "toggle_properties",
+      "comment": "Enable-disable property upload with telemetry.",
+      "commandType": "synchronous" ,
+      "response": {
+        "name": "output",
+        "schema": "integer"
+      }   
     }
   ]
 
