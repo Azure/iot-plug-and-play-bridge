@@ -263,17 +263,6 @@ char* SerialPnp_BinarySchemaToString(
     {
         sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
     }
-    // These next two are values that should be returned from toggle_properties on Arduino 2Do ???
-    else if ((Int == schema) && (*(int*)Data == SERIAL_PNP_RESPONSE_ON))
-    {
-        // When set by toggle
-        sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
-    }
-    else if ((Int == schema) && (*(int*)Data == SERIAL_PNP_RESPONSE_OFF))
-    {
-        // When clear by toggle
-        sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
-    }
     else if (((Boolean == schema) && (1 == length)))
     {
         sprintf_s(rxstrdata, MAXRXSTRLEN, "%d", *((int*)Data));
@@ -590,6 +579,37 @@ IOTHUB_CLIENT_RESULT SerialPnp_CommandHandler(
     Lock(serialDevice->CommandLock);
 
     const CommandDefinition* cmd = SerialPnp_LookupCommand(serialDevice->InterfaceDefinitions, command, 0);
+
+    //int lengthIn = 4; Not needed as SerialPnp_StringSchemaToBinary() returns it
+    //switch (cmd->RequestSchema)
+    //{
+    //    case Invalid:
+    //        lengthIn = 0;
+    //        break;
+    //    case Void:
+    //        lengthIn = 0;
+    //        break;
+    //    case Float:
+    //        lengthIn = 4;
+    //        break;
+    //    case Double:
+    //        lengthIn = 8;
+    //    case Int:
+    //        lengthIn = 4;
+    //        break;
+    //    case Boolean:
+    //        lengthIn = 1;
+    //        break;
+    //    case Long:
+    //        lengthIn = 4;
+    //        break;
+    //    case String:
+    //        // Get from length of input.
+    //        lengthIn = 0;
+    //        break;
+    //}
+
+
   
     byte* input = (byte*)data;
 
@@ -661,7 +681,37 @@ IOTHUB_CLIENT_RESULT SerialPnp_CommandHandler(
     byte* responsePacket = serialDevice->pbMainBuffer;
     int dataOffset = SERIALPNP_PACKET_NAME_OFFSET + nameLength;
     byte* commandResponse = responsePacket + dataOffset;
-    char* stval = SerialPnp_BinarySchemaToString(cmd->ResponseSchema, commandResponse, (byte)length);
+
+    int lengthOut = 4;
+    switch (cmd->ResponseSchema)
+    {
+    case Invalid:
+        lengthOut = 0;
+        break;
+    case Void:
+        lengthOut = 0;
+        break;
+    case Float:
+        lengthOut = 4;
+        break;
+    case Double:
+        lengthOut = 8;
+    case Int:
+        lengthOut = 4;
+        break;
+    case Boolean:
+        lengthOut = 1;
+        break;
+    case Long:
+        lengthOut = 4;
+        break;
+    case String:
+        // Get from length of output ??.
+        lengthOut = 0;
+        break;
+    }
+
+    char* stval = SerialPnp_BinarySchemaToString(cmd->ResponseSchema, commandResponse, (byte)lengthOut);
     free(inputPayload);
     free(responsePacket);
     free(txPacket);
