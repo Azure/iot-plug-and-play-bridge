@@ -135,7 +135,7 @@ OnCommandCallback(
                     break;
 
                 case SYSTEM_IMAGE_UPGRADE_UPLOAD: {
-                    upgradeStatus = CheckUpgardeStatus(device, NULL);
+                    upgradeStatus = CheckUpgradeStatus(device, NULL);
 
                     if (upgradeStatus != READY)
                     {

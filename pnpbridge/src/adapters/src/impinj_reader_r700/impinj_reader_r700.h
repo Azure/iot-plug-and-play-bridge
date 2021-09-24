@@ -41,7 +41,8 @@ typedef struct _IMPINJ_R700_FIRMWARE_VERSION
         V1_0,                    \
         V1_2,                    \
         V1_3,                    \
-        V1_4
+        V1_4,                    \
+        V1_5
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(R700_REST_VERSION, R700_REST_VERSION_VALUES);
 
@@ -57,6 +58,7 @@ static IMPINJ_R700_API_VERSION IMPINJ_R700_API_MAPPING[] = {
     {7, 3, 0, 0, V1_2},
     {7, 4, 0, 0, V1_3},
     {7, 5, 0, 0, V1_4},
+    {7, 6, 0, 0, V1_5}
 };
 
 typedef struct IMPINJ_READER_STATE_TAG
@@ -97,6 +99,7 @@ typedef struct _IMPINJ_READER
     const char* password;
     const char* baseUrl;
     const char* hostname;
+    JSON_Value* deviceMetadataJsonVal;
     CURL_Static_Session_Data* curl_polling_session;
     CURL_Static_Session_Data* curl_static_session;
     CURL_Stream_Session_Data* curl_stream_session;

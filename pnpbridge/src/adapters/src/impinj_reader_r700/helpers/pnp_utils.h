@@ -82,6 +82,12 @@ bool
 ScheduleUpgradeWorker(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle);
 
+JSON_Value*
+UpdateDeviceMetadata(
+    PIMPINJ_READER Device,
+    JSON_Value* newJsonValue,
+    int* httpStatus);
+
 int
 ProcessReboot(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,

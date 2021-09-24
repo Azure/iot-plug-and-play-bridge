@@ -84,7 +84,7 @@ ImpinjReader_WaitForHttps(
             return false;
         }
 
-        if (Reader->Flags.IsRebootPending = 0 || (retryCount % 10 == 0))
+        if (Reader->Flags.IsRebootPending == 0 || (retryCount % 10 == 0))
         {
             LogInfo("R700 : Waiting for Reader. Retrying after %d sec", delay / 1000);
         }
@@ -579,6 +579,11 @@ ImpinjReader_DestroyPnpComponent(
             free((void*)device->hostname);
         }
 
+        if (device->deviceMetadataJsonVal != NULL)
+        {
+            json_value_free(device->deviceMetadataJsonVal);
+        }
+
         free(device);
 
         PnpComponentHandleSetContext(PnpComponentHandle, NULL);
@@ -633,15 +638,18 @@ ImpinjReader_CreatePnpComponent(
     /* print component creation message */
     char compCreateStr[128] = {0};
 
-    char* compHostname = NULL;
-    char* http_user    = NULL;
-    char* http_pass    = NULL;
+    char* compHostname      = NULL;
+    char* http_user         = NULL;
+    char* http_pass         = NULL;
+    JSON_Object* deviceMetadata    = NULL;
+    JSON_Value* deviceMetadataJsonVal = NULL;
 
     curlGlobalInit();
 
     compHostname = (char*)json_object_dotget_string(AdapterComponentConfig, "hostname");
     http_user    = (char*)json_object_dotget_string(AdapterComponentConfig, "username");
     http_pass    = (char*)json_object_dotget_string(AdapterComponentConfig, "password");
+    deviceMetadata = json_object_dotget_object(AdapterComponentConfig, "deviceMetadata");
 
     strcat(compCreateStr, "R700 : Creating Impinj Reader component: ");
     strcat(compCreateStr, ComponentName);
@@ -692,6 +700,8 @@ ImpinjReader_CreatePnpComponent(
     mallocAndStrcpy_s((char**)&device->baseUrl, build_str_url_always);
     mallocAndStrcpy_s((char**)&device->hostname, compHostname);
 
+    device->deviceMetadataJsonVal = json_value_deep_copy(json_object_get_wrapping_value(deviceMetadata));
+    
     device->Flags.AsUSHORT = 0;
 
     // Wait for reader to be available, up to 3 min
@@ -705,15 +715,7 @@ ImpinjReader_CreatePnpComponent(
     // Make sure REST API interface is enabled.
     // Do this before setting up Curl endpoints
     CheckRfidInterfaceType(device);
-
-    // Wait for HTTPS interface to be available, up to 3 min
-    if (!ImpinjReader_WaitForHttps(device, 180))
-    {
-        LogError("R700 : HTTPS interface NOT ready after retry.  Exiting");
-        result = IOTHUB_CLIENT_ERROR;
-        goto exit;
-    }
-
+    
     /* initialize cURL sessions */
     if (!ImpinjReader_Initialize_CurlSessions(device))
     {
@@ -723,6 +725,14 @@ ImpinjReader_CreatePnpComponent(
 
     ImpinjReader_IsLocal(device);
     GetFirmwareVersion(device);
+
+    // Wait for HTTPS interface to be available, up to 3 min
+    if (!ImpinjReader_WaitForHttps(device, 180))
+    {
+        LogError("R700 : HTTPS interface NOT ready after retry.  Exiting");
+        result = IOTHUB_CLIENT_ERROR;
+        goto exit;
+    }
 
     PnpComponentHandleSetContext(BridgeComponentHandle, device);
     PnpComponentHandleSetPropertyPatchCallback(BridgeComponentHandle, ImpinjReader_OnPropertyPatchCallback);

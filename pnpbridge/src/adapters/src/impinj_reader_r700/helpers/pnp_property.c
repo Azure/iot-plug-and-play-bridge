@@ -88,7 +88,7 @@ OnPropertyCompleteCallback(
             LogInfo("R700 : Unable to retrieve desired JSON Object for Component %s", device->SensorState->componentName);
         }
 
-        for (i = 0; i < (sizeof(R700_REST_LIST) / sizeof(IMPINJ_R700_REST)); i++)
+        for (i = 0; i < (sizeof(R700_REST_LIST) / sizeof(IMPINJ_R700_REST)); i++)  // iterate through REST list and operate on properties
         {
             PIMPINJ_R700_REST r700_Request = &R700_REST_LIST[i];
             jsonVal_Rest                   = NULL;
@@ -125,17 +125,28 @@ OnPropertyCompleteCallback(
                 case COMMAND:
                     break;
 
-                case READONLY:
+                case READONLY:  // always reported from device
+
                     jsonVal_Rest = ImpinjReader_RequestGet(device, r700_Request, NULL, &status);
                     UpdateReadOnlyReportProperty(PnpComponentHandle, device->SensorState->componentName, r700_Request->Name, jsonVal_Rest);
                     break;
 
-                case WRITABLE:
+                case WRITABLE:  // cloud can set value, need to check if set or not
                     if ((jsonObj_Desired_Component == NULL) ||
                         ((jsonObj_Desired_Property = json_object_get_object(jsonObj_Desired_Component, r700_Request->Name)) == NULL))
                     {
                         // No desired property for this property.  Send Reported Property with version = 1 with current values from reader
-                        jsonVal_Rest = ImpinjReader_RequestGet(device, r700_Request, NULL, &status);
+
+                        if (r700_Request->RestType == NONE) {
+                            // send to non-REST handler
+                            jsonVal_Rest = ImpinjReader_UpdateNonRestWritableProperty(device, r700_Request, NULL, &status);
+                        }
+                        
+                        else { 
+                            // get current value from reader REST API
+                            jsonVal_Rest = ImpinjReader_RequestGet(device, r700_Request, NULL, &status);
+                        }
+
                         UpdateWritableProperty(PnpComponentHandle, r700_Request, jsonVal_Rest, status, "Value from Reader", 1);
                     }
                     else
@@ -196,6 +207,7 @@ OnPropertyPatchCallback(
 
     if (r700_Request != NULL)
     {
+        // check for situations where function should no-Op
         if (device->ApiVersion < r700_Request->ApiVersion)
         {
             LogError("R700 : Unsupported API. Please upgrade firmware");
@@ -212,11 +224,11 @@ OnPropertyPatchCallback(
         {
             LogInfo("R700 : Shutting Down : %s", MU_ENUM_TO_STRING(R700_REST_REQUEST, r700_Request->Request));
         }
-        else if ((payload = json_serialize_to_string(JsonVal_Property)) == NULL)
+        else if ((payload = json_serialize_to_string(JsonVal_Property)) == NULL)  // parse JsonVal_Property into payload string
         {
-            LogError("R700 : Unabled to serialize JSON for Property");
+            LogError("R700 : Unable to serialize JSON for Property");
         }
-        else
+        else // continue to process if none of the above are true, subfunction based on RestType
         {
             if (r700_Request->RestType == PUT)
             {
@@ -229,6 +241,10 @@ OnPropertyPatchCallback(
             else if (r700_Request->RestType == DELETE)
             {
                 jsonVal_Rest = ImpinjReader_RequestDelete(device, r700_Request, payload, &httpStatus);
+            }
+            else if (r700_Request->RestType == NONE)  // this case handles any properties that do not invoke REST API operations
+            {
+                jsonVal_Rest = ImpinjReader_UpdateNonRestWritableProperty(device, r700_Request, JsonVal_Property, &httpStatus);
             }
             else
             {

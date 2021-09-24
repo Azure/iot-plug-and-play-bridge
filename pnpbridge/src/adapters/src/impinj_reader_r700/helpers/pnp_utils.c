@@ -1163,7 +1163,7 @@ UpgradeWorker(
 
     while (reader->Flags.IsUpgradePending == 1)
     {
-        upgradeStatusCurrnet = CheckUpgardeStatus(reader, &jsonVal_UpgradeStatus);
+        upgradeStatusCurrnet = CheckUpgradeStatus(reader, &jsonVal_UpgradeStatus);
 
         if (upgradeStatusCurrnet != upgradeStatusPrevious)
         {
@@ -1199,6 +1199,36 @@ ScheduleUpgradeWorker(
     }
 
     return true;
+}
+
+JSON_Value*
+UpdateDeviceMetadata(
+    PIMPINJ_READER Device,
+    JSON_Value* newJsonVal,
+    int* HttpStatus)
+{
+    // parse payload >> create copy >> store in device data, return to jsonVal_Rest, update config file (optional)
+    
+    JSON_Value* jsonVal = NULL;
+
+#ifdef DEBUG_REST
+    LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
+#endif
+
+    if (newJsonVal == NULL) {
+        jsonVal = Device->deviceMetadataJsonVal;
+    }
+    else {
+        jsonVal = json_value_deep_copy(newJsonVal);
+        // need to free and reallocate since new value likely a different size
+        json_value_free(Device->deviceMetadataJsonVal);   
+        Device->deviceMetadataJsonVal = json_value_deep_copy(newJsonVal);
+        Device->deviceMetadataJsonVal = newJsonVal;
+        LogInfo("R700 : Updated device metadata from cloud. Value = %s", json_serialize_to_string_pretty(jsonVal));
+        // update config file?
+    }
+
+    return jsonVal;
 }
 
 int

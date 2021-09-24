@@ -1,4 +1,3 @@
-
 #include "restapi.h"
 
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
@@ -391,11 +390,35 @@ ImpinjReader_RequestPost(
     return jsonVal;
 }
 
+JSON_Value*
+ImpinjReader_UpdateNonRestWritableProperty(  
+    PIMPINJ_READER Device,
+    PIMPINJ_R700_REST R700_Request,
+    JSON_Value* newJsonValue,
+    int* httpStatus)
+{
+    JSON_Value* jsonVal = NULL;
+
+#ifdef DEBUG_REST
+    LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
+#endif
+
+    switch (R700_Request->Request)
+    {
+        case DEVICE_METADATA: // parse payload >> create copy >> store in device data, return to jsonVal_Rest, update config file (optional)
+            jsonVal = UpdateDeviceMetadata(Device, newJsonValue, httpStatus);
+            break;
+    }
+
+    return jsonVal;
+}
+
+
 /****************************************************************
 Send /system/image/upgrade REST API
 ****************************************************************/
 R700_UPGRADE_STATUS
-CheckUpgardeStatus(
+CheckUpgradeStatus(
     PIMPINJ_READER Reader,
     JSON_Value** JsonValue)
 {

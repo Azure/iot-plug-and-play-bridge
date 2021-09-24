@@ -28,7 +28,10 @@
             "pnp_bridge_adapter_config": {
                 "hostname": "localhost",
                 "username": "root",
-                "password": "impinj"
+                "password": "impinj",
+                "deviceMetadata": {
+                    "location": "default-location"
+                }
             }
         }
     ]

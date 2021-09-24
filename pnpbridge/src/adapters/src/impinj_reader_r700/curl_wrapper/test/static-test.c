@@ -37,6 +37,7 @@
 #include "../curl_wrapper.h"
 
 #define USEC_DELAY 1
+#define DEBUG_CURL
 
 int main(void)
 {

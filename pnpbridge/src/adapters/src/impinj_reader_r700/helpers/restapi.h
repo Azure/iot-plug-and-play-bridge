@@ -83,41 +83,42 @@ static const char g_upgradeAutoReboot[] = "autoReboot";
 
 #define R700_REST_REQUEST_VALUES                       \
     READER_STATUS_GET,                                 \
-        READER_STATUS,                                 \
-        READER_STATUS_POLL,                            \
-        HTTP_STREAM,                                   \
-        MQTT,                                          \
-        KAFKA,                                         \
-        PROFILES,                                      \
-        PROFILES_STOP,                                 \
-        PROFILES_INVENTORY_PRESETS_SCHEMA,             \
-        PROFILES_INVENTORY_PRESETS_IDS,                \
-        PROFILES_INVENTORY_PRESETS_ID_GET,             \
-        PROFILES_INVENTORY_PRESETS_ID_SET,             \
-        PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH, \
-        PROFILES_INVENTORY_PRESETS_ID_DELETE,          \
-        PROFILES_START,                                \
-        PROFILES_INVENTORY_TAG,                        \
-        SYSTEM,                                        \
-        SYSTEM_HOSTNAME,                               \
-        SYSTEM_IMAGE,                                  \
-        SYSTEM_IMAGE_UPGRADE_UPLOAD,                   \
-        SYSTEM_IMAGE_UPGRADE,                          \
-        SYSTEM_IMAGE_UPGRADE_GET,                      \
-        SYSTEM_NETORK_INTERFACES,                      \
-        SYSTEM_POWER,                                  \
-        SYSTEM_POWER_SET,                              \
-        SYSTEM_REGION,                                 \
-        SYSTEM_REGION_GET,                             \
-        SYSTEM_REBOOT,                                 \
-        SYSTEM_RFID_LLRP,                              \
-        SYSTEM_RFID_INTERFACE,                         \
-        SYSTEM_TIME,                                   \
-        SYSTEM_TIME_GET,                               \
-        SYSTEM_TIME_SET,                               \
-        SYSTEM_TIME_NTP,                               \
-        SYSTEM_TIME_NTP_SET,                           \
-        R700_REST_MAX
+    READER_STATUS,                                 \
+    READER_STATUS_POLL,                            \
+    HTTP_STREAM,                                   \
+    MQTT,                                          \
+    KAFKA,                                         \
+    PROFILES,                                      \
+    PROFILES_STOP,                                 \
+    PROFILES_INVENTORY_PRESETS_SCHEMA,             \
+    PROFILES_INVENTORY_PRESETS_IDS,                \
+    PROFILES_INVENTORY_PRESETS_ID_GET,             \
+    PROFILES_INVENTORY_PRESETS_ID_SET,             \
+    PROFILES_INVENTORY_PRESETS_ID_SET_PASSTHROUGH, \
+    PROFILES_INVENTORY_PRESETS_ID_DELETE,          \
+    PROFILES_START,                                \
+    PROFILES_INVENTORY_TAG,                        \
+    SYSTEM,                                        \
+    SYSTEM_HOSTNAME,                               \
+    SYSTEM_IMAGE,                                  \
+    SYSTEM_IMAGE_UPGRADE_UPLOAD,                   \
+    SYSTEM_IMAGE_UPGRADE,                          \
+    SYSTEM_IMAGE_UPGRADE_GET,                      \
+    SYSTEM_NETORK_INTERFACES,                      \
+    SYSTEM_POWER,                                  \
+    SYSTEM_POWER_SET,                              \
+    SYSTEM_REGION,                                 \
+    SYSTEM_REGION_GET,                             \
+    SYSTEM_REBOOT,                                 \
+    SYSTEM_RFID_LLRP,                              \
+    SYSTEM_RFID_INTERFACE,                         \
+    SYSTEM_TIME,                                   \
+    SYSTEM_TIME_GET,                               \
+    SYSTEM_TIME_SET,                               \
+    SYSTEM_TIME_NTP,                               \
+    SYSTEM_TIME_NTP_SET,                           \
+    DEVICE_METADATA,                               \
+    R700_REST_MAX
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
 
@@ -136,6 +137,7 @@ typedef enum _R700_REST_TYPE
     POST,
     POST_UPLOAD,
     DELETE,
+    NONE,  // for property/command requests that do not go through the REST API
     UNSUPPORTED_REST,
 } R700_REST_TYPE;
 
@@ -196,7 +198,9 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_RFID_INTERFACE, WRITABLE, PUT, false, "/system/rfid/interface", "RfidInterface"},
     {V1_3, SYSTEM_TIME, READONLY, GET, false, "/system/time", "TimeInfo"},
     {V1_3, SYSTEM_TIME_GET, COMMAND, GET, false, "/system/time", "GetTimeInfo"},
-    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, false, "/system/time", "SetTimeInfo"}};
+    {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, false, "/system/time", "SetTimeInfo"},
+    {V1_0, DEVICE_METADATA, WRITABLE, NONE, false, "<no endpoint>", "DeviceMetadata"}
+    };
 
 JSON_Value*
 ImpinjReader_RequestDelete(
@@ -227,8 +231,15 @@ ImpinjReader_RequestPost(
     const char* Parameter,
     int* HttpStatus);
 
+JSON_Value*
+ImpinjReader_UpdateNonRestWritableProperty(  
+    PIMPINJ_READER Device,
+    PIMPINJ_R700_REST R700_Request,
+    JSON_Value* newJsonValue,
+    int* httpStatus);
+
 R700_UPGRADE_STATUS
-CheckUpgardeStatus(
+CheckUpgradeStatus(
     PIMPINJ_READER Reader,
     JSON_Value** JsonValue);
 
