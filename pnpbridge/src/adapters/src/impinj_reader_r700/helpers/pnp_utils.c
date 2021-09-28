@@ -1219,13 +1219,14 @@ UpdateDeviceMetadata(
         jsonVal = Device->deviceMetadataJsonVal;
     }
     else {
-        jsonVal = json_value_deep_copy(newJsonVal);
-        // need to free and reallocate since new value likely a different size
-        json_value_free(Device->deviceMetadataJsonVal);   
+        // need to free and reallocate since new value likely a different size  
+        // if (Device->deviceMetadataJsonVal) {
+        //     json_value_free(Device->deviceMetadataJsonVal);
+        // }
+        jsonVal = json_value_deep_copy(newJsonVal); 
         Device->deviceMetadataJsonVal = json_value_deep_copy(newJsonVal);
-        Device->deviceMetadataJsonVal = newJsonVal;
         LogInfo("R700 : Updated device metadata from cloud. Value = %s", json_serialize_to_string_pretty(jsonVal));
-        // update config file?
+        // kwenner todo: update config file with new value
     }
 
     return jsonVal;

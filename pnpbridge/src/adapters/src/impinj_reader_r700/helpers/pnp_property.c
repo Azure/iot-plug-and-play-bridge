@@ -256,7 +256,7 @@ OnPropertyPatchCallback(
                                    r700_Request,
                                    jsonVal_Rest,
                                    httpStatus,
-                                   NULL,
+                                   "Value from Cloud",
                                    Version);
         }
 

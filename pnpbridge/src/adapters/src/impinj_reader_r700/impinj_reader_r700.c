@@ -700,8 +700,18 @@ ImpinjReader_CreatePnpComponent(
     mallocAndStrcpy_s((char**)&device->baseUrl, build_str_url_always);
     mallocAndStrcpy_s((char**)&device->hostname, compHostname);
 
-    device->deviceMetadataJsonVal = json_value_deep_copy(json_object_get_wrapping_value(deviceMetadata));
-    
+    if (deviceMetadata) {  // set metadata value from config file 
+        LogInfo("Loaded 'deviceMetadata' from config.json. ");
+        device->deviceMetadataJsonVal = json_value_deep_copy(json_object_get_wrapping_value(deviceMetadata));
+    } 
+    else {  // if no value from config file initialize default value for metadata 
+        LogInfo("No 'deviceMetadata' found in config.json.  Initializing to default value." );
+        JSON_Value* deviceMetadataJsonValTemp = json_value_init_object();
+        json_object_set_string(json_value_get_object(deviceMetadataJsonValTemp), "location", "default-location");
+        device->deviceMetadataJsonVal = json_value_deep_copy(deviceMetadataJsonValTemp);
+    }
+    LogInfo("Device Metadata: %s", json_serialize_to_string_pretty(device->deviceMetadataJsonVal));
+
     device->Flags.AsUSHORT = 0;
 
     // Wait for reader to be available, up to 3 min
