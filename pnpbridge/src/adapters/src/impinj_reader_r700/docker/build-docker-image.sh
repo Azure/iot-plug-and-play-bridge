@@ -1,0 +1,3 @@
+echo Building Docker image to create UPGX with custom config.json file...
+cd ../../../../../..
+docker build -t kwennerimpinj/impinj_r700_azure_pnpbridge_buildcap:v0.1.14.3 . -f ./pnpbridge/src/adapters/src/impinj_reader_r700/docker/Dockerfile.updatebuildcapimage --progress plain

@@ -1,0 +1,11 @@
+FROM kwennerimpinj/impinj_r700_azure_pnpbridge_buildcap:v0.1.14.2
+
+COPY pnpbridge/src/adapters/src/impinj_reader_r700/cap /home/pnpbridge/impinj_adapter_r700/cap
+
+COPY pnpbridge/cmake/pnpbridge_linux/src/pnpbridge/samples/console/pnpbridge_bin /home/pnpbridge/impinj_adapter_r700/cap
+
+COPY pnpbridge/src/adapters/src/impinj_reader_r700/support_files/config.json /home/pnpbridge/impinj_adapter_r700/support_files
+
+COPY pnpbridge/src/adapters/src/impinj_reader_r700/docker/files/Makefile /home/pnpbridge/impinj_adapter_r700/cap
+
+CMD bash
