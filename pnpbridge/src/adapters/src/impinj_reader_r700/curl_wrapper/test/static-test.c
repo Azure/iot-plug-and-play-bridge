@@ -44,9 +44,26 @@ int main(void)
   char * res;
   int httpStatus;
 
+  PURL_DATA urlData = (PURL_DATA)malloc(sizeof(URL_DATA)); 
+
+  const char* constUrl = "https://192.168.1.14/api/v1/system/rfid/interface";
+  const char* constUsername = "root";
+  const char* constPassword = "impinj";
+
+  strcpy(urlData->url, constUrl);
+  strcpy(urlData->username, constUsername);
+  strcpy(urlData->password, constPassword);
+
+  char buffer[100] = {0};
+
+  httpStatus = curlGet(urlData, buffer);
+  fprintf(stdout, "    curlGet(%s): %d\n    Response: %s\n", urlData->url, httpStatus, buffer);
+
+  free(urlData);
+
   curlGlobalInit();
  
-  CURL_Static_Session_Data *static_session = curlStaticInit("root", "impinj", "https://192.168.1.14/api/v1", Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+  CURL_Static_Session_Data *static_session = curlStaticInit(constUsername, constPassword, "https://192.168.1.14/api/v1", Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   usleep(USEC_DELAY);
 
