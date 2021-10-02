@@ -3,11 +3,15 @@
 #include "../../../../../../../deps/azure-iot-sdk-c-pnp/deps/parson/parson.h"
 #include <string.h>
 #include "./../../../curl_wrapper/curl_wrapper.h"
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
+#define IsSuccess(code) (code < 400)
+
 // Current values: 
-#define CURRENT_ROOT_INTERFACE_MODEL_ID "dtmi:impinj:FixedReader;12"
+#define CURRENT_ROOT_INTERFACE_MODEL_ID "dtmi:impinj:FixedReader;13"
 #define CURRENT_COMPONENT_NAME "R700"
 #define CURRENT_ADAPTER_ID "impinj-reader-r700"
 #define CURRENT_COMMENT "Impinj Reader Device (R700)"
@@ -20,6 +24,8 @@ using namespace std;
 #define PNP_CONFIG_BRIDGE_COMMENT "_comment"
 #define PNP_CONFIG_DEVICES "pnp_bridge_interface_components"
 #define PNP_CONFIG_BRIDGE_HOSTNAME "pnp_bridge_adapter_config.hostname"
+#define PNP_CONFIG_BRIDGE_USERNAME "pnp_bridge_adapter_config.username"
+#define PNP_CONFIG_BRIDGE_PASSWORD "pnp_bridge_adapter_config.password"
 
 string jsonObjectDotGetString(
   JSON_Object * jsonObject, 
@@ -78,32 +84,92 @@ void findAndReplaceAll(std::string & data, std::string toSearch, std::string rep
     }
 }
 
-string generateDeviceName(string prefix, string host) {
+string generateDeviceName(string prefix, string hostname, string username, string password) {
   char * res;
   int httpStatus;
   JSON_Value* jsonValue;
   string deviceName;
   string macAddress;
 
-  string baseUrl = "https://" + host + "/api/v1";
+  cout << "Generating new deviceId based on reader MAC address..." << endl;
+  
+  string baseUrl = "https://" + hostname + "/api/v1";
 
   curlGlobalInit();
  
-  CURL_Static_Session_Data *static_session = curlStaticInit("root", "impinj", baseUrl.c_str(), Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+  CURL_Static_Session_Data *static_session = curlStaticInit(username.c_str(), password.c_str(), baseUrl.c_str(), Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
 
   res = curlStaticGet(static_session, "/system/network/interfaces", &httpStatus);
   fprintf(stdout, "    HTTP Status: %d\n    Response: %s\n", httpStatus, res);
+  
+  macAddress = parseMacAddress(string(res));
+
+  findAndReplaceAll(macAddress, ":", "-");
+
+  curlStaticCleanup(static_session);
+
+  curlGlobalCleanup();
+  
+  return prefix + macAddress;
+
+}
+
+bool
+ImpinjReader_IsReaderReady(
+    string hostname, string username, string password)
+{
+  int httpStatus            = 500;
+  bool ret                  = false;
+  char * res;
+
+  string baseUrl = "https://" + hostname + "/api/v1";
+  char* endpoint = "/system";
+
+  curlGlobalInit();
+ 
+  CURL_Static_Session_Data *static_session = curlStaticInit(username.c_str(), password.c_str(), baseUrl.c_str(), Session_Static, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+
+    if (static_session != NULL)
+    {
+        res = curlStaticGet(static_session, endpoint, &httpStatus);
+    }
+    else
+    {
+       cout << endl << "ERROR: Could not initialize cURL session. " << endl;
+    }
 
   curlStaticCleanup(static_session);
 
   curlGlobalCleanup();
 
-  macAddress = parseMacAddress(string(res));
+    return IsSuccess(httpStatus);
+}
 
-  findAndReplaceAll(macAddress, ":", "-");
+bool
+ImpinjReader_WaitForReader(
+    string hostname, string username, string password,
+    int MaxRetryCount, int delay)
+{
+    int retryCount     = 0;
 
-  return prefix + macAddress;
+    while (!ImpinjReader_IsReaderReady(hostname, username, password))
+    {
+        if (retryCount == MaxRetryCount)
+        {
+            cout << "R700 : Reader Not ready after retry.  Exiting" << endl;
+            return false;
+        }
 
+        if (retryCount % 10 == 0)
+        {
+            cout << "R700 : Waiting for Reader. Retrying after " << delay/1000 << "seconds ... " << endl;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+        retryCount++;
+    }
+
+    cout << "R700 : Reader is ready" << endl;
+    return true;
 }
 
 int main(int argc, char* argv[]) {
@@ -158,6 +224,8 @@ int main(int argc, char* argv[]) {
       JSON_Object* jsonDeviceObjects[deviceCount];
 
       string hostname = "";
+      string username = "";
+      string password = "";
       // get/set device object pnp component parameters
       for (int i = 0; i < deviceCount; i++) {
         jsonDeviceObjects[i] = json_array_get_object(devices, i);
@@ -176,10 +244,19 @@ int main(int argc, char* argv[]) {
 
         hostname = jsonObjectDotGetString(jsonDeviceObjects[i], PNP_CONFIG_BRIDGE_HOSTNAME);
         cout << endl << " Hostname: " << hostname << endl << endl;
+        username = jsonObjectDotGetString(jsonDeviceObjects[i], PNP_CONFIG_BRIDGE_USERNAME);
+        password = jsonObjectDotGetString(jsonDeviceObjects[i], PNP_CONFIG_BRIDGE_PASSWORD);
       }
 
+      // Enable HTTPS on reader RShell
+      cout << "Enabling HTTPS via RShell..." << endl;
+      char * enableHttpsRShellCmd = "rshell -c \"config network https enable\"";
+      system(enableHttpsRShellCmd);
+
+      ImpinjReader_WaitForReader(hostname, username, password, 20, 3000);
+
       if (deviceId == "") {
-        string newDeviceId = generateDeviceName("impinj-", hostname);
+        string newDeviceId = generateDeviceName("impinj-", hostname, username, password);
         json_object_dotset_string(jsonRootObject, PNP_CONFIG_DEVICE_ID_DOT_STRING, newDeviceId.c_str());
         cout << endl << ">> New Device ID: " << newDeviceId << endl;
       }

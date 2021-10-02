@@ -1,10 +1,17 @@
 #!/bin/bash
 
+if [ -d "logs" ] 
+then
+    echo "/logs directory already exists.  Using for new log files."
+else
+    mkdir logs
+fi
+
 if [ -f /cust/azure_pnpbridge/config.json ] ; then
-    /cust/azure_pnpbridge/support_files/config_update-arm /cust/azure_pnpbridge/config.json /cust/azure_pnpbridge/config.json
+    /cust/azure_pnpbridge/support_files/config_update-arm /cust/azure_pnpbridge/config.json /cust/azure_pnpbridge/config.json > ./logs/$(date +"%Y%m%d_%H%M%S")_config_update.log 2>./logs/$(date +"%Y%m%d_%H%M%S")_config_update_error.log
 fi
 
 while true; do
-    /cust/azure_pnpbridge/pnpbridge_bin /cust/azure_pnpbridge/config.json
-    sleep 1
+    /cust/azure_pnpbridge/pnpbridge_bin /cust/azure_pnpbridge/config.json > ./logs/$(date +"%Y%m%d_%H%M%S")_pnpbridge.log 2>./logs/$(date +"%Y%m%d_%H%M%S")_pnpbridge_error.log
+    sleep 10
 done

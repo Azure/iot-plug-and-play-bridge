@@ -9,11 +9,11 @@
           "auth_type": "symmetric_key",
           "symmetric_key_hub": "",
           "symmetric_key": "",
-          "group_symmetric_key": ""
+          "group_symmetric_key": "7VR7nhvoXwopqbOc3KUNqMY0pyHyi6NVBJYwU/9DgX6QY/E5K0a6Irav/ykP/ER7vrLjvthx2iD4zJRXstnlgw=="
       },
       "dps_parameters": {
           "global_prov_uri": "global.azure-devices-provisioning.net",
-          "id_scope": "",
+          "id_scope": "0ne001C686E",
           "device_id": ""
       }
   },
@@ -30,7 +30,7 @@
                 "username": "root",
                 "password": "impinj",
                 "deviceMetadata": {
-                    "location": "default-location"
+                    "location": "test-location-1"
                 }
             }
         }

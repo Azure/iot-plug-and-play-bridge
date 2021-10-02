@@ -1,5 +1,12 @@
 #!/bin/sh
+if [ -d "$cust_dir/logs" ] 
+then
+    echo "/logs directory already exists.  Using for new log files."
+else
+    mkdir $cust_dir/logs
+fi
 
+{
 event=$1
 echo "cust upgrade script enters"
 echo "my SOP version is $primary_sop_vsn"
@@ -21,3 +28,4 @@ elif [ $event = "upg" ] ; then
        cp -f $old_cust_dir/azure_pnpbridge/config.json $cust_dir/azure_pnpbridge/config.json
     fi
 fi
+} > $cust_dir/logs/$(date +"%Y%m%d_%H%M%S")_cust_app_upgrade.log 2> $cust_dir/logs/$(date +"%Y%m%d_%H%M%S")_cust_app_upgrade_error.log

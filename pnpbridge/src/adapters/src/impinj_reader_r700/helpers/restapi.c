@@ -2,8 +2,8 @@
 
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
 
-//#define DEBUG_REST
-//#define DEBUG_REST_STATUS
+// #define DEBUG_REST
+// #define DEBUG_REST_STATUS
 
 JSON_Value*
 ImpinjReader_Convert_NetworkInterface(
@@ -72,12 +72,12 @@ ImpinjReader_RequestDelete(
     jsonResult = curlStaticDelete(Device->curl_static_session, endpoint, HttpStatus);
     // LogInfo("R700 : Curl %s << Status %d", api, *HttpStatus);
 
+    jsonVal = json_parse_string(jsonResult);
+    
     if (*HttpStatus >= R700_STATUS_BAD_REQUEST)
     {
         LogJsonPretty("R700 : Warn : %s HttpStatus %d Response Payload", jsonVal, api, *HttpStatus);
     }
-
-    jsonVal = json_parse_string(jsonResult);
 
     return jsonVal;
 }
@@ -168,60 +168,75 @@ ImpinjReader_RequestGet(
     }
 
     //LogInfo("R700 : Curl %s << Status %d %s", api, *HttpStatus, jsonResult);
-
-    switch (R700_Request->Request)
-    {
-        case READER_STATUS_POLL:
-        case READER_STATUS_GET:
-        case READER_STATUS:
-            jsonVal = ImpinjReader_Convert_DeviceStatus(jsonResult, bLog);
-            break;
-
-        case KAFKA:
-            jsonVal = JSONArray2DtdlMap(jsonResult, g_kafkaBootstraps, "BootStraps");
-            break;
-
-        case PROFILES:
-            jsonVal = JSONArray2DtdlMap(jsonResult, NULL, "Profile");
-            break;
-
-        case PROFILES_INVENTORY_PRESETS_SCHEMA:
-            sprintf(buffer, g_presetSchemaFormat, g_NotSupportedMessage);
-            jsonVal = json_parse_string(buffer);
-            break;
-
-        case PROFILES_INVENTORY_PRESETS_IDS:
-            sprintf(buffer, g_presetsFormat, jsonResult);
-            jsonVal = json_parse_string(buffer);
-            break;
-
-        case SYSTEM_IMAGE_UPGRADE_GET:
-            jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
-            break;
-
-        case SYSTEM_IMAGE_UPGRADE:
-            jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
-            break;
-
-        case SYSTEM_NETORK_INTERFACES: {
-            // need to convert arrays to Map
-            jsonVal = ImpinjReader_Convert_NetworkInterface(jsonResult);
-            break;
-        }
-        case SYSTEM_REGION:
-            jsonVal = Remove_JSON_Array(jsonResult, impinjReader_property_system_region_selectableRegions);
-            break;
-
-        default:
-            jsonVal = json_parse_string(jsonResult);
-            break;
-    }
-
+    
+    // check HTTP status first to determine if nonstandard response (unsuccessful)
     if (*HttpStatus >= R700_STATUS_BAD_REQUEST)
     {
-        LogJsonPretty("R700 : Warn : %s HttpStatus %d Response Payload", jsonVal, api, *HttpStatus);
-    }
+        jsonVal = json_parse_string(jsonResult);
+        
+        JSON_Object* responseJsonObj = json_value_get_object(jsonVal);
+        const char* responseStr = json_object_get_string(responseJsonObj, "message");
 
+        if (responseStr != NULL) {
+            if (strcmp(responseStr, g_noRegionSelected) == 0) {
+                *HttpStatus = R700_NO_REGION_SELECTED;
+            }
+        }
+
+        if (R700_Request->Request != READER_STATUS_POLL) { // don't flood log with polled errors
+            LogJsonPretty("R700 : Warn : %s HttpStatus %d Response Payload", jsonVal, api, *HttpStatus);
+        }
+    }
+    else {  // request succeeded, continue parsing JSON payload
+        switch (R700_Request->Request)
+        {
+            case READER_STATUS_POLL:
+            case READER_STATUS_GET:
+            case READER_STATUS:
+                jsonVal = ImpinjReader_Convert_DeviceStatus(jsonResult, bLog);
+                break;
+
+            case KAFKA:
+                jsonVal = JSONArray2DtdlMap(jsonResult, g_kafkaBootstraps, "BootStraps");
+                break;
+
+            case PROFILES:
+                jsonVal = JSONArray2DtdlMap(jsonResult, NULL, "Profile");
+                break;
+
+            case PROFILES_INVENTORY_PRESETS_SCHEMA:
+                sprintf(buffer, g_presetSchemaFormat, g_NotSupportedMessage);
+                jsonVal = json_parse_string(buffer);
+                break;
+
+            case PROFILES_INVENTORY_PRESETS_IDS:
+                sprintf(buffer, g_presetsFormat, jsonResult);
+                jsonVal = json_parse_string(buffer);
+                break;
+
+            case SYSTEM_IMAGE_UPGRADE_GET:
+                jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
+                break;
+
+            case SYSTEM_IMAGE_UPGRADE:
+                jsonVal = ImpinjReader_Convert_UpgradeStatus(jsonResult);
+                break;
+
+            case SYSTEM_NETORK_INTERFACES: {
+                // need to convert arrays to Map
+                jsonVal = ImpinjReader_Convert_NetworkInterface(jsonResult);
+                break;
+            }
+            case SYSTEM_REGION:
+                jsonVal = Remove_JSON_Array(jsonResult, impinjReader_property_system_region_selectableRegions);
+                break;
+
+            default:
+                jsonVal = json_parse_string(jsonResult);
+                break;
+        }
+    }
+    
     return jsonVal;
 }
 

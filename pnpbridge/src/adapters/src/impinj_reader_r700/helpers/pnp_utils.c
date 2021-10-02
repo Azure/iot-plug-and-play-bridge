@@ -688,7 +688,7 @@ CheckRfidInterfaceType(
     JSON_Object* jsonObj_Interface = NULL;
     int httpStatus                 = 500;
     const char* interface          = NULL;
-    char jsonResult[64]            = {0};
+    char jsonResult[254]            = {0};
     PUPGRADE_DATA upgradeData      = NULL;
     bool bSwitchToRest             = true;
 

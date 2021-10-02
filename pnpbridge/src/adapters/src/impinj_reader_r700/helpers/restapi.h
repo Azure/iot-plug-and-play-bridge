@@ -21,6 +21,7 @@ extern "C" {
 #define R700_STATUS_CREATED             201
 #define R700_STATUS_ACCEPTED            202   // StatusResponse
 #define R700_STATUS_NO_CONTENT          204
+#define R700_NO_REGION_SELECTED         301   // Unique message (custom)
 #define R700_STATUS_BAD_REQUEST         400   // ErrorResponse
 #define R700_STATUS_FORBIDDEN           403   // ErrorResponse
 #define R700_STATUS_NOT_FOUND           404   // ErrorResponse
@@ -30,7 +31,7 @@ extern "C" {
 #define R700_STATUS_NOT_IMPLEMENTED     501   // ErrorResponse
 #define R700_STATUS_SERVICE_UNAVAILABLE 503   // ErrorResponse
 
-#define IsSuccess(code) ((code & 200) == 200)
+#define IsSuccess(code) (code < 400)
 
 static const char impinjReader_property_system_region_selectableRegions[] = "selectableRegions";
 
@@ -47,8 +48,9 @@ static const char g_shuttingDownResponse[]       = "{\"message\":\"Shutting down
 static const char g_restApiNotEnabled[]          = "{\"message\":\"RESTFul API not enabled.\"}";
 static const char g_upgradeAccepted[]            = "{\"message\":\"The image file was uploaded successfully and is being installed on the reader.\"}";
 static const char g_upgradeFailAlloc[]           = "{\"message\":\"Failed to allocate download data structure.\"}";
-static const char g_upgradeFailDownload[]        = "{\"status\":\"Downlaod Failed\", \"message\":\"Failed to download upgrade firmware.\"}";
+static const char g_upgradeFailDownload[]        = "{\"status\":\"Download Failed\", \"message\":\"Failed to download upgrade firmware.\"}";
 static const char g_upgradeNotReady[]            = "{\"status\":\"Not Ready\", \"message\":\"Reader is not ready for upgrade.\"}";
+static const char g_noRegionSelected[]           = "Failed to get RFID inventory status. Make sure a regulatory region is selected.";
 
 // Array in Kafka payload
 static const char g_kafkaBootstraps[] = "bootstraps";

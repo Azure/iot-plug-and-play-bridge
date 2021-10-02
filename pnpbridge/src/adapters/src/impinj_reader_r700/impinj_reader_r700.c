@@ -86,7 +86,7 @@ ImpinjReader_WaitForHttps(
 
         if (Reader->Flags.IsRebootPending == 0 || (retryCount % 10 == 0))
         {
-            LogInfo("R700 : Waiting for Reader. Retrying after %d sec", delay / 1000);
+            LogInfo("R700 : Waiting for REST API. Retrying after %d sec", delay / 1000);
         }
         ThreadAPI_Sleep(delay);
         retryCount++;
@@ -616,6 +616,7 @@ ImpinjReader_CreatePnpAdapter(
     curl_global_init(CURL_GLOBAL_DEFAULT);   // initialize cURL globally
 
     // Enable HTTPS on reader RShell
+    LogInfo("Enabling HTTPS via RShell...");
     char * enableHttpsRShellCmd = "rshell -c \"config network https enable\"";
     system(enableHttpsRShellCmd);
     ThreadAPI_Sleep(1000);
@@ -714,6 +715,20 @@ ImpinjReader_CreatePnpComponent(
 
     device->Flags.AsUSHORT = 0;
 
+    // Make sure REST API interface is enabled.
+    // Do this before setting up Curl endpoints
+    CheckRfidInterfaceType(device);
+
+    /* initialize cURL sessions */
+    if (!ImpinjReader_Initialize_CurlSessions(device))
+    {
+        LogError("R700 : Unable to initialize curl sessions.");
+        goto exit;
+    }
+    
+    ImpinjReader_IsLocal(device);
+    GetFirmwareVersion(device);  // API version is required by all HTTP calls, must be determined before any curl outgoing curl calls
+    
     // Wait for reader to be available, up to 3 min
     if (!ImpinjReader_WaitForReader(device, 180))
     {
@@ -721,20 +736,6 @@ ImpinjReader_CreatePnpComponent(
         result = IOTHUB_CLIENT_ERROR;
         goto exit;
     }
-
-    // Make sure REST API interface is enabled.
-    // Do this before setting up Curl endpoints
-    CheckRfidInterfaceType(device);
-    
-    /* initialize cURL sessions */
-    if (!ImpinjReader_Initialize_CurlSessions(device))
-    {
-        LogError("R700 : Unable to initialize curl sessions.");
-        goto exit;
-    }
-
-    ImpinjReader_IsLocal(device);
-    GetFirmwareVersion(device);
 
     // Wait for HTTPS interface to be available, up to 3 min
     if (!ImpinjReader_WaitForHttps(device, 180))
