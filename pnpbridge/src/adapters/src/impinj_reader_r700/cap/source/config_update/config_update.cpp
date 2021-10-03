@@ -11,7 +11,7 @@ using namespace std;
 #define IsSuccess(code) (code < 400)
 
 // Current values: 
-#define CURRENT_ROOT_INTERFACE_MODEL_ID "dtmi:impinj:FixedReader;13"
+#define CURRENT_ROOT_INTERFACE_MODEL_ID "dtmi:impinj:FixedReader;14"
 #define CURRENT_COMPONENT_NAME "R700"
 #define CURRENT_ADAPTER_ID "impinj-reader-r700"
 #define CURRENT_COMMENT "Impinj Reader Device (R700)"

@@ -4,16 +4,16 @@
       "connection_type_hub" : "connection_string",
       "connection_string" : "",
       "connection_type" : "dps",
-      "root_interface_model_id": "dtmi:impinj:FixedReader;13",
+      "root_interface_model_id": "dtmi:impinj:FixedReader;14",
       "auth_parameters": {
           "auth_type": "symmetric_key",
           "symmetric_key_hub": "",
           "symmetric_key": "",
-          "group_symmetric_key": "7VR7nhvoXwopqbOc3KUNqMY0pyHyi6NVBJYwU/9DgX6QY/E5K0a6Irav/ykP/ER7vrLjvthx2iD4zJRXstnlgw=="
+          "group_symmetric_key": ""
       },
       "dps_parameters": {
           "global_prov_uri": "global.azure-devices-provisioning.net",
-          "id_scope": "0ne001C686E",
+          "id_scope": "",
           "device_id": ""
       }
   },
