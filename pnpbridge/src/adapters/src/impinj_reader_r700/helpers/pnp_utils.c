@@ -1239,7 +1239,7 @@ UpdateHttpStreamTelemetry(
     int* HttpStatus)
 {
     // parse payload >> create copy >> store in device data, return to jsonVal_Rest, update config file (optional)
-    
+
     JSON_Value* jsonVal = NULL;
 
 #ifdef DEBUG_REST
@@ -1247,9 +1247,20 @@ UpdateHttpStreamTelemetry(
 #endif
 
     if(!newJsonVal) {
-        // input JSON error
-        LogError("R700 ERROR: bad value sent from cloud for httpStreamTelemetry update property: %s", json_serialize_to_string_pretty(newJsonVal));
-        *HttpStatus = R700_STATUS_BAD_REQUEST;
+        // no value provided, return reader status
+        JSON_Value* jsonValTemp = json_value_init_object();
+        
+        char* valueHttpStreamTelemetry = NULL;
+
+        if (Device->Flags.IsHTTPstreamEnabled == 0) {
+            valueHttpStreamTelemetry = "disabled";
+        }
+        else valueHttpStreamTelemetry = "enabled";
+        
+        json_object_set_string(json_value_get_object(jsonValTemp), "httpStreamTelemetry", valueHttpStreamTelemetry);
+
+        jsonVal = json_value_deep_copy(jsonValTemp);
+
         return jsonVal;
     }
     
