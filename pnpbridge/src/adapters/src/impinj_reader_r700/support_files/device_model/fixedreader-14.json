@@ -1,0 +1,18 @@
+{
+    "@id": "dtmi:impinj:FixedReader;14",
+    "@type": "Interface",
+    "displayName": {
+      "en": "Impinj Reader"
+    },
+    "description": {
+      "en": "Azure IoT Plug and Play Bridge Adapter for Impinj Fixed Reader."
+    },
+    "contents": [
+      {
+        "@type": "Component",
+        "name": "R700",
+        "schema": "dtmi:impinj:R700;134"
+      }
+    ],
+    "@context": "dtmi:dtdl:context;2"
+  }

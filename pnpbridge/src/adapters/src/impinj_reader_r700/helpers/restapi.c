@@ -423,6 +423,11 @@ ImpinjReader_UpdateNonRestWritableProperty(
         case DEVICE_METADATA: // parse payload >> create copy >> store in device data, return to jsonVal_Rest, update config file (optional)
             jsonVal = UpdateDeviceMetadata(Device, newJsonValue, httpStatus);
             break;
+        case HTTP_STREAM_TELEMETRY: // parse payload >> create copy >> store in device data, return to jsonVal_Rest, update config file (optional)
+            jsonVal = UpdateHttpStreamTelemetry(Device, newJsonValue, httpStatus);
+            break;
+        default:
+            LogError("R700 ERROR: Unhandled non-REST writable property: %s", MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
     }
 
     return jsonVal;

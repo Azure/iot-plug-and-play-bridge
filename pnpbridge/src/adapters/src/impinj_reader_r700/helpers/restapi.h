@@ -120,6 +120,7 @@ static const char g_upgradeAutoReboot[] = "autoReboot";
     SYSTEM_TIME_NTP,                               \
     SYSTEM_TIME_NTP_SET,                           \
     DEVICE_METADATA,                               \
+    HTTP_STREAM_TELEMETRY,                         \
     R700_REST_MAX
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(R700_REST_REQUEST, R700_REST_REQUEST_VALUES);
@@ -201,7 +202,8 @@ static IMPINJ_R700_REST R700_REST_LIST[] = {
     {V1_3, SYSTEM_TIME, READONLY, GET, false, "/system/time", "TimeInfo"},
     {V1_3, SYSTEM_TIME_GET, COMMAND, GET, false, "/system/time", "GetTimeInfo"},
     {V1_3, SYSTEM_TIME_SET, COMMAND, PUT, false, "/system/time", "SetTimeInfo"},
-    {V1_0, DEVICE_METADATA, WRITABLE, NONE, false, "<no endpoint>", "DeviceMetadata"}
+    {V1_0, DEVICE_METADATA, WRITABLE, NONE, false, "<no endpoint>", "DeviceMetadata"},
+    {V1_0, HTTP_STREAM_TELEMETRY, WRITABLE, NONE, false, "<no endpoint>", "HttpStreamTelemetry"},
     };
 
 JSON_Value*

@@ -331,6 +331,7 @@ int
 curlStreamSpawnReaderThread(
     CURL_Stream_Session_Data* session_data)
 {
+    session_data->threadData.stopFlag = 0;
     session_data->threadData.thread_ref = pthread_create(&(session_data->threadData.tid), NULL, curlStreamReader, (void*)session_data);
 }
 

@@ -88,6 +88,12 @@ UpdateDeviceMetadata(
     JSON_Value* newJsonValue,
     int* httpStatus);
 
+JSON_Value*
+UpdateHttpStreamTelemetry(
+    PIMPINJ_READER Device,
+    JSON_Value* newJsonVal,
+    int* HttpStatus);
+
 int
 ProcessReboot(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,

@@ -80,7 +80,8 @@ typedef union
         unsigned short IsShuttingDown : 1;
         unsigned short IsRebootPending : 1;
         unsigned short IsUpgradePending : 1;
-        unsigned short reserved : 11;
+        unsigned short IsHTTPstreamEnabled : 1;
+        unsigned short reserved : 10;
     };
     unsigned short AsUSHORT;
 } READER_STATE_FLAGS;

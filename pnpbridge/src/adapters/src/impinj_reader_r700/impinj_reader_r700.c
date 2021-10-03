@@ -714,6 +714,7 @@ ImpinjReader_CreatePnpComponent(
     LogInfo("Device Metadata: %s", json_serialize_to_string_pretty(device->deviceMetadataJsonVal));
 
     device->Flags.AsUSHORT = 0;
+    device->Flags.IsHTTPstreamEnabled = 1;
 
     // Make sure REST API interface is enabled.
     // Do this before setting up Curl endpoints

@@ -1232,6 +1232,73 @@ UpdateDeviceMetadata(
     return jsonVal;
 }
 
+JSON_Value*
+UpdateHttpStreamTelemetry(
+    PIMPINJ_READER Device,
+    JSON_Value* newJsonVal,
+    int* HttpStatus)
+{
+    // parse payload >> create copy >> store in device data, return to jsonVal_Rest, update config file (optional)
+    
+    JSON_Value* jsonVal = NULL;
+
+#ifdef DEBUG_REST
+    LogInfo("R700 : %s() API=%s", __FUNCTION__, MU_ENUM_TO_STRING(R700_REST_REQUEST, R700_Request->Request));
+#endif
+
+    if(!newJsonVal) {
+        // input JSON error
+        LogError("R700 ERROR: bad value sent from cloud for httpStreamTelemetry update property: %s", json_serialize_to_string_pretty(newJsonVal));
+        *HttpStatus = R700_STATUS_BAD_REQUEST;
+        return jsonVal;
+    }
+    
+    const char* httpStreamTelemetryNew = json_object_get_string(json_value_get_object(newJsonVal), "httpStreamTelemetry");
+
+    if (strcmp(httpStreamTelemetryNew, "enabled") == 0) {
+        if (Device->Flags.IsHTTPstreamEnabled == 1) {
+            // http stream telemetry already enabled, report back
+            LogInfo("R700: HTTP stream telemetry already enabled.");
+        }
+        else {
+            // enable HTTP stream telemetry 
+            if (Device->curl_stream_session->threadData.stopFlag == 0) {
+                LogInfo("R700: previous HTTP stream reader thread already exists, stopping...");
+                curlStreamStopThread(Device->curl_stream_session);
+                ThreadAPI_Sleep(1000);
+            }
+            LogInfo("R700: starting new HTTP stream reader thread...");
+            curlStreamSpawnReaderThread(Device->curl_stream_session);
+            Device->Flags.IsHTTPstreamEnabled = 1;
+        }
+
+
+    }
+    else if (strcmp(httpStreamTelemetryNew, "disabled") == 0) {
+        if (Device->Flags.IsHTTPstreamEnabled == 0) {
+            // http stream telemetry already disabled, report back
+            LogInfo("R700: HTTP stream telemetry already disabled.");
+        }
+        else {
+            // disable HTTP stream telemetry
+            LogInfo("R700: stopping HTTP stream reader thread...");
+            curlStreamStopThread(Device->curl_stream_session);
+            Device->Flags.IsHTTPstreamEnabled = 0;
+        }
+    }
+    else {
+        //unsupported text, error
+        LogError("R700 ERROR: bad value sent from cloud for httpStreamTelemetry update property: %s", json_serialize_to_string_pretty(newJsonVal));
+        *HttpStatus = R700_STATUS_BAD_REQUEST;
+    }
+
+    jsonVal = json_value_deep_copy(newJsonVal);
+
+    LogInfo("R700 : Updated httpStreamTelemetry from cloud. Value = %s", json_serialize_to_string_pretty(jsonVal));
+
+    return jsonVal;
+}
+
 int
 ProcessReboot(
     PNPBRIDGE_COMPONENT_HANDLE PnpComponentHandle,
