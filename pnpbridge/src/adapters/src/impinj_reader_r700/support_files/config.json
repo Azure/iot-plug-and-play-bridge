@@ -30,7 +30,7 @@
                 "username": "root",
                 "password": "impinj",
                 "deviceMetadata": {
-                    "location": "test-location-1"
+                    "location": "default-location"
                 }
             }
         }
