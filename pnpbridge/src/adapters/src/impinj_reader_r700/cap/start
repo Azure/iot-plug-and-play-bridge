@@ -1,17 +1,35 @@
 #!/bin/bash
 
-if [ -d "logs" ] 
+if [ -d "logs" ];
 then
     echo "/logs directory already exists.  Using for new log files."
 else
     mkdir logs
 fi
 
-if [ -f /cust/azure_pnpbridge/config.json ] ; then
-    /cust/azure_pnpbridge/support_files/config_update-arm /cust/azure_pnpbridge/config.json /cust/azure_pnpbridge/config.json > ./logs/$(date +"%Y%m%d_%H%M%S")_config_update.log 2>./logs/$(date +"%Y%m%d_%H%M%S")_config_update_error.log
+if [ -f "/cust/azure_pnpbridge/config.json" ]; 
+then
+    echo "/cust/azure_pnpbridge/config.json exists.  Updating for PnP Bridge application version..."
+    if [ -f "debug_logs_enable" ]; 
+    then
+        echo "/cust/debug_log_enable exists.  Debugging output logs enabled at /cust/logs."
+        /cust/azure_pnpbridge/support_files/config_update-arm /cust/azure_pnpbridge/config.json /cust/azure_pnpbridge/config.json >./logs/$(date +"%Y%m%d_%H%M%S")_config_update.log 2>./logs/$(date +"%Y%m%d_%H%M%S")_config_update_error.log
+    else
+        echo "/cust/debug_log_enable does not exist.  Logging only error streams at /cust/logs."
+        /cust/azure_pnpbridge/support_files/config_update-arm /cust/azure_pnpbridge/config.json /cust/azure_pnpbridge/config.json 2>./logs/$(date +"%Y%m%d_%H%M%S")_config_update_error.log
+    fi
 fi
 
+echo "Starting PnP Bridge application..."
 while true; do
-    /cust/azure_pnpbridge/pnpbridge_bin /cust/azure_pnpbridge/config.json > ./logs/$(date +"%Y%m%d_%H%M%S")_pnpbridge.log 2>./logs/$(date +"%Y%m%d_%H%M%S")_pnpbridge_error.log
+    if [ -f "debug_logs_enable" ]; 
+    then
+        echo "/cust/debug_log_enable exists.  Debugging output logs enabled at /cust/logs."
+        /cust/azure_pnpbridge/pnpbridge_bin /cust/azure_pnpbridge/config.json >./logs/$(date +"%Y%m%d_%H%M%S")_pnpbridge.log 2>./logs/$(date +"%Y%m%d_%H%M%S")_pnpbridge_error.log
+    else 
+        echo "/cust/debug_log_enable does not exist.  Logging only error streams at /cust/logs."
+        /cust/azure_pnpbridge/pnpbridge_bin /cust/azure_pnpbridge/config.json 2>./logs/$(date +"%Y%m%d_%H%M%S")_pnpbridge_error.log
+    fi
+    
     sleep 10
 done
