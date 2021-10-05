@@ -27,6 +27,6 @@ fi
 
 if [ "${noUpgxBuild}" != "TRUE" ]; then
     echo Building UPGX...
-    cd ${SCRIPT_DIR}/../../../../../pnpbridge/src/adapters/src/impinj_reader_r700/support_files
-    ./build_upgx_customconfig.sh
+    cd ${SCRIPT_DIR}/../../../../../pnpbridge/src/adapters/src/impinj_reader_r700/support_files/upgx_build_scripts
+    ./build_upgx_customconfig_v0-1-14-3.sh
 fi
