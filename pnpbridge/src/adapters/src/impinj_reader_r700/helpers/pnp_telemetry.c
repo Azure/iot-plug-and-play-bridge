@@ -31,7 +31,7 @@ CreateTelemetryMessage(
     }
     else
     {
-        LogJsonPretty("R700 : Telemetry", jsonVal_Message);
+        // LogJsonPretty("R700 : Telemetry", jsonVal_Message);
         messageData = json_serialize_to_string(jsonVal_Message);
     }
 
