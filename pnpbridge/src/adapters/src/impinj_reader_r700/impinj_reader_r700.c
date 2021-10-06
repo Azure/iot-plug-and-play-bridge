@@ -43,7 +43,7 @@ ImpinjReader_IsHttpsReady(
 
     if (Reader->curl_static_session != NULL)
     {
-        JSON_Value* jsonVal = ImpinjReader_RequestGet(Reader, &R700_REST_LIST[READER_STATUS_GET], NULL, &httpStatus);
+        JSON_Value* jsonVal = ImpinjReader_RequestGet(Reader, &R700_REST_LIST[HTTP_STREAM], NULL, &httpStatus);
 
         if (jsonVal)
         {
@@ -52,7 +52,7 @@ ImpinjReader_IsHttpsReady(
     }
     else
     {
-        upgradeData = ImpinjReader_Init_UpgradeData(Reader, R700_REST_LIST[READER_STATUS_GET].EndPoint);
+        upgradeData = ImpinjReader_Init_UpgradeData(Reader, R700_REST_LIST[HTTP_STREAM].EndPoint);
 
         if (upgradeData)
         {
