@@ -21,8 +21,8 @@ extern "C" {
 #define R700_STATUS_CREATED             201
 #define R700_STATUS_ACCEPTED            202   // StatusResponse
 #define R700_STATUS_NO_CONTENT          204
-#define R700_NO_REGION_SELECTED         301   // Unique message (custom)
 #define R700_STATUS_BAD_REQUEST         400   // ErrorResponse
+#define R700_NO_REGION_SELECTED         401   // Unique message (custom)
 #define R700_STATUS_FORBIDDEN           403   // ErrorResponse
 #define R700_STATUS_NOT_FOUND           404   // ErrorResponse
 #define R700_STATUS_NOT_ALLOWED         405   // ErrorResponse
@@ -31,7 +31,7 @@ extern "C" {
 #define R700_STATUS_NOT_IMPLEMENTED     501   // ErrorResponse
 #define R700_STATUS_SERVICE_UNAVAILABLE 503   // ErrorResponse
 
-#define IsSuccess(code) (code < 400)
+#define IsSuccess(code) ((code & 200) == 200)
 
 static const char impinjReader_property_system_region_selectableRegions[] = "selectableRegions";
 
