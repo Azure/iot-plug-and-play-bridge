@@ -42,6 +42,7 @@ $(CAP_UPGX): $(PNP_BIN) $(CONFIG_JSON) $(CFG_DST) $(CAP_DSC) $(START) $(UPGRADE_
 	$E cp $(PNP_BIN) $(CAP_PNPBRIDGE_DIR)/
 	$E cp $(CONFIG_JSON) $(CAP_PNPBRIDGE_DIR)/
 	$E cp $(START) $(CAP_DIR)/
+	# $E cp debug_logs_enable $(CAP_DIR)/
 	$E cp $(UPGRADE_SCRIPT) $(CAP_DIR)/
 	$E cp $(CONFIG_UPDATE_ARM) $(CAP_SUPPORT_DIR)/
 	$E $(ETK_DIR)/cap_gen.sh -d $(CAP_DSC) -o $(CAP_UPGX)
