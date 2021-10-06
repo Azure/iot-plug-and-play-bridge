@@ -39,7 +39,7 @@ LogJsonPretty(
 
     if (JsonValue == NULL)
     {
-        //LogInfo("R700 : JsonValue = NULL");
+        LogInfo("R700 : JsonValue = NULL");
     }
     else if ((jsonType = json_value_get_type(JsonValue)) == JSONError)
     {
@@ -1220,10 +1220,11 @@ UpdateDeviceMetadata(
     }
     else {
         // need to free and reallocate since new value likely a different size  
-        // if (Device->deviceMetadataJsonVal) {
-        //     json_value_free(Device->deviceMetadataJsonVal);
-        // }
-        jsonVal = json_value_deep_copy(newJsonVal); 
+        if (Device->deviceMetadataJsonVal != NULL) {
+            json_value_free(Device->deviceMetadataJsonVal);
+        }
+
+        jsonVal = json_parse_string(json_serialize_to_string(newJsonVal)); 
         Device->deviceMetadataJsonVal = json_value_deep_copy(newJsonVal);
         LogInfo("R700 : Updated device metadata from cloud. Value = %s", json_serialize_to_string_pretty(jsonVal));
         // kwenner todo: update config file with new value
@@ -1276,9 +1277,12 @@ UpdateHttpStreamTelemetry(
             if (Device->curl_stream_session->threadData.stopFlag == 0) {
                 LogInfo("R700: previous HTTP stream reader thread already exists, stopping...");
                 curlStreamStopThread(Device->curl_stream_session);
+                curlStreamCleanup(Device->curl_stream_session);
                 ThreadAPI_Sleep(1000);
             }
             LogInfo("R700: starting new HTTP stream reader thread...");
+            curlStreamInit(Device->username, Device->password, Device->baseUrl, Session_Stream, VERIFY_CERTS_OFF, VERBOSE_OUTPUT_OFF);
+            ThreadAPI_Sleep(1000);
             curlStreamSpawnReaderThread(Device->curl_stream_session);
             Device->Flags.IsHTTPstreamEnabled = 1;
         }

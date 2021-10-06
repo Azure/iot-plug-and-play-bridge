@@ -373,8 +373,10 @@ ImpinjReader_TelemetryWorker(
                 break;
             }
 
-            ProcessReaderTelemetry(componentHandle);
-            ThreadAPI_Sleep(100);
+            if (device->Flags.IsHTTPstreamEnabled != 0) {
+                ProcessReaderTelemetry(componentHandle);
+            }
+            // ThreadAPI_Sleep(100);  
             uSecTimer = clock() - uSecInit;
         }
     }
