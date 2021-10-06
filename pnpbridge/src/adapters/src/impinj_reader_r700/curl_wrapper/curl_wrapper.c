@@ -439,7 +439,7 @@ curlStreamInit(
     char* password_copy = NULL;
     char* basePath_copy = NULL;
 
-#define STREAM_DATA_BUFFER_SIZE 10000000
+    #define STREAM_DATA_BUFFER_SIZE 10000000
 
     char* streamBuffer;
 
@@ -474,6 +474,7 @@ curlStreamInit(
     session_data->basePathLength      = strlen(basePath_copy);
     session_data->dataBuffer          = streamBuffer;
     session_data->dataBufferSize      = STREAM_DATA_BUFFER_SIZE;
+    LogInfo("R700: cURL http stream session buffer size: %d", STREAM_DATA_BUFFER_SIZE);
     session_data->bufferReadIndex     = 0;
     session_data->bufferReadCounter   = 0;
     session_data->bufferWriteIndex    = 0;
