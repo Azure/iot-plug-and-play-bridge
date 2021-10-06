@@ -12,7 +12,7 @@ extern "C" {
 #define VERIFY_CERTS_OFF 0
 #define VERIFY_CERTS_ON  1
 
-#define DEBUG_CURL
+// #define DEBUG_CURL
 
 static const char g_content_json[]         = "application/json";
 static const char g_content_xml[]          = "application/xml";
