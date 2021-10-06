@@ -22,11 +22,11 @@ extern "C" {
 #define R700_STATUS_ACCEPTED            202   // StatusResponse
 #define R700_STATUS_NO_CONTENT          204
 #define R700_STATUS_BAD_REQUEST         400   // ErrorResponse
-#define R700_NO_REGION_SELECTED         401   // Unique message (custom)
 #define R700_STATUS_FORBIDDEN           403   // ErrorResponse
 #define R700_STATUS_NOT_FOUND           404   // ErrorResponse
 #define R700_STATUS_NOT_ALLOWED         405   // ErrorResponse
 #define R700_STATUS_CONFLICT            409   // ErrorResponse
+#define R700_NO_REGION_SELECTED         410   // Unique message (custom)
 #define R700_STATUS_INTERNAL_ERROR      500   // ErrorResponse
 #define R700_STATUS_NOT_IMPLEMENTED     501   // ErrorResponse
 #define R700_STATUS_SERVICE_UNAVAILABLE 503   // ErrorResponse
