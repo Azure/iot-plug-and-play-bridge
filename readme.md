@@ -1,3 +1,5 @@
+⚠️ **Note**: Thank you for your interest in the IoT Plug and Play bridge, due to the changing needs of our customers and partners, evolving technology landscape, and innovations in Azure IoT, we have come to the decision to deprecate the IoT Plug and Play bridge. The repo will be marked as read-only repository on November 30th 2023. Thank you to everyone who contributed bug fixes and new adapters for connecting devices with IoT Plug and Play and thanks to your support on this journey. Developers looking to connect their device can continue to use the [Azure IoT Device SDKs directly](https://learn.microsoft.com/azure/iot-develop/about-iot-sdks#device-sdks). You can find the latest IoT innovations at https://azure.microsoft.com/solutions/iot/. Please note that any use of archived repositories introduces more risks from a security standpoint and should be done with caution.
+
 # IoT Plug and Play bridge
 
 ## Introduction
